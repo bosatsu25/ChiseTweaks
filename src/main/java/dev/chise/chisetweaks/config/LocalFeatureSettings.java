@@ -40,9 +40,6 @@ public final class LocalFeatureSettings {
     public static final ConfigInteger WORKSITE_VISIBILITY_INTERVAL = new ConfigInteger(
             "localWorksiteVisibilityIntervalTicks", 10, 5, 100,
             "Ticks between local visibility scans.");
-    public static final ConfigInteger WORKSITE_VISIBILITY_MAX_RESULTS = new ConfigInteger(
-            "localWorksiteVisibilityMaxResults", 6, 1, 8,
-            "Maximum nearby results shown in the visibility HUD.");
     public static final ConfigInteger WORKSITE_VISIBILITY_MAX_OVERLAYS = new ConfigInteger(
             "localWorksiteVisibilityMaxOverlays", 12, 1, 24,
             "Maximum visible blocks rendered by the bounded world overlay.");
@@ -64,7 +61,6 @@ public final class LocalFeatureSettings {
             WORKSITE_VISIBILITY_HORIZONTAL_RADIUS,
             WORKSITE_VISIBILITY_VERTICAL_RADIUS,
             WORKSITE_VISIBILITY_INTERVAL,
-            WORKSITE_VISIBILITY_MAX_RESULTS,
             WORKSITE_VISIBILITY_MAX_OVERLAYS,
             WORKSITE_VISIBILITY_WORLD_OVERLAY,
             WORKSITE_VISIBILITY_EXCLUSIVE_MODE);
@@ -126,7 +122,6 @@ public final class LocalFeatureSettings {
             WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setIntegerValue(c.worksiteVisibilityHorizontalRadius);
             WORKSITE_VISIBILITY_VERTICAL_RADIUS.setIntegerValue(c.worksiteVisibilityVerticalRadius);
             WORKSITE_VISIBILITY_INTERVAL.setIntegerValue(c.worksiteVisibilityIntervalTicks);
-            WORKSITE_VISIBILITY_MAX_RESULTS.setIntegerValue(c.worksiteVisibilityMaxResults);
             WORKSITE_VISIBILITY_MAX_OVERLAYS.setIntegerValue(c.worksiteVisibilityMaxOverlayResults);
             WORKSITE_VISIBILITY_WORLD_OVERLAY.setBooleanValue(c.worksiteVisibilityWorldOverlay);
             WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setBooleanValue(c.worksiteVisibilityExclusiveMode);
@@ -152,8 +147,6 @@ public final class LocalFeatureSettings {
                 c -> c.worksiteVisibilityVerticalRadius = WORKSITE_VISIBILITY_VERTICAL_RADIUS.getIntegerValue()));
         WORKSITE_VISIBILITY_INTERVAL.setValueChangeCallback(ignored -> save(
                 c -> c.worksiteVisibilityIntervalTicks = WORKSITE_VISIBILITY_INTERVAL.getIntegerValue()));
-        WORKSITE_VISIBILITY_MAX_RESULTS.setValueChangeCallback(ignored -> save(
-                c -> c.worksiteVisibilityMaxResults = WORKSITE_VISIBILITY_MAX_RESULTS.getIntegerValue()));
         WORKSITE_VISIBILITY_MAX_OVERLAYS.setValueChangeCallback(ignored -> save(
                 c -> c.worksiteVisibilityMaxOverlayResults = WORKSITE_VISIBILITY_MAX_OVERLAYS.getIntegerValue()));
         WORKSITE_VISIBILITY_WORLD_OVERLAY.setValueChangeCallback(ignored -> save(
