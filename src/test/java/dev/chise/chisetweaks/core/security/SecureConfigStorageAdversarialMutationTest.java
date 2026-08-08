@@ -72,7 +72,7 @@ final class SecureConfigStorageAdversarialMutationTest {
                 "payload",
                 1024,
                 (stagedFile, target) -> Files.writeString(
-                        stagedFile, "tampered-payload", StandardCharsets.UTF_8))));
+                        stagedFile, "tampered-payload", StandardCharsets.UTF_8)));
 
         assertEquals("Config replacement postcondition failed", failure.getMessage());
         assertEquals("tampered-payload",
