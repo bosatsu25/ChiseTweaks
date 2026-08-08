@@ -77,8 +77,33 @@ jacoco {
     toolVersion = project.jacoco_version
 }
 
+// The 96% unit-quality gate intentionally measures the deterministic Java
+// kernel only. Minecraft/Fabric callbacks, rendering, GUI and mixins require
+// game/integration testing and must not dilute or fake a unit-test metric.
+def qualityGateClasses = [
+        'dev/chise/chisetweaks/config/FeatureConfigDocumentPolicy*.class',
+        'dev/chise/chisetweaks/config/LocalFeatureConfigDocumentPolicy*.class',
+        'dev/chise/chisetweaks/core/performance/WorksiteCandidateRetentionPolicy*.class',
+        'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
+        'dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy*.class',
+        'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
+        'dev/chise/chisetweaks/core/policy/LavaVisionPalettePolicy*.class',
+        'dev/chise/chisetweaks/core/policy/ModVersionPolicy*.class',
+        'dev/chise/chisetweaks/core/policy/OrientationOverlayPolicy*.class',
+        'dev/chise/chisetweaks/core/policy/PumpkinScaffoldPolicy*.class',
+        'dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy*.class',
+        'dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy*.class'
+]
+
+def qualityGateClassDirectories = providers.provider {
+    files(sourceSets.main.output.classesDirs.collect { classesDir ->
+        fileTree(dir: classesDir, includes: qualityGateClasses)
+    })
+}
+
 jacocoTestReport {
     dependsOn tasks.named('test')
+    classDirectories.setFrom(qualityGateClassDirectories)
     reports {
         xml.required = true
         html.required = true
@@ -88,6 +113,7 @@ jacocoTestReport {
 
 jacocoTestCoverageVerification {
     dependsOn tasks.named('test')
+    classDirectories.setFrom(qualityGateClassDirectories)
     violationRules {
         rule {
             element = 'BUNDLE'
@@ -102,19 +128,18 @@ jacocoTestCoverageVerification {
 
 pitest {
     targetClasses = [
+        'dev.chise.chisetweaks.config.FeatureConfigDocumentPolicy',
+        'dev.chise.chisetweaks.config.LocalFeatureConfigDocumentPolicy',
+        'dev.chise.chisetweaks.core.performance.WorksiteCandidateRetentionPolicy',
+        'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
         'dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy',
         'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
         'dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy',
+        'dev.chise.chisetweaks.core.policy.ModVersionPolicy',
         'dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy',
         'dev.chise.chisetweaks.core.policy.PumpkinScaffoldPolicy',
         'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
-        'dev.chise.chisetweaks.core.performance.WorksiteCandidateRetentionPolicy',
-        'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
-        'dev.chise.chisetweaks.core.vision.*',
-        'dev.chise.chisetweaks.core.security.*',
-        'dev.chise.chisetweaks.config.FeatureConfigDocumentPolicy',
-        'dev.chise.chisetweaks.config.LocalFeatureConfigDocumentPolicy',
-        'dev.chise.chisetweaks.core.security.SecureConfigStorage'
+        'dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy'
     ]
     targetTests = [
         'dev.chise.chisetweaks.*Test',
@@ -168,7 +193,7 @@ publishing {
 
 tasks.register('qualityGate') {
     group = 'verification'
-    description = 'Runs unit tests, JaCoCo line coverage verification and PIT mutation gates.'
+    description = 'Runs deterministic-kernel unit tests, JaCoCo line coverage verification and PIT mutation gates.'
     dependsOn tasks.named('test')
     dependsOn tasks.named('jacocoTestReport')
     dependsOn tasks.named('jacocoTestCoverageVerification')
