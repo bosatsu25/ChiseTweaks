@@ -24,6 +24,7 @@ final class LocalFeatureConfigDocumentPolicy {
             "worksiteVisibilityIntervalTicks",
             "worksiteVisibilityMaxResults",
             "worksiteVisibilityMaxOverlayResults",
+            "visualTargetMask",
             "pumpkinScaffoldPlacementRange");
 
     private LocalFeatureConfigDocumentPolicy() {}

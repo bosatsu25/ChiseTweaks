@@ -22,6 +22,7 @@ final class LocalFeatureConfigDocumentPolicyTest {
                   "worksiteVisibilityMaxOverlayResults": 12,
                   "worksiteVisibilityWorldOverlay": true,
                   "worksiteVisibilityExclusiveMode": false,
+                  "visualTargetMask": 33554431,
                   "pumpkinScaffoldPlacementRange": 4
                 }
                 """).getAsJsonObject();
@@ -37,6 +38,13 @@ final class LocalFeatureConfigDocumentPolicyTest {
         assertFalse(merged.has("futureOption"));
         assertEquals(5, merged.get("pumpkinScaffoldPlacementRange").getAsInt());
         assertEquals(10, merged.get("worksiteVisibilityIntervalTicks").getAsInt());
+    }
+
+    @Test
+    void visualTargetMaskAcceptsExactIntegers() {
+        JsonObject source = JsonParser.parseString("{\"visualTargetMask\":12345}").getAsJsonObject();
+        JsonObject merged = LocalFeatureConfigDocumentPolicy.overlayKnownValues(defaults(), source);
+        assertEquals(12345, merged.get("visualTargetMask").getAsInt());
     }
 
     @Test
