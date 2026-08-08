@@ -15,8 +15,8 @@ import java.util.List;
 /**
  * Coordinates bounded worksite world overlays without owning user feature state.
  *
- * <p>Quarantining this engine never changes the user-facing visibility toggles.
- * The manager can stop runtime work independently from persisted preferences.</p>
+ * <p>Material Highlights are model-backed and deliberately excluded from this bounded scan path.
+ * The remaining visibility modes keep their existing line-of-sight and result-budget behavior.</p>
  */
 public final class WorksiteVisibilityEngine
         implements TickingRuntimeComponent, SessionAwareRuntimeComponent {
@@ -40,7 +40,7 @@ public final class WorksiteVisibilityEngine
     @Override
     public boolean isActive() {
         for (FeatureSwitch toggle : FeatureSwitches.VALUES) {
-            if (toggle.definition().isWorksiteVisibilityMode() && toggle.getBooleanValue()) return true;
+            if (usesWorldOverlay(toggle) && toggle.getBooleanValue()) return true;
         }
         return false;
     }
@@ -72,11 +72,16 @@ public final class WorksiteVisibilityEngine
     private EnumSet<BlockInspectionCategory> activeCategories() {
         EnumSet<BlockInspectionCategory> active = EnumSet.noneOf(BlockInspectionCategory.class);
         for (FeatureSwitch toggle : FeatureSwitches.VALUES) {
-            if (!toggle.getBooleanValue()) continue;
-            var definition = toggle.definition();
-            if (definition.isWorksiteVisibilityMode()) active.add(definition.inspectionCategory());
+            if (!toggle.getBooleanValue() || !usesWorldOverlay(toggle)) continue;
+            active.add(toggle.definition().inspectionCategory());
         }
         return active;
+    }
+
+    private static boolean usesWorldOverlay(FeatureSwitch toggle) {
+        var definition = toggle.definition();
+        return definition.isWorksiteVisibilityMode()
+                && definition.inspectionCategory() != BlockInspectionCategory.MATERIAL_HIGHLIGHT;
     }
 
     private void clear() {

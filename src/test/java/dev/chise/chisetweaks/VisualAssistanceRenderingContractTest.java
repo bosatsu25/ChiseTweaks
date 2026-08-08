@@ -13,16 +13,17 @@ final class VisualAssistanceRenderingContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
-    void visualAssistanceUsesSurfaceAnchoredFeatureSpecificGeometry() throws IOException {
+    void visualAssistanceKeepsSurfaceLinesForNonMaterialModesOnly() throws IOException {
         String geometry = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/SurfaceLineVisualGeometry.java"));
         String renderer = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java"));
+        String engine = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java"));
 
         assertTrue(geometry.contains("drawThreadSkin"));
         assertTrue(geometry.contains("drawGlassSkin"));
         assertTrue(geometry.contains("drawHiddenSurfaceSkin"));
-        assertTrue(geometry.contains("drawMaterialSkin"));
         assertTrue(geometry.contains("drawNetherSkin"));
         assertTrue(geometry.contains("drawPlacementSkin"));
         assertTrue(geometry.contains("drawSlab"));
@@ -34,13 +35,17 @@ final class VisualAssistanceRenderingContractTest {
         assertTrue(renderer.contains("case TECHNICAL_TRACE"));
         assertTrue(renderer.contains("case GLASS_INSPECTION"));
         assertTrue(renderer.contains("case HIDDEN_SURFACE"));
-        assertTrue(renderer.contains("case MATERIAL_HIGHLIGHT"));
+        assertTrue(renderer.contains("case MATERIAL_HIGHLIGHT -> { }"));
         assertTrue(renderer.contains("case NETHER_PALETTE"));
         assertTrue(renderer.contains("SurfaceLineVisualGeometry.drawPlacementSkin"));
         assertTrue(renderer.contains("powered=true"));
-        assertTrue(renderer.contains("PULSE_COLORS"));
+        assertFalse(renderer.contains("SurfaceLineVisualGeometry.drawMaterialSkin"));
+        assertFalse(renderer.contains("PULSE_COLORS"));
         assertFalse(renderer.contains("glassColor("));
         assertFalse(renderer.contains("WorldLineGeometry.drawBox"));
+
+        assertTrue(engine.contains(
+                "definition.inspectionCategory() != BlockInspectionCategory.MATERIAL_HIGHLIGHT"));
     }
 
     @Test
@@ -49,14 +54,14 @@ final class VisualAssistanceRenderingContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java"));
         String properties = Files.readString(ROOT.resolve("gradle.properties"));
 
-        assertTrue(properties.contains("mod_version=0.6.3+mc26.1.2"));
+        assertTrue(properties.contains("mod_version=0.6.4+mc26.1.2"));
         assertTrue(renderer.contains("RENDERER_REVISION = \"surface-line-v2\""));
         assertTrue(renderer.contains("Visual renderer {} active in ChiseTweaks {}"));
         assertTrue(renderer.contains("rendererIdentityLogged"));
     }
 
     @Test
-    void visualPaletteAvoidsTheConfiguredSchematicOverlayColors() throws IOException {
+    void nonMaterialWorldLinePaletteAvoidsConfiguredSchematicOverlayColors() throws IOException {
         String style = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy.java"));
         String renderer = Files.readString(ROOT.resolve(

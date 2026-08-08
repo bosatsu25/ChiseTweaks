@@ -21,16 +21,6 @@ import java.util.function.Consumer;
 /** Owns high-visibility world-space rendering for bounded worksite targets. */
 final class WorksiteOverlayRenderer {
     private static final String RENDERER_REVISION = "surface-line-v2";
-    private static final int[] PULSE_COLORS = {
-            0xFF4E3A8C,
-            0xFF5E4FA2,
-            0xFF725AC1,
-            0xFF7D6BDB,
-            0xFF8F7AE5,
-            0xFF9B7EDE,
-            0xFFA68BFF,
-            0xFFB29CFF
-    };
     private static final int ACCENT_DARK = 0xFF4E3A8C;
     private static final int ACCENT_LIGHT = 0xFFB29CFF;
     private static final int THREAD_IDLE = 0xFF5E4FA2;
@@ -139,17 +129,10 @@ final class WorksiteOverlayRenderer {
                     primary,
                     ACCENT_LIGHT,
                     2.5f);
-            case MATERIAL_HIGHLIGHT -> SurfaceLineVisualGeometry.drawMaterialSkin(
-                    vertices, pose, target.position(), primary, pulseColor(target, pulseFrame), phase, 3.3f);
+            case MATERIAL_HIGHLIGHT -> { }
             case NETHER_PALETTE -> SurfaceLineVisualGeometry.drawNetherSkin(
                     vertices, pose, target.position(), primary, ACCENT_DARK, phase, 2.3f);
             case NONE -> { }
         }
-    }
-
-    private static int pulseColor(WorksiteVisibleTarget target, long pulseFrame) {
-        int offset = Math.floorMod(target.position().hashCode(), PULSE_COLORS.length);
-        int frame = (int) Math.floorMod(pulseFrame, PULSE_COLORS.length);
-        return PULSE_COLORS[(frame + offset) % PULSE_COLORS.length];
     }
 }

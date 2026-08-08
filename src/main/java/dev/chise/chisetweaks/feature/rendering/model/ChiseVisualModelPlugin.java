@@ -5,69 +5,98 @@ import dev.chise.chisetweaks.ChiseTweaksMetadata;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy;
+import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier;
 import net.minecraft.client.renderer.block.dispatch.SingleVariant;
 import net.minecraft.client.renderer.block.dispatch.Variant;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.Map;
+
 /**
- * Chise-owned block-model visual path.
+ * Chise-owned material-highlight block-model path.
  *
- * <p>Phase 1 intentionally replaces only diamond ore. It proves that Chise can enter the same
- * block-model stage used by resource packs while keeping all texture/model assets original to
- * ChiseTweaks. Later phases can add the remaining visual targets after this path is confirmed in
- * game with Sodium, Iris and Litematica present.</p>
+ * <p>The vanilla/resource-pack texture remains the base layer. Chise adds only a thin animated
+ * frame model around visible block edges. This keeps the material recognizable while making the
+ * target easy to pick out at a distance.</p>
  */
 public final class ChiseVisualModelPlugin {
-    public static final String REVISION = "model-loading-poc-1";
+    public static final String REVISION = "material-model-highlights-1";
 
-    private static final Identifier DIAMOND_ORE_MODEL =
-            Identifier.fromNamespaceAndPath(ChiseTweaksMetadata.MOD_ID, "block/visual/diamond_ore");
-    private static final Identifier DEEPSLATE_DIAMOND_ORE_MODEL =
-            Identifier.fromNamespaceAndPath(
-                    ChiseTweaksMetadata.MOD_ID,
-                    "block/visual/deepslate_diamond_ore");
+    private static final Map<Block, ModelSpec> MODEL_REPLACEMENTS = Map.ofEntries(
+            replacement(Blocks.OBSIDIAN, Target.MATERIAL_OBSIDIAN, "obsidian"),
+            replacement(Blocks.ANCIENT_DEBRIS, Target.MATERIAL_ANCIENT_DEBRIS, "ancient_debris"),
+            replacement(Blocks.DIAMOND_ORE, Target.MATERIAL_DIAMOND_ORE, "diamond_ore"),
+            replacement(Blocks.DEEPSLATE_DIAMOND_ORE, Target.MATERIAL_DIAMOND_ORE, "deepslate_diamond_ore"),
+            replacement(Blocks.GOLD_ORE, Target.MATERIAL_GOLD_ORE, "gold_ore"),
+            replacement(Blocks.DEEPSLATE_GOLD_ORE, Target.MATERIAL_GOLD_ORE, "deepslate_gold_ore"),
+            replacement(Blocks.EMERALD_ORE, Target.MATERIAL_EMERALD_ORE, "emerald_ore"),
+            replacement(Blocks.DEEPSLATE_EMERALD_ORE, Target.MATERIAL_EMERALD_ORE, "deepslate_emerald_ore"),
+            replacement(Blocks.COAL_ORE, Target.MATERIAL_COAL_ORE, "coal_ore"),
+            replacement(Blocks.DEEPSLATE_COAL_ORE, Target.MATERIAL_COAL_ORE, "deepslate_coal_ore"),
+            replacement(Blocks.IRON_ORE, Target.MATERIAL_IRON_ORE, "iron_ore"),
+            replacement(Blocks.DEEPSLATE_IRON_ORE, Target.MATERIAL_IRON_ORE, "deepslate_iron_ore"),
+            replacement(Blocks.COPPER_ORE, Target.MATERIAL_COPPER_ORE, "copper_ore"),
+            replacement(Blocks.DEEPSLATE_COPPER_ORE, Target.MATERIAL_COPPER_ORE, "deepslate_copper_ore"),
+            replacement(Blocks.LAPIS_ORE, Target.MATERIAL_LAPIS_ORE, "lapis_ore"),
+            replacement(Blocks.DEEPSLATE_LAPIS_ORE, Target.MATERIAL_LAPIS_ORE, "deepslate_lapis_ore"),
+            replacement(Blocks.REDSTONE_ORE, Target.MATERIAL_REDSTONE_ORE, "redstone_ore"),
+            replacement(Blocks.DEEPSLATE_REDSTONE_ORE, Target.MATERIAL_REDSTONE_ORE, "deepslate_redstone_ore"));
 
     private ChiseVisualModelPlugin() {}
 
     public static void register() {
         ModelLoadingPlugin.register(pluginContext -> {
-            boolean useDiamondModel = desiredDiamondModelState();
-            VisualModelReloadCoordinator.markAppliedDiamondModelState(useDiamondModel);
+            int activeMaterialMask = desiredMaterialModelMask();
+            VisualModelReloadCoordinator.markAppliedMaterialModelMask(activeMaterialMask);
 
-            if (!useDiamondModel) return;
+            if (activeMaterialMask == 0) return;
 
             pluginContext.modifyBlockModelOnLoad().register(
                     ModelModifier.OVERRIDE_PHASE,
                     (model, context) -> {
-                        Identifier replacement = replacementModel(context.state());
+                        Identifier replacement = replacementModel(context.state(), activeMaterialMask);
                         if (replacement == null) return model;
                         return new SingleVariant.Unbaked(new Variant(replacement)).asRoot();
                     });
 
             ChiseTweaksClient.LOGGER.info(
-                    "Visual model {} active in ChiseTweaks {}; diamond ore uses Chise block models",
+                    "Visual model {} active in ChiseTweaks {}; {} material target family/families use Chise block models",
                     REVISION,
-                    ChiseTweaksMetadata.MOD_VERSION);
+                    ChiseTweaksMetadata.MOD_VERSION,
+                    Integer.bitCount(activeMaterialMask));
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client ->
-                VisualModelReloadCoordinator.observe(client, desiredDiamondModelState()));
+                VisualModelReloadCoordinator.observe(client, desiredMaterialModelMask()));
     }
 
-    static boolean desiredDiamondModelState() {
-        return VisualModelSelectionPolicy.useDiamondOreModel(
+    static int desiredMaterialModelMask() {
+        return VisualModelSelectionPolicy.activeMaterialModelMask(
                 FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue(),
                 LocalFeatureConfig.getInstance().visualTargetMask);
     }
 
-    private static Identifier replacementModel(BlockState state) {
-        if (state.getBlock() == Blocks.DIAMOND_ORE) return DIAMOND_ORE_MODEL;
-        if (state.getBlock() == Blocks.DEEPSLATE_DIAMOND_ORE) return DEEPSLATE_DIAMOND_ORE_MODEL;
-        return null;
+    private static Identifier replacementModel(BlockState state, int activeMaterialMask) {
+        if (state == null) return null;
+        ModelSpec spec = MODEL_REPLACEMENTS.get(state.getBlock());
+        if (spec == null || !VisualModelSelectionPolicy.useMaterialTarget(activeMaterialMask, spec.target())) {
+            return null;
+        }
+        return spec.model();
     }
+
+    private static Map.Entry<Block, ModelSpec> replacement(Block block, Target target, String modelName) {
+        Identifier model = Identifier.fromNamespaceAndPath(
+                ChiseTweaksMetadata.MOD_ID,
+                "block/visual/material/" + modelName);
+        return Map.entry(block, new ModelSpec(target, model));
+    }
+
+    private record ModelSpec(Target target, Identifier model) {}
 }

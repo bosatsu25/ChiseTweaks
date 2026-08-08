@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,13 +16,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class VisualModelLoadingContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
-    private static final Path VISUAL_MODELS = ROOT.resolve(
-            "src/main/resources/assets/chisetweaks/models/block/visual");
-    private static final Path GENERATED_VISUAL_TEXTURES = ROOT.resolve(
-            "build/generated/chiseVisualAssets/assets/chisetweaks/textures/block/visual");
+    private static final Path GENERATED_ROOT = ROOT.resolve("build/generated/chiseVisualAssets/assets/chisetweaks");
+    private static final Path GENERATED_VISUAL_MODELS = GENERATED_ROOT.resolve("models/block/visual/material");
+    private static final Path GENERATED_VISUAL_TEXTURES = GENERATED_ROOT.resolve("textures/block/visual/material");
+    private static final List<String> MATERIAL_KEYS = List.of(
+            "diamond", "gold", "emerald", "coal", "iron",
+            "copper", "lapis", "redstone", "ancient_debris", "obsidian");
 
     @Test
-    void diamondPocUsesFabricModelLoadingInsteadOfAnotherWorldLinePass() throws IOException {
+    void allMaterialHighlightsUseFabricModelLoadingInsteadOfTheWorldLinePass() throws IOException {
         String plugin = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java"));
 
@@ -29,56 +32,119 @@ final class VisualModelLoadingContractTest {
         assertTrue(plugin.contains("modifyBlockModelOnLoad"));
         assertTrue(plugin.contains("ModelModifier.OVERRIDE_PHASE"));
         assertTrue(plugin.contains("new SingleVariant.Unbaked(new Variant(replacement)).asRoot()"));
-        assertTrue(plugin.contains("Blocks.DIAMOND_ORE"));
-        assertTrue(plugin.contains("Blocks.DEEPSLATE_DIAMOND_ORE"));
+        for (String block : List.of(
+                "OBSIDIAN", "ANCIENT_DEBRIS",
+                "DIAMOND_ORE", "DEEPSLATE_DIAMOND_ORE",
+                "GOLD_ORE", "DEEPSLATE_GOLD_ORE",
+                "EMERALD_ORE", "DEEPSLATE_EMERALD_ORE",
+                "COAL_ORE", "DEEPSLATE_COAL_ORE",
+                "IRON_ORE", "DEEPSLATE_IRON_ORE",
+                "COPPER_ORE", "DEEPSLATE_COPPER_ORE",
+                "LAPIS_ORE", "DEEPSLATE_LAPIS_ORE",
+                "REDSTONE_ORE", "DEEPSLATE_REDSTONE_ORE")) {
+            assertTrue(plugin.contains("Blocks." + block), block);
+        }
         assertFalse(plugin.contains("RenderTypes.lines"));
         assertFalse(plugin.contains("SurfaceLineVisualGeometry"));
     }
 
     @Test
-    void diamondModelsUseOnlyChiseTextureNamespace() throws IOException {
-        String diamond = Files.readString(VISUAL_MODELS.resolve("diamond_ore.json"));
-        String deepslate = Files.readString(VISUAL_MODELS.resolve("deepslate_diamond_ore.json"));
+    void generatedModelsKeepVanillaTexturesAndAddGeometryOnlyHighlightFrames() throws IOException {
+        try (var models = Files.list(GENERATED_VISUAL_MODELS)) {
+            assertEquals(18, models.filter(path -> path.toString().endsWith(".json")).count());
+        }
 
-        assertTrue(diamond.contains("\"parent\": \"minecraft:block/cube_all\""));
-        assertTrue(diamond.contains("chisetweaks:block/visual/diamond_ore_chise"));
-        assertTrue(deepslate.contains("\"parent\": \"minecraft:block/cube_all\""));
-        assertTrue(deepslate.contains("chisetweaks:block/visual/deepslate_diamond_ore_chise"));
+        String diamond = Files.readString(GENERATED_VISUAL_MODELS.resolve("diamond_ore.json"));
+        String deepslateDiamond = Files.readString(
+                GENERATED_VISUAL_MODELS.resolve("deepslate_diamond_ore.json"));
+        String debris = Files.readString(GENERATED_VISUAL_MODELS.resolve("ancient_debris.json"));
+
+        assertTrue(diamond.contains("minecraft:block/diamond_ore"));
+        assertTrue(diamond.contains("chisetweaks:block/visual/material/diamond_highlight"));
+        assertTrue(deepslateDiamond.contains("minecraft:block/deepslate_diamond_ore"));
+        assertTrue(deepslateDiamond.contains("chisetweaks:block/visual/material/diamond_highlight"));
+        assertTrue(debris.contains("minecraft:block/ancient_debris_top"));
+        assertTrue(debris.contains("minecraft:block/ancient_debris_side"));
+        assertTrue(diamond.contains("-0.06"));
+        assertTrue(diamond.contains("\"shade\": false"));
     }
 
     @Test
-    void generatedAnimatedDiamondTexturesHaveEightSixteenPixelFrames() throws IOException {
-        assertAnimatedTexture(GENERATED_VISUAL_TEXTURES.resolve("diamond_ore_chise.png"));
-        assertAnimatedTexture(GENERATED_VISUAL_TEXTURES.resolve("deepslate_diamond_ore_chise.png"));
+    void generatedMaterialBordersHaveEightAnimatedFrames() throws IOException {
+        for (String key : MATERIAL_KEYS) {
+            Path texture = GENERATED_VISUAL_TEXTURES.resolve(key + "_highlight.png");
+            BufferedImage image = ImageIO.read(texture.toFile());
+            assertNotNull(image, key);
+            assertEquals(16, image.getWidth(), key);
+            assertEquals(128, image.getHeight(), key);
 
-        Path sourceTextures = ROOT.resolve(
-                "src/main/resources/assets/chisetweaks/textures/block/visual");
-        String diamondMeta = Files.readString(sourceTextures.resolve("diamond_ore_chise.png.mcmeta"));
-        String deepslateMeta = Files.readString(
-                sourceTextures.resolve("deepslate_diamond_ore_chise.png.mcmeta"));
-
-        assertTrue(diamondMeta.contains("\"frametime\": 3"));
-        assertTrue(diamondMeta.contains("\"interpolate\": true"));
-        assertTrue(deepslateMeta.contains("\"frametime\": 3"));
-        assertTrue(deepslateMeta.contains("\"interpolate\": true"));
+            String meta = Files.readString(GENERATED_VISUAL_TEXTURES.resolve(key + "_highlight.png.mcmeta"));
+            assertTrue(meta.contains("\"frametime\": 2"), key);
+            assertTrue(meta.contains("\"interpolate\": true"), key);
+        }
     }
 
     @Test
-    void buildLogicGeneratesOriginalVisualTexturesIntoProcessedResources() throws IOException {
+    void generatedBorderFamiliesMatchTheirMaterialIdentity() throws IOException {
+        int[] diamond = averageFrame("diamond", 4);
+        int[] gold = averageFrame("gold", 4);
+        int[] emerald = averageFrame("emerald", 4);
+        int[] coal = averageFrame("coal", 4);
+        int[] iron = averageFrame("iron", 4);
+        int[] copper = averageFrame("copper", 4);
+        int[] lapis = averageFrame("lapis", 4);
+        int[] redstone = averageFrame("redstone", 4);
+        int[] debris = averageFrame("ancient_debris", 4);
+        int[] obsidian = averageFrame("obsidian", 4);
+
+        assertTrue(diamond[1] > diamond[0] && diamond[2] > diamond[0]);
+        assertTrue(gold[0] > gold[2] && gold[1] > gold[2]);
+        assertTrue(emerald[1] > emerald[0] && emerald[1] > emerald[2]);
+        assertTrue(max(coal) - min(coal) < 40);
+        assertTrue(iron[0] > iron[1] && iron[1] > iron[2]);
+        assertTrue(copper[0] > copper[1] && copper[0] > copper[2]);
+        assertTrue(lapis[2] > lapis[0] && lapis[2] > lapis[1]);
+        assertTrue(redstone[0] > redstone[1] * 2 && redstone[0] > redstone[2] * 2);
+        assertTrue(debris[0] > debris[1] && debris[1] > debris[2]);
+        assertTrue(obsidian[0] > obsidian[1] && obsidian[2] > obsidian[1]);
+    }
+
+    @Test
+    void buildLogicGeneratesModelsTexturesAndAnimationMetadataTogether() throws IOException {
         String generator = Files.readString(ROOT.resolve("gradle/chise-visual-assets.gradle"));
         String settings = Files.readString(ROOT.resolve("settings.gradle"));
 
         assertTrue(settings.contains("chise-visual-assets.gradle"));
         assertTrue(generator.contains("generateChiseVisualAssets"));
-        assertTrue(generator.contains("ImageIO.write"));
-        assertTrue(generator.contains("diamond_ore_chise.png"));
-        assertTrue(generator.contains("deepslate_diamond_ore_chise.png"));
+        assertTrue(generator.contains("writeBorderTexture"));
+        assertTrue(generator.contains("addBorderRods"));
+        assertTrue(generator.contains("writeAnimationMeta"));
+        assertTrue(generator.contains("ancientDebrisModel"));
     }
 
-    private static void assertAnimatedTexture(Path texture) throws IOException {
-        BufferedImage image = ImageIO.read(texture.toFile());
-        assertNotNull(image);
-        assertEquals(16, image.getWidth());
-        assertEquals(128, image.getHeight());
+    private static int[] averageFrame(String key, int frame) throws IOException {
+        BufferedImage image = ImageIO.read(
+                GENERATED_VISUAL_TEXTURES.resolve(key + "_highlight.png").toFile());
+        long r = 0;
+        long g = 0;
+        long b = 0;
+        int top = frame * 16;
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+                int rgb = image.getRGB(x, top + y);
+                r += (rgb >>> 16) & 0xFF;
+                g += (rgb >>> 8) & 0xFF;
+                b += rgb & 0xFF;
+            }
+        }
+        return new int[] {(int) (r / 256), (int) (g / 256), (int) (b / 256)};
+    }
+
+    private static int max(int[] value) {
+        return Math.max(value[0], Math.max(value[1], value[2]));
+    }
+
+    private static int min(int[] value) {
+        return Math.min(value[0], Math.min(value[1], value[2]));
     }
 }
