@@ -15,8 +15,18 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
-/** Owns only world-space rendering for worksite targets. */
+/** Owns high-visibility world-space rendering for bounded worksite targets. */
 final class WorksiteOverlayRenderer {
+    private static final int[] PULSE_COLORS = {
+            0xFFFF3B30,
+            0xFFFF9500,
+            0xFFFFE14A,
+            0xFF71E35B,
+            0xFF50E3E6,
+            0xFF5A7DFF,
+            0xFFC66BFF
+    };
+
     private final BooleanSupplier activeSupplier;
     private final Consumer<LevelRenderContext> guardedRender;
     private volatile List<WorksiteVisibleTarget> targets = List.of();
@@ -65,8 +75,9 @@ final class WorksiteOverlayRenderer {
                     poseStack,
                     RenderTypes.lines(),
                     (pose, vertices) -> {
+                        long pulseFrame = System.nanoTime() / 140_000_000L;
                         for (WorksiteVisibleTarget target : snapshot) {
-                            drawTarget(vertices, pose, target);
+                            drawTarget(vertices, pose, target, pulseFrame);
                         }
                     });
         } finally {
@@ -77,17 +88,43 @@ final class WorksiteOverlayRenderer {
     private static void drawTarget(
             com.mojang.blaze3d.vertex.VertexConsumer vertices,
             PoseStack.Pose pose,
-            WorksiteVisibleTarget target) {
+            WorksiteVisibleTarget target,
+            long pulseFrame) {
         VisualAssistanceStylePolicy.OverlayStyle style = target.style();
-        int color = style.argb();
-        float lineWidth = style.priority() >= 80 ? 2.6f : 2.0f;
-        WorldLineGeometry.drawBox(vertices, pose, target.position(), color, lineWidth);
+        int primary = style.argb();
         switch (style.marker()) {
-            case CROSS -> WorldLineGeometry.drawCross(vertices, pose, target.position(), color, lineWidth);
-            case DIAGONAL -> WorldLineGeometry.drawDiagonal(vertices, pose, target.position(), color, lineWidth);
-            case ORIENTATION -> WorldLineGeometry.drawOrientation(
-                    vertices, pose, target.position(), target.orientation(), color, lineWidth);
-            case BOX, NONE -> { }
+            case THREAD_SIGNAL -> {
+                int stateColor = target.presentation().details().contains("powered=true")
+                        ? 0xFFFF3B30
+                        : 0xFF46FF6A;
+                WorldLineGeometry.drawThreadSignal(
+                        vertices, pose, target.position(), target.presentation().details(), stateColor, 4.6f);
+                if (target.presentation().blockId().endsWith("tripwire_hook")) {
+                    WorldLineGeometry.drawBox(vertices, pose, target.position(), stateColor, 2.4f);
+                    WorldLineGeometry.drawOrientation(
+                            vertices, pose, target.position(), target.orientation(), 0xFFFFFFFF, 2.2f);
+                }
+            }
+            case SURFACE_HATCH -> WorldLineGeometry.drawSurfaceHatch(
+                    vertices, pose, target.position(), primary, 0xE6FFFFFF, 3.0f);
+            case GLASS_GRID -> WorldLineGeometry.drawGlassGrid(
+                    vertices, pose, target.position(), primary, 0xE6FFFFFF, 3.2f);
+            case ORIENTATION -> {
+                WorldLineGeometry.drawBox(vertices, pose, target.position(), primary, 2.2f);
+                WorldLineGeometry.drawOrientation(
+                        vertices, pose, target.position(), target.orientation(), 0xFFFFFFFF, 3.0f);
+            }
+            case MATERIAL_PULSE -> WorldLineGeometry.drawMaterialPulse(
+                    vertices, pose, target.position(), primary, pulseColor(target, pulseFrame), 3.4f);
+            case NETHER_GRID -> WorldLineGeometry.drawNetherGrid(
+                    vertices, pose, target.position(), primary, 0xBFF7E8DC, 2.4f);
+            case NONE -> { }
         }
+    }
+
+    private static int pulseColor(WorksiteVisibleTarget target, long pulseFrame) {
+        int offset = Math.floorMod(target.position().hashCode(), PULSE_COLORS.length);
+        int frame = (int) Math.floorMod(pulseFrame, PULSE_COLORS.length);
+        return PULSE_COLORS[(frame + offset) % PULSE_COLORS.length];
     }
 }
