@@ -1,0 +1,61 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Chise: Source audits",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "scripts/run_source_audits.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Chise: Unit tests",
+      "type": "process",
+      "command": "./gradlew",
+      "windows": {
+        "command": "${workspaceFolder}\\gradlew.bat"
+      },
+      "args": [
+        "--no-daemon",
+        "test"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$gradle"
+    },
+    {
+      "label": "Chise: CI-equivalent verification",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "scripts/local_ci.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Chise: Run visual client",
+      "type": "process",
+      "command": "./gradlew",
+      "windows": {
+        "command": "${workspaceFolder}\\gradlew.bat"
+      },
+      "args": [
+        "--no-daemon",
+        "runClient"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$gradle"
+    }
+  ]
+}

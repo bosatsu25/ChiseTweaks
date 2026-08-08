@@ -1,0 +1,176 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+    id 'info.solidsoft.pitest' version '1.19.0'
+    id 'jacoco'
+}
+
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+
+def chiseSodiumRuntime = providers.gradleProperty('chiseSodiumRuntime')
+        .map { value -> value.toBoolean() }.orElse(true).get()
+
+repositories {
+    maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven'; content { includeGroup 'maven.modrinth' } }
+    maven { name = 'TerraformersMC'; url = 'https://maven.terraformersmc.com/releases/'; content { includeGroup 'com.terraformersmc' } }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    implementation "maven.modrinth:malilib:${project.malilib_version}"
+
+    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    runtimeOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+    compileOnly "maven.modrinth:sodium:${project.sodium_version}"
+    if (chiseSodiumRuntime) runtimeOnly "maven.modrinth:sodium:${project.sodium_version}"
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+loom {
+    runs {
+        client {
+            name = 'Chise visual client'
+            runDir = 'run/visual-client'
+            vmArg '--enable-native-access=ALL-UNNAMED'
+        }
+    }
+}
+
+def fabricMetadata = [
+        version              : version.toString(),
+        minecraft_version    : project.minecraft_version,
+        loader_version       : project.loader_version,
+        fabric_api_version   : project.fabric_api_version,
+        malilib_version      : project.malilib_version,
+        modmenu_version      : project.modmenu_version,
+        sodium_compat_version: project.sodium_compat_version
+]
+
+processResources {
+    inputs.properties fabricMetadata
+    filesMatching('fabric.mod.json') { expand(fabricMetadata) }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xlint:deprecation', '-Xlint:unchecked'])
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    maxParallelForks = 1
+    failFast = false
+    systemProperty 'file.encoding', 'UTF-8'
+}
+
+jacoco {
+    toolVersion = project.jacoco_version
+}
+
+jacocoTestReport {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn tasks.named('test')
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.96
+            }
+        }
+    }
+}
+
+pitest {
+    targetClasses = [
+        'dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy',
+        'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
+        'dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy',
+        'dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy',
+        'dev.chise.chisetweaks.core.policy.PumpkinScaffoldPolicy',
+        'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
+        'dev.chise.chisetweaks.core.performance.WorksiteCandidateRetentionPolicy',
+        'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
+        'dev.chise.chisetweaks.core.vision.*',
+        'dev.chise.chisetweaks.core.security.*',
+        'dev.chise.chisetweaks.config.FeatureConfigDocumentPolicy',
+        'dev.chise.chisetweaks.config.LocalFeatureConfigDocumentPolicy',
+        'dev.chise.chisetweaks.core.security.SecureConfigStorage'
+    ]
+    targetTests = [
+        'dev.chise.chisetweaks.*Test',
+        'dev.chise.chisetweaks.config.*Test',
+        'dev.chise.chisetweaks.runtime.*Test',
+        'dev.chise.chisetweaks.core.security.*Test'
+    ]
+    junit5PluginVersion = '1.2.3'
+    threads = 2
+    outputFormats = ['HTML', 'XML']
+    timestampedReports = false
+    failWhenNoMutations = true
+    mutationThreshold = 96
+    coverageThreshold = 96
+    testStrengthThreshold = 96
+    exportLineCoverage = true
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.named('sourcesJar') {
+    from('LICENSE') { rename { "${it}_${archives_base_name}" } }
+    from('LICENSE_MIT') { rename { "${it}_${archives_base_name}" } }
+    from('LICENSE_APACHE-2.0') { rename { "${it}_${archives_base_name}" } }
+    from('NOTICE')
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+jar {
+    from('LICENSE') { rename { "${it}_${archives_base_name}" } }
+    from('LICENSE_MIT') { rename { "${it}_${archives_base_name}" } }
+    from('LICENSE_APACHE-2.0') { rename { "${it}_${archives_base_name}" } }
+    from('NOTICE')
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    exclude '**/*Test.class', '**/test/**'
+}
+
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) { from components.java }
+    }
+}
+
+tasks.register('qualityGate') {
+    group = 'verification'
+    description = 'Runs unit tests, JaCoCo line coverage verification and PIT mutation gates.'
+    dependsOn tasks.named('test')
+    dependsOn tasks.named('jacocoTestReport')
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+    dependsOn tasks.named('pitest')
+}
