@@ -17,13 +17,13 @@ final class ClientCallbackCircuitBreakerTest {
     @Test
     void recoverableCallbackFailureOpensOnlyThatCallback() {
         ClientCallbackCircuitBreaker.run(
-                ClientCallbackCircuitBreaker.Callback.WORKSITE_VISIBILITY_HUD_RENDER,
+                ClientCallbackCircuitBreaker.Callback.WORKSITE_VISIBILITY_WORLD_RENDER,
                 () -> { throw new IllegalStateException("test"); });
 
         assertTrue(ClientCallbackCircuitBreaker.isOpen(
-                ClientCallbackCircuitBreaker.Callback.WORKSITE_VISIBILITY_HUD_RENDER));
-        assertFalse(ClientCallbackCircuitBreaker.isOpen(
                 ClientCallbackCircuitBreaker.Callback.WORKSITE_VISIBILITY_WORLD_RENDER));
+        assertFalse(ClientCallbackCircuitBreaker.isOpen(
+                ClientCallbackCircuitBreaker.Callback.SESSION_FEATURE_RESET));
         assertEquals(1, ClientCallbackCircuitBreaker.openCount());
     }
 
@@ -45,7 +45,7 @@ final class ClientCallbackCircuitBreakerTest {
         Consumer<String> consumer = observed::set;
 
         ClientCallbackCircuitBreaker.run(
-                ClientCallbackCircuitBreaker.Callback.WORKSITE_VISIBILITY_HUD_RENDER,
+                ClientCallbackCircuitBreaker.Callback.WORKSITE_VISIBILITY_WORLD_RENDER,
                 "value",
                 consumer);
 
