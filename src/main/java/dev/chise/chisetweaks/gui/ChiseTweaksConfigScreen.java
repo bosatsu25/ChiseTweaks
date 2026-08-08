@@ -1,13 +1,11 @@
 package dev.chise.chisetweaks.gui;
 
-import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
+import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ConfigUiLocalization;
 import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
-import dev.chise.chisetweaks.config.LocalFeatureSwitches;
-import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IHotkeyTogglable;
 import fi.dy.masa.malilib.config.options.BooleanHotkeyGuiWrapper;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
@@ -21,10 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Compact settings UI whose primary view keeps the original hotkey-first row layout.
+ * Compact settings UI whose primary view is the former dedicated keybind list.
  *
- * <p>Feature toggles and keybinds share one tab. Non-hotkey feature settings remain below the
- * hotkey rows so existing controls stay reachable without reintroducing a duplicate Features tab.</p>
+ * <p>The first tab intentionally preserves the established MaLiLib row layout: feature name,
+ * boolean toggle, keybind field, clear control and reset control. It does not append unrelated
+ * scalar settings below the keybind rows.</p>
  */
 public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     private static ConfigGuiTab selectedTab = ConfigGuiTab.FEATURES;
@@ -54,7 +53,6 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     @Override
     protected int getConfigWidth() {
         return switch (selectedTab) {
-            // Match the former dedicated Hotkeys view so toggle/keybind/reset controls stay compact.
             case FEATURES -> 260;
             case LISTS -> 320;
             case HELP -> 220;
@@ -75,21 +73,11 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
         };
     }
 
+    /** Uses exactly the former Hotkeys-screen row model. */
     private List<ConfigOptionWrapper> createFeatureAndHotkeyOptions() {
-        ArrayList<ConfigOptionWrapper> result = new ArrayList<>();
-
-        // Keep the former Hotkeys screen as the primary layout: toggle + keybind + clear/reset.
         ArrayList<BooleanHotkeyGuiWrapper> toggles = new ArrayList<>();
         for (FeatureSwitch toggle : FeatureSwitches.VALUES) toggles.add(wrapConfig(toggle));
-        result.addAll(ConfigOptionWrapper.createFor(toggles));
-
-        // Preserve non-hotkey feature controls without creating another duplicate top-level tab.
-        ArrayList<IConfigBase> options = new ArrayList<>();
-        options.addAll(LocalFeatureSwitches.VALUES);
-        options.addAll(BuilderFocusConfig.GENERAL_OPTIONS);
-        options.addAll(LocalFeatureSettings.ALL_OPTIONS);
-        result.addAll(ConfigOptionWrapper.createFor(options));
-        return List.copyOf(result);
+        return ConfigOptionWrapper.createFor(toggles);
     }
 
     private BooleanHotkeyGuiWrapper wrapConfig(IHotkeyTogglable config) {
