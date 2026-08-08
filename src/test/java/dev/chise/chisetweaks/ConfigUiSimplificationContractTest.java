@@ -13,7 +13,7 @@ final class ConfigUiSimplificationContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
-    void configUiKeepsTheFormerHotkeyLayoutAsThePrimaryFeatureView() throws IOException {
+    void configUiUsesExactlyTheFormerHotkeyListAsThePrimaryFeatureView() throws IOException {
         String source = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
 
@@ -21,7 +21,10 @@ final class ConfigUiSimplificationContractTest {
                 "FEATURES(\"Features & Keybinds\"), LISTS(\"Lists\"), HELP(\"Feature Guide\")"));
         assertTrue(source.contains("case FEATURES -> 260"));
         assertTrue(source.contains("BooleanHotkeyGuiWrapper"));
-        assertTrue(source.contains("createFeatureAndHotkeyOptions"));
+        assertTrue(source.contains("return ConfigOptionWrapper.createFor(toggles);"));
+        assertFalse(source.contains("options.addAll(LocalFeatureSwitches.VALUES)"));
+        assertFalse(source.contains("options.addAll(BuilderFocusConfig.GENERAL_OPTIONS)"));
+        assertFalse(source.contains("options.addAll(LocalFeatureSettings.ALL_OPTIONS)"));
         assertFalse(source.contains("HOTKEYS("));
         assertFalse(source.contains("ALL("));
         assertFalse(source.contains("createAllOptions"));
