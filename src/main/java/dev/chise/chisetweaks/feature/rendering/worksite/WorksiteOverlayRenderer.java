@@ -1,6 +1,8 @@
 package dev.chise.chisetweaks.feature.rendering.worksite;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.chise.chisetweaks.ChiseTweaksClient;
+import dev.chise.chisetweaks.ChiseTweaksMetadata;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
 import dev.chise.chisetweaks.feature.rendering.SurfaceLineVisualGeometry;
@@ -18,6 +20,7 @@ import java.util.function.Consumer;
 
 /** Owns high-visibility world-space rendering for bounded worksite targets. */
 final class WorksiteOverlayRenderer {
+    private static final String RENDERER_REVISION = "surface-line-v2";
     private static final int[] PULSE_COLORS = {
             0xFF4E3A8C,
             0xFF5E4FA2,
@@ -36,6 +39,7 @@ final class WorksiteOverlayRenderer {
     private final BooleanSupplier activeSupplier;
     private final Consumer<LevelRenderContext> guardedRender;
     private volatile List<WorksiteVisibleTarget> targets = List.of();
+    private boolean rendererIdentityLogged;
 
     WorksiteOverlayRenderer(BooleanSupplier activeSupplier) {
         this.activeSupplier = activeSupplier;
@@ -72,6 +76,17 @@ final class WorksiteOverlayRenderer {
         if (snapshot.isEmpty() || client.player == null || client.level == null || client.screen != null) return;
         Vec3 cameraPosition = context.levelState().cameraRenderState.pos;
         if (cameraPosition == null) return;
+
+        if (!rendererIdentityLogged) {
+            WorksiteVisibleTarget first = snapshot.get(0);
+            ChiseTweaksClient.LOGGER.info(
+                    "Visual renderer {} active in ChiseTweaks {}; first target {} ({})",
+                    RENDERER_REVISION,
+                    ChiseTweaksMetadata.MOD_VERSION,
+                    first.presentation().blockId(),
+                    first.presentation().category());
+            rendererIdentityLogged = true;
+        }
 
         PoseStack poseStack = context.poseStack();
         poseStack.pushPose();
