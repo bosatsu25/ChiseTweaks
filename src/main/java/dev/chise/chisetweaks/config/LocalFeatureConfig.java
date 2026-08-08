@@ -9,6 +9,7 @@ import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.PumpkinScaffoldPolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
+import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.util.Optional;
@@ -32,6 +33,9 @@ public final class LocalFeatureConfig {
     public int worksiteVisibilityMaxOverlayResults = 12;
     public boolean worksiteVisibilityWorldOverlay = true;
     public boolean worksiteVisibilityExclusiveMode = false;
+
+    /** Fine-grained visual targets. All bits start enabled for backwards-compatible behaviour. */
+    public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
 
     public int pumpkinScaffoldPlacementRange = PumpkinScaffoldPolicy.DEFAULT_PLACEMENT_RANGE;
 
@@ -109,6 +113,7 @@ public final class LocalFeatureConfig {
         worksiteVisibilityMaxOverlayResults = 12;
         worksiteVisibilityWorldOverlay = true;
         worksiteVisibilityExclusiveMode = false;
+        visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
         pumpkinScaffoldPlacementRange = PumpkinScaffoldPolicy.DEFAULT_PLACEMENT_RANGE;
     }
 
@@ -123,6 +128,7 @@ public final class LocalFeatureConfig {
                 WorksiteVisibilityBudgetPolicy.clampHudResults(worksiteVisibilityMaxResults);
         worksiteVisibilityMaxOverlayResults =
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(worksiteVisibilityMaxOverlayResults);
+        visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
         pumpkinScaffoldPlacementRange =
                 PumpkinScaffoldPolicy.clampPlacementRange(pumpkinScaffoldPlacementRange);
     }
@@ -141,6 +147,7 @@ public final class LocalFeatureConfig {
         worksiteVisibilityMaxOverlayResults = loaded.worksiteVisibilityMaxOverlayResults;
         worksiteVisibilityWorldOverlay = loaded.worksiteVisibilityWorldOverlay;
         worksiteVisibilityExclusiveMode = loaded.worksiteVisibilityExclusiveMode;
+        visualTargetMask = loaded.visualTargetMask;
         pumpkinScaffoldPlacementRange = loaded.pumpkinScaffoldPlacementRange;
     }
 }
