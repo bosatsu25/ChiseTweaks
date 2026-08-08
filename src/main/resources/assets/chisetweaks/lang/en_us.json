@@ -49,7 +49,7 @@
   "config.option.localworksitevisibilityworldoverlay.name": "World Visibility Overlay",
   "config.option.refreshbuilderfocusrenderer.comment": "Reload visible chunks after Builder Focus block rules change.",
   "config.option.refreshbuilderfocusrenderer.name": "Refresh rendering after visibility changes",
-  "gui.chisetweaks.tab.features": "Features",
+  "gui.chisetweaks.tab.features": "Features & Keybinds",
   "gui.chisetweaks.tab.help": "Feature Guide",
   "gui.chisetweaks.tab.lists": "Target Lists",
   "gui.chisetweaks.tab.settings": "Settings",

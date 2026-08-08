@@ -20,7 +20,12 @@ import net.minecraft.client.Minecraft;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Compact settings UI with feature toggles and hotkeys in one list. */
+/**
+ * Compact settings UI whose primary view keeps the original hotkey-first row layout.
+ *
+ * <p>Feature toggles and keybinds share one tab. Non-hotkey feature settings remain below the
+ * hotkey rows so existing controls stay reachable without reintroducing a duplicate Features tab.</p>
+ */
 public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     private static ConfigGuiTab selectedTab = ConfigGuiTab.FEATURES;
 
@@ -49,7 +54,8 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     @Override
     protected int getConfigWidth() {
         return switch (selectedTab) {
-            case FEATURES -> 350;
+            // Match the former dedicated Hotkeys view so toggle/keybind/reset controls stay compact.
+            case FEATURES -> 260;
             case LISTS -> 320;
             case HELP -> 220;
         };
@@ -63,19 +69,21 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     @Override
     public List<ConfigOptionWrapper> getConfigs() {
         return switch (selectedTab) {
-            case FEATURES -> createFeatureOptions();
+            case FEATURES -> createFeatureAndHotkeyOptions();
             case LISTS -> ConfigOptionWrapper.createFor(BuilderFocusConfig.RULE_OPTIONS);
             case HELP -> List.of();
         };
     }
 
-    private List<ConfigOptionWrapper> createFeatureOptions() {
+    private List<ConfigOptionWrapper> createFeatureAndHotkeyOptions() {
         ArrayList<ConfigOptionWrapper> result = new ArrayList<>();
 
+        // Keep the former Hotkeys screen as the primary layout: toggle + keybind + clear/reset.
         ArrayList<BooleanHotkeyGuiWrapper> toggles = new ArrayList<>();
         for (FeatureSwitch toggle : FeatureSwitches.VALUES) toggles.add(wrapConfig(toggle));
         result.addAll(ConfigOptionWrapper.createFor(toggles));
 
+        // Preserve non-hotkey feature controls without creating another duplicate top-level tab.
         ArrayList<IConfigBase> options = new ArrayList<>();
         options.addAll(LocalFeatureSwitches.VALUES);
         options.addAll(BuilderFocusConfig.GENERAL_OPTIONS);
@@ -111,7 +119,7 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     }
 
     private enum ConfigGuiTab {
-        FEATURES("Features"), LISTS("Lists"), HELP("Feature Guide");
+        FEATURES("Features & Keybinds"), LISTS("Lists"), HELP("Feature Guide");
 
         private final String fallback;
 

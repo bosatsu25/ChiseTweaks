@@ -13,15 +13,17 @@ final class ConfigUiSimplificationContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
-    void configUiKeepsFeatureAndHotkeyEditingInOneView() throws IOException {
+    void configUiKeepsTheFormerHotkeyLayoutAsThePrimaryFeatureView() throws IOException {
         String source = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
 
-        assertTrue(source.contains("FEATURES(\"Features\"), LISTS(\"Lists\"), HELP(\"Feature Guide\")"));
+        assertTrue(source.contains(
+                "FEATURES(\"Features & Keybinds\"), LISTS(\"Lists\"), HELP(\"Feature Guide\")"));
+        assertTrue(source.contains("case FEATURES -> 260"));
         assertTrue(source.contains("BooleanHotkeyGuiWrapper"));
+        assertTrue(source.contains("createFeatureAndHotkeyOptions"));
         assertFalse(source.contains("HOTKEYS("));
         assertFalse(source.contains("ALL("));
-        assertFalse(source.contains("createHotkeyOptions"));
         assertFalse(source.contains("createAllOptions"));
     }
 
@@ -41,10 +43,16 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
-    void removedUiAndHudKeysDoNotReturnToTranslations() throws IOException {
-        for (String locale : new String[] {"en_us.json", "ja_jp.json"}) {
-            String language = Files.readString(ROOT.resolve(
-                    "src/main/resources/assets/chisetweaks/lang/" + locale));
+    void unifiedFeatureTabLabelsAndRemovedUiKeysStayStable() throws IOException {
+        String english = Files.readString(ROOT.resolve(
+                "src/main/resources/assets/chisetweaks/lang/en_us.json"));
+        String japanese = Files.readString(ROOT.resolve(
+                "src/main/resources/assets/chisetweaks/lang/ja_jp.json"));
+
+        assertTrue(english.contains("\"gui.chisetweaks.tab.features\": \"Features & Keybinds\""));
+        assertTrue(japanese.contains("\"gui.chisetweaks.tab.features\": \"機能・キー設定\""));
+
+        for (String language : new String[] {english, japanese}) {
             assertFalse(language.contains("gui.chisetweaks.tab.all"));
             assertFalse(language.contains("gui.chisetweaks.tab.hotkeys"));
             assertFalse(language.contains("config.option.localworksitevisibilitymaxresults"));
