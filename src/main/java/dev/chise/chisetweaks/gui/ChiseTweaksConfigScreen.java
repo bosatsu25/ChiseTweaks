@@ -6,6 +6,8 @@ import dev.chise.chisetweaks.config.ConfigUiLocalization;
 import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
+import dev.chise.chisetweaks.config.VisualTargetSettings;
+import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IHotkeyTogglable;
 import fi.dy.masa.malilib.config.options.BooleanHotkeyGuiWrapper;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
@@ -21,9 +23,8 @@ import java.util.List;
 /**
  * Compact settings UI whose primary view is the former dedicated keybind list.
  *
- * <p>The first tab intentionally preserves the established MaLiLib row layout: feature name,
- * boolean toggle, keybind field, clear control and reset control. It does not append unrelated
- * scalar settings below the keybind rows.</p>
+ * <p>The first tab intentionally preserves the established MaLiLib row layout. Fine-grained
+ * visual target selection belongs to Target Lists rather than duplicating parent feature rows.</p>
  */
 public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     private static ConfigGuiTab selectedTab = ConfigGuiTab.FEATURES;
@@ -36,6 +37,7 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     @Override
     public void initGui() {
         LocalFeatureSettings.init();
+        VisualTargetSettings.init();
         ConfigUiLocalization.refresh();
         super.initGui();
         clearOptions();
@@ -54,7 +56,7 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     protected int getConfigWidth() {
         return switch (selectedTab) {
             case FEATURES -> 260;
-            case LISTS -> 320;
+            case LISTS -> 360;
             case HELP -> 220;
         };
     }
@@ -68,7 +70,7 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     public List<ConfigOptionWrapper> getConfigs() {
         return switch (selectedTab) {
             case FEATURES -> createFeatureAndHotkeyOptions();
-            case LISTS -> ConfigOptionWrapper.createFor(BuilderFocusConfig.RULE_OPTIONS);
+            case LISTS -> createTargetListOptions();
             case HELP -> List.of();
         };
     }
@@ -78,6 +80,17 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
         ArrayList<BooleanHotkeyGuiWrapper> toggles = new ArrayList<>();
         for (FeatureSwitch toggle : FeatureSwitches.VALUES) toggles.add(wrapConfig(toggle));
         return ConfigOptionWrapper.createFor(toggles);
+    }
+
+    /**
+     * Target Lists now owns both Scene Filter rules and fine-grained visual target switches.
+     * Parent visual features remain exclusively in Features & Keybinds.
+     */
+    private List<ConfigOptionWrapper> createTargetListOptions() {
+        ArrayList<IConfigBase> options = new ArrayList<>();
+        options.addAll(VisualTargetSettings.ALL_OPTIONS);
+        options.addAll(BuilderFocusConfig.RULE_OPTIONS);
+        return ConfigOptionWrapper.createFor(options);
     }
 
     private BooleanHotkeyGuiWrapper wrapConfig(IHotkeyTogglable config) {
