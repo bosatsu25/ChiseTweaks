@@ -1,0 +1,153 @@
+name: Publish Verified Build
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: verified-release-main
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish latest verified JAR
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: verified-main
+      VERIFIED_RUN_ID: ${{ github.event.workflow_run.id }}
+      VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+      VERIFIED_RUN_URL: ${{ github.event.workflow_run.html_url }}
+
+    steps:
+      - name: Download verified artifacts from successful CI run
+        uses: actions/download-artifact@v8.0.1
+        with:
+          pattern: chisetweaks-verified-*
+          path: release
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Validate downloaded verified artifact set
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f release/artifact-audit.json
+          test -f release/SHA256SUMS.txt
+          test -f release/quality-summary.md
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("release")
+          audit = json.loads((root / "artifact-audit.json").read_text(encoding="utf-8"))
+
+          required = ("version", "runtime_jar", "runtime_sha256", "sources_jar")
+          missing = [key for key in required if not audit.get(key)]
+          if missing:
+              raise SystemExit(f"artifact-audit.json is missing required fields: {missing}")
+
+          version = audit["version"]
+          if "+mc" not in version:
+              raise SystemExit(f"verified version does not contain Minecraft suffix: {version}")
+
+          runtime = root / audit["runtime_jar"]
+          sources = root / audit["sources_jar"]
+          if not runtime.is_file():
+              raise SystemExit(f"verified runtime JAR is missing: {runtime}")
+          if not sources.is_file():
+              raise SystemExit(f"verified sources JAR is missing: {sources}")
+
+          minecraft_version = version.split("+mc", 1)[1]
+          outputs = {
+              "version": version,
+              "minecraft_version": minecraft_version,
+              "runtime_jar": runtime.name,
+              "runtime_sha256": audit["runtime_sha256"],
+              "sources_jar": sources.name,
+          }
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              for key, value in outputs.items():
+                  handle.write(f"{key}={value}\n")
+          PY
+
+      - name: Verify downloaded checksums
+        working-directory: release
+        run: sha256sum --check SHA256SUMS.txt
+
+      - name: Prepare rolling release notes
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+          MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
+          RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_sha="${VERIFIED_SHA:0:7}"
+
+          cat > verified-release-notes.md <<EOF
+          ## Latest verified ChiseTweaks build
+
+          This rolling pre-release is replaced automatically after a successful
+          **CI** run on the \`main\` branch.
+
+          - Version: \`${VERSION}\`
+          - Minecraft: \`${MC_VERSION}\`
+          - Java: \`25\`
+          - Commit: \`${short_sha}\`
+          - Runtime JAR: \`${RUNTIME_JAR}\`
+          - Runtime SHA-256: \`${RUNTIME_SHA256}\`
+          - Verified CI run: ${VERIFIED_RUN_URL}
+
+          The attached runtime JAR is the exact artifact that passed the Java 25
+          quality gate, including JUnit, repository contracts, JaCoCo coverage,
+          PIT mutation testing, build verification, and the artifact audit.
+
+          This is a rolling verified build, not a versioned formal release.
+          EOF
+
+      - name: Replace rolling verified release
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+          RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
+          SOURCES_JAR: ${{ steps.metadata.outputs.sources_jar }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release delete "$RELEASE_TAG" --yes --cleanup-tag
+          fi
+
+          gh release create "$RELEASE_TAG" \
+            "release/$RUNTIME_JAR" \
+            "release/$SOURCES_JAR" \
+            "release/SHA256SUMS.txt" \
+            "release/artifact-audit.json" \
+            "release/quality-summary.md" \
+            --target "$VERIFIED_SHA" \
+            --title "Latest Verified Build — ChiseTweaks ${VERSION}" \
+            --notes-file verified-release-notes.md \
+            --prerelease \
+            --latest=false
