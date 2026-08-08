@@ -5,6 +5,8 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy;
 import net.minecraft.core.BlockPos;
 
+import java.util.List;
+
 /** Shared line primitives for bounded Chise-owned world overlays. */
 public final class WorldLineGeometry {
     private static final float BOX_INSET = 0.015f;
@@ -72,6 +74,101 @@ public final class WorldLineGeometry {
         line(vertices, pose, minX, y, maxZ, maxX, y, minZ, argb, lineWidth);
     }
 
+    /** Thick state-coloured tripwire trace with a narrow white core for contrast. */
+    public static void drawThreadSignal(
+            VertexConsumer vertices,
+            PoseStack.Pose pose,
+            BlockPos position,
+            List<String> details,
+            int stateArgb,
+            float lineWidth) {
+        float centerX = position.getX() + 0.5f;
+        float centerZ = position.getZ() + 0.5f;
+        float y = position.getY() + 0.095f;
+        boolean north = has(details, "north=true");
+        boolean east = has(details, "east=true");
+        boolean south = has(details, "south=true");
+        boolean west = has(details, "west=true");
+        boolean connected = north || east || south || west;
+
+        if (north) signal(vertices, pose, centerX, y, centerZ, centerX, y, position.getZ() + 0.02f, stateArgb, lineWidth);
+        if (east) signal(vertices, pose, centerX, y, centerZ, position.getX() + 0.98f, y, centerZ, stateArgb, lineWidth);
+        if (south) signal(vertices, pose, centerX, y, centerZ, centerX, y, position.getZ() + 0.98f, stateArgb, lineWidth);
+        if (west) signal(vertices, pose, centerX, y, centerZ, position.getX() + 0.02f, y, centerZ, stateArgb, lineWidth);
+        if (!connected) {
+            signal(vertices, pose,
+                    position.getX() + 0.20f, y, centerZ,
+                    position.getX() + 0.80f, y, centerZ,
+                    stateArgb, lineWidth);
+            signal(vertices, pose,
+                    centerX, y, position.getZ() + 0.20f,
+                    centerX, y, position.getZ() + 0.80f,
+                    stateArgb, lineWidth);
+        }
+    }
+
+    /** Dense high-contrast grid used instead of replacing stained-glass textures. */
+    public static void drawGlassGrid(
+            VertexConsumer vertices,
+            PoseStack.Pose pose,
+            BlockPos position,
+            int primaryArgb,
+            int accentArgb,
+            float lineWidth) {
+        drawBox(vertices, pose, position, primaryArgb, lineWidth);
+        drawFaceGrid(vertices, pose, position, accentArgb, Math.max(1.2f, lineWidth * 0.55f));
+    }
+
+    /** Surface-edge and diagonal hatch for visually ambiguous solid blocks. */
+    public static void drawSurfaceHatch(
+            VertexConsumer vertices,
+            PoseStack.Pose pose,
+            BlockPos position,
+            int primaryArgb,
+            int accentArgb,
+            float lineWidth) {
+        drawBox(vertices, pose, position, primaryArgb, lineWidth);
+        drawFaceDiagonals(vertices, pose, position, accentArgb, Math.max(1.2f, lineWidth * 0.60f));
+    }
+
+    /** High-contrast animated material marker without using upstream textures. */
+    public static void drawMaterialPulse(
+            VertexConsumer vertices,
+            PoseStack.Pose pose,
+            BlockPos position,
+            int primaryArgb,
+            int pulseArgb,
+            float lineWidth) {
+        drawBox(vertices, pose, position, primaryArgb, lineWidth);
+        drawCross(vertices, pose, position, pulseArgb, Math.max(2.0f, lineWidth * 0.80f));
+        drawFaceDiagonals(vertices, pose, position, pulseArgb, Math.max(1.4f, lineWidth * 0.55f));
+    }
+
+    /** Low-information palette bands that make adjacent Nether materials easier to distinguish. */
+    public static void drawNetherGrid(
+            VertexConsumer vertices,
+            PoseStack.Pose pose,
+            BlockPos position,
+            int primaryArgb,
+            int accentArgb,
+            float lineWidth) {
+        drawBox(vertices, pose, position, primaryArgb, lineWidth);
+        float minX = position.getX() + 0.02f;
+        float minY = position.getY() + 0.02f;
+        float minZ = position.getZ() + 0.02f;
+        float maxX = position.getX() + 0.98f;
+        float maxY = position.getY() + 0.98f;
+        float maxZ = position.getZ() + 0.98f;
+        float w = Math.max(1.0f, lineWidth * 0.50f);
+        for (float fraction : new float[] {0.25f, 0.50f, 0.75f}) {
+            float y = minY + (maxY - minY) * fraction;
+            line(vertices, pose, minX, y, minZ, maxX, y, minZ, accentArgb, w);
+            line(vertices, pose, minX, y, maxZ, maxX, y, maxZ, accentArgb, w);
+            line(vertices, pose, minX, y, minZ, minX, y, maxZ, accentArgb, w);
+            line(vertices, pose, maxX, y, minZ, maxX, y, maxZ, accentArgb, w);
+        }
+    }
+
     public static void drawOrientation(
             VertexConsumer vertices,
             PoseStack.Pose pose,
@@ -101,6 +198,78 @@ public final class WorldLineGeometry {
         if (Boolean.TRUE.equals(overlay.open())) {
             drawOpenFlag(vertices, pose, centerX, centerY, centerZ, overlay.facing(), argb, lineWidth);
         }
+    }
+
+    private static void drawFaceGrid(
+            VertexConsumer vertices,
+            PoseStack.Pose pose,
+            BlockPos position,
+            int argb,
+            float lineWidth) {
+        float minX = position.getX() + 0.02f;
+        float minY = position.getY() + 0.02f;
+        float minZ = position.getZ() + 0.02f;
+        float maxX = position.getX() + 0.98f;
+        float maxY = position.getY() + 0.98f;
+        float maxZ = position.getZ() + 0.98f;
+        for (float fraction : new float[] {1.0f / 3.0f, 2.0f / 3.0f}) {
+            float x = minX + (maxX - minX) * fraction;
+            float y = minY + (maxY - minY) * fraction;
+            float z = minZ + (maxZ - minZ) * fraction;
+            line(vertices, pose, x, minY, minZ, x, maxY, minZ, argb, lineWidth);
+            line(vertices, pose, x, minY, maxZ, x, maxY, maxZ, argb, lineWidth);
+            line(vertices, pose, minX, y, minZ, maxX, y, minZ, argb, lineWidth);
+            line(vertices, pose, minX, y, maxZ, maxX, y, maxZ, argb, lineWidth);
+            line(vertices, pose, minX, minY, z, minX, maxY, z, argb, lineWidth);
+            line(vertices, pose, maxX, minY, z, maxX, maxY, z, argb, lineWidth);
+            line(vertices, pose, minX, minY, z, maxX, minY, z, argb, lineWidth);
+            line(vertices, pose, minX, maxY, z, maxX, maxY, z, argb, lineWidth);
+        }
+    }
+
+    private static void drawFaceDiagonals(
+            VertexConsumer vertices,
+            PoseStack.Pose pose,
+            BlockPos position,
+            int argb,
+            float lineWidth) {
+        float minX = position.getX() + 0.04f;
+        float minY = position.getY() + 0.04f;
+        float minZ = position.getZ() + 0.04f;
+        float maxX = position.getX() + 0.96f;
+        float maxY = position.getY() + 0.96f;
+        float maxZ = position.getZ() + 0.96f;
+
+        line(vertices, pose, minX, minY, minZ, maxX, maxY, minZ, argb, lineWidth);
+        line(vertices, pose, maxX, minY, minZ, minX, maxY, minZ, argb, lineWidth);
+        line(vertices, pose, minX, minY, maxZ, maxX, maxY, maxZ, argb, lineWidth);
+        line(vertices, pose, maxX, minY, maxZ, minX, maxY, maxZ, argb, lineWidth);
+        line(vertices, pose, minX, minY, minZ, minX, maxY, maxZ, argb, lineWidth);
+        line(vertices, pose, minX, minY, maxZ, minX, maxY, minZ, argb, lineWidth);
+        line(vertices, pose, maxX, minY, minZ, maxX, maxY, maxZ, argb, lineWidth);
+        line(vertices, pose, maxX, minY, maxZ, maxX, maxY, minZ, argb, lineWidth);
+        line(vertices, pose, minX, maxY, minZ, maxX, maxY, maxZ, argb, lineWidth);
+        line(vertices, pose, minX, maxY, maxZ, maxX, maxY, minZ, argb, lineWidth);
+    }
+
+    private static void signal(
+            VertexConsumer vertices,
+            PoseStack.Pose pose,
+            float startX,
+            float startY,
+            float startZ,
+            float endX,
+            float endY,
+            float endZ,
+            int stateArgb,
+            float lineWidth) {
+        line(vertices, pose, startX, startY, startZ, endX, endY, endZ, stateArgb, lineWidth);
+        line(vertices, pose, startX, startY + 0.008f, startZ, endX, endY + 0.008f, endZ,
+                0xFFFFFFFF, Math.max(1.0f, lineWidth * 0.34f));
+    }
+
+    private static boolean has(List<String> details, String token) {
+        return details != null && details.contains(token);
     }
 
     private static void drawFacing(

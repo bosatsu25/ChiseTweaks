@@ -22,6 +22,34 @@ import java.util.Set;
 
 /** Performs the bounded, loaded-chunk-only scan for visible worksite targets. */
 final class WorksiteScanner {
+    private static final double[][] SOLID_SAMPLES = {
+            {0.50, 0.50, 0.50}
+    };
+    private static final double[][] THIN_TECHNICAL_SAMPLES = {
+            {0.50, 0.08, 0.50},
+            {0.25, 0.08, 0.50},
+            {0.75, 0.08, 0.50},
+            {0.50, 0.08, 0.25},
+            {0.50, 0.08, 0.75},
+            {0.50, 0.32, 0.50}
+    };
+    private static final double[][] GLASS_SAMPLES = {
+            {0.50, 0.50, 0.50},
+            {0.16, 0.50, 0.50},
+            {0.84, 0.50, 0.50},
+            {0.50, 0.50, 0.16},
+            {0.50, 0.50, 0.84}
+    };
+    private static final double[][] SHAPED_BLOCK_SAMPLES = {
+            {0.50, 0.50, 0.50},
+            {0.50, 0.18, 0.50},
+            {0.50, 0.82, 0.50},
+            {0.18, 0.50, 0.50},
+            {0.82, 0.50, 0.50},
+            {0.50, 0.50, 0.18},
+            {0.50, 0.50, 0.82}
+    };
+
     private static final Comparator<ScanCandidate> SCAN_ORDER = Comparator
             .comparingInt((ScanCandidate candidate) -> candidate.style().priority()).reversed()
             .thenComparingDouble(ScanCandidate::distanceSquared);
@@ -127,7 +155,7 @@ final class WorksiteScanner {
             Vec3 eyePosition,
             ScanCandidate candidate) {
         BlockPos position = new BlockPos(candidate.x(), candidate.y(), candidate.z());
-        if (!lineOfSight(client, eyePosition, position)) return null;
+        if (!lineOfSight(client, eyePosition, position, candidate.category())) return null;
 
         WorksiteMaterializedInspection inspection = blockInspector.materialize(
                 candidate.state(), candidate.blockId(), candidate.category());
@@ -139,15 +167,39 @@ final class WorksiteScanner {
                 candidate.distanceSquared());
     }
 
-    private static boolean lineOfSight(Minecraft client, Vec3 eyePosition, BlockPos position) {
-        Vec3 center = Vec3.atCenterOf(position);
-        BlockHitResult result = client.level.clip(new ClipContext(
-                eyePosition,
-                center,
-                ClipContext.Block.OUTLINE,
-                ClipContext.Fluid.NONE,
-                client.player));
-        return result.getType() == HitResult.Type.BLOCK && result.getBlockPos().equals(position);
+    /**
+     * Samples the actual occupied regions of thin/shaped blocks instead of only
+     * aiming at the block-volume centre. Every successful ray must still hit the
+     * target block itself, so the visibility helper never becomes wall-through.
+     */
+    private static boolean lineOfSight(
+            Minecraft client,
+            Vec3 eyePosition,
+            BlockPos position,
+            BlockInspectionCategory category) {
+        for (double[] sample : samplesFor(category)) {
+            Vec3 target = new Vec3(
+                    position.getX() + sample[0],
+                    position.getY() + sample[1],
+                    position.getZ() + sample[2]);
+            BlockHitResult result = client.level.clip(new ClipContext(
+                    eyePosition,
+                    target,
+                    ClipContext.Block.OUTLINE,
+                    ClipContext.Fluid.NONE,
+                    client.player));
+            if (result.getType() == HitResult.Type.BLOCK && result.getBlockPos().equals(position)) return true;
+        }
+        return false;
+    }
+
+    private static double[][] samplesFor(BlockInspectionCategory category) {
+        return switch (category) {
+            case TECHNICAL_TRACE -> THIN_TECHNICAL_SAMPLES;
+            case GLASS_INSPECTION -> GLASS_SAMPLES;
+            case HIDDEN_SURFACE, PLACEMENT_GUIDE -> SHAPED_BLOCK_SAMPLES;
+            case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> SOLID_SAMPLES;
+        };
     }
 
     private record ScanCandidate(
