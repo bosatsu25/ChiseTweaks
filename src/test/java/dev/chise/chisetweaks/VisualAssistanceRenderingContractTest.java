@@ -13,26 +13,60 @@ final class VisualAssistanceRenderingContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
-    void visualAssistanceUsesFeatureSpecificHighContrastGeometry() throws IOException {
+    void visualAssistanceUsesSurfaceAnchoredFeatureSpecificGeometry() throws IOException {
         String geometry = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/WorldLineGeometry.java"));
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/SurfaceLineVisualGeometry.java"));
         String renderer = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java"));
 
-        assertTrue(geometry.contains("drawThreadSignal"));
-        assertTrue(geometry.contains("drawGlassGrid"));
-        assertTrue(geometry.contains("drawSurfaceHatch"));
-        assertTrue(geometry.contains("drawMaterialPulse"));
-        assertTrue(geometry.contains("drawNetherGrid"));
+        assertTrue(geometry.contains("drawThreadSkin"));
+        assertTrue(geometry.contains("drawGlassSkin"));
+        assertTrue(geometry.contains("drawHiddenSurfaceSkin"));
+        assertTrue(geometry.contains("drawMaterialSkin"));
+        assertTrue(geometry.contains("drawNetherSkin"));
+        assertTrue(geometry.contains("drawPlacementSkin"));
+        assertTrue(geometry.contains("drawSlab"));
+        assertTrue(geometry.contains("drawStairs"));
+        assertTrue(geometry.contains("drawTrapdoor"));
+        assertTrue(geometry.contains("drawFenceGate"));
+        assertTrue(geometry.contains("drawAxisSkin"));
 
         assertTrue(renderer.contains("case TECHNICAL_TRACE"));
         assertTrue(renderer.contains("case GLASS_INSPECTION"));
         assertTrue(renderer.contains("case HIDDEN_SURFACE"));
         assertTrue(renderer.contains("case MATERIAL_HIGHLIGHT"));
         assertTrue(renderer.contains("case NETHER_PALETTE"));
+        assertTrue(renderer.contains("SurfaceLineVisualGeometry.drawPlacementSkin"));
         assertTrue(renderer.contains("powered=true"));
         assertTrue(renderer.contains("PULSE_COLORS"));
-        assertTrue(renderer.contains("glassColor"));
+        assertFalse(renderer.contains("glassColor("));
+        assertFalse(renderer.contains("WorldLineGeometry.drawBox"));
+    }
+
+    @Test
+    void visualPaletteAvoidsTheConfiguredSchematicOverlayColors() throws IOException {
+        String style = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy.java"));
+        String renderer = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java"));
+        String combined = style + "\n" + renderer;
+
+        for (String reserved : new String[] {
+                "0xFFFFFFFF",
+                "0xFFFF30FF",
+                "0xFFFFAA00",
+                "0xFF33CC33",
+                "0xFFF03030",
+                "0xFFF8D650",
+                "0xFFFF4CE6",
+                "0xFF33B3E6",
+                "0xFFFF3333",
+                "0xFFFF9010"
+        }) {
+            assertFalse(combined.contains(reserved), reserved);
+        }
+        assertTrue(combined.contains("0xFFB29CFF"));
+        assertTrue(combined.contains("0xFF4E3A8C"));
     }
 
     @Test
