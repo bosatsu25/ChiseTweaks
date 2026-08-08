@@ -13,21 +13,18 @@ import java.util.EnumSet;
 import java.util.List;
 
 /**
- * Coordinates the worksite visibility runtime without owning user feature state.
+ * Coordinates bounded worksite world overlays without owning user feature state.
  *
- * <p>Quarantining this engine never changes the six user-facing visibility
- * toggles. The manager can stop runtime work independently from persisted
- * preferences.</p>
+ * <p>Quarantining this engine never changes the user-facing visibility toggles.
+ * The manager can stop runtime work independently from persisted preferences.</p>
  */
 public final class WorksiteVisibilityEngine
         implements TickingRuntimeComponent, SessionAwareRuntimeComponent {
     public static final String RUNTIME_ID = "worksite_visibility_engine";
 
     private final WorksiteBlockInspector blockInspector = new WorksiteBlockInspector();
-    private final WorksiteTargetInspector targetInspector = new WorksiteTargetInspector(blockInspector);
     private final WorksiteScanner scanner = new WorksiteScanner(blockInspector);
     private final WorksiteOverlayRenderer overlayRenderer = new WorksiteOverlayRenderer(this::isActive);
-    private final WorksiteHudPresenter hudPresenter = new WorksiteHudPresenter(this::isActive);
     private int ticksUntilScan;
 
     @Override
@@ -38,7 +35,6 @@ public final class WorksiteVisibilityEngine
     @Override
     public void init() {
         overlayRenderer.init();
-        hudPresenter.init();
     }
 
     @Override
@@ -63,10 +59,8 @@ public final class WorksiteVisibilityEngine
                 config.worksiteVisibilityIntervalTicks) - 1;
 
         EnumSet<BlockInspectionCategory> activeCategories = activeCategories();
-        WorksiteTargetInspection inspectedTarget = targetInspector.inspect(client, activeCategories);
         List<WorksiteVisibleTarget> targets = scanner.scan(client, config, activeCategories);
         overlayRenderer.updateTargets(targets);
-        hudPresenter.update(client, config, inspectedTarget, targets);
     }
 
     @Override
@@ -87,6 +81,5 @@ public final class WorksiteVisibilityEngine
 
     private void clear() {
         overlayRenderer.clear();
-        hudPresenter.clear();
     }
 }

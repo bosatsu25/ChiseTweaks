@@ -3,11 +3,9 @@ package dev.chise.chisetweaks.gui;
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
 import dev.chise.chisetweaks.config.ConfigUiLocalization;
-import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
-import dev.chise.chisetweaks.config.LocalFeatureSwitch;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IHotkeyTogglable;
@@ -22,7 +20,7 @@ import net.minecraft.client.Minecraft;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Compact settings UI for the bounded ChiseTweaks client features. */
+/** Compact settings UI with feature toggles and hotkeys in one list. */
 public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     private static ConfigGuiTab selectedTab = ConfigGuiTab.FEATURES;
 
@@ -51,58 +49,39 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     @Override
     protected int getConfigWidth() {
         return switch (selectedTab) {
-            case ALL, FEATURES -> 350;
+            case FEATURES -> 350;
             case LISTS -> 320;
-            case HOTKEYS -> 260;
             case HELP -> 220;
         };
     }
 
     @Override
     protected boolean useKeybindSearch() {
-        return selectedTab == ConfigGuiTab.ALL
-                || selectedTab == ConfigGuiTab.FEATURES
-                || selectedTab == ConfigGuiTab.HOTKEYS;
+        return selectedTab == ConfigGuiTab.FEATURES;
     }
 
     @Override
     public List<ConfigOptionWrapper> getConfigs() {
         return switch (selectedTab) {
-            case ALL -> createAllOptions();
-            case FEATURES -> createFeatureOptions(true);
+            case FEATURES -> createFeatureOptions();
             case LISTS -> ConfigOptionWrapper.createFor(BuilderFocusConfig.RULE_OPTIONS);
-            case HOTKEYS -> createHotkeyOptions();
             case HELP -> List.of();
         };
     }
 
-    private List<ConfigOptionWrapper> createAllOptions() {
+    private List<ConfigOptionWrapper> createFeatureOptions() {
         ArrayList<ConfigOptionWrapper> result = new ArrayList<>();
-        result.addAll(createFeatureOptions(true));
-        result.addAll(ConfigOptionWrapper.createFor(BuilderFocusConfig.RULE_OPTIONS));
-        return List.copyOf(result);
-    }
 
-    private List<ConfigOptionWrapper> createFeatureOptions(boolean includeSettings) {
-        ArrayList<ConfigOptionWrapper> result = new ArrayList<>();
         ArrayList<BooleanHotkeyGuiWrapper> toggles = new ArrayList<>();
         for (FeatureSwitch toggle : FeatureSwitches.VALUES) toggles.add(wrapConfig(toggle));
         result.addAll(ConfigOptionWrapper.createFor(toggles));
 
         ArrayList<IConfigBase> options = new ArrayList<>();
         options.addAll(LocalFeatureSwitches.VALUES);
-        if (includeSettings) {
-            options.addAll(BuilderFocusConfig.GENERAL_OPTIONS);
-            options.addAll(LocalFeatureSettings.ALL_OPTIONS);
-        }
+        options.addAll(BuilderFocusConfig.GENERAL_OPTIONS);
+        options.addAll(LocalFeatureSettings.ALL_OPTIONS);
         result.addAll(ConfigOptionWrapper.createFor(options));
         return List.copyOf(result);
-    }
-
-    private List<ConfigOptionWrapper> createHotkeyOptions() {
-        ArrayList<BooleanHotkeyGuiWrapper> toggles = new ArrayList<>();
-        for (FeatureSwitch toggle : FeatureSwitches.VALUES) toggles.add(wrapConfig(toggle));
-        return ConfigOptionWrapper.createFor(toggles);
     }
 
     private BooleanHotkeyGuiWrapper wrapConfig(IHotkeyTogglable config) {
@@ -112,10 +91,12 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     private static final class ButtonListener implements IButtonActionListener {
         private final ConfigGuiTab tab;
         private final ChiseTweaksConfigScreen parent;
+
         private ButtonListener(ConfigGuiTab tab, ChiseTweaksConfigScreen parent) {
             this.tab = tab;
             this.parent = parent;
         }
+
         @Override
         public void actionPerformedWithButton(ButtonBase button, int mouseButton) {
             if (tab == ConfigGuiTab.HELP) {
@@ -130,9 +111,14 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     }
 
     private enum ConfigGuiTab {
-        ALL("All"), FEATURES("Features"), LISTS("Lists"), HOTKEYS("Hotkeys"), HELP("Feature Guide");
+        FEATURES("Features"), LISTS("Lists"), HELP("Feature Guide");
+
         private final String fallback;
-        ConfigGuiTab(String fallback) { this.fallback = fallback; }
+
+        ConfigGuiTab(String fallback) {
+            this.fallback = fallback;
+        }
+
         String getDisplayName() {
             return StringUtils.getTranslatedOrFallback(
                     "gui.chisetweaks.tab." + name().toLowerCase(), fallback);
