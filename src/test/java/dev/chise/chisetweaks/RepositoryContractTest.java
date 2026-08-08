@@ -102,6 +102,7 @@ final class RepositoryContractTest {
         assertFalse(allText.contains("getWorksiteVisibilityFeature"));
         assertFalse(allText.contains("ChiseConfigStorage"));
         assertFalse(allText.contains("SafeFileStorage"));
+        assertFalse(allText.contains("hasChunkAt("));
 
         Path secureStorage = MAIN.resolve("dev/chise/chisetweaks/core/security/SecureConfigStorage.java");
         assertTrue(Files.isRegularFile(secureStorage));
@@ -130,7 +131,11 @@ final class RepositoryContractTest {
         assertFalse(pumpkin.contains("void tick("));
 
         String scanner = textByFile.get(MAIN.resolve("dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java"));
-        for (String required : List.of("MutableBlockPos", "PriorityQueue<ScanCandidate>", "MAX_SCAN_CANDIDATES", "hasChunkAt(position)")) {
+        for (String required : List.of(
+                "MutableBlockPos",
+                "PriorityQueue<ScanCandidate>",
+                "MAX_SCAN_CANDIDATES",
+                "getChunkSource().hasChunk(")) {
             assertTrue(scanner.contains(required), required);
         }
         assertFalse(scanner.contains("origin.offset("));
