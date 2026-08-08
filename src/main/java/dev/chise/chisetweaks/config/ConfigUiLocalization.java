@@ -11,6 +11,7 @@ public final class ConfigUiLocalization {
         localize(BuilderFocusConfig.GENERAL_OPTIONS);
         localize(BuilderFocusConfig.RULE_OPTIONS);
         LocalFeatureSettings.refreshTranslations();
+        VisualTargetSettings.refreshTranslations();
     }
 
     private static void localize(Iterable<? extends IConfigBase> options) {
