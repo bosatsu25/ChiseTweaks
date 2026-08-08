@@ -49,7 +49,7 @@
   "config.option.localworksitevisibilityworldoverlay.name": "ワールド視認オーバーレイ",
   "config.option.refreshbuilderfocusrenderer.comment": "ブロック表示ルール変更後、見えているチャンクを再描画します。",
   "config.option.refreshbuilderfocusrenderer.name": "表示ルール変更後に描画を更新",
-  "gui.chisetweaks.tab.features": "機能一覧",
+  "gui.chisetweaks.tab.features": "機能・キー設定",
   "gui.chisetweaks.tab.help": "機能説明",
   "gui.chisetweaks.tab.lists": "対象リスト",
   "gui.chisetweaks.tab.settings": "設定",
