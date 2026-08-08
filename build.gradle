@@ -97,7 +97,7 @@ def qualityGateClasses = [
 
 def qualityGateClassDirectories = providers.provider {
     files(sourceSets.main.output.classesDirs.collect { classesDir ->
-        fileTree(dir: classesDir, includes: qualityGateClasses)
+        fileTree(dir: classesDir, include: qualityGateClasses)
     })
 }
 
