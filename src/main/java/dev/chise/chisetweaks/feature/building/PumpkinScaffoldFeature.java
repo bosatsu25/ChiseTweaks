@@ -112,7 +112,9 @@ public final class PumpkinScaffoldFeature implements Feature {
         Vec3 targetPoint = eye.add(look.scale(range));
         BlockPos targetPos = BlockPos.containing(targetPoint.x, targetPoint.y, targetPoint.z);
 
-        boolean chunkLoaded = client.level.hasChunkAt(targetPos);
+        boolean chunkLoaded = client.level.getChunkSource().hasChunk(
+                targetPos.getX() >> 4,
+                targetPos.getZ() >> 4);
         boolean targetIsAir = chunkLoaded && client.level.getBlockState(targetPos).isAir();
         if (!PumpkinScaffoldPolicy.canAttemptAirPlacement(chunkLoaded, targetIsAir)) return null;
 
