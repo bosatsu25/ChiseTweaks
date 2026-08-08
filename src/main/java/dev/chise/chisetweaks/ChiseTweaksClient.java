@@ -1,6 +1,7 @@
 package dev.chise.chisetweaks;
 
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
+import dev.chise.chisetweaks.feature.rendering.model.ChiseVisualModelPlugin;
 import dev.chise.chisetweaks.runtime.ClientSessionState;
 import dev.chise.chisetweaks.runtime.FeatureManager;
 import dev.chise.chisetweaks.runtime.SafeStartup;
@@ -21,6 +22,7 @@ public final class ChiseTweaksClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         SafeStartup.run("local-config", () -> LocalFeatureConfig.getInstance().load());
+        SafeStartup.run("visual-model-plugin", ChiseVisualModelPlugin::register);
         SafeStartup.run("malilib-bootstrap", () ->
                 InitializationHandler.getInstance().registerInitializationHandler(new ClientFeatureBootstrap()));
         SafeStartup.run("feature-manager", () -> FeatureManager.getInstance().init());
