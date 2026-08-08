@@ -139,6 +139,7 @@ pitest {
         'dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy',
         'dev.chise.chisetweaks.core.policy.PumpkinScaffoldPolicy',
         'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
+        'dev.chise.chisetweaks.core.security.SecureConfigStorage',
         'dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy'
     ]
     targetTests = [
