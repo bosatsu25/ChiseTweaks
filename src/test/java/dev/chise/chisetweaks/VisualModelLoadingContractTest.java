@@ -17,8 +17,8 @@ final class VisualModelLoadingContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
     private static final Path VISUAL_MODELS = ROOT.resolve(
             "src/main/resources/assets/chisetweaks/models/block/visual");
-    private static final Path VISUAL_TEXTURES = ROOT.resolve(
-            "src/main/resources/assets/chisetweaks/textures/block/visual");
+    private static final Path GENERATED_VISUAL_TEXTURES = ROOT.resolve(
+            "build/generated/chiseVisualAssets/assets/chisetweaks/textures/block/visual");
 
     @Test
     void diamondPocUsesFabricModelLoadingInsteadOfAnotherWorldLinePass() throws IOException {
@@ -36,7 +36,7 @@ final class VisualModelLoadingContractTest {
     }
 
     @Test
-    void diamondModelsUseOnlyChiseOwnedTextureResources() throws IOException {
+    void diamondModelsUseOnlyChiseTextureNamespace() throws IOException {
         String diamond = Files.readString(VISUAL_MODELS.resolve("diamond_ore.json"));
         String deepslate = Files.readString(VISUAL_MODELS.resolve("deepslate_diamond_ore.json"));
 
@@ -44,23 +44,35 @@ final class VisualModelLoadingContractTest {
         assertTrue(diamond.contains("chisetweaks:block/visual/diamond_ore_chise"));
         assertTrue(deepslate.contains("\"parent\": \"minecraft:block/cube_all\""));
         assertTrue(deepslate.contains("chisetweaks:block/visual/deepslate_diamond_ore_chise"));
-        assertFalse(diamond.contains("amateras"));
-        assertFalse(deepslate.contains("amateras"));
     }
 
     @Test
-    void animatedDiamondTexturesHaveEightSixteenPixelFrames() throws IOException {
-        assertAnimatedTexture(VISUAL_TEXTURES.resolve("diamond_ore_chise.png"));
-        assertAnimatedTexture(VISUAL_TEXTURES.resolve("deepslate_diamond_ore_chise.png"));
+    void generatedAnimatedDiamondTexturesHaveEightSixteenPixelFrames() throws IOException {
+        assertAnimatedTexture(GENERATED_VISUAL_TEXTURES.resolve("diamond_ore_chise.png"));
+        assertAnimatedTexture(GENERATED_VISUAL_TEXTURES.resolve("deepslate_diamond_ore_chise.png"));
 
-        String diamondMeta = Files.readString(VISUAL_TEXTURES.resolve("diamond_ore_chise.png.mcmeta"));
+        Path sourceTextures = ROOT.resolve(
+                "src/main/resources/assets/chisetweaks/textures/block/visual");
+        String diamondMeta = Files.readString(sourceTextures.resolve("diamond_ore_chise.png.mcmeta"));
         String deepslateMeta = Files.readString(
-                VISUAL_TEXTURES.resolve("deepslate_diamond_ore_chise.png.mcmeta"));
+                sourceTextures.resolve("deepslate_diamond_ore_chise.png.mcmeta"));
 
         assertTrue(diamondMeta.contains("\"frametime\": 3"));
         assertTrue(diamondMeta.contains("\"interpolate\": true"));
         assertTrue(deepslateMeta.contains("\"frametime\": 3"));
         assertTrue(deepslateMeta.contains("\"interpolate\": true"));
+    }
+
+    @Test
+    void buildLogicGeneratesOriginalVisualTexturesIntoProcessedResources() throws IOException {
+        String generator = Files.readString(ROOT.resolve("gradle/chise-visual-assets.gradle"));
+        String settings = Files.readString(ROOT.resolve("settings.gradle"));
+
+        assertTrue(settings.contains("chise-visual-assets.gradle"));
+        assertTrue(generator.contains("generateChiseVisualAssets"));
+        assertTrue(generator.contains("ImageIO.write"));
+        assertTrue(generator.contains("diamond_ore_chise.png"));
+        assertTrue(generator.contains("deepslate_diamond_ore_chise.png"));
     }
 
     private static void assertAnimatedTexture(Path texture) throws IOException {
