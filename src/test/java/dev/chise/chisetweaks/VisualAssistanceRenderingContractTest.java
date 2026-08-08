@@ -44,6 +44,18 @@ final class VisualAssistanceRenderingContractTest {
     }
 
     @Test
+    void rendererBuildCanBeIdentifiedFromTheRuntimeLog() throws IOException {
+        String renderer = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java"));
+        String properties = Files.readString(ROOT.resolve("gradle.properties"));
+
+        assertTrue(properties.contains("mod_version=0.6.3+mc26.1.2"));
+        assertTrue(renderer.contains("RENDERER_REVISION = \"surface-line-v2\""));
+        assertTrue(renderer.contains("Visual renderer {} active in ChiseTweaks {}"));
+        assertTrue(renderer.contains("rendererIdentityLogged"));
+    }
+
+    @Test
     void visualPaletteAvoidsTheConfiguredSchematicOverlayColors() throws IOException {
         String style = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy.java"));

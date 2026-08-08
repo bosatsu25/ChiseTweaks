@@ -9,4 +9,10 @@ pluginManagement {
     }
 }
 
+gradle.beforeProject { project ->
+    if (project.path == ':') {
+        project.apply from: new File(settingsDir, 'gradle/chise-visual-assets.gradle')
+    }
+}
+
 rootProject.name = 'ChiseTweaks'
