@@ -10,10 +10,7 @@ out/
 *.iws
 
 # VS Code
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/tasks.json
+.vscode/
 
 # Eclipse
 .classpath
