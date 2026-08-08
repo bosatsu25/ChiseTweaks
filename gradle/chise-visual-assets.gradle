@@ -1,10 +1,35 @@
+import groovy.json.JsonOutput
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
 def generatedVisualAssetsDir = layout.buildDirectory.dir('generated/chiseVisualAssets')
 
-def argb = { int r, int g, int b ->
-    ((0xFF << 24) | (r << 16) | (g << 8) | b) as int
+def argb = { int a, int r, int g, int b ->
+    ((a << 24) | (r << 16) | (g << 8) | b) as int
+}
+
+def clampChannel = { double value -> Math.max(0, Math.min(255, Math.round(value) as int)) }
+
+def scaledColor = { List<Integer> rgb, double factor, int alpha ->
+    argb(
+            alpha,
+            clampChannel(rgb[0] * factor),
+            clampChannel(rgb[1] * factor),
+            clampChannel(rgb[2] * factor))
+}
+
+def whiteMix = { List<Integer> rgb, double mix, int alpha ->
+    argb(
+            alpha,
+            clampChannel(rgb[0] + (255 - rgb[0]) * mix),
+            clampChannel(rgb[1] + (255 - rgb[1]) * mix),
+            clampChannel(rgb[2] + (255 - rgb[2]) * mix))
+}
+
+def putPixel = { BufferedImage image, int x, int y, int color ->
+    if (x >= 0 && x < image.width && y >= 0 && y < image.height) {
+        image.setRGB(x, y, color)
+    }
 }
 
 def line = { BufferedImage image, int x0, int y0, int x1, int y1, int color ->
@@ -14,9 +39,7 @@ def line = { BufferedImage image, int x0, int y0, int x1, int y1, int color ->
     int sy = y0 < y1 ? 1 : -1
     int error = dx + dy
     while (true) {
-        if (x0 >= 0 && x0 < image.width && y0 >= 0 && y0 < image.height) {
-            image.setRGB(x0, y0, color)
-        }
+        putPixel(image, x0, y0, color)
         if (x0 == x1 && y0 == y1) break
         int twice = 2 * error
         if (twice >= dy) {
@@ -30,62 +53,92 @@ def line = { BufferedImage image, int x0, int y0, int x1, int y1, int color ->
     }
 }
 
-def writeDiamondTexture = { File output, boolean deepslate ->
+def materialSpecs = [
+        [key: 'diamond', color: [34, 225, 255], accent: [205, 252, 255], motif: 'crystal', thickness: 0.52d],
+        [key: 'gold', color: [255, 190, 18], accent: [255, 246, 170], motif: 'dotted', thickness: 0.40d],
+        [key: 'emerald', color: [20, 238, 92], accent: [188, 255, 210], motif: 'runes', thickness: 0.44d],
+        [key: 'coal', color: [220, 230, 242], accent: [255, 255, 255], motif: 'brackets', thickness: 0.34d],
+        [key: 'iron', color: [255, 190, 145], accent: [255, 238, 215], motif: 'double', thickness: 0.38d],
+        [key: 'copper', color: [255, 105, 38], accent: [55, 210, 185], motif: 'wave', thickness: 0.46d],
+        [key: 'lapis', color: [55, 112, 255], accent: [188, 210, 255], motif: 'nodes', thickness: 0.44d],
+        [key: 'redstone', color: [255, 42, 42], accent: [255, 195, 195], motif: 'sparks', thickness: 0.50d],
+        [key: 'ancient_debris', color: [218, 128, 48], accent: [255, 221, 160], motif: 'ancient', thickness: 0.46d],
+        [key: 'obsidian', color: [174, 70, 255], accent: [229, 196, 255], motif: 'jagged', thickness: 0.54d]
+]
+
+def writeBorderTexture = { File output, Map spec ->
     BufferedImage image = new BufferedImage(16, 128, BufferedImage.TYPE_INT_ARGB)
-    int base = deepslate ? argb(48, 48, 52) : argb(116, 116, 116)
-    int baseAccent = deepslate ? argb(63, 61, 70) : argb(137, 135, 143)
-    int[] violet = [
-            argb(80, 65, 145),
-            argb(112, 89, 190),
-            argb(143, 119, 226),
-            argb(184, 165, 255),
-            argb(211, 197, 255)
-    ] as int[]
-    int[][] nodes = [
-            [3, 3], [12, 3], [7, 6],
-            [2, 10], [12, 11], [7, 14]
-    ] as int[][]
-    int[][] links = [
-            [3, 3, 7, 6],
-            [7, 6, 12, 3],
-            [2, 10, 7, 14],
-            [7, 14, 12, 11]
-    ] as int[][]
+    double[] pulse = [0.72d, 0.84d, 0.98d, 1.12d, 1.32d, 1.12d, 0.98d, 0.84d] as double[]
+    List<Integer> rgb = spec.color as List<Integer>
+    List<Integer> accentRgb = spec.accent as List<Integer>
 
     for (int frame = 0; frame < 8; frame++) {
         int top = frame * 16
+        int base = scaledColor(rgb, pulse[frame], 255)
+        int bright = whiteMix(rgb, frame == 4 ? 0.72d : 0.40d, 255)
+        int accent = whiteMix(accentRgb, 0.20d, 255)
+
         for (int y = 0; y < 16; y++) {
             for (int x = 0; x < 16; x++) {
-                boolean grain = ((x * 5 + y * 3 + frame) % 13) == 0
-                image.setRGB(x, top + y, grain ? baseAccent : base)
+                image.setRGB(x, top + y, base)
             }
         }
 
-        for (int i = 0; i < links.length; i++) {
-            int[] link = links[i]
-            line(
-                    image,
-                    link[0],
-                    top + link[1],
-                    link[2],
-                    top + link[3],
-                    violet[(frame + i + 1) % violet.length])
-        }
-
-        for (int i = 0; i < nodes.length; i++) {
-            int[] node = nodes[i]
-            int x = node[0]
-            int y = top + node[1]
-            int color = violet[(frame + i) % violet.length]
-            for (int oy = -1; oy <= 1; oy++) {
-                for (int ox = -1; ox <= 1; ox++) {
-                    if (Math.abs(ox) + Math.abs(oy) <= 1) {
-                        image.setRGB(x + ox, y + oy, color)
-                    }
+        int sweep = Math.floorMod(frame * 2, 16)
+        switch (spec.motif) {
+            case 'crystal' -> {
+                line(image, sweep, top, Math.max(0, sweep - 5), top + 15, bright)
+                line(image, Math.min(15, sweep + 3), top, Math.max(0, sweep - 2), top + 15, accent)
+            }
+            case 'dotted' -> {
+                for (int y = 1; y < 16; y += 3) {
+                    putPixel(image, sweep, top + y, bright)
+                    putPixel(image, Math.floorMod(sweep + 8, 16), top + y, accent)
                 }
             }
-            if (((frame + i) & 1) == 0 && x + 2 < 16) {
-                image.setRGB(x + 2, y, color)
+            case 'runes' -> {
+                for (int y = 1; y < 15; y += 4) {
+                    line(image, Math.max(0, sweep - 1), top + y, Math.min(15, sweep + 1), top + y, bright)
+                }
+            }
+            case 'brackets' -> {
+                line(image, sweep, top + 2, sweep, top + 6, bright)
+                line(image, sweep, top + 9, sweep, top + 13, accent)
+            }
+            case 'double' -> {
+                int second = Math.floorMod(sweep + 5, 16)
+                line(image, sweep, top, sweep, top + 15, bright)
+                line(image, second, top, second, top + 15, accent)
+            }
+            case 'wave' -> {
+                for (int y = 0; y < 16; y++) {
+                    int x = Math.floorMod(sweep + ((y / 2) % 3) - 1, 16)
+                    putPixel(image, x, top + y, (y % 4 == 0) ? accent : bright)
+                }
+            }
+            case 'nodes' -> {
+                for (int y : [2, 7, 12]) {
+                    putPixel(image, sweep, top + y, bright)
+                    putPixel(image, Math.floorMod(sweep + 1, 16), top + y, accent)
+                }
+            }
+            case 'sparks' -> {
+                for (int i = 0; i < 7; i++) {
+                    int x = Math.floorMod(sweep + i * 5, 16)
+                    int y = Math.floorMod(frame * 3 + i * 7, 16)
+                    putPixel(image, x, top + y, (i & 1) == 0 ? bright : accent)
+                }
+            }
+            case 'ancient' -> {
+                line(image, sweep, top + 1, Math.floorMod(sweep + 4, 16), top + 5, bright)
+                line(image, Math.floorMod(sweep + 4, 16), top + 10, sweep, top + 14, accent)
+            }
+            case 'jagged' -> {
+                for (int y = 0; y < 16; y += 2) {
+                    int x = Math.floorMod(sweep + ((y / 2) % 2 == 0 ? 0 : 2), 16)
+                    putPixel(image, x, top + y, bright)
+                    putPixel(image, Math.floorMod(x + 1, 16), top + y, accent)
+                }
             }
         }
     }
@@ -96,14 +149,150 @@ def writeDiamondTexture = { File output, boolean deepslate ->
     }
 }
 
+def writeAnimationMeta = { File output ->
+    output.parentFile.mkdirs()
+    output.setText(JsonOutput.prettyPrint(JsonOutput.toJson([
+            animation: [frametime: 2, interpolate: true]
+    ])) + '\n', 'UTF-8')
+}
+
+def allFaces = { String texture ->
+    def result = [:]
+    ['down', 'up', 'north', 'south', 'west', 'east'].each { side ->
+        result[side] = [texture: texture, cullface: side, uv: [0, 0, 16, 16]]
+    }
+    result
+}
+
+def rodFaces = { String texture ->
+    def result = [:]
+    ['down', 'up', 'north', 'south', 'west', 'east'].each { side ->
+        result[side] = [texture: texture, uv: [0, 0, 16, 16]]
+    }
+    result
+}
+
+def addBorderRods = { List<Map> elements, double thickness, String texture ->
+    double e = 0.06d
+    double low = -e
+    double high = 16.0d + e
+    double t1 = 16.0d - thickness
+
+    [[low, low], [low, t1], [t1, low], [t1, t1]].each { pair ->
+        elements << ['from': [low, pair[0], pair[1]], 'to': [high, pair[0] + thickness, pair[1] + thickness], shade: false, faces: rodFaces(texture)]
+        elements << ['from': [pair[0], low, pair[1]], 'to': [pair[0] + thickness, high, pair[1] + thickness], shade: false, faces: rodFaces(texture)]
+        elements << ['from': [pair[0], pair[1], low], 'to': [pair[0] + thickness, pair[1] + thickness, high], shade: false, faces: rodFaces(texture)]
+    }
+}
+
+def addCornerNodes = { List<Map> elements, double size, String texture ->
+    double e = 0.12d
+    double low = -e
+    double highStart = 16.0d - size + e
+    [low, highStart].each { x ->
+        [low, highStart].each { y ->
+            [low, highStart].each { z ->
+                elements << ['from': [x, y, z], 'to': [x + size, y + size, z + size], shade: false, faces: rodFaces(texture)]
+            }
+        }
+    }
+}
+
+def cubeModel = { String baseTexture, String highlightTexture, double thickness, boolean nodes ->
+    List<Map> elements = [[
+            'from': [0, 0, 0],
+            'to': [16, 16, 16],
+            faces: allFaces('#base')
+    ]]
+    addBorderRods(elements, thickness, '#highlight')
+    if (nodes) addCornerNodes(elements, Math.max(0.70d, thickness + 0.28d), '#highlight')
+    [
+            ambientocclusion: true,
+            textures: [base: baseTexture, highlight: highlightTexture, particle: baseTexture],
+            elements: elements
+    ]
+}
+
+def ancientDebrisModel = { String highlightTexture, double thickness ->
+    def baseFaces = [
+            down: [texture: '#top', cullface: 'down', uv: [0, 0, 16, 16]],
+            up: [texture: '#top', cullface: 'up', uv: [0, 0, 16, 16]],
+            north: [texture: '#side', cullface: 'north', uv: [0, 0, 16, 16]],
+            south: [texture: '#side', cullface: 'south', uv: [0, 0, 16, 16]],
+            west: [texture: '#side', cullface: 'west', uv: [0, 0, 16, 16]],
+            east: [texture: '#side', cullface: 'east', uv: [0, 0, 16, 16]]
+    ]
+    List<Map> elements = [['from': [0, 0, 0], 'to': [16, 16, 16], faces: baseFaces]]
+    addBorderRods(elements, thickness, '#highlight')
+    addCornerNodes(elements, thickness + 0.36d, '#highlight')
+    [
+            ambientocclusion: true,
+            textures: [
+                    top: 'minecraft:block/ancient_debris_top',
+                    side: 'minecraft:block/ancient_debris_side',
+                    highlight: highlightTexture,
+                    particle: 'minecraft:block/ancient_debris_side'
+            ],
+            elements: elements
+    ]
+}
+
+def writeModel = { File output, Map model ->
+    output.parentFile.mkdirs()
+    output.setText(JsonOutput.prettyPrint(JsonOutput.toJson(model)) + '\n', 'UTF-8')
+}
+
+def modelSpecs = [
+        [id: 'diamond_ore', base: 'minecraft:block/diamond_ore', highlight: 'diamond'],
+        [id: 'deepslate_diamond_ore', base: 'minecraft:block/deepslate_diamond_ore', highlight: 'diamond'],
+        [id: 'gold_ore', base: 'minecraft:block/gold_ore', highlight: 'gold'],
+        [id: 'deepslate_gold_ore', base: 'minecraft:block/deepslate_gold_ore', highlight: 'gold'],
+        [id: 'emerald_ore', base: 'minecraft:block/emerald_ore', highlight: 'emerald'],
+        [id: 'deepslate_emerald_ore', base: 'minecraft:block/deepslate_emerald_ore', highlight: 'emerald'],
+        [id: 'coal_ore', base: 'minecraft:block/coal_ore', highlight: 'coal'],
+        [id: 'deepslate_coal_ore', base: 'minecraft:block/deepslate_coal_ore', highlight: 'coal'],
+        [id: 'iron_ore', base: 'minecraft:block/iron_ore', highlight: 'iron'],
+        [id: 'deepslate_iron_ore', base: 'minecraft:block/deepslate_iron_ore', highlight: 'iron'],
+        [id: 'copper_ore', base: 'minecraft:block/copper_ore', highlight: 'copper'],
+        [id: 'deepslate_copper_ore', base: 'minecraft:block/deepslate_copper_ore', highlight: 'copper'],
+        [id: 'lapis_ore', base: 'minecraft:block/lapis_ore', highlight: 'lapis'],
+        [id: 'deepslate_lapis_ore', base: 'minecraft:block/deepslate_lapis_ore', highlight: 'lapis'],
+        [id: 'redstone_ore', base: 'minecraft:block/redstone_ore', highlight: 'redstone'],
+        [id: 'deepslate_redstone_ore', base: 'minecraft:block/deepslate_redstone_ore', highlight: 'redstone'],
+        [id: 'obsidian', base: 'minecraft:block/obsidian', highlight: 'obsidian']
+]
+
 def generateChiseVisualAssets = tasks.register('generateChiseVisualAssets') {
     outputs.dir(generatedVisualAssetsDir)
     doLast {
-        File textureDir = generatedVisualAssetsDir.get()
-                .dir('assets/chisetweaks/textures/block/visual')
-                .asFile
-        writeDiamondTexture(new File(textureDir, 'diamond_ore_chise.png'), false)
-        writeDiamondTexture(new File(textureDir, 'deepslate_diamond_ore_chise.png'), true)
+        File root = generatedVisualAssetsDir.get().asFile
+        project.delete(root)
+
+        File textureDir = new File(root, 'assets/chisetweaks/textures/block/visual/material')
+        File modelDir = new File(root, 'assets/chisetweaks/models/block/visual/material')
+        Map<String, Map> specsByKey = materialSpecs.collectEntries { [(it.key): it] }
+
+        materialSpecs.each { spec ->
+            File texture = new File(textureDir, "${spec.key}_highlight.png")
+            writeBorderTexture(texture, spec)
+            writeAnimationMeta(new File(textureDir, "${spec.key}_highlight.png.mcmeta"))
+        }
+
+        modelSpecs.each { modelSpec ->
+            Map materialSpec = specsByKey[modelSpec.highlight]
+            boolean nodes = materialSpec.motif in ['crystal', 'nodes', 'jagged']
+            String highlightTexture = "chisetweaks:block/visual/material/${modelSpec.highlight}_highlight"
+            writeModel(
+                    new File(modelDir, "${modelSpec.id}.json"),
+                    cubeModel(modelSpec.base, highlightTexture, materialSpec.thickness as double, nodes))
+        }
+
+        Map ancientSpec = specsByKey['ancient_debris']
+        writeModel(
+                new File(modelDir, 'ancient_debris.json'),
+                ancientDebrisModel(
+                        'chisetweaks:block/visual/material/ancient_debris_highlight',
+                        ancientSpec.thickness as double))
     }
 }
 
