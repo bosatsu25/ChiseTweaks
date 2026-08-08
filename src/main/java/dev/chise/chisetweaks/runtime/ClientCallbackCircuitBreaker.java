@@ -36,7 +36,6 @@ public final class ClientCallbackCircuitBreaker {
     public static void resetSessionState() { OPEN_MASK.set(0); }
     public static int openCount() { return Integer.bitCount(OPEN_MASK.get()); }
     public enum Callback {
-        WORKSITE_VISIBILITY_HUD_RENDER,
         WORKSITE_VISIBILITY_WORLD_RENDER,
         SESSION_FEATURE_RESET;
         private int bit() { return 1 << ordinal(); }
