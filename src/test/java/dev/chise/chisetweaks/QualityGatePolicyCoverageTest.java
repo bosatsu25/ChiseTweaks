@@ -179,7 +179,7 @@ final class QualityGatePolicyCoverageTest {
     }
 
     @Test
-    void visualStylePolicyUsesStablePriorityMarkerAndArgbMappings() {
+    void visualStylePolicyUsesStablePriorityMarkerAndVioletMappings() {
         assertEquals(VisualAssistanceStylePolicy.OverlayStyle.NONE,
                 VisualAssistanceStylePolicy.styleFor("minecraft:stone", null));
         assertEquals(VisualAssistanceStylePolicy.OverlayStyle.NONE,
@@ -187,18 +187,18 @@ final class QualityGatePolicyCoverageTest {
         assertFalse(VisualAssistanceStylePolicy.OverlayStyle.NONE.visible());
 
         var technical = VisualAssistanceStylePolicy.styleFor(null, BlockInspectionCategory.TECHNICAL_TRACE);
-        assertEquals(0xFFFFC857, technical.argb());
+        assertEquals(0xFFB29CFF, technical.argb());
         assertEquals(100, technical.priority());
         assertEquals(VisualAssistanceStylePolicy.Marker.CROSS, technical.marker());
         assertTrue(technical.visible());
 
-        assertEquals(0xFFBDEBFF, VisualAssistanceStylePolicy.styleFor(
+        assertEquals(0xFFA68BFF, VisualAssistanceStylePolicy.styleFor(
                 "minecraft:powder_snow", BlockInspectionCategory.HIDDEN_SURFACE).argb());
-        assertEquals(0xFF6DB7FF, VisualAssistanceStylePolicy.styleFor(
+        assertEquals(0xFF8A76FF, VisualAssistanceStylePolicy.styleFor(
                 "minecraft:blue_ice", BlockInspectionCategory.HIDDEN_SURFACE).argb());
-        assertEquals(0xFFB8A58A, VisualAssistanceStylePolicy.styleFor(
+        assertEquals(0xFF7D6BDB, VisualAssistanceStylePolicy.styleFor(
                 "minecraft:dead_brain_coral", BlockInspectionCategory.HIDDEN_SURFACE).argb());
-        assertEquals(0xFF6EE7B7, VisualAssistanceStylePolicy.styleFor(
+        assertEquals(0xFF9B7EDE, VisualAssistanceStylePolicy.styleFor(
                 "minecraft:stone", BlockInspectionCategory.HIDDEN_SURFACE).argb());
 
         assertEquals(VisualAssistanceStylePolicy.Marker.BOX, VisualAssistanceStylePolicy.styleFor(
@@ -206,26 +206,26 @@ final class QualityGatePolicyCoverageTest {
         assertEquals(VisualAssistanceStylePolicy.Marker.ORIENTATION, VisualAssistanceStylePolicy.styleFor(
                 "minecraft:oak_stairs", BlockInspectionCategory.PLACEMENT_GUIDE).marker());
 
-        assertEquals(0xFF50E3E6, material("DIAMOND"));
-        assertEquals(0xFF57E389, material("emerald"));
-        assertEquals(0xFFFF5A5A, material("redstone"));
-        assertEquals(0xFF5A7DFF, material("lapis"));
-        assertEquals(0xFFFFD24A, material("gold"));
-        assertEquals(0xFFFF9B62, material("copper"));
-        assertEquals(0xFFE4D8C8, material("iron"));
-        assertEquals(0xFFA6A6A6, material("coal"));
-        assertEquals(0xFFFF8B6B, material("ancient_debris"));
-        assertEquals(0xFFC6A0FF, material("obsidian"));
+        assertEquals(0xFFB29CFF, material("DIAMOND"));
+        assertEquals(0xFFA68BFF, material("emerald"));
+        assertEquals(0xFF8F7AE5, material("redstone"));
+        assertEquals(0xFF7D6BDB, material("lapis"));
+        assertEquals(0xFF9B7EDE, material("gold"));
+        assertEquals(0xFF725AC1, material("copper"));
+        assertEquals(0xFF8A76FF, material("iron"));
+        assertEquals(0xFF6B5B95, material("coal"));
+        assertEquals(0xFF4E3A8C, material("ancient_debris"));
+        assertEquals(0xFF5E4FA2, material("obsidian"));
 
-        assertEquals(0xFF52D7D0, nether("warped_stem"));
-        assertEquals(0xFFE45A72, nether("crimson_stem"));
-        assertEquals(0xFFE45A72, nether("nether_wart_block"));
-        assertEquals(0xFF69C9E8, nether("soul_soil"));
-        assertEquals(0xFFB49ACF, nether("blackstone"));
-        assertEquals(0xFFB7B7B7, nether("basalt"));
-        assertEquals(0xFFFFD166, nether("glowstone"));
-        assertEquals(0xFFFFD166, nether("shroomlight"));
-        assertEquals(0xFFE38C78, nether("netherrack"));
+        assertEquals(0xFF7D6BDB, nether("warped_stem"));
+        assertEquals(0xFF8F7AE5, nether("crimson_stem"));
+        assertEquals(0xFF8F7AE5, nether("nether_wart_block"));
+        assertEquals(0xFFA68BFF, nether("soul_soil"));
+        assertEquals(0xFF4E3A8C, nether("blackstone"));
+        assertEquals(0xFF6B5B95, nether("basalt"));
+        assertEquals(0xFF9B7EDE, nether("glowstone"));
+        assertEquals(0xFF9B7EDE, nether("shroomlight"));
+        assertEquals(0xFF725AC1, nether("netherrack"));
     }
 
     private static int material(String id) {
