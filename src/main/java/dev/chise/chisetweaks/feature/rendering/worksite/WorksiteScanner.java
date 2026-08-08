@@ -6,6 +6,7 @@ import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
+import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ClipContext;
@@ -86,7 +87,7 @@ final class WorksiteScanner {
                 int z = originZ + zOffset;
                 for (int xOffset = -horizontalRadius; xOffset <= horizontalRadius; xOffset++) {
                     cursor.set(originX + xOffset, y, z);
-                    collectCandidate(client, eyePosition, cursor, activeCategories, candidates);
+                    collectCandidate(client, config, eyePosition, cursor, activeCategories, candidates);
                 }
             }
         }
@@ -104,6 +105,7 @@ final class WorksiteScanner {
 
     private void collectCandidate(
             Minecraft client,
+            LocalFeatureConfig config,
             Vec3 eyePosition,
             BlockPos position,
             Set<BlockInspectionCategory> activeCategories,
@@ -116,6 +118,10 @@ final class WorksiteScanner {
         BlockInspectionCategory category =
                 blockInspector.resolveActiveCategory(descriptor, activeCategories);
         if (!BlockInspectionPolicy.isScanCategory(category)) return;
+        if (!VisualTargetSelectionPolicy.matchesEnabled(
+                config.visualTargetMask,
+                descriptor.id(),
+                category)) return;
 
         VisualAssistanceStylePolicy.OverlayStyle style = descriptor.styleFor(category);
         if (!style.visible()) return;
