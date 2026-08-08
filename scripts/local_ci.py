@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the same quality gates that GitHub Actions enforces, from VS Code or a shell."""
+"""Run the same build and post-build verification used by GitHub Actions."""
 
 from __future__ import annotations
 
@@ -24,7 +24,6 @@ def gradle_command() -> list[str]:
 
 
 def main() -> int:
-    run([sys.executable, str(SCRIPTS / "run_source_audits.py")])
     run(gradle_command() + ["--no-daemon", "--stacktrace", "clean", "qualityGate", "build"])
     run([sys.executable, str(SCRIPTS / "quality_summary.py")])
     run([sys.executable, str(SCRIPTS / "artifact_audit.py")])

@@ -16,6 +16,8 @@ import java.util.Set;
 
 /** Converts Minecraft block state into stable Chise inspection data. */
 final class WorksiteBlockInspector {
+    private static final int EXPECTED_PROPERTY_CAPACITY = 8;
+
     private final Map<Block, WorksiteBlockDescriptor> descriptorCache = new IdentityHashMap<>();
 
     WorksiteBlockDescriptor describe(BlockState state) {
@@ -70,10 +72,9 @@ final class WorksiteBlockInspector {
     }
 
     private Map<String, String> properties(BlockState state) {
-        HashMap<String, String> result = new HashMap<>(Math.max(4, state.getValues().size() * 2));
-        for (var value : state.getValues()) {
-            result.put(value.property().getName(), value.valueName());
-        }
+        HashMap<String, String> result = new HashMap<>(EXPECTED_PROPERTY_CAPACITY);
+        state.getValues().forEach(value ->
+                result.put(value.property().getName(), value.valueName()));
         return result;
     }
 }

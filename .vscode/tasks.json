@@ -2,16 +2,22 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Chise: Source audits",
+      "label": "Chise: Repository contracts",
       "type": "process",
-      "command": "python",
+      "command": "./gradlew",
+      "windows": {
+        "command": "${workspaceFolder}\\gradlew.bat"
+      },
       "args": [
-        "scripts/run_source_audits.py"
+        "--no-daemon",
+        "test",
+        "--tests",
+        "dev.chise.chisetweaks.RepositoryContractTest"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": []
+      "problemMatcher": "$gradle"
     },
     {
       "label": "Chise: Unit tests",

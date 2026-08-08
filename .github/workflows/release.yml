@@ -1,18 +1,22 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   provenance-gate:
-    name: Require resolved provenance
+    name: Require releasable main branch
     runs-on: ubuntu-latest
     steps:
+      - name: Require main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo 'Releases may only be started from the main branch.' >&2
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
@@ -27,27 +31,9 @@ jobs:
     needs: provenance-gate
     uses: ./.github/workflows/verify-build.yml
 
-  validate-tag:
-    name: Validate release tag
-    needs: verify
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require exact version tag
-        env:
-          TAG: ${{ github.ref_name }}
-          VERSION: ${{ needs.verify.outputs.version }}
-        run: |
-          expected="v${VERSION}"
-          if [[ "$TAG" != "$expected" ]]; then
-            echo "Release tag '$TAG' must exactly match '$expected'." >&2
-            exit 1
-          fi
-
   release:
-    name: Publish verified JAR
-    needs:
-      - verify
-      - validate-tag
+    name: Tag and publish verified JAR
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - name: Download verified artifacts
@@ -60,29 +46,63 @@ jobs:
         working-directory: release
         run: sha256sum --check SHA256SUMS.txt
 
+      - name: Prepare release metadata
+        id: metadata
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          MC_VERSION: ${{ needs.verify.outputs.minecraft_version }}
+        run: |
+          expected_suffix="+mc${MC_VERSION}"
+          if [[ "$VERSION" != *"$expected_suffix" ]]; then
+            echo "Version '$VERSION' must end with '$expected_suffix'." >&2
+            exit 1
+          fi
+          display_version="${VERSION%%+mc*}"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "display_version=${display_version}" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse duplicate release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.metadata.outputs.tag }}
+        run: |
+          if gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Release tag '${TAG}' already exists." >&2
+            exit 1
+          fi
+
       - name: Prepare release notes
         env:
           VERSION: ${{ needs.verify.outputs.version }}
+          MC_VERSION: ${{ needs.verify.outputs.minecraft_version }}
           RUNTIME_JAR: ${{ needs.verify.outputs.runtime_jar }}
           RUNTIME_SHA256: ${{ needs.verify.outputs.runtime_sha256 }}
         run: |
           cat > release-notes.md <<EOF
           ## ChiseTweaks ${VERSION}
 
-          This release publishes the exact runtime JAR that passed the Java 25
-          quality gate, artifact audit, JaCoCo gate and PIT mutation gate.
+          Verified release for **Minecraft ${MC_VERSION}** and **Java 25**.
 
+          This publishes the exact runtime JAR that passed JUnit, JaCoCo,
+          PIT mutation testing, the source identity audit and the artifact audit.
+
+          - Minecraft: \`${MC_VERSION}\`
+          - Java: \`25\`
           - Runtime JAR: \`${RUNTIME_JAR}\`
           - SHA-256: \`${RUNTIME_SHA256}\`
 
-          Full checksums are attached as \`SHA256SUMS.txt\`.
+          The sources JAR, full checksums, artifact audit and quality summary are
+          attached to this release.
           EOF
 
-      - name: Create GitHub Release
+      - name: Create version tag and GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ steps.metadata.outputs.tag }}
+          DISPLAY_VERSION: ${{ steps.metadata.outputs.display_version }}
+          MC_VERSION: ${{ needs.verify.outputs.minecraft_version }}
           RUNTIME_JAR: ${{ needs.verify.outputs.runtime_jar }}
           SOURCES_JAR: ${{ needs.verify.outputs.sources_jar }}
         run: |
@@ -91,6 +111,7 @@ jobs:
             "release/$SOURCES_JAR" \
             "release/SHA256SUMS.txt" \
             "release/artifact-audit.json" \
-            --verify-tag \
-            --title "$TAG" \
+            "release/quality-summary.md" \
+            --target "$GITHUB_SHA" \
+            --title "ChiseTweaks ${DISPLAY_VERSION} — Minecraft ${MC_VERSION}" \
             --notes-file release-notes.md
