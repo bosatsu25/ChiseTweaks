@@ -92,8 +92,8 @@ final class WorksiteOverlayRenderer {
             long pulseFrame) {
         VisualAssistanceStylePolicy.OverlayStyle style = target.style();
         int primary = style.argb();
-        switch (style.marker()) {
-            case THREAD_SIGNAL -> {
+        switch (target.presentation().category()) {
+            case TECHNICAL_TRACE -> {
                 int stateColor = target.presentation().details().contains("powered=true")
                         ? 0xFFFF3B30
                         : 0xFF46FF6A;
@@ -105,18 +105,18 @@ final class WorksiteOverlayRenderer {
                             vertices, pose, target.position(), target.orientation(), 0xFFFFFFFF, 2.2f);
                 }
             }
-            case SURFACE_HATCH -> WorldLineGeometry.drawSurfaceHatch(
+            case HIDDEN_SURFACE -> WorldLineGeometry.drawSurfaceHatch(
                     vertices, pose, target.position(), primary, 0xE6FFFFFF, 3.0f);
-            case GLASS_GRID -> WorldLineGeometry.drawGlassGrid(
-                    vertices, pose, target.position(), primary, 0xE6FFFFFF, 3.2f);
-            case ORIENTATION -> {
+            case GLASS_INSPECTION -> WorldLineGeometry.drawGlassGrid(
+                    vertices, pose, target.position(), glassColor(target.presentation().blockId()), 0xE6FFFFFF, 3.2f);
+            case PLACEMENT_GUIDE -> {
                 WorldLineGeometry.drawBox(vertices, pose, target.position(), primary, 2.2f);
                 WorldLineGeometry.drawOrientation(
                         vertices, pose, target.position(), target.orientation(), 0xFFFFFFFF, 3.0f);
             }
-            case MATERIAL_PULSE -> WorldLineGeometry.drawMaterialPulse(
+            case MATERIAL_HIGHLIGHT -> WorldLineGeometry.drawMaterialPulse(
                     vertices, pose, target.position(), primary, pulseColor(target, pulseFrame), 3.4f);
-            case NETHER_GRID -> WorldLineGeometry.drawNetherGrid(
+            case NETHER_PALETTE -> WorldLineGeometry.drawNetherGrid(
                     vertices, pose, target.position(), primary, 0xBFF7E8DC, 2.4f);
             case NONE -> { }
         }
@@ -126,5 +126,34 @@ final class WorksiteOverlayRenderer {
         int offset = Math.floorMod(target.position().hashCode(), PULSE_COLORS.length);
         int frame = (int) Math.floorMod(pulseFrame, PULSE_COLORS.length);
         return PULSE_COLORS[(frame + offset) % PULSE_COLORS.length];
+    }
+
+    private static int glassColor(String blockId) {
+        String id = blockId == null ? "" : blockId;
+        if (id.equals("minecraft:glass") || id.equals("minecraft:glass_pane")) return 0xFFE8F7FF;
+        if (id.equals("minecraft:tinted_glass")) return 0xFF655E78;
+        String path = id.startsWith("minecraft:") ? id.substring("minecraft:".length()) : id;
+        String color = path
+                .replace("_stained_glass_pane", "")
+                .replace("_stained_glass", "");
+        return switch (color) {
+            case "white" -> 0xFFF0F0F0;
+            case "orange" -> 0xFFF2A65A;
+            case "magenta" -> 0xFFD66BD6;
+            case "light_blue" -> 0xFF79C8F2;
+            case "yellow" -> 0xFFF4E45C;
+            case "lime" -> 0xFF8FD14F;
+            case "pink" -> 0xFFF29AB2;
+            case "gray" -> 0xFF777C83;
+            case "light_gray" -> 0xFFB8BDC3;
+            case "cyan" -> 0xFF48B8C4;
+            case "purple" -> 0xFF9365C8;
+            case "blue" -> 0xFF4D6FD6;
+            case "brown" -> 0xFF8A5A3C;
+            case "green" -> 0xFF4E9B56;
+            case "red" -> 0xFFE05252;
+            case "black" -> 0xFF404047;
+            default -> 0xFFD8D8D8;
+        };
     }
 }
