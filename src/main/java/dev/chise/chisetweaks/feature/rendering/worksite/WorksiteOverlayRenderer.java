@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.feature.rendering.worksite;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
+import dev.chise.chisetweaks.feature.rendering.SurfaceLineVisualGeometry;
 import dev.chise.chisetweaks.feature.rendering.WorldLineGeometry;
 import dev.chise.chisetweaks.runtime.ClientCallbackCircuitBreaker;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -18,14 +19,19 @@ import java.util.function.Consumer;
 /** Owns high-visibility world-space rendering for bounded worksite targets. */
 final class WorksiteOverlayRenderer {
     private static final int[] PULSE_COLORS = {
-            0xFFFF3B30,
-            0xFFFF9500,
-            0xFFFFE14A,
-            0xFF71E35B,
-            0xFF50E3E6,
-            0xFF5A7DFF,
-            0xFFC66BFF
+            0xFF4E3A8C,
+            0xFF5E4FA2,
+            0xFF725AC1,
+            0xFF7D6BDB,
+            0xFF8F7AE5,
+            0xFF9B7EDE,
+            0xFFA68BFF,
+            0xFFB29CFF
     };
+    private static final int ACCENT_DARK = 0xFF4E3A8C;
+    private static final int ACCENT_LIGHT = 0xFFB29CFF;
+    private static final int THREAD_IDLE = 0xFF5E4FA2;
+    private static final int THREAD_POWERED = 0xFFA68BFF;
 
     private final BooleanSupplier activeSupplier;
     private final Consumer<LevelRenderContext> guardedRender;
@@ -75,7 +81,7 @@ final class WorksiteOverlayRenderer {
                     poseStack,
                     RenderTypes.lines(),
                     (pose, vertices) -> {
-                        long pulseFrame = System.nanoTime() / 140_000_000L;
+                        long pulseFrame = System.nanoTime() / 150_000_000L;
                         for (WorksiteVisibleTarget target : snapshot) {
                             drawTarget(vertices, pose, target, pulseFrame);
                         }
@@ -92,32 +98,36 @@ final class WorksiteOverlayRenderer {
             long pulseFrame) {
         VisualAssistanceStylePolicy.OverlayStyle style = target.style();
         int primary = style.argb();
+        int phase = (int) Math.floorMod(pulseFrame + target.position().hashCode(), 8L);
         switch (target.presentation().category()) {
             case TECHNICAL_TRACE -> {
-                int stateColor = target.presentation().details().contains("powered=true")
-                        ? 0xFFFF3B30
-                        : 0xFF46FF6A;
-                WorldLineGeometry.drawThreadSignal(
-                        vertices, pose, target.position(), target.presentation().details(), stateColor, 4.6f);
+                boolean powered = target.presentation().details().contains("powered=true");
+                int stateColor = powered ? THREAD_POWERED : THREAD_IDLE;
+                int accent = powered ? ACCENT_DARK : ACCENT_LIGHT;
+                SurfaceLineVisualGeometry.drawThreadSkin(
+                        vertices, pose, target.position(), target.presentation().details(), stateColor, accent, 4.6f);
                 if (target.presentation().blockId().endsWith("tripwire_hook")) {
-                    WorldLineGeometry.drawBox(vertices, pose, target.position(), stateColor, 2.4f);
                     WorldLineGeometry.drawOrientation(
-                            vertices, pose, target.position(), target.orientation(), 0xFFFFFFFF, 2.2f);
+                            vertices, pose, target.position(), target.orientation(), accent, 2.3f);
                 }
             }
-            case HIDDEN_SURFACE -> WorldLineGeometry.drawSurfaceHatch(
-                    vertices, pose, target.position(), primary, 0xE6FFFFFF, 3.0f);
-            case GLASS_INSPECTION -> WorldLineGeometry.drawGlassGrid(
-                    vertices, pose, target.position(), glassColor(target.presentation().blockId()), 0xE6FFFFFF, 3.2f);
-            case PLACEMENT_GUIDE -> {
-                WorldLineGeometry.drawBox(vertices, pose, target.position(), primary, 2.2f);
-                WorldLineGeometry.drawOrientation(
-                        vertices, pose, target.position(), target.orientation(), 0xFFFFFFFF, 3.0f);
-            }
-            case MATERIAL_HIGHLIGHT -> WorldLineGeometry.drawMaterialPulse(
-                    vertices, pose, target.position(), primary, pulseColor(target, pulseFrame), 3.4f);
-            case NETHER_PALETTE -> WorldLineGeometry.drawNetherGrid(
-                    vertices, pose, target.position(), primary, 0xBFF7E8DC, 2.4f);
+            case HIDDEN_SURFACE -> SurfaceLineVisualGeometry.drawHiddenSurfaceSkin(
+                    vertices, pose, target.position(), primary, ACCENT_DARK, 3.0f);
+            case GLASS_INSPECTION -> SurfaceLineVisualGeometry.drawGlassSkin(
+                    vertices, pose, target.position(), primary, ACCENT_DARK, 2.8f);
+            case PLACEMENT_GUIDE -> SurfaceLineVisualGeometry.drawPlacementSkin(
+                    vertices,
+                    pose,
+                    target.position(),
+                    target.presentation().blockId(),
+                    target.orientation(),
+                    primary,
+                    ACCENT_LIGHT,
+                    2.5f);
+            case MATERIAL_HIGHLIGHT -> SurfaceLineVisualGeometry.drawMaterialSkin(
+                    vertices, pose, target.position(), primary, pulseColor(target, pulseFrame), phase, 3.3f);
+            case NETHER_PALETTE -> SurfaceLineVisualGeometry.drawNetherSkin(
+                    vertices, pose, target.position(), primary, ACCENT_DARK, phase, 2.3f);
             case NONE -> { }
         }
     }
@@ -126,34 +136,5 @@ final class WorksiteOverlayRenderer {
         int offset = Math.floorMod(target.position().hashCode(), PULSE_COLORS.length);
         int frame = (int) Math.floorMod(pulseFrame, PULSE_COLORS.length);
         return PULSE_COLORS[(frame + offset) % PULSE_COLORS.length];
-    }
-
-    private static int glassColor(String blockId) {
-        String id = blockId == null ? "" : blockId;
-        if (id.equals("minecraft:glass") || id.equals("minecraft:glass_pane")) return 0xFFE8F7FF;
-        if (id.equals("minecraft:tinted_glass")) return 0xFF655E78;
-        String path = id.startsWith("minecraft:") ? id.substring("minecraft:".length()) : id;
-        String color = path
-                .replace("_stained_glass_pane", "")
-                .replace("_stained_glass", "");
-        return switch (color) {
-            case "white" -> 0xFFF0F0F0;
-            case "orange" -> 0xFFF2A65A;
-            case "magenta" -> 0xFFD66BD6;
-            case "light_blue" -> 0xFF79C8F2;
-            case "yellow" -> 0xFFF4E45C;
-            case "lime" -> 0xFF8FD14F;
-            case "pink" -> 0xFFF29AB2;
-            case "gray" -> 0xFF777C83;
-            case "light_gray" -> 0xFFB8BDC3;
-            case "cyan" -> 0xFF48B8C4;
-            case "purple" -> 0xFF9365C8;
-            case "blue" -> 0xFF4D6FD6;
-            case "brown" -> 0xFF8A5A3C;
-            case "green" -> 0xFF4E9B56;
-            case "red" -> 0xFFE05252;
-            case "black" -> 0xFF404047;
-            default -> 0xFFD8D8D8;
-        };
     }
 }
