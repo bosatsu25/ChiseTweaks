@@ -80,7 +80,9 @@ final class WorksiteScanner {
             BlockPos position,
             Set<BlockInspectionCategory> activeCategories,
             PriorityQueue<ScanCandidate> candidates) {
-        if (!client.level.hasChunkAt(position)) return;
+        if (!client.level.getChunkSource().hasChunk(
+                position.getX() >> 4,
+                position.getZ() >> 4)) return;
         BlockState state = client.level.getBlockState(position);
         WorksiteBlockDescriptor descriptor = blockInspector.describe(state);
         BlockInspectionCategory category =
