@@ -2,6 +2,8 @@ package dev.chise.chisetweaks.gui;
 
 import net.minecraft.client.gui.components.Button;
 
+import java.util.Locale;
+
 /** Mutable widget/render state for one immutable settings row definition. */
 final class ChiseTweaksSettingRowView {
     final ChiseTweaksSettingRowDefinition definition;
@@ -9,6 +11,7 @@ final class ChiseTweaksSettingRowView {
     final Button minus;
     final Button value;
     final Button plus;
+    final String searchableText;
     int screenY;
     boolean renderVisible;
     String renderedDescription = "";
@@ -24,6 +27,7 @@ final class ChiseTweaksSettingRowView {
         this.minus = minus;
         this.value = value;
         this.plus = plus;
+        this.searchableText = normalizeSearchText(definition);
     }
 
     static ChiseTweaksSettingRowView header(ChiseTweaksSettingRowDefinition definition) {
@@ -35,5 +39,10 @@ final class ChiseTweaksSettingRowView {
         if (minus != null) minus.visible = visible;
         if (value != null) value.visible = visible;
         if (plus != null) plus.visible = visible;
+    }
+
+    private static String normalizeSearchText(ChiseTweaksSettingRowDefinition definition) {
+        return (definition.name() + " " + definition.description())
+                .toLowerCase(Locale.ROOT);
     }
 }
