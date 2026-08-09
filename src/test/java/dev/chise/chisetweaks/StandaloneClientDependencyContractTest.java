@@ -66,11 +66,25 @@ final class StandaloneClientDependencyContractTest {
     }
 
     @Test
-    void standaloneUiExistsButOpeningGestureIsIntentionallyNotFixedYet() throws IOException {
+    void standaloneUiHasVanillaOptionsLauncherWithoutFixedKeyChord() throws IOException {
         Path screen = MAIN.resolve("dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+        Path mixin = MAIN.resolve("dev/chise/chisetweaks/mixin/gui/OptionsScreenMixin.java");
         assertTrue(Files.isRegularFile(screen));
+        assertTrue(Files.isRegularFile(mixin));
+
         String client = Files.readString(
                 MAIN.resolve("dev/chise/chisetweaks/ChiseTweaksClient.java"), StandardCharsets.UTF_8);
+        String mixinSource = Files.readString(mixin, StandardCharsets.UTF_8);
+        String mixinConfig = Files.readString(
+                ROOT.resolve("src/main/resources/chisetweaks.features.mixins.json"), StandardCharsets.UTF_8);
+
+        assertTrue(mixinConfig.contains("gui.OptionsScreenMixin"));
+        assertTrue(mixinSource.contains("@Mixin(OptionsScreen.class)"));
+        assertTrue(mixinSource.contains("@Inject(method = \"init\", at = @At(\"TAIL\"))"));
+        assertTrue(mixinSource.contains("new ChiseTweaksConfigScreen()"));
+        assertTrue(mixinSource.contains("settings.setParent(this)"));
+        assertTrue(mixinSource.contains("ChiseTweaksLauncherLayout.place"));
+
         assertFalse(client.contains("KeyMapping"));
         assertFalse(client.contains("C+T"));
         assertFalse(client.contains("GLFW_KEY_C"));
