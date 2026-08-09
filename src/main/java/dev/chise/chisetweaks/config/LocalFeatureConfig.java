@@ -29,6 +29,7 @@ public final class LocalFeatureConfig {
     public int worksiteVisibilityHorizontalRadius = 5;
     public int worksiteVisibilityVerticalRadius = 3;
     public int worksiteVisibilityIntervalTicks = 10;
+    /** Legacy persisted field kept for backward-compatible config documents; no HUD consumes it. */
     public int worksiteVisibilityMaxResults = 6;
     public int worksiteVisibilityMaxOverlayResults = 12;
     public boolean worksiteVisibilityWorldOverlay = true;
@@ -137,7 +138,7 @@ public final class LocalFeatureConfig {
         worksiteVisibilityIntervalTicks =
                 WorksiteVisibilityBudgetPolicy.clampIntervalTicks(worksiteVisibilityIntervalTicks);
         worksiteVisibilityMaxResults =
-                WorksiteVisibilityBudgetPolicy.clampHudResults(worksiteVisibilityMaxResults);
+                WorksiteVisibilityBudgetPolicy.clampLegacyResults(worksiteVisibilityMaxResults);
         worksiteVisibilityMaxOverlayResults =
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(worksiteVisibilityMaxOverlayResults);
         visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
