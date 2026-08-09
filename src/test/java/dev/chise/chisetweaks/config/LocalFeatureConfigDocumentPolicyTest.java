@@ -22,7 +22,8 @@ final class LocalFeatureConfigDocumentPolicyTest {
                   "worksiteVisibilityMaxOverlayResults": 12,
                   "worksiteVisibilityWorldOverlay": true,
                   "worksiteVisibilityExclusiveMode": false,
-                  "visualTargetMask": 33554431,
+                  "visualTargetMask": 268435455,
+                  "visualTargetSchemaVersion": 2,
                   "pumpkinScaffoldPlacementRange": 4
                 }
                 """).getAsJsonObject();
@@ -41,10 +42,12 @@ final class LocalFeatureConfigDocumentPolicyTest {
     }
 
     @Test
-    void visualTargetMaskAcceptsExactIntegers() {
-        JsonObject source = JsonParser.parseString("{\"visualTargetMask\":12345}").getAsJsonObject();
+    void visualTargetFieldsAcceptExactIntegers() {
+        JsonObject source = JsonParser.parseString(
+                "{\"visualTargetMask\":12345,\"visualTargetSchemaVersion\":2}").getAsJsonObject();
         JsonObject merged = LocalFeatureConfigDocumentPolicy.overlayKnownValues(defaults(), source);
         assertEquals(12345, merged.get("visualTargetMask").getAsInt());
+        assertEquals(2, merged.get("visualTargetSchemaVersion").getAsInt());
     }
 
     @Test
