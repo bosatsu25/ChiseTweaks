@@ -10,8 +10,12 @@ public final class ConfigUiLocalization {
     public static void refresh() {
         localize(BuilderFocusConfig.GENERAL_OPTIONS);
         localize(BuilderFocusConfig.RULE_OPTIONS);
+
         LocalFeatureSettings.refreshTranslations();
+        mirrorPrettyNamesToGui(LocalFeatureSettings.ALL_OPTIONS);
+
         VisualTargetSettings.refreshTranslations();
+        mirrorPrettyNamesToGui(VisualTargetSettings.ALL_OPTIONS);
     }
 
     private static void localize(Iterable<? extends IConfigBase> options) {
@@ -23,6 +27,17 @@ public final class ConfigUiLocalization {
             option.setTranslatedName(displayName);
             option.setComment(StringUtils.getTranslatedOrFallback(
                     base + ".comment", option.getComment()));
+        }
+    }
+
+    /**
+     * MaLiLib 26.1 renders getTranslatedName() in config rows, while several legacy ConfigBase
+     * adapters only updated prettyName. Mirror the already-localized pretty name so raw camelCase
+     * config IDs never leak into Chise's settings UI.
+     */
+    private static void mirrorPrettyNamesToGui(Iterable<? extends IConfigBase> options) {
+        for (IConfigBase option : options) {
+            option.setTranslatedName(option.getPrettyName());
         }
     }
 }
