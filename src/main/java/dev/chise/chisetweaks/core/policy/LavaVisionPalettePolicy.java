@@ -8,32 +8,19 @@ public final class LavaVisionPalettePolicy {
     public static final int FAR_OUTLINE_ARGB = 0xFF021A0E;
     /** Distance at or inside which the selected #075B32 source colour is shown unchanged. */
     public static final double NEAR_DISTANCE_BLOCKS = 2.0;
-    /** Fixed semantic distance used for the far end of the gradient, independent of UI radius changes. */
+    /** Fixed semantic distance used for the far end of the gradient. */
     public static final double FAR_DISTANCE_BLOCKS = 8.0;
-    /** Slightly heavier than ordinary inspection lines for the direct source-guide path. */
-    public static final float SOURCE_LINE_WIDTH = 3.4f;
     /** World-space edge thickness used by the through-terrain analyzer wireframe. */
     public static final float ANALYZER_EDGE_THICKNESS = 0.026f;
 
-    /** Legacy no-tint value retained for old config/document compatibility tests. */
-    public static final int NO_TINT = 0xFFFFFFFF;
-
     private LavaVisionPalettePolicy() {}
 
-    /**
-     * Returns whether one block should receive the source-analysis cube.
-     *
-     * <p>The analyzer is deliberately source-only. Flowing lava is left untouched, and fully
-     * surrounded source blocks are skipped so dense lava volumes do not turn into a wall of boxes.</p>
-     */
+    /** Source-only selection; dense fully surrounded source blocks are skipped. */
     public static boolean shouldHighlight(boolean enabled, boolean source, boolean exposed) {
         return enabled && source && exposed;
     }
 
-    /**
-     * Smoothly strengthens the reserved deep-green family as the player approaches a retained source.
-     * The hue family stays distinct from emerald/copper ore highlights; only RGB intensity changes.
-     */
+    /** Smoothly strengthens the reserved deep-green family as the player approaches a source. */
     public static int colorForDistance(double distanceBlocks) {
         if (!Double.isFinite(distanceBlocks)) return FAR_OUTLINE_ARGB;
         double distance = Math.max(0.0, distanceBlocks);
@@ -61,17 +48,5 @@ public final class LavaVisionPalettePolicy {
 
     private static int interpolateChannel(int from, int to, double t) {
         return (int) Math.round(from + (to - from) * t);
-    }
-
-    /**
-     * Legacy tint selector retained while old persisted fields are accepted by the config schema.
-     * New runtime rendering does not use this tint path.
-     */
-    public static int color(boolean enabled, boolean source, boolean showSource,
-                            boolean showFlowing, int sourceRgb, int flowingRgb) {
-        if (!enabled) return NO_TINT;
-        if (source && showSource) return 0xFF000000 | sourceRgb;
-        if (!source && showFlowing) return 0xFF000000 | flowingRgb;
-        return NO_TINT;
     }
 }

@@ -13,18 +13,12 @@ public final class VisualAssistanceStylePolicy {
             case TECHNICAL_TRACE -> new OverlayStyle(0xFFB29CFF, 100, Marker.CROSS);
             case HIDDEN_SURFACE -> new OverlayStyle(hiddenColor(id), 90, Marker.CROSS);
             case GLASS_INSPECTION -> new OverlayStyle(0xD6A68BFF, 60, Marker.BOX);
-            case PLACEMENT_GUIDE -> new OverlayStyle(0xE68F7AE5, 70, Marker.ORIENTATION);
             case MATERIAL_HIGHLIGHT -> new OverlayStyle(materialColor(id), 80, Marker.DIAGONAL);
             case NETHER_PALETTE -> new OverlayStyle(netherColor(id), 20, Marker.BOX);
             case NONE -> OverlayStyle.NONE;
         };
     }
 
-    /**
-     * Chise deliberately stays in a violet/indigo family so its visual assistance remains
-     * distinguishable from the red/green/yellow/orange/cyan/magenta schematic overlays used in
-     * the supported modpack profile.
-     */
     private static int materialColor(String id) {
         if (id.contains("diamond")) return 0xFFB29CFF;
         if (id.contains("emerald")) return 0xFFA68BFF;
@@ -55,7 +49,7 @@ public final class VisualAssistanceStylePolicy {
         return 0xFF725AC1;
     }
 
-    public enum Marker { NONE, BOX, CROSS, DIAGONAL, ORIENTATION }
+    public enum Marker { NONE, BOX, CROSS, DIAGONAL }
 
     public record OverlayStyle(int argb, int priority, Marker marker) {
         public static final OverlayStyle NONE = new OverlayStyle(0x00000000, 0, Marker.NONE);

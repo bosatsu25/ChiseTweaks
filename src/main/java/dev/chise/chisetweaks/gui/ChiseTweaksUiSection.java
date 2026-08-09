@@ -2,9 +2,8 @@ package dev.chise.chisetweaks.gui;
 
 import net.minecraft.network.chat.Component;
 
-/** Stable top-level navigation for the standalone Chise settings and guide screens. */
+/** Focused top-level navigation for the retained Chise settings and guide screens. */
 public enum ChiseTweaksUiSection {
-    PLACEMENT("Placement & Direction", "設置・向き"),
     RESOURCES("Resources", "資源"),
     VISIBILITY("Visibility", "見やすさ"),
     HELP("Guide", "使い方");

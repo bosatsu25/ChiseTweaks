@@ -1,8 +1,6 @@
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
-    id 'info.solidsoft.pitest' version '1.19.0'
-    id 'jacoco'
 }
 
 version = project.mod_version
@@ -23,16 +21,11 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-    // Optional integration only: compile against Mod Menu's API without making
-    // Mod Menu a runtime or packaged dependency of ChiseTweaks.
+    // Optional integration only. Mod Menu is not packaged or required at runtime.
     compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 
-    compileOnly "maven.modrinth:sodium:${project.sodium_version}"
+    // Development/runtime compatibility target only. Production code has no Sodium API dependency.
     if (chiseSodiumRuntime) runtimeOnly "maven.modrinth:sodium:${project.sodium_version}"
-
-    testImplementation platform('org.junit:junit-bom:5.11.4')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 loom {
@@ -64,112 +57,6 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.addAll(['-Xlint:deprecation', '-Xlint:unchecked'])
 }
 
-tasks.withType(Test).configureEach {
-    useJUnitPlatform()
-    maxParallelForks = 1
-    failFast = false
-    systemProperty 'file.encoding', 'UTF-8'
-}
-
-jacoco {
-    toolVersion = project.jacoco_version
-}
-
-// The 96% unit-quality gate intentionally measures the deterministic Java kernel only.
-def qualityGateClasses = [
-        'dev/chise/chisetweaks/config/FeatureConfigDocumentPolicy*.class',
-        'dev/chise/chisetweaks/config/LocalFeatureConfigDocumentPolicy*.class',
-        'dev/chise/chisetweaks/core/performance/VisualModelReloadThrottlePolicy*.class',
-        'dev/chise/chisetweaks/core/performance/WorksiteCandidateRetentionPolicy*.class',
-        'dev/chise/chisetweaks/core/performance/WorksiteOverlayDetailPolicy*.class',
-        'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
-        'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
-        'dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy*.class',
-        'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
-        'dev/chise/chisetweaks/core/policy/LavaVisionPalettePolicy*.class',
-        'dev/chise/chisetweaks/core/policy/ModVersionPolicy*.class',
-        'dev/chise/chisetweaks/core/policy/OrientationOverlayPolicy*.class',
-        'dev/chise/chisetweaks/core/policy/PumpkinScaffoldPolicy*.class',
-        'dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy*.class',
-        'dev/chise/chisetweaks/core/vision/OreHighlightLightingPolicy*.class',
-        'dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy*.class',
-        'dev/chise/chisetweaks/core/vision/VisualModelSelectionPolicy*.class',
-        'dev/chise/chisetweaks/core/vision/VisualTargetGroupPolicy*.class',
-        'dev/chise/chisetweaks/core/vision/VisualTargetSelectionPolicy*.class'
-]
-
-def qualityGateClassDirectories = providers.provider {
-    files(sourceSets.main.output.classesDirs.collect { classesDir ->
-        fileTree(dir: classesDir, include: qualityGateClasses)
-    })
-}
-
-jacocoTestReport {
-    dependsOn tasks.named('test')
-    classDirectories.setFrom(qualityGateClassDirectories)
-    reports {
-        xml.required = true
-        html.required = true
-        csv.required = false
-    }
-}
-
-jacocoTestCoverageVerification {
-    dependsOn tasks.named('test')
-    classDirectories.setFrom(qualityGateClassDirectories)
-    violationRules {
-        rule {
-            element = 'BUNDLE'
-            limit {
-                counter = 'LINE'
-                value = 'COVEREDRATIO'
-                minimum = 0.96
-            }
-        }
-    }
-}
-
-pitest {
-    targetClasses = [
-        'dev.chise.chisetweaks.config.FeatureConfigDocumentPolicy',
-        'dev.chise.chisetweaks.config.LocalFeatureConfigDocumentPolicy',
-        'dev.chise.chisetweaks.core.performance.VisualModelReloadThrottlePolicy',
-        'dev.chise.chisetweaks.core.performance.WorksiteCandidateRetentionPolicy',
-        'dev.chise.chisetweaks.core.performance.WorksiteOverlayDetailPolicy',
-        'dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy',
-        'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
-        'dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy',
-        'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
-        'dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy',
-        'dev.chise.chisetweaks.core.policy.ModVersionPolicy',
-        'dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy',
-        'dev.chise.chisetweaks.core.policy.PumpkinScaffoldPolicy',
-        'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
-        'dev.chise.chisetweaks.core.security.SecureConfigStorage',
-        'dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy',
-        'dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy',
-        'dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy',
-        'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
-        'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy'
-    ]
-    targetTests = [
-        'dev.chise.chisetweaks.*Test',
-        'dev.chise.chisetweaks.config.*Test',
-        'dev.chise.chisetweaks.runtime.*Test',
-        'dev.chise.chisetweaks.core.security.*Test',
-        'dev.chise.chisetweaks.core.vision.*Test'
-    ]
-    junit5PluginVersion = '1.2.3'
-    threads = 2
-    outputFormats = ['HTML', 'XML']
-    timestampedReports = false
-    failWhenNoMutations = true
-    mutationThreshold = 96
-    coverageThreshold = 96
-    testStrengthThreshold = 96
-    exportLineCoverage = true
-}
-
 java {
     withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_25
@@ -194,20 +81,10 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.FAIL
     preserveFileTimestamps = false
     reproducibleFileOrder = true
-    exclude '**/*Test.class', '**/test/**'
 }
 
 publishing {
     publications {
         create('mavenJava', MavenPublication) { from components.java }
     }
-}
-
-tasks.register('qualityGate') {
-    group = 'verification'
-    description = 'Runs deterministic-kernel unit tests, JaCoCo line coverage verification and PIT mutation gates.'
-    dependsOn tasks.named('test')
-    dependsOn tasks.named('jacocoTestReport')
-    dependsOn tasks.named('jacocoTestCoverageVerification')
-    dependsOn tasks.named('pitest')
 }

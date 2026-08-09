@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
-/** Owns high-visibility world-space rendering for bounded worksite targets. */
+/** Owns high-visibility world-space rendering for retained bounded worksite targets. */
 final class WorksiteOverlayRenderer {
-    private static final String RENDERER_REVISION = "surface-line-v4-budgeted";
+    private static final String RENDERER_REVISION = "surface-line-v5-focused";
     private static final int ACCENT_DARK = 0xFF4E3A8C;
     private static final int ACCENT_LIGHT = 0xFFB29CFF;
     private static final int THREAD_IDLE = 0xFF5E4FA2;
@@ -158,28 +158,6 @@ final class WorksiteOverlayRenderer {
                 } else {
                     SurfaceLineVisualGeometry.drawGlassSkin(
                             vertices, pose, target.position(), primary, ACCENT_DARK, 2.8f);
-                }
-            }
-            case PLACEMENT_GUIDE -> {
-                if (compact) {
-                    SurfaceLineVisualGeometry.drawCompactPlacementSkin(
-                            vertices,
-                            pose,
-                            target.position(),
-                            target.orientation(),
-                            primary,
-                            ACCENT_LIGHT,
-                            2.0f);
-                } else {
-                    SurfaceLineVisualGeometry.drawPlacementSkin(
-                            vertices,
-                            pose,
-                            target.position(),
-                            target.presentation().blockId(),
-                            target.orientation(),
-                            primary,
-                            ACCENT_LIGHT,
-                            2.5f);
                 }
             }
             case MATERIAL_HIGHLIGHT -> { }

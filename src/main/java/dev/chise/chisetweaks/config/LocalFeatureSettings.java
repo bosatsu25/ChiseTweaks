@@ -1,35 +1,9 @@
 package dev.chise.chisetweaks.config;
 
-import dev.chise.chisetweaks.core.policy.PumpkinScaffoldPolicy;
-
 import java.util.function.Consumer;
 
-/** Chise-owned UI adapters for bounded client-side settings. */
+/** Chise-owned UI adapters for retained bounded client-side visibility settings. */
 public final class LocalFeatureSettings {
-    public static final ChiseIntegerSetting PUMPKIN_SCAFFOLD_PLACEMENT_RANGE = new ChiseIntegerSetting(
-            "localPumpkinScaffoldPlacementRange",
-            PumpkinScaffoldPolicy.DEFAULT_PLACEMENT_RANGE,
-            PumpkinScaffoldPolicy.MIN_PLACEMENT_RANGE,
-            PumpkinScaffoldPolicy.MAX_PLACEMENT_RANGE,
-            "Pumpkin placement range", "かぼちゃ設置距離",
-            "Maximum distance for a Pumpkin Scaffold air-placement attempt.",
-            "かぼちゃを使った空中設置を試す最大距離です。");
-
-    public static final SimpleBooleanSetting LAVA_SOURCE = bool(
-            "localLavaHighlightSource", true,
-            "Source lava", "溶岩源",
-            "Apply the source-lava highlight color.", "溶岩源の強調色を適用します。");
-    public static final SimpleBooleanSetting LAVA_FLOWING = bool(
-            "localLavaHighlightFlowing", true,
-            "Flowing lava", "流れる溶岩",
-            "Apply the flowing-lava highlight color.", "流れる溶岩の強調色を適用します。");
-    public static final ChiseIntegerSetting LAVA_SOURCE_COLOR = integer(
-            "localLavaSourceColorArgb", 0xFFFF3B30, Integer.MIN_VALUE, Integer.MAX_VALUE,
-            "Source lava ARGB", "溶岩源のARGB色");
-    public static final ChiseIntegerSetting LAVA_FLOWING_COLOR = integer(
-            "localLavaFlowingColorArgb", 0xFFFF9500, Integer.MIN_VALUE, Integer.MAX_VALUE,
-            "Flowing lava ARGB", "流れる溶岩のARGB色");
-
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_HORIZONTAL_RADIUS = integer(
             "localWorksiteVisibilityHorizontalRadius", 5, 1, 8,
             "Horizontal scan radius", "視認スキャン範囲");
@@ -70,11 +44,6 @@ public final class LocalFeatureSettings {
         syncing = true;
         try {
             LocalFeatureConfig c = LocalFeatureConfig.getInstance();
-            PUMPKIN_SCAFFOLD_PLACEMENT_RANGE.setIntegerValueSilently(c.pumpkinScaffoldPlacementRange);
-            LAVA_SOURCE.setBooleanValueSilently(c.lavaHighlightSource);
-            LAVA_FLOWING.setBooleanValueSilently(c.lavaHighlightFlowing);
-            LAVA_SOURCE_COLOR.setIntegerValueSilently(c.lavaSourceColor);
-            LAVA_FLOWING_COLOR.setIntegerValueSilently(c.lavaFlowingColor);
             WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setIntegerValueSilently(c.worksiteVisibilityHorizontalRadius);
             WORKSITE_VISIBILITY_VERTICAL_RADIUS.setIntegerValueSilently(c.worksiteVisibilityVerticalRadius);
             WORKSITE_VISIBILITY_INTERVAL.setIntegerValueSilently(c.worksiteVisibilityIntervalTicks);
@@ -87,12 +56,6 @@ public final class LocalFeatureSettings {
     }
 
     private static void bindCallbacks() {
-        PUMPKIN_SCAFFOLD_PLACEMENT_RANGE.setValueChangeCallback(ignored -> save(
-                c -> c.pumpkinScaffoldPlacementRange = PUMPKIN_SCAFFOLD_PLACEMENT_RANGE.getIntegerValue()));
-        LAVA_SOURCE.setValueChangeCallback(ignored -> save(c -> c.lavaHighlightSource = LAVA_SOURCE.getBooleanValue()));
-        LAVA_FLOWING.setValueChangeCallback(ignored -> save(c -> c.lavaHighlightFlowing = LAVA_FLOWING.getBooleanValue()));
-        LAVA_SOURCE_COLOR.setValueChangeCallback(ignored -> save(c -> c.lavaSourceColor = LAVA_SOURCE_COLOR.getIntegerValue()));
-        LAVA_FLOWING_COLOR.setValueChangeCallback(ignored -> save(c -> c.lavaFlowingColor = LAVA_FLOWING_COLOR.getIntegerValue()));
         WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> save(
                 c -> c.worksiteVisibilityHorizontalRadius = WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.getIntegerValue()));
         WORKSITE_VISIBILITY_VERTICAL_RADIUS.setValueChangeCallback(ignored -> save(

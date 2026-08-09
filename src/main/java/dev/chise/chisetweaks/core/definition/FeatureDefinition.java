@@ -6,23 +6,8 @@ import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Canonical metadata for user-facing features.
- *
- * <p>Only metadata consumed by runtime/UI code belongs here. Build reports,
- * historical design notes and duplicate ownership models deliberately stay out
- * of this enum so a feature can be understood from one compact declaration.</p>
- */
+/** Canonical metadata for the retained user-facing ChiseTweaks features. */
 public enum FeatureDefinition {
-    PUMPKIN_SCAFFOLD(
-            "pumpkin_scaffold",
-            FeatureArea.BUILDING,
-            "config.name.pumpkinscaffold",
-            "Pumpkin Scaffold",
-            "",
-            FeatureHelpLevel.AUTOMATION,
-            null,
-            null),
     BUILDER_FOCUS_BLOCKS(
             "builder_focus_blocks",
             FeatureArea.RENDERING,
@@ -68,15 +53,6 @@ public enum FeatureDefinition {
             FeatureHelpLevel.DIAGNOSTIC,
             WorksiteVisibilitySelectionPolicy.Mode.GLASS,
             BlockInspectionCategory.GLASS_INSPECTION),
-    PLACEMENT_GUIDE(
-            "placement_guide",
-            FeatureArea.RENDERING,
-            "config.name.placementguide",
-            "Placement Guide",
-            "",
-            FeatureHelpLevel.DIAGNOSTIC,
-            WorksiteVisibilitySelectionPolicy.Mode.PLACEMENT_GUIDE,
-            BlockInspectionCategory.PLACEMENT_GUIDE),
     MATERIAL_HIGHLIGHTS(
             "material_highlights",
             FeatureArea.RENDERING,

@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.core.policy;
 import java.util.EnumSet;
 import java.util.Set;
 
-/** Selection rules for the six scan-based visibility modes. */
+/** Selection rules for the five retained scan-based visibility modes. */
 public final class WorksiteVisibilitySelectionPolicy {
     private WorksiteVisibilitySelectionPolicy() {}
 
@@ -11,7 +11,6 @@ public final class WorksiteVisibilitySelectionPolicy {
         FINE_THREAD,
         HIDDEN_SURFACE,
         GLASS,
-        PLACEMENT_GUIDE,
         MATERIAL_HIGHLIGHT,
         NETHER_PALETTE
     }

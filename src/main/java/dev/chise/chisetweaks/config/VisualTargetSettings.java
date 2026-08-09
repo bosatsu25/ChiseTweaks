@@ -5,48 +5,9 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 
 import java.util.List;
 
-/**
- * Fine-grained target switches shown in the Chise category settings UI.
- *
- * <p>The target model is fully Chise-owned. Normal/deepslate ore variants intentionally share one
- * resource switch because the user selects a resource family, not a host-stone implementation.</p>
- */
+/** Fine-grained target switches for Ore Highlights and Hidden Surface Trace. */
 public final class VisualTargetSettings {
     private static final List<Entry> ENTRIES = List.of(
-            entry(Target.PLACEMENT_ANVIL, "visualTargetPlacementAnvil",
-                    "Placement: Anvil", "設置方向：金床",
-                    "Allow Placement Guide to mark anvils.", "設置方向ガイドで金床を表示対象にします。"),
-            entry(Target.PLACEMENT_BEEHIVE, "visualTargetPlacementBeehive",
-                    "Placement: Beehive", "設置方向：養蜂箱",
-                    "Allow Placement Guide to mark beehives.", "設置方向ガイドで養蜂箱を表示対象にします。"),
-            entry(Target.PLACEMENT_CAMPFIRE, "visualTargetPlacementCampfire",
-                    "Placement: Campfire", "設置方向：焚き火",
-                    "Allow Placement Guide to mark campfires.", "設置方向ガイドで焚き火を表示対象にします。"),
-            entry(Target.PLACEMENT_GLAZED_TERRACOTTA, "visualTargetPlacementGlazedTerracotta",
-                    "Placement: Glazed Terracotta", "設置方向：彩釉テラコッタ",
-                    "Allow Placement Guide to mark glazed terracotta.", "設置方向ガイドで彩釉テラコッタを表示対象にします。"),
-            entry(Target.PLACEMENT_GRINDSTONE, "visualTargetPlacementGrindstone",
-                    "Placement: Grindstone", "設置方向：砥石",
-                    "Allow Placement Guide to mark grindstones.", "設置方向ガイドで砥石を表示対象にします。"),
-            entry(Target.PLACEMENT_FENCE_GATE, "visualTargetPlacementFenceGate",
-                    "Placement: Fence Gate", "設置方向：フェンスゲート",
-                    "Allow Placement Guide to mark fence gates.", "設置方向ガイドでフェンスゲートを表示対象にします。"),
-            entry(Target.PLACEMENT_FROGLIGHT, "visualTargetPlacementFroglight",
-                    "Placement: Froglight", "設置方向：フロッグライト",
-                    "Allow Placement Guide to mark froglights.", "設置方向ガイドでフロッグライトを表示対象にします。"),
-            entry(Target.PLACEMENT_SLAB, "visualTargetPlacementSlab",
-                    "Placement: Slabs", "設置方向：ハーフブロック",
-                    "Allow Placement Guide to mark slab placement state.", "設置方向ガイドでハーフブロックの上下状態を表示対象にします。"),
-            entry(Target.PLACEMENT_STAIRS, "visualTargetPlacementStairs",
-                    "Placement: Stairs", "設置方向：階段",
-                    "Allow Placement Guide to mark stair placement state.", "設置方向ガイドで階段の向き・上下・形状を表示対象にします。"),
-            entry(Target.PLACEMENT_TRAPDOOR, "visualTargetPlacementTrapdoor",
-                    "Placement: Trapdoors", "設置方向：トラップドア",
-                    "Allow Placement Guide to mark trapdoor placement state.", "設置方向ガイドでトラップドアの設置状態を表示対象にします。"),
-            entry(Target.PLACEMENT_LOG_WOOD, "visualTargetPlacementLogWood",
-                    "Placement: Logs & Wood", "設置方向：原木・木材",
-                    "Allow Placement Guide to mark log, wood, stem and hyphae axes.", "設置方向ガイドで原木・木・幹・菌糸の軸を表示対象にします。"),
-
             entry(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre",
                     "Ore: Coal", "鉱石：石炭",
                     "Toggle normal and deepslate Coal Ore together.", "通常版と深層岩版の石炭鉱石を1つのスイッチで切り替えます。"),
@@ -86,7 +47,6 @@ public final class VisualTargetSettings {
             entry(Target.MATERIAL_CRYING_OBSIDIAN, "visualTargetMaterialCryingObsidian",
                     "Special Material: Crying Obsidian", "特殊資材：泣く黒曜石",
                     "Highlight Crying Obsidian independently from normal Obsidian.", "泣く黒曜石を通常の黒曜石とは別に切り替えます。"),
-
             entry(Target.HIDDEN_BLUE_ICE, "visualTargetHiddenBlueIce",
                     "Hidden Surface: Blue Ice", "隠面：青氷",
                     "Allow Hidden Surface Trace to mark visible blue ice.", "隠面トレースで見えている青氷を表示対象にします。"),
@@ -116,7 +76,6 @@ public final class VisualTargetSettings {
         initialized = true;
     }
 
-    /** Retained as a source-compatible no-op; labels are now owned by each setting. */
     public static void refreshTranslations() {}
 
     public static synchronized void setAllOreHighlightTargets(boolean enabled) {
