@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Japanese-first, searchable in-game guide using the same five-section navigation as settings. */
+/** Japanese-first searchable guide sharing the standalone Chise navigation. */
 public final class ChiseTweaksHelpScreen extends Screen {
     private static final int NAV_Y = 26;
     private static final int SEARCH_Y = 52;
@@ -85,13 +85,16 @@ public final class ChiseTweaksHelpScreen extends Screen {
     }
 
     private void createNavigation() {
+        ChiseTweaksUiSection[] sections = ChiseTweaksUiSection.values();
+        int count = sections.length;
         int gap = 4;
-        int available = Math.max(300, width - 20 - gap * 4);
-        int buttonWidth = Math.max(56, Math.min(110, available / 5));
-        int totalWidth = buttonWidth * 5 + gap * 4;
+        int gapTotal = gap * Math.max(0, count - 1);
+        int available = Math.max(240, width - 20 - gapTotal);
+        int buttonWidth = Math.max(56, Math.min(110, available / Math.max(1, count)));
+        int totalWidth = buttonWidth * count + gapTotal;
         int x = Math.max(10, (width - totalWidth) / 2);
 
-        for (ChiseTweaksUiSection section : ChiseTweaksUiSection.values()) {
+        for (ChiseTweaksUiSection section : sections) {
             Button button = addRenderableWidget(Button.builder(
                     Component.literal(section.getDisplayName()),
                     ignored -> navigate(section))
@@ -129,9 +132,7 @@ public final class ChiseTweaksHelpScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (minecraft != null) {
-            minecraft.setScreen(parent);
-        }
+        if (minecraft != null) minecraft.setScreen(parent);
     }
 
     @Override
@@ -199,9 +200,7 @@ public final class ChiseTweaksHelpScreen extends Screen {
                     translated(entry.requirementKey(), ""),
                     entry.englishName(),
                     entry.dependency()).toLowerCase(Locale.ROOT);
-            if (searchable.contains(query)) {
-                result.add(entry);
-            }
+            if (searchable.contains(query)) result.add(entry);
         }
         return List.copyOf(result);
     }
@@ -217,9 +216,8 @@ public final class ChiseTweaksHelpScreen extends Screen {
         int top = TOP;
         int visibleTop = Math.max(top, y);
         int visibleBottom = Math.min(bottom, y + height);
-        if (visibleTop >= visibleBottom) {
-            return;
-        }
+        if (visibleTop >= visibleBottom) return;
+
         extractor.fill(x, visibleTop, x + width, visibleBottom, 0xD0282828);
         extractor.fill(x, visibleTop, x + 3, visibleBottom, card.accentColor());
 
@@ -241,9 +239,7 @@ public final class ChiseTweaksHelpScreen extends Screen {
             int top,
             int bottom) {
         for (String line : lines) {
-            if (y >= top && y < bottom) {
-                extractor.text(font, line, x, y, color);
-            }
+            if (y >= top && y < bottom) extractor.text(font, line, x, y, color);
             y += LINE_HEIGHT;
         }
         return y;
@@ -276,9 +272,7 @@ public final class ChiseTweaksHelpScreen extends Screen {
         badges.add(translated(
                 "screen.chisetweaks.help.badge." + entry.level().name().toLowerCase(),
                 "[" + entry.level().name() + "]"));
-        if (!entry.dependency().isBlank()) {
-            badges.add("[" + entry.dependency() + "]");
-        }
+        if (!entry.dependency().isBlank()) badges.add("[" + entry.dependency() + "]");
         return String.join(" ", badges);
     }
 
@@ -337,6 +331,5 @@ public final class ChiseTweaksHelpScreen extends Screen {
             List<String> usageLines,
             List<String> requirementLines,
             int height,
-            int accentColor) {
-    }
+            int accentColor) {}
 }
