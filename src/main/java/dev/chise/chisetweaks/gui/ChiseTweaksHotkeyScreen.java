@@ -13,10 +13,14 @@ import java.util.List;
 
 /** Dedicated MaLiLib-backed editor for multi-key bindings. */
 public final class ChiseTweaksHotkeyScreen extends GuiConfigsBase {
+    public ChiseTweaksHotkeyScreen() {
+        this(null);
+    }
+
     public ChiseTweaksHotkeyScreen(Screen parent) {
         super(10, 42, ChiseTweaksMetadata.MOD_ID, null,
                 ChiseTweaksMetadata.MOD_NAME + " %s - Keybinds", ChiseTweaksMetadata.MOD_VERSION);
-        setParent(parent);
+        if (parent != null) setParent(parent);
     }
 
     @Override
