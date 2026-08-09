@@ -80,6 +80,18 @@ final class LavaSourceGuideContractTest {
     }
 
     @Test
+    void helpExplainsBoundedWallThroughProximityAnalysis() throws IOException {
+        String ja = read("src/main/resources/assets/chisetweaks/lang/ja_jp.json");
+        String en = read("src/main/resources/assets/chisetweaks/lang/en_us.json");
+
+        assertTrue(ja.contains("近くの溶岩源を壁越しに解析"));
+        assertTrue(ja.contains("2ブロック以内で #075B32"));
+        assertTrue(en.contains("Analyzes nearby lava sources through terrain"));
+        assertTrue(en.contains("within 2 blocks"));
+        assertFalse(en.contains("It does not display through terrain"));
+    }
+
+    @Test
     void legacySodiumTintMixinIsNotRegisteredForRuntime() throws IOException {
         String mixins = read("src/main/resources/chisetweaks.sodium.mixins.json");
         assertTrue(mixins.contains("\"client\": []"));
