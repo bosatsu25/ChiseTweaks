@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.feature.rendering;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
@@ -8,10 +7,10 @@ import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.feature.SessionAwareFeature;
 import dev.chise.chisetweaks.feature.TickingFeature;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.material.FluidState;
@@ -22,18 +21,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Bounded, client-only guide for visible nearby lava source blocks.
+ * Bounded, client-only analyzer for nearby lava source blocks.
  *
- * <p>The feature never recolors lava, never loads chunks and never sends packets. It periodically
- * scans already-loaded nearby blocks and renders a fixed deep-green 1x1x1 wireframe around exposed
- * source lava. The Chise line path does not submit block-light coordinates, so the semantic guide
- * stays legible in dark caves while normal depth testing still prevents wall-through display.</p>
+ * <p>The feature never recolors lava, loads chunks, mutates the world, or sends packets. It scans
+ * only already-loaded nearby blocks on the existing Chise tick cadence, retains a bounded set of
+ * exposed lava sources, and renders a full-bright 1x1x1 source wireframe through nearby terrain.
+ * The wireframe stays in Chise's reserved deep-green family and strengthens smoothly toward
+ * {@code #075B32} as the player approaches the source.</p>
  */
 public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature {
     private static final int MAX_CANDIDATES = WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS;
     private static final Direction[] DIRECTIONS = Direction.values();
 
     private final LavaHighlightConfig config = new LavaHighlightConfig();
+    private final LavaAnalyzerThroughWallRenderer analyzerRenderer = new LavaAnalyzerThroughWallRenderer();
     private final int[] candidateX = new int[MAX_CANDIDATES];
     private final int[] candidateY = new int[MAX_CANDIDATES];
     private final int[] candidateZ = new int[MAX_CANDIDATES];
@@ -43,7 +44,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private final BlockPos.MutableBlockPos neighborCursor = new BlockPos.MutableBlockPos();
 
-    private volatile List<BlockPos> visibleSources = List.of();
+    private volatile List<BlockPos> analyzedSources = List.of();
     private int ticksUntilScan;
     private boolean renderQuarantined;
 
@@ -60,8 +61,9 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     @Override
     public void init() {
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(this::render);
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> analyzerRenderer.close());
         ChiseTweaksClient.LOGGER.info(
-                "Lava Source Guide initialized with bounded full-bright outline rendering");
+                "Lava Analyzer initialized with bounded through-terrain proximity rendering");
     }
 
     @Override
@@ -151,7 +153,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         for (int index = 0; index < count; index++) {
             prepared.add(new BlockPos(candidateX[index], candidateY[index], candidateZ[index]));
         }
-        visibleSources = List.copyOf(prepared);
+        analyzedSources = List.copyOf(prepared);
     }
 
     private boolean isExposedSource(Minecraft client, BlockPos position) {
@@ -198,7 +200,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
 
     private void render(LevelRenderContext context) {
         if (!isEnabled() || renderQuarantined) return;
-        List<BlockPos> snapshot = visibleSources;
+        List<BlockPos> snapshot = analyzedSources;
         if (snapshot.isEmpty()) return;
         try {
             renderSafely(context, snapshot);
@@ -206,7 +208,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
             renderQuarantined = true;
             clearTargets();
             ChiseTweaksClient.LOGGER.error(
-                    "Lava Source Guide rendering was quarantined after {}",
+                    "Lava Analyzer rendering was quarantined after {}",
                     failure.getClass().getSimpleName());
         }
     }
@@ -214,33 +216,11 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     private void renderSafely(LevelRenderContext context, List<BlockPos> snapshot) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null || client.screen != null) return;
-        Vec3 cameraPosition = context.levelState().cameraRenderState.pos;
-        if (cameraPosition == null) return;
-
-        PoseStack poseStack = context.poseStack();
-        poseStack.pushPose();
-        try {
-            poseStack.translate(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);
-            context.submitNodeCollector().submitCustomGeometry(
-                    poseStack,
-                    RenderTypes.lines(),
-                    (pose, vertices) -> {
-                        for (BlockPos position : snapshot) {
-                            WorldLineGeometry.drawBox(
-                                    vertices,
-                                    pose,
-                                    position,
-                                    LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB,
-                                    LavaVisionPalettePolicy.SOURCE_LINE_WIDTH);
-                        }
-                    });
-        } finally {
-            poseStack.popPose();
-        }
+        analyzerRenderer.render(context, snapshot);
     }
 
     private void clearTargets() {
-        if (!visibleSources.isEmpty()) visibleSources = List.of();
+        if (!analyzedSources.isEmpty()) analyzedSources = List.of();
     }
 
     @Override
