@@ -1,0 +1,75 @@
+name: Replay standalone 0.7.0
+
+on:
+  push:
+    branches:
+      - release/0.7.0-standalone-ui
+    paths:
+      - .github/workflows/replay-standalone-070.yml
+
+permissions:
+  contents: write
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: release/0.7.0-standalone-ui
+          fetch-depth: 0
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6.0.0
+        with:
+          python-version: '3.13'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6.3.0
+
+      - name: Replay standalone delta and bump version
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin 7ad1aa9d4d2e9591ee1036ed267ede794d1af9db
+          git cherry-pick -m 1 7ad1aa9d4d2e9591ee1036ed267ede794d1af9db
+          sed -i 's/^mod_version=.*/mod_version=0.7.0+mc26.1.2/' gradle.properties
+          if grep -RIl --include='*.java' '0\.6\.10+mc26\.1\.2' src/test >/tmp/chise-version-files.txt; then
+            xargs -r sed -i 's/0\.6\.10+mc26\.1\.2/0.7.0+mc26.1.2/g' </tmp/chise-version-files.txt
+          fi
+          rm -f .github/workflows/replay-standalone-070.yml
+
+      - name: Verify standalone dependency boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RniE 'fi\.dy\.masa|malilib|modmenu|minihud|tweakeroo|litematica' src/main/java build.gradle gradle.properties src/main/resources/fabric.mod.json
+          grep -q '^mod_version=0.7.0+mc26.1.2$' gradle.properties
+          grep -q '"settingsOwnership": "standalone"' src/main/resources/fabric.mod.json
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Quality gate and build
+        run: ./gradlew --no-daemon --stacktrace clean qualityGate build
+
+      - name: Artifact audit
+        run: python scripts/artifact_audit.py
+
+      - name: Commit clean replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A
+          git commit --amend -m "Release standalone ChiseTweaks 0.7.0"
+          git push --force-with-lease origin HEAD:release/0.7.0-standalone-ui
