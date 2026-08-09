@@ -31,6 +31,7 @@ import java.util.List;
  */
 public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature {
     private static final int MAX_CANDIDATES = WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS;
+    private static final Direction[] DIRECTIONS = Direction.values();
 
     private final LavaHighlightConfig config = new LavaHighlightConfig();
     private final int[] candidateX = new int[MAX_CANDIDATES];
@@ -130,7 +131,9 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
                     int y = originY + yOffset;
                     cursor.set(x, y, z);
                     FluidState fluidState = client.level.getFluidState(cursor);
-                    if (!isSourceLava(fluidState) || !isExposedSource(client, cursor)) continue;
+                    boolean source = isSourceLava(fluidState);
+                    boolean exposed = source && isExposedSource(client, cursor);
+                    if (!LavaVisionPalettePolicy.shouldHighlight(true, source, exposed)) continue;
 
                     double dx = x + 0.5 - eye.x;
                     double dy = y + 0.5 - eye.y;
@@ -152,7 +155,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     }
 
     private boolean isExposedSource(Minecraft client, BlockPos position) {
-        for (Direction direction : Direction.values()) {
+        for (Direction direction : DIRECTIONS) {
             neighborCursor.set(
                     position.getX() + direction.getStepX(),
                     position.getY() + direction.getStepY(),
