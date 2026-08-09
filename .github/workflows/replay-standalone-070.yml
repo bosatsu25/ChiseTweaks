@@ -6,12 +6,18 @@ on:
       - release/0.7.0-standalone-ui
     paths:
       - .github/workflows/replay-standalone-070.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/replay-standalone-070.yml
 
 permissions:
   contents: write
 
 jobs:
   replay:
+    if: github.head_ref == 'release/0.7.0-standalone-ui' || github.ref == 'refs/heads/release/0.7.0-standalone-ui'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
