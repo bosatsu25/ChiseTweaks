@@ -1,5 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
+import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 import dev.chise.chisetweaks.config.FeatureConfig;
@@ -96,8 +97,25 @@ final class ChiseTweaksSettingsController {
                 FeatureSwitches.BUILDER_FOCUS_BLOCKS.resetToDefault();
                 FeatureSwitches.BUILDER_FOCUS_ENTITIES.resetToDefault();
                 LocalFeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
+
+                BuilderFocusConfig.REFRESH_RENDERER.resetToDefault();
+                BuilderFocusConfig.BLOCK_RULE_MODE.resetToDefault();
+                BuilderFocusConfig.BLOCK_WHITELIST.resetToDefault();
+                BuilderFocusConfig.BLOCK_BLACKLIST.resetToDefault();
+                BuilderFocusConfig.ENTITY_RULE_MODE.resetToDefault();
+                BuilderFocusConfig.ENTITY_WHITELIST.resetToDefault();
+                BuilderFocusConfig.ENTITY_BLACKLIST.resetToDefault();
+
+                LocalFeatureSettings.LAVA_SOURCE.resetToDefault();
+                LocalFeatureSettings.LAVA_FLOWING.resetToDefault();
+                LocalFeatureSettings.LAVA_SOURCE_COLOR.resetToDefault();
+                LocalFeatureSettings.LAVA_FLOWING_COLOR.resetToDefault();
                 LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.resetToDefault();
+                LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS.resetToDefault();
                 LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL.resetToDefault();
+                LocalFeatureSettings.WORKSITE_VISIBILITY_MAX_OVERLAYS.resetToDefault();
+                LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY.resetToDefault();
+                LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE.resetToDefault();
                 resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
             }
             case HELP -> { return false; }
