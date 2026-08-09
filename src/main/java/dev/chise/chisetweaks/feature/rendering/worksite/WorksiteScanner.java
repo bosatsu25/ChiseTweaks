@@ -56,6 +56,16 @@ final class WorksiteScanner {
             .thenComparingDouble(ScanCandidate::distanceSquared);
 
     private final WorksiteBlockInspector blockInspector;
+    private final PriorityQueue<ScanCandidate> candidateBuffer = new PriorityQueue<>(
+            WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES,
+            SCAN_ORDER.reversed());
+    private final ArrayList<ScanCandidate> orderedBuffer = new ArrayList<>(
+            WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES);
+    private final ArrayList<WorksiteVisibleTarget> visibleBuffer = new ArrayList<>(
+            WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS);
+    private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+    private final boolean[] loadedChunkBuffer = new boolean[
+            WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES];
 
     WorksiteScanner(WorksiteBlockInspector blockInspector) {
         this.blockInspector = blockInspector;
@@ -65,6 +75,11 @@ final class WorksiteScanner {
             Minecraft client,
             LocalFeatureConfig config,
             Set<BlockInspectionCategory> activeCategories) {
+        if (client == null || client.player == null || client.level == null
+                || activeCategories == null || activeCategories.isEmpty()) {
+            return List.of();
+        }
+
         int horizontalRadius = WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(
                 config.worksiteVisibilityHorizontalRadius);
         int verticalRadius = WorksiteVisibilityBudgetPolicy.clampVerticalRadius(
@@ -73,34 +88,64 @@ final class WorksiteScanner {
                 config.worksiteVisibilityMaxOverlayResults);
         BlockPos origin = client.player.blockPosition();
         Vec3 eyePosition = client.player.getEyePosition();
-        PriorityQueue<ScanCandidate> candidates = new PriorityQueue<>(
-                WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES,
-                SCAN_ORDER.reversed());
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+
+        candidateBuffer.clear();
+        orderedBuffer.clear();
+        visibleBuffer.clear();
 
         int originX = origin.getX();
         int originY = origin.getY();
         int originZ = origin.getZ();
-        for (int yOffset = -verticalRadius; yOffset <= verticalRadius; yOffset++) {
-            int y = originY + yOffset;
-            for (int zOffset = -horizontalRadius; zOffset <= horizontalRadius; zOffset++) {
-                int z = originZ + zOffset;
-                for (int xOffset = -horizontalRadius; xOffset <= horizontalRadius; xOffset++) {
-                    cursor.set(originX + xOffset, y, z);
-                    collectCandidate(client, config, eyePosition, cursor, activeCategories, candidates);
+        int minX = originX - horizontalRadius;
+        int maxX = originX + horizontalRadius;
+        int minZ = originZ - horizontalRadius;
+        int maxZ = originZ + horizontalRadius;
+        int minChunkX = minX >> 4;
+        int maxChunkX = maxX >> 4;
+        int minChunkZ = minZ >> 4;
+        int maxChunkZ = maxZ >> 4;
+        int chunkSpanX = maxChunkX - minChunkX + 1;
+        int chunkSpanZ = maxChunkZ - minChunkZ + 1;
+        int chunkCount = chunkSpanX * chunkSpanZ;
+        if (chunkCount > loadedChunkBuffer.length) {
+            // The policy constant and buffer size must evolve together. Fail closed instead of
+            // falling back to thousands of chunk-source probes if a future radius cap changes.
+            return List.of();
+        }
+
+        int chunkIndex = 0;
+        for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                loadedChunkBuffer[chunkIndex++] = client.level.getChunkSource().hasChunk(chunkX, chunkZ);
+            }
+        }
+
+        for (int z = minZ; z <= maxZ; z++) {
+            int loadedRow = ((z >> 4) - minChunkZ) * chunkSpanX;
+            for (int x = minX; x <= maxX; x++) {
+                int loadedIndex = loadedRow + ((x >> 4) - minChunkX);
+                if (!loadedChunkBuffer[loadedIndex]) continue;
+                for (int yOffset = -verticalRadius; yOffset <= verticalRadius; yOffset++) {
+                    cursor.set(x, originY + yOffset, z);
+                    collectCandidate(
+                            client,
+                            config,
+                            eyePosition,
+                            cursor,
+                            activeCategories,
+                            candidateBuffer);
                 }
             }
         }
 
-        ArrayList<ScanCandidate> orderedCandidates = new ArrayList<>(candidates);
-        orderedCandidates.sort(SCAN_ORDER);
-        ArrayList<WorksiteVisibleTarget> visible = new ArrayList<>(overlayLimit);
-        for (ScanCandidate candidate : orderedCandidates) {
-            if (visible.size() >= overlayLimit) break;
+        orderedBuffer.addAll(candidateBuffer);
+        orderedBuffer.sort(SCAN_ORDER);
+        for (ScanCandidate candidate : orderedBuffer) {
+            if (visibleBuffer.size() >= overlayLimit) break;
             WorksiteVisibleTarget target = materializeVisibleTarget(client, eyePosition, candidate);
-            if (target != null) visible.add(target);
+            if (target != null) visibleBuffer.add(target);
         }
-        return List.copyOf(visible);
+        return List.copyOf(visibleBuffer);
     }
 
     private void collectCandidate(
@@ -110,9 +155,6 @@ final class WorksiteScanner {
             BlockPos position,
             Set<BlockInspectionCategory> activeCategories,
             PriorityQueue<ScanCandidate> candidates) {
-        if (!client.level.getChunkSource().hasChunk(
-                position.getX() >> 4,
-                position.getZ() >> 4)) return;
         BlockState state = client.level.getBlockState(position);
         WorksiteBlockDescriptor descriptor = blockInspector.describe(state);
         BlockInspectionCategory category =
@@ -132,7 +174,9 @@ final class WorksiteScanner {
         double distanceSquared = dx * dx + dy * dy + dz * dz;
         ScanCandidate weakest = candidates.peek();
         int weakestPriority = weakest == null ? Integer.MIN_VALUE : weakest.style().priority();
-        double weakestDistanceSquared = weakest == null ? Double.POSITIVE_INFINITY : weakest.distanceSquared();
+        double weakestDistanceSquared = weakest == null
+                ? Double.POSITIVE_INFINITY
+                : weakest.distanceSquared();
         if (!WorksiteCandidateRetentionPolicy.shouldRetain(
                 candidates.size(),
                 WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES,
@@ -194,7 +238,8 @@ final class WorksiteScanner {
                     ClipContext.Block.OUTLINE,
                     ClipContext.Fluid.NONE,
                     client.player));
-            if (result.getType() == HitResult.Type.BLOCK && result.getBlockPos().equals(position)) return true;
+            if (result.getType() == HitResult.Type.BLOCK
+                    && result.getBlockPos().equals(position)) return true;
         }
         return false;
     }
