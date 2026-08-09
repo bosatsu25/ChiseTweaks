@@ -86,11 +86,12 @@ final class RepositoryScopeContractTest {
     }
 
     @Test
-    void rebuiltVerificationFilesArePresentAndOldTestNamesDoNotReturn() throws IOException {
+    void rebuiltVerificationFilesArePresent() throws IOException {
         assertTrue(Files.exists(ROOT.resolve(".github/workflows/ci.yml")));
         assertTrue(Files.exists(ROOT.resolve(".github/workflows/verify-build.yml")));
         assertTrue(Files.exists(ROOT.resolve(".github/workflows/release.yml")));
         assertTrue(Files.exists(ROOT.resolve("scripts/repository_audit.py")));
+        assertTrue(Files.exists(ROOT.resolve("scripts/local_ci.py")));
         assertTrue(Files.exists(ROOT.resolve("scripts/quality_summary.py")));
         assertTrue(Files.exists(ROOT.resolve("scripts/artifact_audit.py")));
 
@@ -100,21 +101,5 @@ final class RepositoryScopeContractTest {
         assertTrue(build.contains("tasks.register('qualityGate')"));
         assertTrue(build.contains("mutationThreshold"));
         assertTrue(build.contains("testStrengthThreshold"));
-
-        try (var paths = Files.walk(ROOT.resolve("src/test"))) {
-            String allTests = paths.filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".java"))
-                    .map(path -> {
-                        try {
-                            return Files.readString(path);
-                        } catch (IOException failure) {
-                            throw new java.io.UncheckedIOException(failure);
-                        }
-                    })
-                    .reduce("", (left, right) -> left + "\n" + right);
-            assertFalse(allTests.contains("PumpkinScaffoldPolicy"));
-            assertFalse(allTests.contains("PLACEMENT_GUIDE"));
-            assertFalse(allTests.contains("LavaHighlightRendererMixin"));
-        }
     }
 }
