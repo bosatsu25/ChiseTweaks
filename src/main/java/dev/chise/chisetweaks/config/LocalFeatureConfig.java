@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
-import dev.chise.chisetweaks.core.policy.PumpkinScaffoldPolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
@@ -14,33 +13,26 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import java.util.Optional;
 
-/** Local persistence for bounded client-side ChiseTweaks settings. */
+/** Local persistence for the retained bounded client-side visual settings. */
 public final class LocalFeatureConfig {
     private static final LocalFeatureConfig INSTANCE = new LocalFeatureConfig();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String CONFIG_FILE_NAME = "chisetweaks-visual.json";
 
     public boolean lavaHighlightEnabled = false;
-    public boolean lavaHighlightSource = true;
-    public boolean lavaHighlightFlowing = true;
-    public int lavaSourceColor = 0xFFFF3B30;
-    public int lavaFlowingColor = 0xFFFF9500;
 
     public int worksiteVisibilityHorizontalRadius = 5;
     public int worksiteVisibilityVerticalRadius = 3;
     public int worksiteVisibilityIntervalTicks = 10;
-    /** Legacy persisted field kept for backward-compatible config documents; no HUD consumes it. */
+    /** Legacy persisted field kept for compatible reads; no HUD consumes it. */
     public int worksiteVisibilityMaxResults = 6;
     public int worksiteVisibilityMaxOverlayResults = 12;
     public boolean worksiteVisibilityWorldOverlay = true;
     public boolean worksiteVisibilityExclusiveMode = false;
 
-    /** Fine-grained visual targets. All bits start enabled for backwards-compatible behaviour. */
+    /** Fine-grained target mask for retained Ore Highlights and Hidden Surface Trace targets. */
     public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
-    /** Persisted target-bit schema so newly introduced targets are migrated exactly once. */
     public int visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
-
-    public int pumpkinScaffoldPlacementRange = PumpkinScaffoldPolicy.DEFAULT_PLACEMENT_RANGE;
 
     LocalFeatureConfig() {}
 
@@ -113,11 +105,6 @@ public final class LocalFeatureConfig {
 
     void resetToDefaults() {
         lavaHighlightEnabled = false;
-        lavaHighlightSource = true;
-        lavaHighlightFlowing = true;
-        lavaSourceColor = 0xFFFF3B30;
-        lavaFlowingColor = 0xFFFF9500;
-
         worksiteVisibilityHorizontalRadius = 5;
         worksiteVisibilityVerticalRadius = 3;
         worksiteVisibilityIntervalTicks = 10;
@@ -127,7 +114,6 @@ public final class LocalFeatureConfig {
         worksiteVisibilityExclusiveMode = false;
         visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
-        pumpkinScaffoldPlacementRange = PumpkinScaffoldPolicy.DEFAULT_PLACEMENT_RANGE;
     }
 
     void sanitize() {
@@ -143,17 +129,10 @@ public final class LocalFeatureConfig {
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(worksiteVisibilityMaxOverlayResults);
         visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
-        pumpkinScaffoldPlacementRange =
-                PumpkinScaffoldPolicy.clampPlacementRange(pumpkinScaffoldPlacementRange);
     }
 
     private void copyFrom(LocalFeatureConfig loaded) {
         lavaHighlightEnabled = loaded.lavaHighlightEnabled;
-        lavaHighlightSource = loaded.lavaHighlightSource;
-        lavaHighlightFlowing = loaded.lavaHighlightFlowing;
-        lavaSourceColor = loaded.lavaSourceColor;
-        lavaFlowingColor = loaded.lavaFlowingColor;
-
         worksiteVisibilityHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
         worksiteVisibilityVerticalRadius = loaded.worksiteVisibilityVerticalRadius;
         worksiteVisibilityIntervalTicks = loaded.worksiteVisibilityIntervalTicks;
@@ -163,6 +142,5 @@ public final class LocalFeatureConfig {
         worksiteVisibilityExclusiveMode = loaded.worksiteVisibilityExclusiveMode;
         visualTargetMask = loaded.visualTargetMask;
         visualTargetSchemaVersion = loaded.visualTargetSchemaVersion;
-        pumpkinScaffoldPlacementRange = loaded.pumpkinScaffoldPlacementRange;
     }
 }
