@@ -19,9 +19,10 @@ final class StandaloneClientDependencyContractTest {
     private static final Path MAIN = ROOT.resolve("src/main/java");
 
     @Test
-    void fabricMetadataHasNoMaLiLibOrModMenuEntrypointOrDependency() throws IOException {
+    void fabricMetadataHasNoExternalConfigEntrypointOrDependency() throws IOException {
         String descriptor = Files.readString(
                 ROOT.resolve("src/main/resources/fabric.mod.json"), StandardCharsets.UTF_8);
+        String lower = descriptor.toLowerCase(Locale.ROOT);
 
         assertTrue(descriptor.contains("\"environment\": \"client\""));
         assertTrue(descriptor.contains("dev.chise.chisetweaks.ChiseTweaksClient"));
@@ -29,10 +30,10 @@ final class StandaloneClientDependencyContractTest {
         assertTrue(descriptor.contains("\"settingsOwnership\": \"standalone\""));
         assertTrue(descriptor.contains("\"externalConfigLibraryRequired\": false"));
         assertTrue(descriptor.contains("\"modMenuRequired\": false"));
-        assertFalse(descriptor.toLowerCase(Locale.ROOT).contains("malilib"));
-        assertFalse(descriptor.toLowerCase(Locale.ROOT).contains("modmenu"));
+        assertFalse(lower.contains("malilib"));
         assertFalse(descriptor.contains("\"main\""));
         assertFalse(descriptor.contains("\"modmenu\""));
+        assertFalse(descriptor.contains("\"modmenu\":"));
     }
 
     @Test
@@ -49,15 +50,13 @@ final class StandaloneClientDependencyContractTest {
     }
 
     @Test
-    void productionJavaHasNoMaLiLibModMenuMiniHudOrTweakerooReferences() throws IOException {
+    void productionJavaHasNoExternalSettingsOrMasaFamilyReferences() throws IOException {
         List<String> failures = new ArrayList<>();
         try (Stream<Path> files = Files.walk(MAIN)) {
             for (Path path : files.filter(value -> value.getFileName().toString().endsWith(".java")).toList()) {
                 String text = Files.readString(path, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
                 for (String forbidden : List.of("fi.dy.masa", "malilib", "modmenu", "minihud", "tweakeroo")) {
-                    if (text.contains(forbidden)) {
-                        failures.add(ROOT.relativize(path) + " -> " + forbidden);
-                    }
+                    if (text.contains(forbidden)) failures.add(ROOT.relativize(path) + " -> " + forbidden);
                 }
             }
         }
