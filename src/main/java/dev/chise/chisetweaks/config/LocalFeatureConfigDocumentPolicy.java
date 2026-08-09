@@ -25,6 +25,7 @@ final class LocalFeatureConfigDocumentPolicy {
             "worksiteVisibilityMaxResults",
             "worksiteVisibilityMaxOverlayResults",
             "visualTargetMask",
+            "visualTargetSchemaVersion",
             "pumpkinScaffoldPlacementRange");
 
     private LocalFeatureConfigDocumentPolicy() {}
