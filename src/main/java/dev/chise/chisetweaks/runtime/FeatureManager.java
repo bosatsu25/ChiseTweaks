@@ -6,7 +6,6 @@ import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
 import dev.chise.chisetweaks.feature.Feature;
 import dev.chise.chisetweaks.feature.SessionAwareFeature;
 import dev.chise.chisetweaks.feature.TickingFeature;
-import dev.chise.chisetweaks.feature.building.PumpkinScaffoldFeature;
 import dev.chise.chisetweaks.feature.rendering.LavaHighlightFeature;
 import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -19,12 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Owns user-facing features and internal runtime components.
- *
- * <p>Runtime quarantine is intentionally separate from persisted user settings:
- * an engine failure stops the engine, not the feature toggles it serves.</p>
- */
+/** Owns retained user-facing features and shared runtime components. */
 public final class FeatureManager {
     private static final FeatureManager INSTANCE = new FeatureManager();
     private static final TickSlot[] NO_TICK_SLOTS = new TickSlot[0];
@@ -49,7 +43,6 @@ public final class FeatureManager {
     public synchronized void init() {
         if (initialized) return;
 
-        registerFeature(new PumpkinScaffoldFeature());
         registerFeature(new LavaHighlightFeature());
         registerRuntimeComponent(new WorksiteVisibilityEngine());
 
@@ -82,7 +75,7 @@ public final class FeatureManager {
     public synchronized void registerRuntimeComponent(RuntimeComponent component) {
         requireMutableRegistration();
         Objects.requireNonNull(component, "component");
-        String id = requireId(component.getId(), "runtime component id");
+        String id = requireId(component.getId(), "component id");
         if (runtimeComponents.putIfAbsent(id, component) != null) {
             throw new IllegalStateException("Duplicate runtime component id: " + id);
         }
@@ -101,11 +94,6 @@ public final class FeatureManager {
     }
     public int getSessionAwareComponentCount() {
         return sessionSchedule.length == 0 ? mutableSessionComponents.size() : sessionSchedule.length;
-    }
-
-    public PumpkinScaffoldFeature getPumpkinScaffoldFeature() {
-        Feature value = features.get(FeatureDefinition.PUMPKIN_SCAFFOLD.id());
-        return value instanceof PumpkinScaffoldFeature typed ? typed : null;
     }
 
     public LavaHighlightFeature getLavaHighlightFeature() {
