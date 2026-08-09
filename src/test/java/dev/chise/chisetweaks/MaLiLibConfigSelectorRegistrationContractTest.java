@@ -13,7 +13,7 @@ final class MaLiLibConfigSelectorRegistrationContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
-    void chiseRegistersWithMaLiLibDuringMainInitialization() throws IOException {
+    void chiseRegistersCompatibleMaLiLibFallbackWhileModMenuUsesCustomSettings() throws IOException {
         String descriptor = Files.readString(ROOT.resolve("src/main/resources/fabric.mod.json"));
         String mainInitializer = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/ChiseTweaks.java"));
@@ -21,6 +21,8 @@ final class MaLiLibConfigSelectorRegistrationContractTest {
                 "src/main/java/dev/chise/chisetweaks/ChiseTweaksClient.java"));
         String bootstrap = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/ClientFeatureBootstrap.java"));
+        String modMenu = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/compat/ChiseTweaksModMenu.java"));
 
         assertTrue(descriptor.contains("\"environment\": \"client\""));
         assertTrue(descriptor.contains("\"main\""));
@@ -36,6 +38,10 @@ final class MaLiLibConfigSelectorRegistrationContractTest {
         assertTrue(bootstrap.contains("ConfigManager.getInstance().registerConfigHandler"));
         assertTrue(bootstrap.contains("Registry.CONFIG_SCREEN.registerConfigScreenFactory"));
         assertTrue(bootstrap.contains("new ModInfo("));
-        assertTrue(bootstrap.contains("ChiseTweaksConfigScreen::new"));
+        assertTrue(bootstrap.contains("ChiseTweaksHotkeyScreen::new"));
+        assertFalse(bootstrap.contains("ChiseTweaksConfigScreen::new"));
+
+        assertTrue(modMenu.contains("new ChiseTweaksConfigScreen()"));
+        assertTrue(modMenu.contains("settings.setParent(parent)"));
     }
 }
