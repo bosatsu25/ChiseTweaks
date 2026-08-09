@@ -171,6 +171,16 @@ final class VisualModelLoadingContractTest {
     }
 
     @Test
+    void ancientDebrisUsesAChiseAuthoredWhorlInsteadOfGenericOreMarks() throws IOException {
+        String generator = Files.readString(ROOT.resolve("gradle/chise-visual-assets.gradle"));
+
+        assertTrue(generator.contains("motif: 'whorl'"));
+        assertTrue(generator.contains("A Chise-authored square spiral"));
+        assertTrue(generator.contains("whorlPulse"));
+        assertFalse(generator.contains("motif: 'ancient'"));
+    }
+
+    @Test
     void oreHighlightLocalizationMatchesTheModelBackedFeature() throws IOException {
         String ja = Files.readString(ROOT.resolve("src/main/resources/assets/chisetweaks/lang/ja_jp.json"));
         String en = Files.readString(ROOT.resolve("src/main/resources/assets/chisetweaks/lang/en_us.json"));
@@ -198,6 +208,7 @@ final class VisualModelLoadingContractTest {
         assertTrue(generator.contains("overlayElement"));
         assertTrue(generator.contains("writeAnimationMeta"));
         assertTrue(generator.contains("ancientDebrisModel"));
+        assertTrue(generator.contains("motif: 'whorl'"));
         assertTrue(generator.contains("motif: 'tears'"));
         assertTrue(generator.contains("motif: 'nether_gold'"));
         assertTrue(generator.contains("motif: 'quartz'"));

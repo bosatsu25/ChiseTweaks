@@ -40,6 +40,27 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
+    void oreHighlightRowsRepresentResourceFamiliesInsteadOfStoneVariants() throws IOException {
+        String targets = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java"));
+
+        assertTrue(targets.contains("normal ore and its deepslate variant share one switch"));
+        assertTrue(targets.contains("visualTargetMaterialCoalOre"));
+        assertTrue(targets.contains("visualTargetMaterialIronOre"));
+        assertTrue(targets.contains("visualTargetMaterialCopperOre"));
+        assertTrue(targets.contains("visualTargetMaterialGoldOre"));
+        assertTrue(targets.contains("visualTargetMaterialLapisOre"));
+        assertTrue(targets.contains("visualTargetMaterialRedstoneOre"));
+        assertTrue(targets.contains("visualTargetMaterialDiamondOre"));
+        assertTrue(targets.contains("visualTargetMaterialEmeraldOre"));
+        assertTrue(targets.contains("ネザー資源：古代の残骸"));
+        assertTrue(targets.contains("特殊資材：黒曜石"));
+        assertTrue(targets.contains("特殊資材：泣く黒曜石"));
+        assertFalse(targets.contains("visualTargetMaterialDeepslate"));
+        assertFalse(targets.contains("鉱石：深層"));
+    }
+
+    @Test
     void worksiteVisibilityUsesWorldOverlayWithoutTheRemovedHudPath() throws IOException {
         Path worksite = ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite");

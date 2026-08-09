@@ -50,7 +50,7 @@ def line = { image, x0Raw, y0Raw, x1Raw, y1Raw, colorRaw ->
 }
 
 // One semantic definition per material family. Normal/deepslate variants share the same
-// Chise overlay so adding a new rendering effect does not duplicate texture assets.
+// Chise overlay so the UI can select a resource family without duplicating texture assets.
 def materialSpecs = [
         [key: 'diamond', frame: [34, 225, 255], ore: [38, 190, 225], accent: [220, 254, 255], motif: 'crystal'],
         [key: 'gold', frame: [255, 190, 18], ore: [232, 160, 8], accent: [255, 248, 180], motif: 'dotted'],
@@ -60,7 +60,7 @@ def materialSpecs = [
         [key: 'copper', frame: [255, 105, 38], ore: [215, 76, 25], accent: [55, 210, 185], motif: 'wave'],
         [key: 'lapis', frame: [55, 112, 255], ore: [34, 68, 205], accent: [198, 218, 255], motif: 'nodes'],
         [key: 'redstone', frame: [255, 42, 42], ore: [220, 18, 18], accent: [255, 205, 205], motif: 'sparks'],
-        [key: 'ancient_debris', frame: [122, 74, 45], ore: [78, 43, 28], accent: [205, 168, 112], motif: 'ancient'],
+        [key: 'ancient_debris', frame: [137, 88, 66], ore: [82, 48, 40], accent: [198, 154, 114], motif: 'whorl'],
         [key: 'obsidian', frame: [174, 70, 255], ore: [101, 38, 164], accent: [235, 208, 255], motif: 'jagged'],
         [key: 'crying_obsidian', frame: [196, 45, 255], ore: [92, 22, 165], accent: [95, 180, 255], motif: 'tears'],
         [key: 'nether_gold', frame: [255, 210, 32], ore: [235, 160, 12], accent: [255, 247, 170], motif: 'nether_gold'],
@@ -96,8 +96,8 @@ def drawSparkle = { image, frame, top, bright, accent ->
     }
 }
 
-// Sparse interior marks carry the ore-family colour even at light level 0 without hiding
-// the underlying vanilla/resource-pack texture. They are intentionally not a copied ore mask.
+// Sparse interior marks carry the resource-family colour even at light level 0 without hiding
+// the underlying vanilla/resource-pack texture. These are Chise-authored motifs, not copied masks.
 def drawOreAccents = { image, spec, frame, top, oreColor, bright, accent ->
     int sweep = Math.floorMod(frame * 2, 10) + 3
     switch (spec.motif) {
@@ -151,11 +151,22 @@ def drawOreAccents = { image, spec, frame, top, oreColor, bright, accent ->
                 putPixel(image, x, top + y, (i & 1) == 0 ? oreColor : bright)
             }
             break
-        case 'ancient':
-            line(image, 4, top + 4, 7, top + 7, oreColor)
-            line(image, 7, top + 7, 4, top + 10, accent)
-            line(image, 10, top + 4, 12, top + 6, oreColor)
-            line(image, 12, top + 9, 10, top + 11, bright)
+        case 'whorl':
+            // A Chise-authored square spiral echoes Ancient Debris' layered/whorled identity
+            // without sampling or reproducing the vanilla texture pixels.
+            line(image, 3, top + 3, 12, top + 3, oreColor)
+            line(image, 12, top + 3, 12, top + 12, oreColor)
+            line(image, 12, top + 12, 3, top + 12, accent)
+            line(image, 3, top + 12, 3, top + 5, accent)
+            line(image, 3, top + 5, 10, top + 5, oreColor)
+            line(image, 10, top + 5, 10, top + 10, bright)
+            line(image, 10, top + 10, 5, top + 10, oreColor)
+            line(image, 5, top + 10, 5, top + 7, accent)
+            line(image, 5, top + 7, 8, top + 7, oreColor)
+            line(image, 8, top + 7, 8, top + 8, bright)
+            def whorlPulse = [[6, 3], [12, 7], [8, 12], [3, 8]][frame % 4]
+            putPixel(image, whorlPulse[0], top + whorlPulse[1], bright)
+            putPixel(image, 7, top + 8, accent)
             break
         case 'jagged':
             line(image, 4, top + 4, 7, top + 7, oreColor)
@@ -297,7 +308,6 @@ def generateChiseVisualAssets = tasks.register('generateChiseVisualAssets') {
         project.delete(root)
         File textureDir = new File(root, 'assets/chisetweaks/textures/block/visual/material')
         File modelDir = new File(root, 'assets/chisetweaks/models/block/visual/material')
-        def specsByKey = materialSpecs.collectEntries { [(it.key): it] }
 
         materialSpecs.each { spec ->
             writeHighlightTexture(new File(textureDir, "${spec.key}_highlight.png"), spec)
