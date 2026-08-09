@@ -21,11 +21,9 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 
-/** Performs the bounded, loaded-chunk-only scan for visible worksite targets. */
+/** Performs the bounded, loaded-chunk-only scan for retained visible worksite targets. */
 final class WorksiteScanner {
-    private static final double[][] SOLID_SAMPLES = {
-            {0.50, 0.50, 0.50}
-    };
+    private static final double[][] SOLID_SAMPLES = {{0.50, 0.50, 0.50}};
     private static final double[][] THIN_TECHNICAL_SAMPLES = {
             {0.50, 0.08, 0.50},
             {0.25, 0.08, 0.50},
@@ -114,11 +112,7 @@ final class WorksiteScanner {
         int chunkSpanX = maxChunkX - minChunkX + 1;
         int chunkSpanZ = maxChunkZ - minChunkZ + 1;
         int chunkCount = chunkSpanX * chunkSpanZ;
-        if (chunkCount > loadedChunkBuffer.length) {
-            // The policy constant and buffer size must evolve together. Fail closed instead of
-            // falling back to thousands of chunk-source probes if a future radius cap changes.
-            return List.of();
-        }
+        if (chunkCount > loadedChunkBuffer.length) return List.of();
 
         int chunkIndex = 0;
         for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
@@ -229,11 +223,6 @@ final class WorksiteScanner {
                 candidate.distanceSquared());
     }
 
-    /**
-     * Samples the actual occupied regions of thin/shaped blocks instead of only
-     * aiming at the block-volume centre. Every successful ray must still hit the
-     * target block itself, so the visibility helper never becomes wall-through.
-     */
     private boolean lineOfSight(
             Minecraft client,
             Vec3 eyePosition,
@@ -262,7 +251,7 @@ final class WorksiteScanner {
         return switch (category) {
             case TECHNICAL_TRACE -> THIN_TECHNICAL_SAMPLES;
             case GLASS_INSPECTION -> GLASS_SAMPLES;
-            case HIDDEN_SURFACE, PLACEMENT_GUIDE -> SHAPED_BLOCK_SAMPLES;
+            case HIDDEN_SURFACE -> SHAPED_BLOCK_SAMPLES;
             case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> SOLID_SAMPLES;
         };
     }
