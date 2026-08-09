@@ -101,6 +101,11 @@ final class VanillaOreReplacementContractTest {
 
     @Test
     void everyCatalogOreIsClassifiedAndSelectableByTheRuntimePath() {
+        LinkedHashSet<String> expectedMaterialIds = new LinkedHashSet<>(EXPECTED_VANILLA_ORE_BLOCKS);
+        expectedMaterialIds.add("minecraft:obsidian");
+        expectedMaterialIds.add("minecraft:crying_obsidian");
+        assertEquals(expectedMaterialIds, BlockInspectionPolicy.materialHighlightIds());
+
         int allTargets = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
         for (String blockId : EXPECTED_VANILLA_ORE_BLOCKS) {
             assertTrue(
