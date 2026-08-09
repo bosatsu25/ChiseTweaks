@@ -127,7 +127,7 @@ final class ChiseTweaksSettingsController {
         bool(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
                 "鉱石ハイライト", "鉱石や資源の視認性をON/OFFする");
         bool(rows, "nether", FeatureSwitches.NETHER_PALETTE,
-                "ネザー配色ガイド", "ネザーの資源を見分けやすくする");
+                "ネザー配色ガイド", "ネザーの主要な建材・地形素材を色分けして見やすくする");
         header(rows, "header.resourceTargets", "ハイライト対象", "Highlight targets");
         for (ChiseBooleanSetting option : resourceTargets) {
             boolTarget(rows, option, "対象資源をON/OFFする");
