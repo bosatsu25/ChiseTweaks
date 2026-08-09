@@ -31,6 +31,7 @@ final class StandaloneClientDependencyContractTest {
         assertTrue(descriptor.contains("\"externalConfigLibraryRequired\": false"));
         assertTrue(descriptor.contains("\"modMenuRequired\": false"));
         assertFalse(lower.contains("malilib"));
+        assertFalse(lower.contains("litematica"));
         assertFalse(descriptor.contains("\"main\""));
         assertFalse(descriptor.contains("\"modmenu\""));
         assertFalse(descriptor.contains("\"modmenu\":"));
@@ -43,10 +44,10 @@ final class StandaloneClientDependencyContractTest {
         String properties = Files.readString(ROOT.resolve("gradle.properties"), StandardCharsets.UTF_8)
                 .toLowerCase(Locale.ROOT);
 
-        assertFalse(build.contains("malilib"));
-        assertFalse(build.contains("modmenu"));
-        assertFalse(properties.contains("malilib"));
-        assertFalse(properties.contains("modmenu"));
+        for (String forbidden : List.of("malilib", "modmenu", "litematica", "minihud", "tweakeroo")) {
+            assertFalse(build.contains(forbidden), forbidden + " in build.gradle");
+            assertFalse(properties.contains(forbidden), forbidden + " in gradle.properties");
+        }
     }
 
     @Test
@@ -55,7 +56,8 @@ final class StandaloneClientDependencyContractTest {
         try (Stream<Path> files = Files.walk(MAIN)) {
             for (Path path : files.filter(value -> value.getFileName().toString().endsWith(".java")).toList()) {
                 String text = Files.readString(path, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
-                for (String forbidden : List.of("fi.dy.masa", "malilib", "modmenu", "minihud", "tweakeroo")) {
+                for (String forbidden : List.of(
+                        "fi.dy.masa", "malilib", "litematica", "modmenu", "minihud", "tweakeroo")) {
                     if (text.contains(forbidden)) failures.add(ROOT.relativize(path) + " -> " + forbidden);
                 }
             }
