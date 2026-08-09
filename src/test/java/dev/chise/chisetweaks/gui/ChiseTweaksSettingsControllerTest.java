@@ -39,8 +39,8 @@ final class ChiseTweaksSettingsControllerTest {
         assertTrue(body.contains("\"見やすさ\""));
         assertTrue(body.contains("\"見えにくいブロックの対象\""));
         assertTrue(body.contains("\"表示を絞る対象\""));
-        assertTrue(body.contains("\"溶岩源・視認の詳細設定\""));
-        assertTrue(body.contains("\"溶岩源ガイド\""));
+        assertTrue(body.contains("\"Lava Analyzer・視認の詳細設定\""));
+        assertTrue(body.contains("\"Lava Analyzer\""));
         assertTrue(body.contains("\"細線トレース\""));
         assertTrue(body.contains("\"隠面トレース\""));
         assertTrue(body.contains("\"ガラス検査\""));
@@ -89,7 +89,8 @@ final class ChiseTweaksSettingsControllerTest {
                 "\"header.specialMaterialTargets\"",
                 "resourceTargets");
         assertTrue(resources.contains("\"資源\""));
-        assertTrue(resources.contains("\"鉱石・資源ハイライト\""));
+        assertTrue(resources.contains("\"鉱石ハイライト\""));
+        assertFalse(resources.contains("鉱石・資源ハイライト"));
         assertTrue(resources.contains("\"バニラ鉱石の対象\""));
         assertTrue(resources.contains("\"特殊資材\""));
         assertTrue(resources.contains("VanillaOreVisualCatalog.blockVariantCount()"));

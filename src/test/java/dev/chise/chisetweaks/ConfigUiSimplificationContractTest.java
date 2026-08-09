@@ -55,7 +55,7 @@ final class ConfigUiSimplificationContractTest {
         assertTrue(controller.contains("細線トレース"));
         assertTrue(controller.contains("見えにくいブロックの対象"));
         assertTrue(controller.contains("表示を絞る対象"));
-        assertTrue(controller.contains("溶岩源・視認の詳細設定"));
+        assertTrue(controller.contains("Lava Analyzer・視認の詳細設定"));
         assertTrue(controller.contains("視認スキャン範囲"));
         assertTrue(controller.contains("スキャン間隔"));
         assertFalse(controller.contains("addHotkeyRows"));
@@ -90,12 +90,15 @@ final class ConfigUiSimplificationContractTest {
     @Test
     void oreHighlightRowsRepresentResourceFamiliesInsteadOfStoneVariants() throws IOException {
         String targets = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
+        String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         assertTrue(targets.contains("Normal/deepslate ore variants intentionally share one"));
         assertTrue(targets.contains("visualTargetMaterialCoalOre"));
         assertTrue(targets.contains("visualTargetMaterialDiamondOre"));
         assertTrue(targets.contains("ネザー資源：古代の残骸"));
         assertTrue(targets.contains("特殊資材：黒曜石"));
         assertFalse(targets.contains("visualTargetMaterialDeepslate"));
+        assertTrue(controller.contains("鉱石ハイライト"));
+        assertFalse(controller.contains("鉱石・資源ハイライト"));
     }
 
     @Test

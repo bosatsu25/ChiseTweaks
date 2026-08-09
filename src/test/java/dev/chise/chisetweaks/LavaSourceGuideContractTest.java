@@ -57,11 +57,12 @@ final class LavaSourceGuideContractTest {
     }
 
     @Test
-    void userFacingMetadataNoLongerRequiresSodiumForTheLavaGuide() throws IOException {
+    void userFacingMetadataUsesLavaAnalyzerWithoutRequiringSodium() throws IOException {
         String definitions = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
         String lavaDefinition = between(definitions, "LAVA_HIGHLIGHT(", ");\n\n    public static final");
 
-        assertTrue(lavaDefinition.contains("\"Lava Source Guide\""));
+        assertTrue(lavaDefinition.contains("\"Lava Analyzer\""));
+        assertFalse(lavaDefinition.contains("\"Lava Source Guide\""));
         assertFalse(lavaDefinition.contains("\"Sodium\""));
     }
 
