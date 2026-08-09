@@ -363,9 +363,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 headerAdded = false;
                 continue;
             }
-            String searchable = (row.definition.name() + " " + row.definition.description())
-                    .toLowerCase(Locale.ROOT);
-            if (!searchable.contains(query)) continue;
+            if (!row.searchableText.contains(query)) continue;
             if (pendingHeader != null && !headerAdded) {
                 filteredRows.add(pendingHeader);
                 headerAdded = true;
