@@ -86,35 +86,28 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
-    void miningCategoryProvidesSoloAndBulkOreHighlightControlsOnlyWhereTheyApply() throws IOException {
+    void miningCategoryProvidesOnlyBulkOreHighlightControls() throws IOException {
         String screen = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
-        String targets = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java"));
 
         assertTrue(screen.contains(
                 "if (selectedTargetCategory == TargetListCategory.MINING_RESOURCES)"));
         assertTrue(screen.contains("TargetListAction"));
-        assertTrue(screen.contains("SOLO"));
         assertTrue(screen.contains("ALL_ON"));
         assertTrue(screen.contains("ALL_OFF"));
-        assertTrue(screen.contains("Solo選択: "));
         assertTrue(screen.contains("対象 全ON"));
         assertTrue(screen.contains("対象 全OFF"));
-        assertTrue(screen.contains("VisualTargetSettings.toggleSoloOreSelection()"));
         assertTrue(screen.contains("VisualTargetSettings.setAllOreHighlightTargets(true)"));
         assertTrue(screen.contains("VisualTargetSettings.setAllOreHighlightTargets(false)"));
 
-        assertTrue(targets.contains("soloOreSelection"));
-        assertTrue(targets.contains("withOnlyOreHighlightTarget"));
-        assertTrue(targets.contains("withAllOreHighlightTargets"));
-        assertTrue(targets.contains("if (soloOreSelection\n                && enabled"));
-        assertTrue(targets.contains("toggleSoloOreSelection"));
-        assertTrue(targets.contains("if (soloOreSelection) setAllOreHighlightTargets(false)"));
+        assertFalse(screen.contains("SOLO"));
+        assertFalse(screen.contains("Solo選択"));
+        assertFalse(screen.contains("Solo:"));
+        assertFalse(screen.contains("toggleSoloOreSelection"));
     }
 
     @Test
-    void categoryChangesClearTransientSoloStateBeforeRefreshingTheList() throws IOException {
+    void categoryChangesResetTransientTargetControlsBeforeRefreshingTheList() throws IOException {
         String source = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
 
