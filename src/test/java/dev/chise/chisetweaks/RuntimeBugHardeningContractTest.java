@@ -115,6 +115,26 @@ final class RuntimeBugHardeningContractTest {
         assertTrue(editor.contains(".bounds(panelX + panelWidth - 88, footerY, 80, 20)"));
     }
 
+    @Test
+    void helpDirectionsUseTheCurrentStandaloneNavigation() throws IOException {
+        String ja = read("src/main/resources/assets/chisetweaks/lang/ja_jp.json");
+        String en = read("src/main/resources/assets/chisetweaks/lang/en_us.json");
+
+        assertTrue(ja.contains("「見やすさ」で「ブロックの対象」を開き"));
+        assertTrue(ja.contains("「見やすさ」で「エンティティの対象」を開き"));
+        assertTrue(ja.contains("「資源」で鉱石・資源ハイライトを有効にし"));
+        assertFalse(ja.contains("\"help.chisetweaks.builder_focus_blocks.usage\": \"Rendering"));
+        assertFalse(ja.contains("\"help.chisetweaks.builder_focus_entities.usage\": \"Rendering"));
+        assertFalse(ja.contains("\"help.chisetweaks.lava_highlight.usage\": \"Rendering"));
+
+        assertTrue(en.contains("Under Visibility, open Block targets"));
+        assertTrue(en.contains("Under Visibility, open Entity targets"));
+        assertTrue(en.contains("Under Resources, enable Ore Highlights"));
+        assertFalse(en.contains("enable it under Rendering"));
+        assertFalse(en.contains("Enable it under Rendering"));
+        assertFalse(en.contains("in Target Lists"));
+    }
+
     private static String read(String relative) throws IOException {
         return Files.readString(ROOT.resolve(relative));
     }
