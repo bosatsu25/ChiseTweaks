@@ -99,6 +99,8 @@ jobs:
         run: echo "name=chisetweaks-verified-${{ steps.artifact-audit.outputs.version }}" >> "$GITHUB_OUTPUT"
 
       - name: Upload verified artifacts
+        id: upload-verified-artifacts
+        continue-on-error: true
         uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ steps.artifact-name.outputs.name }}
@@ -106,8 +108,24 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Wait before retrying verified artifact upload
+        if: steps.upload-verified-artifacts.outcome == 'failure'
+        run: sleep 10
+
+      - name: Retry verified artifact upload
+        if: steps.upload-verified-artifacts.outcome == 'failure'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}
+          path: build/verified/
+          if-no-files-found: error
+          retention-days: 14
+          overwrite: true
+
       - name: Upload verification reports
+        id: upload-verification-reports
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v7.0.1
         with:
           name: chisetweaks-verification-reports-${{ github.run_id }}
@@ -119,3 +137,22 @@ jobs:
             build/ci/
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Wait before retrying verification report upload
+        if: always() && steps.upload-verification-reports.outcome == 'failure'
+        run: sleep 10
+
+      - name: Retry verification report upload
+        if: always() && steps.upload-verification-reports.outcome == 'failure'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: chisetweaks-verification-reports-${{ github.run_id }}
+          path: |
+            build/reports/tests/
+            build/reports/jacoco/
+            build/reports/pitest/
+            build/test-results/
+            build/ci/
+          if-no-files-found: ignore
+          retention-days: 14
+          overwrite: true
