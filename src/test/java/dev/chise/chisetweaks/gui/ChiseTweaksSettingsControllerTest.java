@@ -39,7 +39,8 @@ final class ChiseTweaksSettingsControllerTest {
         assertTrue(body.contains("\"見やすさ\""));
         assertTrue(body.contains("\"見えにくいブロックの対象\""));
         assertTrue(body.contains("\"表示を絞る対象\""));
-        assertTrue(body.contains("\"溶岩・視認の詳細設定\""));
+        assertTrue(body.contains("\"溶岩源・視認の詳細設定\""));
+        assertTrue(body.contains("\"溶岩源ガイド\""));
         assertTrue(body.contains("\"細線トレース\""));
         assertTrue(body.contains("\"隠面トレース\""));
         assertTrue(body.contains("\"ガラス検査\""));
