@@ -46,13 +46,17 @@ public abstract class LavaHighlightRendererMixin {
                 return;
             }
             LavaHighlightConfig config = feature.getConfig();
-            int requestedColor = -1;
+            boolean applyHighlight = false;
+            int requestedColor = 0;
             if (fluidState.isSource() && config.isHighlightSource()) {
                 requestedColor = config.getSourceColor();
+                applyHighlight = true;
             } else if (!fluidState.isSource() && config.isHighlightFlowing()) {
                 requestedColor = config.getFlowingColor();
+                applyHighlight = true;
             }
-            if (requestedColor == -1) {
+            // ARGB 0xFFFFFFFF is a valid user color. Never reuse it as a "no highlight" sentinel.
+            if (!applyHighlight) {
                 return;
             }
 
