@@ -46,7 +46,7 @@ final class VisualAssistanceRenderingContractTest {
     }
 
     @Test
-    void rendererPreparesFrameStateOnceAndBoundsDistantGeometry() throws IOException {
+    void rendererPreparesFrameStateOnceAndBoundsEveryDistantWorldLineMode() throws IOException {
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java");
         String target = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteRenderTarget.java");
         String detail = read("src/main/java/dev/chise/chisetweaks/core/performance/WorksiteOverlayDetailPolicy.java");
@@ -55,6 +55,7 @@ final class VisualAssistanceRenderingContractTest {
         assertTrue(renderer.contains("WorksiteOverlayDetailPolicy.Detail.COMPACT"));
         assertTrue(renderer.contains("drawCompactFrame"));
         assertTrue(renderer.contains("drawCompactPlacementSkin"));
+        assertTrue(renderer.contains("vertices, pose, target.position(), stateColor, 1.8f"));
         assertTrue(target.contains("details.contains(\"powered=true\")"));
         assertTrue(target.contains("blockId.endsWith(\"tripwire_hook\")"));
         assertTrue(target.contains("Math.floorMod(source.position().hashCode(), 8)"));
@@ -71,7 +72,7 @@ final class VisualAssistanceRenderingContractTest {
         String properties = read("gradle.properties");
 
         assertTrue(properties.contains("mod_version=0.6.10+mc26.1.2"));
-        assertTrue(renderer.contains("RENDERER_REVISION = \"surface-line-v3-bounded\""));
+        assertTrue(renderer.contains("RENDERER_REVISION = \"surface-line-v4-budgeted\""));
         assertTrue(renderer.contains("Visual renderer {} active in ChiseTweaks {}"));
         assertTrue(renderer.contains("rendererIdentityLogged"));
     }
@@ -109,6 +110,7 @@ final class VisualAssistanceRenderingContractTest {
         assertTrue(scanner.contains("SHAPED_BLOCK_SAMPLES"));
         assertTrue(scanner.contains("{0.50, 0.08, 0.50}"));
         assertTrue(scanner.contains("result.getBlockPos().equals(position)"));
+        assertTrue(scanner.contains("remainingLineOfSightRays--"));
         assertFalse(scanner.contains("return true; // wall-through"));
     }
 
