@@ -61,6 +61,32 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
+    void targetListsProvideSoloAndBulkOreHighlightControls() throws IOException {
+        String screen = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+        String targets = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java"));
+
+        assertTrue(screen.contains("TargetListAction"));
+        assertTrue(screen.contains("SOLO"));
+        assertTrue(screen.contains("ALL_ON"));
+        assertTrue(screen.contains("ALL_OFF"));
+        assertTrue(screen.contains("Solo選択: "));
+        assertTrue(screen.contains("対象 全ON"));
+        assertTrue(screen.contains("対象 全OFF"));
+        assertTrue(screen.contains("VisualTargetSettings.toggleSoloOreSelection()"));
+        assertTrue(screen.contains("VisualTargetSettings.setAllOreHighlightTargets(true)"));
+        assertTrue(screen.contains("VisualTargetSettings.setAllOreHighlightTargets(false)"));
+
+        assertTrue(targets.contains("soloOreSelection"));
+        assertTrue(targets.contains("withOnlyOreHighlightTarget"));
+        assertTrue(targets.contains("withAllOreHighlightTargets"));
+        assertTrue(targets.contains("if (soloOreSelection\n                && enabled"));
+        assertTrue(targets.contains("toggleSoloOreSelection"));
+        assertTrue(targets.contains("if (soloOreSelection) setAllOreHighlightTargets(false)"));
+    }
+
+    @Test
     void worksiteVisibilityUsesWorldOverlayWithoutTheRemovedHudPath() throws IOException {
         Path worksite = ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite");
