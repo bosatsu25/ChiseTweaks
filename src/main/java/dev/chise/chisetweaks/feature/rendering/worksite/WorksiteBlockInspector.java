@@ -5,6 +5,7 @@ import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -25,8 +26,13 @@ final class WorksiteBlockInspector {
         WorksiteBlockDescriptor cached = descriptorCache.get(block);
         if (cached != null) return cached;
 
-        String id = BuiltInRegistries.BLOCK.getKey(block).toString();
-        Set<BlockInspectionCategory> categories = BlockInspectionPolicy.categories(id);
+        Identifier registryId = BuiltInRegistries.BLOCK.getKey(block);
+        String id = registryId == null ? "" : registryId.toString();
+        // A broken/late external registration must not quarantine Chise's entire worksite engine.
+        // Unknown blocks simply have no Chise inspection categories and therefore fail open.
+        Set<BlockInspectionCategory> categories = id.isEmpty()
+                ? Set.of()
+                : BlockInspectionPolicy.categories(id);
         EnumMap<BlockInspectionCategory, VisualAssistanceStylePolicy.OverlayStyle> styles =
                 new EnumMap<>(BlockInspectionCategory.class);
         for (BlockInspectionCategory category : categories) {
