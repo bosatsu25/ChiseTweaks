@@ -171,8 +171,8 @@ final class QualityGatePolicyCoverageTest {
         assertEquals(5, WorksiteVisibilityBudgetPolicy.clampVerticalRadius(6));
         assertEquals(5, WorksiteVisibilityBudgetPolicy.clampIntervalTicks(0));
         assertEquals(100, WorksiteVisibilityBudgetPolicy.clampIntervalTicks(101));
-        assertEquals(1, WorksiteVisibilityBudgetPolicy.clampResults(0));
-        assertEquals(8, WorksiteVisibilityBudgetPolicy.clampHudResults(99));
+        assertEquals(1, WorksiteVisibilityBudgetPolicy.clampLegacyResults(0));
+        assertEquals(8, WorksiteVisibilityBudgetPolicy.clampLegacyResults(99));
         assertEquals(24, WorksiteVisibilityBudgetPolicy.clampOverlayResults(99));
         assertEquals(27, WorksiteVisibilityBudgetPolicy.maximumBlocksFor(1, 1));
         assertEquals(3179, WorksiteVisibilityBudgetPolicy.maximumBlocksFor(99, 99));
