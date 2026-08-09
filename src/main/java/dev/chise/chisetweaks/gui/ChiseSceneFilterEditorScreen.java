@@ -103,16 +103,16 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         int footerY = height - 28;
         previousButton = addRenderableWidget(Button.builder(
                 Component.literal(japanese ? "前へ" : "Previous"), ignored -> movePage(-1))
-                .bounds(panelX + 8, footerY, 80, 20)
+                .bounds(panelX + 8, footerY, 58, 20)
                 .build());
         nextButton = addRenderableWidget(Button.builder(
                 Component.literal(japanese ? "次へ" : "Next"), ignored -> movePage(1))
-                .bounds(panelX + 94, footerY, 80, 20)
+                .bounds(panelX + 70, footerY, 58, 20)
                 .build());
         clearButton = addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "現在のリストを空にする" : "Clear current list"),
+                Component.literal(japanese ? "リストを空にする" : "Clear list"),
                 ignored -> clearEntries())
-                .bounds(Math.max(panelX + 182, panelX + panelWidth / 2 - 90), footerY, 180, 20)
+                .bounds(panelX + 132, footerY, 104, 20)
                 .build());
         addRenderableWidget(Button.builder(
                 Component.literal(japanese ? "戻る" : "Back"), ignored -> onClose())
