@@ -23,7 +23,7 @@
   "config.option.builderfocusblockwhitelist.name": "表示を残すブロック",
   "config.option.builderfocusentityblacklist.comment": "Builder Focusで非表示にするエンティティIDです。",
   "config.option.builderfocusentityblacklist.name": "非表示にするエンティティ",
-  "config.option.builderfocusentityrulemode.comment": "Builder Focus entity listsの解釈方式です。",
+  "config.option.builderfocusentityrulemode.comment": "表示対象・非表示対象リストの解釈方式です。",
   "config.option.builderfocusentityrulemode.name": "エンティティ表示リストの方式",
   "config.option.builderfocusentitywhitelist.comment": "Builder Focusで表示を残すエンティティIDです。",
   "config.option.builderfocusentitywhitelist.name": "表示を残すエンティティ",
