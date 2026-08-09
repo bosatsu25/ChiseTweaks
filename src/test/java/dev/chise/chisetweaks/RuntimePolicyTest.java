@@ -16,8 +16,8 @@ final class RuntimePolicyTest {
         assertEquals(5, WorksiteVisibilityBudgetPolicy.clampVerticalRadius(Integer.MAX_VALUE));
         assertEquals(5, WorksiteVisibilityBudgetPolicy.clampIntervalTicks(Integer.MIN_VALUE));
         assertEquals(100, WorksiteVisibilityBudgetPolicy.clampIntervalTicks(Integer.MAX_VALUE));
-        assertEquals(1, WorksiteVisibilityBudgetPolicy.clampHudResults(Integer.MIN_VALUE));
-        assertEquals(8, WorksiteVisibilityBudgetPolicy.clampHudResults(Integer.MAX_VALUE));
+        assertEquals(1, WorksiteVisibilityBudgetPolicy.clampLegacyResults(Integer.MIN_VALUE));
+        assertEquals(8, WorksiteVisibilityBudgetPolicy.clampLegacyResults(Integer.MAX_VALUE));
         assertEquals(1, WorksiteVisibilityBudgetPolicy.clampOverlayResults(Integer.MIN_VALUE));
         assertEquals(24, WorksiteVisibilityBudgetPolicy.clampOverlayResults(Integer.MAX_VALUE));
     }
