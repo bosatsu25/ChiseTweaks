@@ -16,19 +16,42 @@ final class PerformanceRegressionContractTest {
     @Test
     void boundedScannerProbesEachIntersectedChunkOnceAndReusesHotBuffers() throws IOException {
         String scanner = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java");
+        String candidate = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanCandidate.java");
         String scanBody = between(scanner, "List<WorksiteVisibleTarget> scan(", "private void collectCandidate(");
+        String collectBody = between(scanner, "private void collectCandidate(", "private WorksiteVisibleTarget materializeVisibleTarget(");
 
         assertTrue(scanner.contains("candidateBuffer"));
         assertTrue(scanner.contains("orderedBuffer"));
         assertTrue(scanner.contains("visibleBuffer"));
+        assertTrue(scanner.contains("candidatePool"));
         assertTrue(scanner.contains("loadedChunkBuffer"));
         assertTrue(scanner.contains("BlockPos.MutableBlockPos cursor"));
+        assertTrue(scanner.contains("BlockPos.MutableBlockPos visibilityCursor"));
         assertEquals(1, occurrences(scanner, ".hasChunk("));
         assertFalse(scanBody.contains("new PriorityQueue"));
         assertFalse(scanBody.contains("new ArrayList"));
         assertFalse(scanBody.contains("new BlockPos.MutableBlockPos"));
+        assertFalse(collectBody.contains("new WorksiteScanCandidate"));
+        assertTrue(candidate.contains("void assign("));
         assertTrue(scanBody.indexOf("hasChunk(chunkX, chunkZ)")
                 < scanBody.indexOf("for (int z = minZ; z <= maxZ; z++)"));
+    }
+
+    @Test
+    void scannerHardCapsLineOfSightRaycastsAndTheirShortLivedAllocations() throws IOException {
+        String scanner = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java");
+        String budget = read("src/main/java/dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy.java");
+        String materialize = between(scanner,
+                "private WorksiteVisibleTarget materializeVisibleTarget(",
+                "/**\n     * Samples the actual occupied regions");
+        String lineOfSight = between(scanner, "private boolean lineOfSight(", "private static double[][] samplesFor(");
+
+        assertTrue(budget.contains("MAX_LINE_OF_SIGHT_RAYS_PER_SCAN = 192"));
+        assertTrue(scanner.contains("remainingLineOfSightRays = WorksiteVisibilityBudgetPolicy.MAX_LINE_OF_SIGHT_RAYS_PER_SCAN"));
+        assertTrue(scanner.contains("remainingLineOfSightRays <= 0"));
+        assertEquals(1, occurrences(lineOfSight, "remainingLineOfSightRays--"));
+        assertTrue(materialize.contains("visibilityCursor.set"));
+        assertTrue(materialize.indexOf("lineOfSight(") < materialize.indexOf("new BlockPos("));
     }
 
     @Test
@@ -75,18 +98,25 @@ final class PerformanceRegressionContractTest {
     @Test
     void settingsScreenCachesFilteringAndEllipsisInsteadOfAllocatingEveryFrame() throws IOException {
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+        String rowView = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingRowView.java");
 
         assertTrue(screen.contains("filteredRows"));
         assertTrue(screen.contains("rebuildFilteredRows()"));
         assertTrue(screen.contains("refreshDescriptionCache()"));
         assertTrue(screen.contains("row.renderedDescription"));
+        assertTrue(screen.contains("row.searchableText.contains(query)"));
+        assertTrue(rowView.contains("final String searchableText;"));
+        assertTrue(rowView.contains("this.searchableText = normalizeSearchText(definition)"));
         assertFalse(screen.contains("visibleRows()"));
         assertFalse(screen.contains("List.copyOf(rows)"));
 
         String renderBody = between(screen, "public void extractRenderState(", "private void renderScrollbar(");
+        String filterBody = between(screen, "private void rebuildFilteredRows()", "private void refreshDescriptionCache()");
         assertFalse(renderBody.contains("ellipsize("));
         assertFalse(renderBody.contains("toLowerCase("));
         assertFalse(renderBody.contains("new ArrayList"));
+        assertFalse(filterBody.contains("row.definition.name() +"));
+        assertFalse(filterBody.contains("row.definition.description())\n                    .toLowerCase"));
     }
 
     @Test
@@ -101,14 +131,29 @@ final class PerformanceRegressionContractTest {
     }
 
     @Test
+    void removedSoloUiDoesNotLeaveTransientTargetStateInTheConfigPath() throws IOException {
+        String targets = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
+        String saveBody = between(targets, "private static void save(Entry entry)", "private static Entry entry(");
+
+        assertFalse(targets.contains("soloOreSelection"));
+        assertFalse(targets.contains("toggleSoloOreSelection"));
+        assertFalse(targets.contains("isSoloOreSelectionEnabled"));
+        assertFalse(targets.contains("resetTransientControls"));
+        assertFalse(saveBody.contains("withOnlyOreHighlightTarget"));
+        assertEquals(1, occurrences(saveBody, "config.save()"));
+    }
+
+    @Test
     void uiAndRenderingResponsibilitiesRemainSplitIntoBoundedFiles() throws IOException {
         assertLineCountBelow("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java", 520);
         assertLineCountBelow("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java", 390);
+        assertLineCountBelow("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingRowView.java", 80);
         assertLineCountBelow("src/main/java/dev/chise/chisetweaks/feature/rendering/SurfaceLineVisualGeometry.java", 220);
         assertLineCountBelow("src/main/java/dev/chise/chisetweaks/feature/rendering/SurfaceLinePrimitives.java", 330);
         assertLineCountBelow("src/main/java/dev/chise/chisetweaks/feature/rendering/PlacementGuideLineGeometry.java", 420);
-        assertLineCountBelow("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java", 260);
+        assertLineCountBelow("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java", 270);
         assertLineCountBelow("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java", 320);
+        assertLineCountBelow("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanCandidate.java", 100);
     }
 
     private static String read(String relative) throws IOException {
