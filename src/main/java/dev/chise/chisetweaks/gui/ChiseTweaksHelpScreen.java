@@ -1,24 +1,26 @@
 package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.core.definition.FeatureHelpLevel;
-
 import dev.chise.chisetweaks.gui.help.FeatureHelpCatalog;
+import dev.chise.chisetweaks.gui.help.FeatureHelpDisplayLanguage;
 import dev.chise.chisetweaks.gui.help.FeatureHelpEntry;
 import dev.chise.chisetweaks.gui.help.FeatureHelpLanguageCatalog;
-import dev.chise.chisetweaks.gui.help.FeatureHelpDisplayLanguage;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
-/** Japanese-first, task-oriented in-game help navigation for every Chise feature. */
+/** Japanese-first, searchable in-game guide using the same five-section navigation as settings. */
 public final class ChiseTweaksHelpScreen extends Screen {
-    private static final int TOP = 62;
-    private static final int LANGUAGE_Y = 30;
+    private static final int NAV_Y = 26;
+    private static final int SEARCH_Y = 52;
+    private static final int TOP = 82;
     private static final int BOTTOM = 34;
     private static final int CARD_GAP = 8;
     private static final int CARD_PADDING = 8;
@@ -29,6 +31,8 @@ public final class ChiseTweaksHelpScreen extends Screen {
     private Button japaneseButton;
     private Button englishButton;
     private Button backButton;
+    private EditBox searchBox;
+    private String searchQuery = "";
     private int scrollOffset;
     private int maxScroll;
 
@@ -40,19 +44,36 @@ public final class ChiseTweaksHelpScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        int languageWidth = 76;
+        createNavigation();
+
+        int searchWidth = Math.max(120, Math.min(420, width - 210));
+        int searchX = 10;
+        searchBox = addRenderableWidget(new EditBox(
+                font,
+                searchX,
+                SEARCH_Y,
+                searchWidth,
+                20,
+                Component.literal(translated("screen.chisetweaks.help.search", "Search features"))));
+        searchBox.setHint(Component.literal(translated("screen.chisetweaks.help.search", "機能を検索...")));
+        searchBox.setValue(searchQuery);
+        searchBox.setResponder(value -> {
+            searchQuery = value == null ? "" : value;
+            scrollOffset = 0;
+        });
+
+        int languageWidth = 72;
         int languageGap = 4;
-        int languageRowWidth = languageWidth * 2 + languageGap;
-        int languageX = (width - languageRowWidth) / 2;
+        int languageX = Math.max(searchX + searchWidth + 8, width - (languageWidth * 2 + languageGap + 10));
         japaneseButton = addRenderableWidget(Button.builder(
                 Component.literal("日本語"),
                 ignored -> selectLanguage(FeatureHelpDisplayLanguage.JAPANESE))
-                .bounds(languageX, LANGUAGE_Y, languageWidth, 20)
+                .bounds(languageX, SEARCH_Y, languageWidth, 20)
                 .build());
         englishButton = addRenderableWidget(Button.builder(
                 Component.literal("English"),
                 ignored -> selectLanguage(FeatureHelpDisplayLanguage.ENGLISH))
-                .bounds(languageX + languageWidth + languageGap, LANGUAGE_Y, languageWidth, 20)
+                .bounds(languageX + languageWidth + languageGap, SEARCH_Y, languageWidth, 20)
                 .build());
 
         backButton = addRenderableWidget(Button.builder(
@@ -63,11 +84,38 @@ public final class ChiseTweaksHelpScreen extends Screen {
         refreshLanguageControls();
     }
 
+    private void createNavigation() {
+        int gap = 4;
+        int available = Math.max(300, width - 20 - gap * 4);
+        int buttonWidth = Math.max(56, Math.min(110, available / 5));
+        int totalWidth = buttonWidth * 5 + gap * 4;
+        int x = Math.max(10, (width - totalWidth) / 2);
+
+        for (ChiseTweaksUiSection section : ChiseTweaksUiSection.values()) {
+            Button button = addRenderableWidget(Button.builder(
+                    Component.literal(section.getDisplayName()),
+                    ignored -> navigate(section))
+                    .bounds(x, NAV_Y, buttonWidth, 20)
+                    .build());
+            button.active = section != ChiseTweaksUiSection.HELP;
+            x += buttonWidth + gap;
+        }
+    }
+
+    private void navigate(ChiseTweaksUiSection section) {
+        if (minecraft == null || section == null || section == ChiseTweaksUiSection.HELP) return;
+        minecraft.setScreen(new ChiseTweaksConfigScreen(section));
+    }
+
     private void selectLanguage(FeatureHelpDisplayLanguage language) {
         if (language == null || language == displayLanguage) return;
         displayLanguage = language;
         scrollOffset = 0;
         refreshLanguageControls();
+        if (searchBox != null) {
+            searchBox.setHint(Component.literal(translated(
+                    "screen.chisetweaks.help.search", "機能を検索...")));
+        }
     }
 
     private void refreshLanguageControls() {
@@ -125,7 +173,7 @@ public final class ChiseTweaksHelpScreen extends Screen {
         int y = TOP - scrollOffset;
         int contentHeight = 0;
 
-        for (FeatureHelpEntry entry : FeatureHelpCatalog.entries()) {
+        for (FeatureHelpEntry entry : filteredEntries()) {
             Card card = card(entry, contentWidth - CARD_PADDING * 2);
             int cardHeight = card.height();
             if (y + cardHeight >= TOP && y <= height - BOTTOM) {
@@ -136,6 +184,26 @@ public final class ChiseTweaksHelpScreen extends Screen {
         }
         maxScroll = Math.max(0, contentHeight - (height - TOP - BOTTOM));
         scrollOffset = Math.min(scrollOffset, maxScroll);
+    }
+
+    private List<FeatureHelpEntry> filteredEntries() {
+        String query = searchQuery == null ? "" : searchQuery.trim().toLowerCase(Locale.ROOT);
+        if (query.isEmpty()) return FeatureHelpCatalog.entries();
+
+        ArrayList<FeatureHelpEntry> result = new ArrayList<>();
+        for (FeatureHelpEntry entry : FeatureHelpCatalog.entries()) {
+            String searchable = String.join(" ",
+                    translated(entry.nameKey(), entry.englishName()),
+                    translated(entry.summaryKey(), ""),
+                    translated(entry.usageKey(), ""),
+                    translated(entry.requirementKey(), ""),
+                    entry.englishName(),
+                    entry.dependency()).toLowerCase(Locale.ROOT);
+            if (searchable.contains(query)) {
+                result.add(entry);
+            }
+        }
+        return List.copyOf(result);
     }
 
     private void renderCard(
