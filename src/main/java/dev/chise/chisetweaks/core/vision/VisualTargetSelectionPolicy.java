@@ -64,6 +64,22 @@ public final class VisualTargetSelectionPolicy {
                     | Target.MATERIAL_NETHER_QUARTZ_ORE.bitMask();
     public static final int ALL_TARGETS_MASK = (1 << Target.values().length) - 1;
 
+    /** Only the targets owned by Ore Highlights; placement/hidden bits are deliberately excluded. */
+    public static final int ORE_HIGHLIGHT_TARGETS_MASK =
+            Target.MATERIAL_OBSIDIAN.bitMask()
+                    | Target.MATERIAL_CRYING_OBSIDIAN.bitMask()
+                    | Target.MATERIAL_ANCIENT_DEBRIS.bitMask()
+                    | Target.MATERIAL_DIAMOND_ORE.bitMask()
+                    | Target.MATERIAL_GOLD_ORE.bitMask()
+                    | Target.MATERIAL_EMERALD_ORE.bitMask()
+                    | Target.MATERIAL_COAL_ORE.bitMask()
+                    | Target.MATERIAL_IRON_ORE.bitMask()
+                    | Target.MATERIAL_COPPER_ORE.bitMask()
+                    | Target.MATERIAL_LAPIS_ORE.bitMask()
+                    | Target.MATERIAL_REDSTONE_ORE.bitMask()
+                    | Target.MATERIAL_NETHER_GOLD_ORE.bitMask()
+                    | Target.MATERIAL_NETHER_QUARTZ_ORE.bitMask();
+
     private VisualTargetSelectionPolicy() {}
 
     public static int sanitizeMask(int mask) {
@@ -92,6 +108,28 @@ public final class VisualTargetSelectionPolicy {
         return enabled
                 ? sanitized | target.bitMask()
                 : sanitized & ~target.bitMask();
+    }
+
+    public static boolean isOreHighlightTarget(Target target) {
+        return target != null && (target.bitMask() & ORE_HIGHLIGHT_TARGETS_MASK) != 0;
+    }
+
+    /** Enables or disables every Ore Highlights target without touching other feature bits. */
+    public static int withAllOreHighlightTargets(int mask, boolean enabled) {
+        int sanitized = sanitizeMask(mask);
+        return enabled
+                ? sanitized | ORE_HIGHLIGHT_TARGETS_MASK
+                : sanitized & ~ORE_HIGHLIGHT_TARGETS_MASK;
+    }
+
+    /**
+     * Leaves exactly one Ore Highlights resource family enabled while preserving all unrelated
+     * visual-target selections. Invalid/non-material targets are a no-op.
+     */
+    public static int withOnlyOreHighlightTarget(int mask, Target target) {
+        int sanitized = sanitizeMask(mask);
+        if (!isOreHighlightTarget(target)) return sanitized;
+        return (sanitized & ~ORE_HIGHLIGHT_TARGETS_MASK) | target.bitMask();
     }
 
     /**

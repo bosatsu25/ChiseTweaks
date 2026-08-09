@@ -117,11 +117,13 @@ public final class VisualTargetSettings {
 
     private static boolean initialized;
     private static boolean syncing;
+    private static boolean soloOreSelection;
 
     private VisualTargetSettings() {}
 
     public static synchronized void init() {
         if (initialized) {
+            syncFromStorage();
             refreshTranslations();
             return;
         }
@@ -143,6 +145,34 @@ public final class VisualTargetSettings {
             entry.option().setComment(StringUtils.getTranslatedOrFallback(
                     base + ".comment", fallbackComment));
         }
+    }
+
+    public static boolean isSoloOreSelectionEnabled() {
+        return soloOreSelection;
+    }
+
+    /**
+     * Toggles transient Solo selection mode. Entering Solo clears only Ore Highlights targets so
+     * the next resource-row click behaves naturally: first click ON, second click OFF.
+     */
+    public static synchronized boolean toggleSoloOreSelection() {
+        soloOreSelection = !soloOreSelection;
+        if (soloOreSelection) setAllOreHighlightTargets(false);
+        return soloOreSelection;
+    }
+
+    /** Solo is a UI interaction mode, not persisted configuration. */
+    public static void resetTransientControls() {
+        soloOreSelection = false;
+    }
+
+    public static synchronized void setAllOreHighlightTargets(boolean enabled) {
+        LocalFeatureConfig config = LocalFeatureConfig.getInstance();
+        config.visualTargetMask = VisualTargetSelectionPolicy.withAllOreHighlightTargets(
+                config.visualTargetMask,
+                enabled);
+        config.save();
+        syncFromStorage();
     }
 
     private static void syncFromStorage() {
@@ -167,11 +197,25 @@ public final class VisualTargetSettings {
     private static void save(Entry entry) {
         if (syncing) return;
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
-        config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
-                config.visualTargetMask,
-                entry.target(),
-                entry.option().getBooleanValue());
+        boolean enabled = entry.option().getBooleanValue();
+
+        if (soloOreSelection
+                && enabled
+                && VisualTargetSelectionPolicy.isOreHighlightTarget(entry.target())) {
+            config.visualTargetMask = VisualTargetSelectionPolicy.withOnlyOreHighlightTarget(
+                    config.visualTargetMask,
+                    entry.target());
+        } else {
+            config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
+                    config.visualTargetMask,
+                    entry.target(),
+                    enabled);
+        }
+
         config.save();
+        if (soloOreSelection && VisualTargetSelectionPolicy.isOreHighlightTarget(entry.target())) {
+            syncFromStorage();
+        }
     }
 
     private static Entry entry(

@@ -79,6 +79,49 @@ final class VisualTargetSelectionPolicyTest {
     }
 
     @Test
+    void oreHighlightBulkAndSoloOperationsPreserveUnrelatedTargetBits() {
+        assertEquals(13, Integer.bitCount(VisualTargetSelectionPolicy.ORE_HIGHLIGHT_TARGETS_MASK));
+        assertTrue(VisualTargetSelectionPolicy.isOreHighlightTarget(Target.MATERIAL_DIAMOND_ORE));
+        assertTrue(VisualTargetSelectionPolicy.isOreHighlightTarget(Target.MATERIAL_ANCIENT_DEBRIS));
+        assertFalse(VisualTargetSelectionPolicy.isOreHighlightTarget(Target.PLACEMENT_ANVIL));
+        assertFalse(VisualTargetSelectionPolicy.isOreHighlightTarget(null));
+
+        int allOff = VisualTargetSelectionPolicy.withAllOreHighlightTargets(
+                VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
+                false);
+        for (Target target : Target.values()) {
+            assertEquals(
+                    !VisualTargetSelectionPolicy.isOreHighlightTarget(target),
+                    VisualTargetSelectionPolicy.isEnabled(allOff, target),
+                    target.name());
+        }
+        assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
+                VisualTargetSelectionPolicy.withAllOreHighlightTargets(allOff, true));
+
+        int placementAlreadyOff = VisualTargetSelectionPolicy.withEnabled(
+                VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
+                Target.PLACEMENT_ANVIL,
+                false);
+        int diamondOnly = VisualTargetSelectionPolicy.withOnlyOreHighlightTarget(
+                placementAlreadyOff,
+                Target.MATERIAL_DIAMOND_ORE);
+        assertFalse(VisualTargetSelectionPolicy.isEnabled(diamondOnly, Target.PLACEMENT_ANVIL));
+        assertTrue(VisualTargetSelectionPolicy.isEnabled(diamondOnly, Target.MATERIAL_DIAMOND_ORE));
+        assertTrue(VisualTargetSelectionPolicy.isEnabled(diamondOnly, Target.HIDDEN_BLUE_ICE));
+        for (Target target : Target.values()) {
+            if (VisualTargetSelectionPolicy.isOreHighlightTarget(target)
+                    && target != Target.MATERIAL_DIAMOND_ORE) {
+                assertFalse(VisualTargetSelectionPolicy.isEnabled(diamondOnly, target), target.name());
+            }
+        }
+
+        assertEquals(placementAlreadyOff, VisualTargetSelectionPolicy.withOnlyOreHighlightTarget(
+                placementAlreadyOff, Target.PLACEMENT_BEEHIVE));
+        assertEquals(placementAlreadyOff, VisualTargetSelectionPolicy.withOnlyOreHighlightTarget(
+                placementAlreadyOff, null));
+    }
+
+    @Test
     void placementFamiliesFollowTheirGroupedSwitches() {
         assertFamily(Target.PLACEMENT_ANVIL, BlockInspectionCategory.PLACEMENT_GUIDE,
                 "minecraft:anvil");
