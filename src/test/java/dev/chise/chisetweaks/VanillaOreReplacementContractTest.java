@@ -1,7 +1,10 @@
 package dev.chise.chisetweaks;
 
+import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
+import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog;
 import dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy;
+import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import org.junit.jupiter.api.Test;
 
@@ -60,6 +63,22 @@ final class VanillaOreReplacementContractTest {
             }
         }
         assertEquals(EXPECTED_VANILLA_ORE_BLOCKS, observed);
+    }
+
+    @Test
+    void everyCatalogOreIsClassifiedAndSelectableByTheRuntimePath() {
+        int allTargets = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
+        for (String blockId : EXPECTED_VANILLA_ORE_BLOCKS) {
+            assertTrue(
+                    BlockInspectionPolicy.matches(blockId, BlockInspectionCategory.MATERIAL_HIGHLIGHT),
+                    blockId);
+            assertTrue(
+                    VisualTargetSelectionPolicy.matchesEnabled(
+                            allTargets,
+                            blockId,
+                            BlockInspectionCategory.MATERIAL_HIGHLIGHT),
+                    blockId);
+        }
     }
 
     @Test
