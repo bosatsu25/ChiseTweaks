@@ -356,18 +356,19 @@ public final class ChiseTweaksConfigScreen extends Screen {
         }
 
         ChiseTweaksSettingRowView pendingHeader = null;
+        boolean headerAdded = false;
         for (ChiseTweaksSettingRowView row : rows) {
             if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
                 pendingHeader = row;
+                headerAdded = false;
                 continue;
             }
             String searchable = (row.definition.name() + " " + row.definition.description())
                     .toLowerCase(Locale.ROOT);
             if (!searchable.contains(query)) continue;
-            if (pendingHeader != null
-                    && (filteredRows.isEmpty()
-                    || filteredRows.get(filteredRows.size() - 1) != pendingHeader)) {
+            if (pendingHeader != null && !headerAdded) {
                 filteredRows.add(pendingHeader);
+                headerAdded = true;
             }
             filteredRows.add(row);
         }
