@@ -14,6 +14,10 @@ public final class ChiseTweaksSettingsLayout {
     private static final int NAV_COUNT = 4;
     private static final int BULK_GAP = 8;
     private static final int BULK_WIDTH = 134;
+    private static final int TEXT_CONTROL_GAP = 12;
+    private static final int TEXT_COLUMN_GAP = 14;
+    private static final int STACKED_TEXT_BREAKPOINT = 720;
+    private static final int INTEGER_CONTROL_WIDTH = 110;
 
     private ChiseTweaksSettingsLayout() {}
 
@@ -48,10 +52,29 @@ public final class ChiseTweaksSettingsLayout {
         Rect footer = new Rect(contentX, footerY, contentWidth, 20);
 
         int controlWidth = clamp(contentWidth / 7, 88, 132);
+        int controlSlotWidth = Math.max(controlWidth, INTEGER_CONTROL_WIDTH);
         int panelPadding = 16;
         int nameX = panel.x() + panelPadding;
-        int descriptionX = panel.x() + Math.max(190, Math.min(330, panel.width() / 3));
-        int controlX = panel.right() - controlWidth - panelPadding;
+        int controlX = panel.right() - controlSlotWidth - panelPadding;
+        int textRight = controlX - TEXT_CONTROL_GAP;
+        int availableTextWidth = Math.max(120, textRight - nameX);
+        boolean stackedText = contentWidth < STACKED_TEXT_BREAKPOINT;
+
+        int nameWidth;
+        int descriptionX;
+        int descriptionWidth;
+        int rowHeight;
+        if (stackedText) {
+            nameWidth = availableTextWidth;
+            descriptionX = nameX;
+            descriptionWidth = availableTextWidth;
+            rowHeight = 46;
+        } else {
+            nameWidth = clamp(availableTextWidth * 34 / 100, 160, 260);
+            descriptionX = nameX + nameWidth + TEXT_COLUMN_GAP;
+            descriptionWidth = Math.max(140, textRight - descriptionX);
+            rowHeight = 38;
+        }
 
         return new Geometry(
                 new Rect(contentX, 0, contentWidth, safeHeight),
@@ -64,11 +87,15 @@ public final class ChiseTweaksSettingsLayout {
                 navButtonWidth,
                 NAV_GAP,
                 controlWidth,
+                controlSlotWidth,
                 nameX,
+                nameWidth,
                 descriptionX,
+                descriptionWidth,
                 controlX,
-                38,
-                24);
+                rowHeight,
+                24,
+                stackedText);
     }
 
     private static int clamp(int value, int min, int max) {
@@ -86,15 +113,21 @@ public final class ChiseTweaksSettingsLayout {
             int navButtonWidth,
             int navGap,
             int controlWidth,
+            int controlSlotWidth,
             int nameX,
+            int nameWidth,
             int descriptionX,
+            int descriptionWidth,
             int controlX,
             int rowHeight,
-            int headerHeight) {
+            int headerHeight,
+            boolean stackedText) {
 
         public boolean categoryPage() { return !bulk.isEmpty(); }
         public int panelContentTop() { return panel.y() + 8; }
         public int panelContentBottom() { return panel.bottom() - 8; }
+        public int textRight() { return controlX - TEXT_CONTROL_GAP; }
+        public int booleanControlX() { return controlX + controlSlotWidth - controlWidth; }
     }
 
     public record Rect(int x, int y, int width, int height) {

@@ -281,15 +281,77 @@ public final class ChiseTweaksConfigScreen extends Screen {
                         0xFF78AFFF);
                 continue;
             }
-            extractor.text(font, row.definition.name(), geometry.nameX(), row.screenY + 6, 0xFFFFFFFF);
-            extractor.text(
-                    font,
-                    row.renderedDescription,
-                    geometry.descriptionX(),
-                    row.screenY + 6,
-                    0xFFC8C8C8);
+            renderRowText(extractor, row);
         }
         renderScrollbar(extractor);
+    }
+
+    private void renderRowText(GuiGraphicsExtractor extractor, ChiseTweaksSettingRowView row) {
+        int lineHeight = font.lineHeight;
+        if (geometry.stackedText()) {
+            int nameY = row.screenY + 5;
+            drawCenteredText(
+                    extractor,
+                    row.definition.name(),
+                    geometry.nameX(),
+                    geometry.nameWidth(),
+                    nameY,
+                    0xFFFFFFFF);
+
+            int descriptionLines = row.renderedDescriptionLineCount();
+            int descriptionY = row.screenY + (descriptionLines > 1 ? 22 : 27);
+            drawDescriptionLines(extractor, row, descriptionY, lineHeight);
+            return;
+        }
+
+        int nameY = row.screenY + Math.max(0, (geometry.rowHeight() - lineHeight) / 2);
+        drawCenteredText(
+                extractor,
+                row.definition.name(),
+                geometry.nameX(),
+                geometry.nameWidth(),
+                nameY,
+                0xFFFFFFFF);
+
+        int descriptionLines = row.renderedDescriptionLineCount();
+        int descriptionHeight = Math.max(1, descriptionLines) * lineHeight;
+        int descriptionY = row.screenY + Math.max(0, (geometry.rowHeight() - descriptionHeight) / 2);
+        drawDescriptionLines(extractor, row, descriptionY, lineHeight);
+    }
+
+    private void drawDescriptionLines(
+            GuiGraphicsExtractor extractor,
+            ChiseTweaksSettingRowView row,
+            int firstY,
+            int lineHeight) {
+        drawCenteredText(
+                extractor,
+                row.renderedDescriptionLine1,
+                geometry.descriptionX(),
+                geometry.descriptionWidth(),
+                firstY,
+                0xFFC8C8C8);
+        if (!row.renderedDescriptionLine2.isEmpty()) {
+            drawCenteredText(
+                    extractor,
+                    row.renderedDescriptionLine2,
+                    geometry.descriptionX(),
+                    geometry.descriptionWidth(),
+                    firstY + lineHeight,
+                    0xFFC8C8C8);
+        }
+    }
+
+    private void drawCenteredText(
+            GuiGraphicsExtractor extractor,
+            String text,
+            int regionX,
+            int regionWidth,
+            int y,
+            int color) {
+        if (text == null || text.isEmpty()) return;
+        int x = regionX + Math.max(0, (regionWidth - font.width(text)) / 2);
+        extractor.text(font, text, x, y, color);
     }
 
     private void renderScrollbar(GuiGraphicsExtractor extractor) {
@@ -332,9 +394,11 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void refreshDescriptionCache() {
-        int descriptionMaxWidth = Math.max(80, geometry.controlX() - geometry.descriptionX() - 16);
         for (ChiseTweaksSettingRowView row : rows) {
-            row.renderedDescription = ellipsize(row.definition.description(), descriptionMaxWidth);
+            row.cacheDescription(ChiseTweaksRowTextLayout.wrap(
+                    row.definition.description(),
+                    geometry.descriptionWidth(),
+                    font::width));
         }
     }
 
@@ -378,15 +442,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void positionWidgets(ChiseTweaksSettingRowView row, int y) {
-        int controlY = y + 8;
+        int controlY = y + Math.max(0, (geometry.rowHeight() - 18) / 2);
         switch (row.definition.kind()) {
             case BOOLEAN -> {
-                row.primary.setPosition(geometry.controlX(), controlY);
+                row.primary.setPosition(geometry.booleanControlX(), controlY);
                 row.primary.visible = true;
             }
             case INTEGER -> {
-                int total = 24 + 4 + 54 + 4 + 24;
-                int x = geometry.panel().right() - 16 - total;
+                int x = geometry.controlX();
                 row.minus.setPosition(x, controlY);
                 row.value.setPosition(x + 28, controlY);
                 row.plus.setPosition(x + 86, controlY);
@@ -425,21 +488,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
         boolean enabled = value.getBooleanValue();
         return Component.literal(enabled ? "ON" : "OFF")
                 .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED);
-    }
-
-    private String ellipsize(String text, int maxWidth) {
-        if (text == null || text.isBlank()) return "";
-        if (font.width(text) <= maxWidth) return text;
-        String suffix = "…";
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            result.append(text.charAt(i));
-            if (font.width(result.toString() + suffix) > maxWidth) {
-                result.setLength(Math.max(0, result.length() - 1));
-                break;
-            }
-        }
-        return result + suffix;
     }
 
     @Override

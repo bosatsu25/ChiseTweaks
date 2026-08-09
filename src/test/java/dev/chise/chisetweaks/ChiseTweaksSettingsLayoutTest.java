@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseTweaksSettingsLayoutTest {
     private static final int[][] VIEWPORTS = {
+            {360, 260},
+            {480, 320},
             {640, 360},
             {854, 480},
             {1280, 720},
@@ -44,11 +46,30 @@ final class ChiseTweaksSettingsLayoutTest {
         assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 450, 830, 20), layout.footer());
         assertEquals(112, layout.navButtonWidth());
         assertEquals(118, layout.controlWidth());
+        assertEquals(118, layout.controlSlotWidth());
         assertEquals(28, layout.nameX());
-        assertEquals(288, layout.descriptionX());
+        assertEquals(227, layout.nameWidth());
+        assertEquals(269, layout.descriptionX());
+        assertEquals(427, layout.descriptionWidth());
         assertEquals(708, layout.controlX());
         assertEquals(38, layout.rowHeight());
         assertEquals(24, layout.headerHeight());
+        assertFalse(layout.stackedText());
+    }
+
+    @Test
+    void compactScreensStackTextAndReserveFullIntegerControlSlot() {
+        var layout = ChiseTweaksSettingsLayout.calculate(640, 360, true);
+
+        assertTrue(layout.stackedText());
+        assertEquals(46, layout.rowHeight());
+        assertEquals(layout.nameX(), layout.descriptionX());
+        assertEquals(layout.nameWidth(), layout.descriptionWidth());
+        assertEquals(110, layout.controlSlotWidth());
+        assertTrue(layout.descriptionX() + layout.descriptionWidth() <= layout.controlX());
+        assertTrue(layout.booleanControlX() >= layout.controlX());
+        assertTrue(layout.booleanControlX() + layout.controlWidth()
+                <= layout.controlX() + layout.controlSlotWidth());
     }
 
     @Test
@@ -58,15 +79,17 @@ final class ChiseTweaksSettingsLayoutTest {
         assertTrue(layout.content().x() > 12);
         assertTrue(layout.controlWidth() <= 132);
         assertTrue(layout.search().width() < 1180);
+        assertFalse(layout.stackedText());
     }
 
     @Test
-    void compactControlsStayToTheRightOfDescriptions() {
+    void textRegionsStayBeforeTheControlSlotAtEverySupportedViewport() {
         for (int[] viewport : VIEWPORTS) {
             var layout = ChiseTweaksSettingsLayout.calculate(viewport[0], viewport[1], true);
-            assertTrue(layout.nameX() < layout.descriptionX(), viewportLabel(viewport));
+            assertTrue(layout.nameX() < layout.controlX(), viewportLabel(viewport));
             assertTrue(layout.descriptionX() < layout.controlX(), viewportLabel(viewport));
-            assertTrue(layout.controlX() + layout.controlWidth() <= layout.panel().right(), viewportLabel(viewport));
+            assertTrue(layout.descriptionX() + layout.descriptionWidth() <= layout.controlX(), viewportLabel(viewport));
+            assertTrue(layout.controlX() + layout.controlSlotWidth() <= layout.panel().right(), viewportLabel(viewport));
         }
     }
 
