@@ -28,8 +28,6 @@ final class ConfigUiSimplificationContractTest {
 
         assertFalse(screen.contains("ConfigGuiTab"));
         assertFalse(screen.contains("TargetListCategory"));
-        assertFalse(screen.contains("FEATURES(\"Features & Keybinds\")"));
-        assertFalse(screen.contains("LISTS(\"Lists\")"));
         assertFalse(navigation.contains("OTHER("));
     }
 
@@ -42,16 +40,32 @@ final class ConfigUiSimplificationContractTest {
         assertTrue(source.contains("case RESOURCES -> createResourceOptions()"));
         assertTrue(source.contains("case VISIBILITY -> createVisibilityOptions()"));
 
-        assertTrue(source.contains("addFeature(rows, FeatureSwitches.PUMPKIN_SCAFFOLD)"));
-        assertTrue(source.contains("addFeature(rows, FeatureSwitches.PLACEMENT_GUIDE)"));
+        assertTrue(source.contains("addFeatureToggle(rows, FeatureSwitches.PUMPKIN_SCAFFOLD)"));
+        assertTrue(source.contains("addFeatureToggle(rows, FeatureSwitches.PLACEMENT_GUIDE)"));
         assertTrue(source.contains("visualTargetsFor(ChiseTweaksUiSection.PLACEMENT)"));
 
-        assertTrue(source.contains("addFeature(rows, FeatureSwitches.MATERIAL_HIGHLIGHTS)"));
+        assertTrue(source.contains("addFeatureToggle(rows, FeatureSwitches.MATERIAL_HIGHLIGHTS)"));
         assertTrue(source.contains("visualTargetsFor(ChiseTweaksUiSection.RESOURCES)"));
 
-        assertTrue(source.contains("addFeature(rows, FeatureSwitches.HIDDEN_SURFACE_TRACE)"));
+        assertTrue(source.contains("addFeatureToggle(rows, FeatureSwitches.HIDDEN_SURFACE_TRACE)"));
         assertTrue(source.contains("visualTargetsFor(ChiseTweaksUiSection.VISIBILITY)"));
         assertTrue(source.contains("addConfigs(rows, BuilderFocusConfig.RULE_OPTIONS)"));
+        assertFalse(source.contains("addSpacer(rows)"));
+    }
+
+    @Test
+    void categoryFeatureRowsAreBooleanOnlyAndHotkeyEditorsStayOnKeybindPage() throws IOException {
+        String screen = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+        String featureSwitch = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/FeatureSwitch.java"));
+
+        assertTrue(screen.contains("feature.booleanGuiView()"));
+        assertTrue(screen.contains("addFeatureHotkey(rows, feature)"));
+        assertTrue(featureSwitch.contains("public IConfigBoolean booleanGuiView()"));
+        assertTrue(featureSwitch.contains("return ConfigType.BOOLEAN"));
+        assertTrue(featureSwitch.contains("FeatureSwitch.this.setBooleanValue(value)"));
+        assertTrue(screen.contains("BooleanHotkeyGuiWrapper"));
     }
 
     @Test
@@ -59,6 +73,7 @@ final class ConfigUiSimplificationContractTest {
         String screen = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
 
+        assertTrue(screen.contains("BULK_BUTTON_WIDTH = 126"));
         assertTrue(screen.contains("createBulkToggleButton"));
         assertTrue(screen.contains("一括選択："));
         assertTrue(screen.contains("boolean turnOn = !areAllCategoryTargetsEnabled"));
@@ -71,6 +86,33 @@ final class ConfigUiSimplificationContractTest {
         assertFalse(screen.contains("対象 全OFF"));
         assertFalse(screen.contains("SOLO"));
         assertFalse(screen.contains("Solo選択"));
+    }
+
+    @Test
+    void settingsGeometryIsResponsiveAndSearchDoesNotCompeteWithBulkControl() throws IOException {
+        String source = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+
+        assertTrue(source.contains("MAX_GROUP_WIDTH = 1080"));
+        assertTrue(source.contains("setListPosition(groupX(), LIST_Y)"));
+        assertTrue(source.contains("groupX() + getBrowserWidth() + BULK_GAP"));
+        assertTrue(source.contains("return Math.max(160, groupWidth() - reserved);"));
+        assertTrue(source.contains("return selectedSection == ChiseTweaksUiSection.HOTKEYS;"));
+        assertTrue(source.contains("int preferred = selectedSection == ChiseTweaksUiSection.HOTKEYS ? 220 : 180;"));
+    }
+
+    @Test
+    void localizedConfigRowsSetTranslatedGuiNamesInsteadOfOnlyPrettyNames() throws IOException {
+        String localization = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/ConfigUiLocalization.java"));
+        String localSettings = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java"));
+
+        assertTrue(localization.contains("option.setTranslatedName(displayName)"));
+        assertTrue(localization.contains("mirrorPrettyNamesToGui(LocalFeatureSettings.ALL_OPTIONS)"));
+        assertTrue(localization.contains("mirrorPrettyNamesToGui(VisualTargetSettings.ALL_OPTIONS)"));
+        assertTrue(localization.contains("option.setTranslatedName(option.getPrettyName())"));
+        assertTrue(localSettings.contains("option.setTranslatedName(displayName)"));
     }
 
     @Test
@@ -96,15 +138,6 @@ final class ConfigUiSimplificationContractTest {
         assertTrue(help.contains("EditBox"));
         assertTrue(help.contains("filteredEntries()"));
         assertTrue(help.contains("searchable.contains(query)"));
-    }
-
-    @Test
-    void searchRemainsAvailableAcrossSettingsDestinations() throws IOException {
-        String source = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
-
-        assertTrue(source.contains("return selectedSection != ChiseTweaksUiSection.HELP;"));
-        assertTrue(source.contains("super(10, 76"));
     }
 
     @Test
