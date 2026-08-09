@@ -13,55 +13,98 @@ final class ConfigUiSimplificationContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
-    void configUiKeepsTheFeatureAndKeybindViewWhileReservingSpaceForTargetNavigation() throws IOException {
+    void topLevelNavigationUsesExactlyFiveUserFacingSections() throws IOException {
+        String navigation = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksUiSection.java"));
+        String screen = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+
+        assertTrue(navigation.contains("PLACEMENT(\"Placement & Direction\", \"設置・向き\")"));
+        assertTrue(navigation.contains("RESOURCES(\"Resources\", \"資源\")"));
+        assertTrue(navigation.contains("VISIBILITY(\"Visibility\", \"見やすさ\")"));
+        assertTrue(navigation.contains("HOTKEYS(\"Keybinds\", \"キー設定\")"));
+        assertTrue(navigation.contains("HELP(\"Guide\", \"使い方\")"));
+        assertTrue(screen.contains("for (ChiseTweaksUiSection section : ChiseTweaksUiSection.values())"));
+
+        assertFalse(screen.contains("ConfigGuiTab"));
+        assertFalse(screen.contains("TargetListCategory"));
+        assertFalse(screen.contains("FEATURES(\"Features & Keybinds\")"));
+        assertFalse(screen.contains("LISTS(\"Lists\")"));
+        assertFalse(navigation.contains("OTHER("));
+    }
+
+    @Test
+    void categoryPagesKeepFeaturesAndTheirTargetsTogether() throws IOException {
         String source = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
 
-        assertTrue(source.contains(
-                "FEATURES(\"Features & Keybinds\"), LISTS(\"Lists\"), HELP(\"Feature Guide\")"));
-        assertTrue(source.contains("super(10, 100"));
-        assertTrue(source.contains("case FEATURES -> 260"));
+        assertTrue(source.contains("case PLACEMENT -> createPlacementOptions()"));
+        assertTrue(source.contains("case RESOURCES -> createResourceOptions()"));
+        assertTrue(source.contains("case VISIBILITY -> createVisibilityOptions()"));
+
+        assertTrue(source.contains("addFeature(rows, FeatureSwitches.PUMPKIN_SCAFFOLD)"));
+        assertTrue(source.contains("addFeature(rows, FeatureSwitches.PLACEMENT_GUIDE)"));
+        assertTrue(source.contains("visualTargetsFor(ChiseTweaksUiSection.PLACEMENT)"));
+
+        assertTrue(source.contains("addFeature(rows, FeatureSwitches.MATERIAL_HIGHLIGHTS)"));
+        assertTrue(source.contains("visualTargetsFor(ChiseTweaksUiSection.RESOURCES)"));
+
+        assertTrue(source.contains("addFeature(rows, FeatureSwitches.HIDDEN_SURFACE_TRACE)"));
+        assertTrue(source.contains("visualTargetsFor(ChiseTweaksUiSection.VISIBILITY)"));
+        assertTrue(source.contains("addConfigs(rows, BuilderFocusConfig.RULE_OPTIONS)"));
+    }
+
+    @Test
+    void categoryPagesExposeOneContextAwareBulkSelectionControl() throws IOException {
+        String screen = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+
+        assertTrue(screen.contains("createBulkToggleButton"));
+        assertTrue(screen.contains("一括選択："));
+        assertTrue(screen.contains("boolean turnOn = !areAllCategoryTargetsEnabled"));
+        assertTrue(screen.contains("setAllCategoryTargets(section, turnOn)"));
+        assertTrue(screen.contains("VisualTargetSettings.setAllOreHighlightTargets(enabled)"));
+
+        assertFalse(screen.contains("ALL_ON"));
+        assertFalse(screen.contains("ALL_OFF"));
+        assertFalse(screen.contains("対象 全ON"));
+        assertFalse(screen.contains("対象 全OFF"));
+        assertFalse(screen.contains("SOLO"));
+        assertFalse(screen.contains("Solo選択"));
+    }
+
+    @Test
+    void keybindsAreAFirstClassTopLevelDestination() throws IOException {
+        String source = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+
+        assertTrue(source.contains("case HOTKEYS -> createHotkeyOptions()"));
+        assertTrue(source.contains("Feature keybinds"));
+        assertTrue(source.contains("機能のキー設定"));
         assertTrue(source.contains("BooleanHotkeyGuiWrapper"));
-        assertTrue(source.contains("return ConfigOptionWrapper.createFor(toggles);"));
-        assertFalse(source.contains("HOTKEYS("));
-        assertFalse(source.contains("ALL("));
-        assertFalse(source.contains("createAllOptions"));
+        assertTrue(source.contains("for (FeatureSwitch feature : FeatureSwitches.VALUES)"));
     }
 
     @Test
-    void targetListsExposeFourTaskOrientedCategories() throws IOException {
-        String source = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+    void guideUsesTheSameNavigationAndAddsSearch() throws IOException {
+        String help = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksHelpScreen.java"));
 
-        assertTrue(source.contains("TargetListCategory"));
-        assertTrue(source.contains("DECORATION(\"visualTargetPlacement\", \"Decoration\", \"装飾\")"));
-        assertTrue(source.contains(
-                "MINING_RESOURCES(\"visualTargetMaterial\", \"Mining / Resources\", \"採掘・資源\")"));
-        assertTrue(source.contains(
-                "VISUAL_SUPPORT(\"visualTargetHidden\", \"Visual Support\", \"視認支援\")"));
-        assertTrue(source.contains("OTHER(\"\", \"Other\", \"その他\")"));
-        assertTrue(source.contains("selectedTargetCategory.matches(option.getName())"));
+        assertTrue(help.contains("createNavigation()"));
+        assertTrue(help.contains("for (ChiseTweaksUiSection section : ChiseTweaksUiSection.values())"));
+        assertTrue(help.contains("new ChiseTweaksConfigScreen(section)"));
+        assertTrue(help.contains("EditBox"));
+        assertTrue(help.contains("filteredEntries()"));
+        assertTrue(help.contains("searchable.contains(query)"));
     }
 
     @Test
-    void targetListsKeepVisualTargetsAndSceneFilterRulesSeparated() throws IOException {
+    void searchRemainsAvailableAcrossSettingsDestinations() throws IOException {
         String source = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
 
-        assertTrue(source.contains("case LISTS -> createTargetListOptions()"));
-        assertTrue(source.contains("if (selectedTargetCategory == TargetListCategory.OTHER)"));
-        assertTrue(source.contains("options.addAll(BuilderFocusConfig.RULE_OPTIONS)"));
-        assertTrue(source.contains("for (IConfigBase option : VisualTargetSettings.ALL_OPTIONS)"));
-        assertFalse(source.contains("options.addAll(LocalFeatureSettings.ALL_OPTIONS)"));
-    }
-
-    @Test
-    void targetListsEnableSearchForTheCategoryFilteredRows() throws IOException {
-        String source = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
-
-        assertTrue(source.contains(
-                "return selectedTab == ConfigGuiTab.FEATURES || selectedTab == ConfigGuiTab.LISTS;"));
+        assertTrue(source.contains("return selectedSection != ChiseTweaksUiSection.HELP;"));
+        assertTrue(source.contains("super(10, 76"));
     }
 
     @Test
@@ -86,36 +129,6 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
-    void miningCategoryProvidesOnlyBulkOreHighlightControls() throws IOException {
-        String screen = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
-
-        assertTrue(screen.contains(
-                "if (selectedTargetCategory == TargetListCategory.MINING_RESOURCES)"));
-        assertTrue(screen.contains("TargetListAction"));
-        assertTrue(screen.contains("ALL_ON"));
-        assertTrue(screen.contains("ALL_OFF"));
-        assertTrue(screen.contains("対象 全ON"));
-        assertTrue(screen.contains("対象 全OFF"));
-        assertTrue(screen.contains("VisualTargetSettings.setAllOreHighlightTargets(true)"));
-        assertTrue(screen.contains("VisualTargetSettings.setAllOreHighlightTargets(false)"));
-
-        assertFalse(screen.contains("SOLO"));
-        assertFalse(screen.contains("Solo選択"));
-        assertFalse(screen.contains("Solo:"));
-        assertFalse(screen.contains("toggleSoloOreSelection"));
-    }
-
-    @Test
-    void categoryChangesResetTransientTargetControlsBeforeRefreshingTheList() throws IOException {
-        String source = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
-
-        assertTrue(source.contains("class CategoryButtonListener"));
-        assertTrue(source.contains("VisualTargetSettings.resetTransientControls();\n            selectedTargetCategory = category;"));
-    }
-
-    @Test
     void worksiteVisibilityUsesWorldOverlayWithoutTheRemovedHudPath() throws IOException {
         Path worksite = ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite");
@@ -128,22 +141,5 @@ final class ConfigUiSimplificationContractTest {
         assertTrue(engine.contains("overlayRenderer.updateTargets(targets)"));
         assertFalse(engine.contains("hudPresenter"));
         assertFalse(engine.contains("targetInspector"));
-    }
-
-    @Test
-    void unifiedFeatureTabLabelsAndRemovedUiKeysStayStable() throws IOException {
-        String english = Files.readString(ROOT.resolve(
-                "src/main/resources/assets/chisetweaks/lang/en_us.json"));
-        String japanese = Files.readString(ROOT.resolve(
-                "src/main/resources/assets/chisetweaks/lang/ja_jp.json"));
-
-        assertTrue(english.contains("\"gui.chisetweaks.tab.features\": \"Features & Keybinds\""));
-        assertTrue(japanese.contains("\"gui.chisetweaks.tab.features\": \"機能・キー設定\""));
-
-        for (String language : new String[] {english, japanese}) {
-            assertFalse(language.contains("gui.chisetweaks.tab.all"));
-            assertFalse(language.contains("gui.chisetweaks.tab.hotkeys"));
-            assertFalse(language.contains("config.option.localworksitevisibilitymaxresults"));
-        }
     }
 }
