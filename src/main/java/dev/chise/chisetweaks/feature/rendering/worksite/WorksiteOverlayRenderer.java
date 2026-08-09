@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 
 /** Owns high-visibility world-space rendering for bounded worksite targets. */
 final class WorksiteOverlayRenderer {
-    private static final String RENDERER_REVISION = "surface-line-v3-bounded";
+    private static final String RENDERER_REVISION = "surface-line-v4-budgeted";
     private static final int ACCENT_DARK = 0xFF4E3A8C;
     private static final int ACCENT_LIGHT = 0xFFB29CFF;
     private static final int THREAD_IDLE = 0xFF5E4FA2;
@@ -120,17 +120,26 @@ final class WorksiteOverlayRenderer {
             case TECHNICAL_TRACE -> {
                 int stateColor = target.powered() ? THREAD_POWERED : THREAD_IDLE;
                 int accent = target.powered() ? ACCENT_DARK : ACCENT_LIGHT;
-                SurfaceLineVisualGeometry.drawThreadSkin(
-                        vertices,
-                        pose,
-                        target.position(),
-                        target.presentation().details(),
-                        stateColor,
-                        accent,
-                        4.6f);
-                if (target.tripwireHook()) {
-                    WorldLineGeometry.drawOrientation(
-                            vertices, pose, target.position(), target.orientation(), accent, 2.3f);
+                if (compact) {
+                    SurfaceLineVisualGeometry.drawCompactFrame(
+                            vertices, pose, target.position(), stateColor, 1.8f);
+                    if (target.tripwireHook()) {
+                        WorldLineGeometry.drawOrientation(
+                                vertices, pose, target.position(), target.orientation(), accent, 1.6f);
+                    }
+                } else {
+                    SurfaceLineVisualGeometry.drawThreadSkin(
+                            vertices,
+                            pose,
+                            target.position(),
+                            target.presentation().details(),
+                            stateColor,
+                            accent,
+                            4.6f);
+                    if (target.tripwireHook()) {
+                        WorldLineGeometry.drawOrientation(
+                                vertices, pose, target.position(), target.orientation(), accent, 2.3f);
+                    }
                 }
             }
             case HIDDEN_SURFACE -> {
