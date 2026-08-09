@@ -13,12 +13,13 @@ final class ConfigUiSimplificationContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
-    void configUiUsesExactlyTheFormerHotkeyListAsThePrimaryFeatureView() throws IOException {
+    void configUiKeepsTheFeatureAndKeybindViewWhileReservingSpaceForTargetNavigation() throws IOException {
         String source = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
 
         assertTrue(source.contains(
                 "FEATURES(\"Features & Keybinds\"), LISTS(\"Lists\"), HELP(\"Feature Guide\")"));
+        assertTrue(source.contains("super(10, 100"));
         assertTrue(source.contains("case FEATURES -> 260"));
         assertTrue(source.contains("BooleanHotkeyGuiWrapper"));
         assertTrue(source.contains("return ConfigOptionWrapper.createFor(toggles);"));
@@ -28,15 +29,39 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
-    void targetListsOwnFineGrainedVisualTargetsWithoutDuplicatingParentFeatures() throws IOException {
+    void targetListsExposeFourTaskOrientedCategories() throws IOException {
         String source = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
 
-        assertTrue(source.contains("VisualTargetSettings.init()"));
+        assertTrue(source.contains("TargetListCategory"));
+        assertTrue(source.contains("DECORATION(\"visualTargetPlacement\", \"Decoration\", \"装飾\")"));
+        assertTrue(source.contains(
+                "MINING_RESOURCES(\"visualTargetMaterial\", \"Mining / Resources\", \"採掘・資源\")"));
+        assertTrue(source.contains(
+                "VISUAL_SUPPORT(\"visualTargetHidden\", \"Visual Support\", \"視認支援\")"));
+        assertTrue(source.contains("OTHER(\"\", \"Other\", \"その他\")"));
+        assertTrue(source.contains("selectedTargetCategory.matches(option.getName())"));
+    }
+
+    @Test
+    void targetListsKeepVisualTargetsAndSceneFilterRulesSeparated() throws IOException {
+        String source = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+
         assertTrue(source.contains("case LISTS -> createTargetListOptions()"));
-        assertTrue(source.contains("options.addAll(VisualTargetSettings.ALL_OPTIONS)"));
+        assertTrue(source.contains("if (selectedTargetCategory == TargetListCategory.OTHER)"));
         assertTrue(source.contains("options.addAll(BuilderFocusConfig.RULE_OPTIONS)"));
+        assertTrue(source.contains("for (IConfigBase option : VisualTargetSettings.ALL_OPTIONS)"));
         assertFalse(source.contains("options.addAll(LocalFeatureSettings.ALL_OPTIONS)"));
+    }
+
+    @Test
+    void targetListsEnableSearchForTheCategoryFilteredRows() throws IOException {
+        String source = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+
+        assertTrue(source.contains(
+                "return selectedTab == ConfigGuiTab.FEATURES || selectedTab == ConfigGuiTab.LISTS;"));
     }
 
     @Test
@@ -61,12 +86,14 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
-    void targetListsProvideSoloAndBulkOreHighlightControls() throws IOException {
+    void miningCategoryProvidesSoloAndBulkOreHighlightControlsOnlyWhereTheyApply() throws IOException {
         String screen = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
         String targets = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java"));
 
+        assertTrue(screen.contains(
+                "if (selectedTargetCategory == TargetListCategory.MINING_RESOURCES)"));
         assertTrue(screen.contains("TargetListAction"));
         assertTrue(screen.contains("SOLO"));
         assertTrue(screen.contains("ALL_ON"));
@@ -84,6 +111,15 @@ final class ConfigUiSimplificationContractTest {
         assertTrue(targets.contains("if (soloOreSelection\n                && enabled"));
         assertTrue(targets.contains("toggleSoloOreSelection"));
         assertTrue(targets.contains("if (soloOreSelection) setAllOreHighlightTargets(false)"));
+    }
+
+    @Test
+    void categoryChangesClearTransientSoloStateBeforeRefreshingTheList() throws IOException {
+        String source = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+
+        assertTrue(source.contains("class CategoryButtonListener"));
+        assertTrue(source.contains("VisualTargetSettings.resetTransientControls();\n            selectedTargetCategory = category;"));
     }
 
     @Test
