@@ -93,7 +93,9 @@ def qualityGateClasses = [
         'dev/chise/chisetweaks/core/policy/PumpkinScaffoldPolicy*.class',
         'dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy*.class',
         'dev/chise/chisetweaks/core/vision/OreHighlightLightingPolicy*.class',
-        'dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy*.class'
+        'dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy*.class',
+        'dev/chise/chisetweaks/core/vision/VisualModelSelectionPolicy*.class',
+        'dev/chise/chisetweaks/core/vision/VisualTargetSelectionPolicy*.class'
 ]
 
 def qualityGateClassDirectories = providers.provider {
@@ -142,13 +144,16 @@ pitest {
         'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
         'dev.chise.chisetweaks.core.security.SecureConfigStorage',
         'dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy',
-        'dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy'
+        'dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy',
+        'dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy',
+        'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy'
     ]
     targetTests = [
         'dev.chise.chisetweaks.*Test',
         'dev.chise.chisetweaks.config.*Test',
         'dev.chise.chisetweaks.runtime.*Test',
-        'dev.chise.chisetweaks.core.security.*Test'
+        'dev.chise.chisetweaks.core.security.*Test',
+        'dev.chise.chisetweaks.core.vision.*Test'
     ]
     junit5PluginVersion = '1.2.3'
     threads = 2

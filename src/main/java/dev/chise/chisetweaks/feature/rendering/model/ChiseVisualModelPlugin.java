@@ -27,11 +27,14 @@ import java.util.Map;
  * server state, or packets are modified.</p>
  */
 public final class ChiseVisualModelPlugin {
-    public static final String REVISION = "ore-highlight-emissive-overlay-2";
+    public static final String REVISION = "ore-highlight-emissive-overlay-3";
 
     private static final Map<Block, ModelSpec> MODEL_REPLACEMENTS = Map.ofEntries(
             replacement(Blocks.OBSIDIAN, Target.MATERIAL_OBSIDIAN, "obsidian"),
+            replacement(Blocks.CRYING_OBSIDIAN, Target.MATERIAL_CRYING_OBSIDIAN, "crying_obsidian"),
             replacement(Blocks.ANCIENT_DEBRIS, Target.MATERIAL_ANCIENT_DEBRIS, "ancient_debris"),
+            replacement(Blocks.NETHER_GOLD_ORE, Target.MATERIAL_NETHER_GOLD_ORE, "nether_gold_ore"),
+            replacement(Blocks.NETHER_QUARTZ_ORE, Target.MATERIAL_NETHER_QUARTZ_ORE, "nether_quartz_ore"),
             replacement(Blocks.DIAMOND_ORE, Target.MATERIAL_DIAMOND_ORE, "diamond_ore"),
             replacement(Blocks.DEEPSLATE_DIAMOND_ORE, Target.MATERIAL_DIAMOND_ORE, "deepslate_diamond_ore"),
             replacement(Blocks.GOLD_ORE, Target.MATERIAL_GOLD_ORE, "gold_ore"),

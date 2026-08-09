@@ -31,7 +31,10 @@ public final class BlockInspectionPolicy {
 
     private static final Set<String> MATERIAL_HIGHLIGHT_IDS = Set.of(
             "minecraft:obsidian",
+            "minecraft:crying_obsidian",
             "minecraft:ancient_debris",
+            "minecraft:nether_gold_ore",
+            "minecraft:nether_quartz_ore",
             "minecraft:coal_ore",
             "minecraft:deepslate_coal_ore",
             "minecraft:iron_ore",

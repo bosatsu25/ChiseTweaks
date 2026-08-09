@@ -16,14 +16,23 @@ final class VisualModelSelectionPolicyTest {
     }
 
     @Test
-    void materialMaskContainsExactlyTheTenMaterialFamilies() {
-        assertEquals(10, Integer.bitCount(VisualModelSelectionPolicy.MATERIAL_MODEL_TARGET_MASK));
+    void materialMaskContainsExactlyTheThirteenMaterialFamilies() {
+        assertEquals(13, Integer.bitCount(VisualModelSelectionPolicy.MATERIAL_MODEL_TARGET_MASK));
         assertTrue(VisualModelSelectionPolicy.useMaterialTarget(
                 VisualModelSelectionPolicy.MATERIAL_MODEL_TARGET_MASK,
                 Target.MATERIAL_DIAMOND_ORE));
         assertTrue(VisualModelSelectionPolicy.useMaterialTarget(
                 VisualModelSelectionPolicy.MATERIAL_MODEL_TARGET_MASK,
                 Target.MATERIAL_OBSIDIAN));
+        assertTrue(VisualModelSelectionPolicy.useMaterialTarget(
+                VisualModelSelectionPolicy.MATERIAL_MODEL_TARGET_MASK,
+                Target.MATERIAL_CRYING_OBSIDIAN));
+        assertTrue(VisualModelSelectionPolicy.useMaterialTarget(
+                VisualModelSelectionPolicy.MATERIAL_MODEL_TARGET_MASK,
+                Target.MATERIAL_NETHER_GOLD_ORE));
+        assertTrue(VisualModelSelectionPolicy.useMaterialTarget(
+                VisualModelSelectionPolicy.MATERIAL_MODEL_TARGET_MASK,
+                Target.MATERIAL_NETHER_QUARTZ_ORE));
         assertFalse(VisualModelSelectionPolicy.useMaterialTarget(
                 VisualModelSelectionPolicy.MATERIAL_MODEL_TARGET_MASK,
                 Target.HIDDEN_POWDER_SNOW));
@@ -33,11 +42,11 @@ final class VisualModelSelectionPolicyTest {
     void disabledMaterialTargetIsRemovedFromModelMask() {
         int configured = VisualTargetSelectionPolicy.withEnabled(
                 VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
-                Target.MATERIAL_GOLD_ORE,
+                Target.MATERIAL_NETHER_QUARTZ_ORE,
                 false);
         int active = VisualModelSelectionPolicy.activeMaterialModelMask(true, configured);
 
-        assertFalse(VisualModelSelectionPolicy.useMaterialTarget(active, Target.MATERIAL_GOLD_ORE));
+        assertFalse(VisualModelSelectionPolicy.useMaterialTarget(active, Target.MATERIAL_NETHER_QUARTZ_ORE));
         assertTrue(VisualModelSelectionPolicy.useMaterialTarget(active, Target.MATERIAL_DIAMOND_ORE));
     }
 

@@ -37,7 +37,13 @@ public final class VisualTargetSelectionPolicy {
         HIDDEN_BLUE_ICE(21),
         HIDDEN_DEAD_CORAL(22),
         HIDDEN_POWDER_SNOW(23),
-        HIDDEN_SCULK_CATALYST(24);
+        HIDDEN_SCULK_CATALYST(24),
+
+        // Persisted bit indices are append-only. Never insert above these entries or old masks
+        // would silently select a different target after an upgrade.
+        MATERIAL_CRYING_OBSIDIAN(25),
+        MATERIAL_NETHER_GOLD_ORE(26),
+        MATERIAL_NETHER_QUARTZ_ORE(27);
 
         private final int bit;
 
@@ -50,12 +56,30 @@ public final class VisualTargetSelectionPolicy {
         }
     }
 
+    public static final int LEGACY_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
+    public static final int NEW_NETHER_TARGETS_MASK =
+            Target.MATERIAL_CRYING_OBSIDIAN.bitMask()
+                    | Target.MATERIAL_NETHER_GOLD_ORE.bitMask()
+                    | Target.MATERIAL_NETHER_QUARTZ_ORE.bitMask();
     public static final int ALL_TARGETS_MASK = (1 << Target.values().length) - 1;
 
     private VisualTargetSelectionPolicy() {}
 
     public static int sanitizeMask(int mask) {
         return mask & ALL_TARGETS_MASK;
+    }
+
+    /**
+     * Upgrades a persisted mask without changing the meaning of any pre-existing target bit.
+     * Targets introduced after schema v1 are enabled once during migration, then future loads
+     * preserve the user's explicit choices through the stored schema version.
+     */
+    public static int migrateMask(int mask, int schemaVersion) {
+        int sanitized = sanitizeMask(mask);
+        return schemaVersion < CURRENT_SCHEMA_VERSION
+                ? sanitized | NEW_NETHER_TARGETS_MASK
+                : sanitized;
     }
 
     public static boolean isEnabled(int mask, Target target) {
@@ -119,8 +143,17 @@ public final class VisualTargetSelectionPolicy {
 
     private static boolean materialEnabled(int mask, String id) {
         if (id.equals("minecraft:obsidian")) return isEnabled(mask, Target.MATERIAL_OBSIDIAN);
+        if (id.equals("minecraft:crying_obsidian")) {
+            return isEnabled(mask, Target.MATERIAL_CRYING_OBSIDIAN);
+        }
         if (id.equals("minecraft:ancient_debris")) {
             return isEnabled(mask, Target.MATERIAL_ANCIENT_DEBRIS);
+        }
+        if (id.equals("minecraft:nether_gold_ore")) {
+            return isEnabled(mask, Target.MATERIAL_NETHER_GOLD_ORE);
+        }
+        if (id.equals("minecraft:nether_quartz_ore")) {
+            return isEnabled(mask, Target.MATERIAL_NETHER_QUARTZ_ORE);
         }
         if (orePair(id, "diamond")) return isEnabled(mask, Target.MATERIAL_DIAMOND_ORE);
         if (orePair(id, "gold")) return isEnabled(mask, Target.MATERIAL_GOLD_ORE);

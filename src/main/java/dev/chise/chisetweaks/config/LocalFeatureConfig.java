@@ -36,6 +36,8 @@ public final class LocalFeatureConfig {
 
     /** Fine-grained visual targets. All bits start enabled for backwards-compatible behaviour. */
     public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
+    /** Persisted target-bit schema so newly introduced targets are migrated exactly once. */
+    public int visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
 
     public int pumpkinScaffoldPlacementRange = PumpkinScaffoldPolicy.DEFAULT_PLACEMENT_RANGE;
 
@@ -78,6 +80,15 @@ public final class LocalFeatureConfig {
             JsonObject merged = LocalFeatureConfigDocumentPolicy.overlayKnownValues(defaults, source);
             LocalFeatureConfig loaded = GSON.fromJson(merged, LocalFeatureConfig.class);
             if (loaded == null) return false;
+
+            int sourceSchemaVersion = source.has("visualTargetSchemaVersion")
+                    ? source.get("visualTargetSchemaVersion").getAsInt()
+                    : VisualTargetSelectionPolicy.LEGACY_SCHEMA_VERSION;
+            loaded.visualTargetMask = VisualTargetSelectionPolicy.migrateMask(
+                    loaded.visualTargetMask,
+                    sourceSchemaVersion);
+            loaded.visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
+
             copyFrom(loaded);
             sanitize();
             return true;
@@ -114,6 +125,7 @@ public final class LocalFeatureConfig {
         worksiteVisibilityWorldOverlay = true;
         worksiteVisibilityExclusiveMode = false;
         visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
+        visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
         pumpkinScaffoldPlacementRange = PumpkinScaffoldPolicy.DEFAULT_PLACEMENT_RANGE;
     }
 
@@ -129,6 +141,7 @@ public final class LocalFeatureConfig {
         worksiteVisibilityMaxOverlayResults =
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(worksiteVisibilityMaxOverlayResults);
         visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
+        visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
         pumpkinScaffoldPlacementRange =
                 PumpkinScaffoldPolicy.clampPlacementRange(pumpkinScaffoldPlacementRange);
     }
@@ -148,6 +161,7 @@ public final class LocalFeatureConfig {
         worksiteVisibilityWorldOverlay = loaded.worksiteVisibilityWorldOverlay;
         worksiteVisibilityExclusiveMode = loaded.worksiteVisibilityExclusiveMode;
         visualTargetMask = loaded.visualTargetMask;
+        visualTargetSchemaVersion = loaded.visualTargetSchemaVersion;
         pumpkinScaffoldPlacementRange = loaded.pumpkinScaffoldPlacementRange;
     }
 }
