@@ -2,14 +2,13 @@ package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
-import java.util.Locale;
 import java.util.Objects;
 
 /**
  * Chise-owned persistent feature switch.
  *
  * <p>Feature toggles are intentionally plain booleans now. Opening the settings UI will use a
- * future Chise-owned input surface; individual MaLiLib hotkeys are no longer part of the feature
+ * future Chise-owned input surface; individual feature hotkeys are no longer part of the feature
  * model.</p>
  */
 public final class FeatureSwitch extends ChiseBooleanSetting {
