@@ -9,9 +9,12 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.block.Block;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,10 +126,12 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
     }
 
     private void cycleMode() {
+        // The first active mode is the fail-open hide list. An empty allow list could otherwise
+        // make the scene appear blank immediately when a user enables filtering for the first time.
         ChiseRuleMode next = switch (modeSetting().getValue()) {
-            case NONE -> ChiseRuleMode.WHITELIST;
-            case WHITELIST -> ChiseRuleMode.BLACKLIST;
-            case BLACKLIST -> ChiseRuleMode.NONE;
+            case NONE -> ChiseRuleMode.BLACKLIST;
+            case BLACKLIST -> ChiseRuleMode.WHITELIST;
+            case WHITELIST -> ChiseRuleMode.NONE;
         };
         modeSetting().setValue(next);
         page = 0;
@@ -142,6 +147,13 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         Identifier id = Identifier.tryParse(raw);
         if (id == null) {
             feedback = japanese ? "IDの形式が正しくありません。" : "Invalid identifier format.";
+            refreshControls();
+            return;
+        }
+        if (!isRegisteredTarget(id)) {
+            feedback = japanese
+                    ? "現在のクライアントに存在しないIDです。"
+                    : "That ID is not registered in this client.";
             refreshControls();
             return;
         }
@@ -167,6 +179,19 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         page = Math.max(0, (sanitized.size() - 1) / pageSize);
         feedback = japanese ? "追加しました。" : "Added.";
         refreshControls();
+    }
+
+    private boolean isRegisteredTarget(Identifier id) {
+        if (target == Target.BLOCKS) {
+            for (Block block : BuiltInRegistries.BLOCK) {
+                if (id.equals(BuiltInRegistries.BLOCK.getKey(block))) return true;
+            }
+            return false;
+        }
+        for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
+            if (id.equals(BuiltInRegistries.ENTITY_TYPE.getKey(type))) return true;
+        }
+        return false;
     }
 
     private void removeEntry(int visibleSlot) {
