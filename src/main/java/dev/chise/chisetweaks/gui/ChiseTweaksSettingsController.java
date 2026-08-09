@@ -16,16 +16,14 @@ import net.minecraft.network.chat.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Owns config/domain mapping for the standalone Chise settings UI. */
+/** Owns config/domain mapping for the focused standalone Chise settings UI. */
 final class ChiseTweaksSettingsController {
     private final boolean japanese;
-    private final List<ChiseBooleanSetting> placementTargets;
     private final List<ChiseBooleanSetting> resourceTargets;
     private final List<ChiseBooleanSetting> visibilityTargets;
 
     ChiseTweaksSettingsController(boolean japanese) {
         this.japanese = japanese;
-        this.placementTargets = targets("visualTargetPlacement");
         this.resourceTargets = targets("visualTargetMaterial");
         this.visibilityTargets = targets("visualTargetHidden");
     }
@@ -40,15 +38,12 @@ final class ChiseTweaksSettingsController {
         VisualTargetSettings.init();
     }
 
-    boolean japanese() {
-        return japanese;
-    }
+    boolean japanese() { return japanese; }
 
     List<ChiseTweaksSettingRowDefinition> rowsFor(ChiseTweaksUiSection section) {
         if (section == null) return List.of();
         ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
         switch (section) {
-            case PLACEMENT -> addPlacementRows(rows);
             case RESOURCES -> addResourceRows(rows);
             case VISIBILITY -> addVisibilityRows(rows);
             case HELP -> { }
@@ -79,12 +74,6 @@ final class ChiseTweaksSettingsController {
     boolean resetSection(ChiseTweaksUiSection section) {
         if (section == null) return false;
         switch (section) {
-            case PLACEMENT -> {
-                FeatureSwitches.PUMPKIN_SCAFFOLD.resetToDefault();
-                FeatureSwitches.PLACEMENT_GUIDE.resetToDefault();
-                LocalFeatureSettings.PUMPKIN_SCAFFOLD_PLACEMENT_RANGE.resetToDefault();
-                resetTargetGroup(VisualTargetGroupPolicy.Group.PLACEMENT);
-            }
             case RESOURCES -> {
                 FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
                 FeatureSwitches.NETHER_PALETTE.resetToDefault();
@@ -106,10 +95,6 @@ final class ChiseTweaksSettingsController {
                 BuilderFocusConfig.ENTITY_WHITELIST.resetToDefault();
                 BuilderFocusConfig.ENTITY_BLACKLIST.resetToDefault();
 
-                LocalFeatureSettings.LAVA_SOURCE.resetToDefault();
-                LocalFeatureSettings.LAVA_FLOWING.resetToDefault();
-                LocalFeatureSettings.LAVA_SOURCE_COLOR.resetToDefault();
-                LocalFeatureSettings.LAVA_FLOWING_COLOR.resetToDefault();
                 LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.resetToDefault();
                 LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS.resetToDefault();
                 LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL.resetToDefault();
@@ -123,23 +108,7 @@ final class ChiseTweaksSettingsController {
         return true;
     }
 
-    void saveFeatureConfig() {
-        FeatureConfig.saveToFile();
-    }
-
-    private void addPlacementRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        header(rows, "header.placement", "設置・向き", "Placement & Direction");
-        bool(rows, "pumpkin", FeatureSwitches.PUMPKIN_SCAFFOLD,
-                "Pumpkin Scaffold", "かぼちゃを使った設置作業を補助する");
-        integer(rows, "pumpkinRange", LocalFeatureSettings.PUMPKIN_SCAFFOLD_PLACEMENT_RANGE,
-                "かぼちゃ設置距離", "かぼちゃを置く最大距離", 1);
-        bool(rows, "placementGuide", FeatureSwitches.PLACEMENT_GUIDE,
-                "設置方向ガイド", "ブロックの向きや設置状態を見やすくする");
-        header(rows, "header.placementTargets", "設置方向ガイドの対象", "Placement Guide targets");
-        for (ChiseBooleanSetting option : placementTargets) {
-            boolTarget(rows, option, "向きや設置状態を確認しやすくする");
-        }
-    }
+    void saveFeatureConfig() { FeatureConfig.saveToFile(); }
 
     private void addResourceRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         header(rows, "header.resources", "資源", "Resources");
@@ -197,7 +166,7 @@ final class ChiseTweaksSettingsController {
 
         header(rows, "header.visibilityDetails", "Lava Analyzer・視認の詳細設定", "Lava Analyzer & visibility details");
         bool(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
-                "Lava Analyzer", "溶岩源を解析し、深緑の発光枠で1ブロックずつ表示する");
+                "Lava Analyzer", "近くの溶岩源を解析し、壁越しでも距離に応じた深緑の発光枠で表示する");
         integer(rows, "scanRange", LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS,
                 "視認スキャン範囲", "周辺を確認する水平範囲", 1);
         integer(rows, "scanInterval", LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL,
@@ -284,7 +253,6 @@ final class ChiseTweaksSettingsController {
     private static VisualTargetGroupPolicy.Group groupFor(ChiseTweaksUiSection section) {
         if (section == null) return null;
         return switch (section) {
-            case PLACEMENT -> VisualTargetGroupPolicy.Group.PLACEMENT;
             case RESOURCES -> VisualTargetGroupPolicy.Group.MATERIAL;
             case VISIBILITY -> VisualTargetGroupPolicy.Group.HIDDEN;
             case HELP -> null;
