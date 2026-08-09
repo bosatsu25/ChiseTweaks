@@ -4,7 +4,8 @@ package dev.chise.chisetweaks.core.performance;
  * Stateful debounce/backoff policy for resource reloads caused by model-backed target changes.
  *
  * <p>Rapid UI edits are coalesced into one reload after a short quiet period. A failed reload is
- * backed off instead of being retried every client tick.</p>
+ * backed off instead of being retried every client tick. Methods are synchronized because reload
+ * completion may arrive off the client tick thread.</p>
  */
 public final class VisualModelReloadThrottlePolicy {
     public static final int QUIET_TICKS = 4;
@@ -15,7 +16,8 @@ public final class VisualModelReloadThrottlePolicy {
     private int stableTicks;
     private int retryCooldownTicks;
 
-    public boolean shouldRequestReload(int appliedMask, int desiredMask, boolean reloadInFlight) {
+    public synchronized boolean shouldRequestReload(
+            int appliedMask, int desiredMask, boolean reloadInFlight) {
         if (retryCooldownTicks > 0) retryCooldownTicks--;
 
         if (desiredMask == appliedMask) {
@@ -37,24 +39,24 @@ public final class VisualModelReloadThrottlePolicy {
                 && !reloadInFlight;
     }
 
-    public void onReloadSucceeded() {
+    public synchronized void onReloadSucceeded() {
         retryCooldownTicks = 0;
         desiredKnown = false;
         stableTicks = 0;
     }
 
-    public void onReloadFailed() {
+    public synchronized void onReloadFailed() {
         retryCooldownTicks = FAILURE_BACKOFF_TICKS;
     }
 
-    public void reset() {
+    public synchronized void reset() {
         desiredKnown = false;
         observedDesiredMask = 0;
         stableTicks = 0;
         retryCooldownTicks = 0;
     }
 
-    public int retryCooldownTicks() {
+    public synchronized int retryCooldownTicks() {
         return retryCooldownTicks;
     }
 }
