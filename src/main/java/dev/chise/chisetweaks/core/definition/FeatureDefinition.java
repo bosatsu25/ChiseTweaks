@@ -99,8 +99,8 @@ public enum FeatureDefinition {
             "lava_highlight",
             FeatureArea.RENDERING,
             "config.name.locallavahighlight",
-            "Lava Flow Lens",
-            "Sodium",
+            "Lava Source Guide",
+            "",
             FeatureHelpLevel.DIAGNOSTIC,
             null,
             null);
