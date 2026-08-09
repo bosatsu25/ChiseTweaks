@@ -8,6 +8,7 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
+import dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 import net.minecraft.network.chat.Component;
 
@@ -125,12 +126,24 @@ final class ChiseTweaksSettingsController {
     private void addResourceRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         header(rows, "header.resources", "資源", "Resources");
         bool(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
-                "鉱石ハイライト", "鉱石や資源の視認性をON/OFFする");
+                "鉱石・資源ハイライト",
+                "バニラ鉱石" + VanillaOreVisualCatalog.blockVariantCount()
+                        + "ブロック種をリソースパックなしで発光枠表示する");
         bool(rows, "nether", FeatureSwitches.NETHER_PALETTE,
                 "ネザー配色ガイド", "ネザーの主要な建材・地形素材を色分けして見やすくする");
-        header(rows, "header.resourceTargets", "ハイライト対象", "Highlight targets");
+
+        header(rows, "header.vanillaOreTargets", "バニラ鉱石の対象", "Vanilla ore targets");
         for (ChiseBooleanSetting option : resourceTargets) {
-            boolTarget(rows, option, "対象資源をON/OFFする");
+            if (!isSpecialMaterialTarget(option)) {
+                boolTarget(rows, option, "対象鉱石を発光枠で強調する");
+            }
+        }
+
+        header(rows, "header.specialMaterialTargets", "特殊資材", "Special materials");
+        for (ChiseBooleanSetting option : resourceTargets) {
+            if (isSpecialMaterialTarget(option)) {
+                boolTarget(rows, option, "対象資材を発光枠で強調する");
+            }
         }
     }
 
@@ -236,6 +249,12 @@ final class ChiseTweaksSettingsController {
             if (option.getName().startsWith(prefix)) result.add(option);
         }
         return List.copyOf(result);
+    }
+
+    private static boolean isSpecialMaterialTarget(ChiseBooleanSetting option) {
+        if (option == null) return false;
+        String name = option.getName();
+        return name.endsWith("Obsidian") || name.endsWith("CryingObsidian");
     }
 
     private String compactTargetName(String value) {
