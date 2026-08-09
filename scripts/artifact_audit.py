@@ -65,7 +65,10 @@ def main() -> None:
         f"LICENSE_MIT_{base}",
         f"LICENSE_APACHE-2.0_{base}",
     }
-    forbidden_fragments = (".git/", ".gradle/", ".idea/", "src/test/", "META-INF/gradle-plugins/")
+    forbidden_fragments = (
+        ".git/", ".gradle/", ".idea/", "src/test/", "META-INF/gradle-plugins/",
+        "fi/dy/masa/", "com/terraformersmc/modmenu/",
+    )
 
     with zipfile.ZipFile(runtime) as jar:
         names = set(jar.namelist())
@@ -99,22 +102,39 @@ def main() -> None:
         fail(f"packaged version {metadata.get('version')!r} != {version!r}")
     if metadata.get("environment") != "client":
         fail("packaged mod environment is not client")
+
+    entrypoints = metadata.get("entrypoints", {})
+    if set(entrypoints) != {"client"}:
+        fail(f"standalone build must expose only the client entrypoint; found {sorted(entrypoints)}")
+    if entrypoints.get("client") != ["dev.chise.chisetweaks.ChiseTweaksClient"]:
+        fail("packaged client entrypoint is not ChiseTweaksClient")
+
     depends = metadata.get("depends", {})
     expected_depends = {
         "minecraft": p["minecraft_version"],
         "fabricloader": f">={p['loader_version']}",
         "fabric-api": f">={p['fabric_api_version']}",
         "java": ">=25",
-        "malilib": f">={p['malilib_version']}",
     }
-    for key, expected in expected_depends.items():
-        if depends.get(key) != expected:
-            fail(f"packaged dependency {key}={depends.get(key)!r}, expected {expected!r}")
+    if depends != expected_depends:
+        fail(f"packaged standalone dependencies {depends!r}, expected {expected_depends!r}")
+
     recommends = metadata.get("recommends", {})
-    if recommends.get("modmenu") != f">={p['modmenu_version']}":
-        fail("packaged Mod Menu recommendation does not match gradle.properties")
-    if recommends.get("sodium") != f">={p['sodium_compat_version']}":
-        fail("packaged Sodium recommendation does not match gradle.properties")
+    expected_recommends = {"sodium": f">={p['sodium_compat_version']}"}
+    if recommends != expected_recommends:
+        fail(f"packaged recommendations {recommends!r}, expected {expected_recommends!r}")
+
+    custom = metadata.get("custom", {}).get("chisetweaks", {})
+    if custom.get("serverInstallationRequired") is not False:
+        fail("packaged metadata does not declare serverInstallationRequired=false")
+    if custom.get("customPlayProtocol") is not False:
+        fail("packaged metadata does not declare customPlayProtocol=false")
+    if custom.get("settingsOwnership") != "standalone":
+        fail("packaged settingsOwnership is not standalone")
+    if custom.get("externalConfigLibraryRequired") is not False:
+        fail("packaged metadata still requires an external config library")
+    if custom.get("modMenuRequired") is not False:
+        fail("packaged metadata still requires a Mod Menu entrypoint")
 
     args.report_dir.mkdir(parents=True, exist_ok=True)
     runtime_hash = sha256(runtime)
@@ -127,6 +147,7 @@ def main() -> None:
         "sources_jar": sources.name,
         "sources_sha256": sources_hash,
         "sources_size": sources.stat().st_size,
+        "settings_ownership": "standalone",
     }
     (args.report_dir / "artifact-audit.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     (args.report_dir / "SHA256SUMS.txt").write_text(
@@ -135,6 +156,7 @@ def main() -> None:
     summary = (
         "## ChiseTweaks verified artifacts\n\n"
         f"- Version: `{version}`\n"
+        "- Settings ownership: `standalone`\n"
         f"- Runtime: `{runtime.name}` ({runtime.stat().st_size} bytes)\n"
         f"- Runtime SHA-256: `{runtime_hash}`\n"
         f"- Sources: `{sources.name}` ({sources.stat().st_size} bytes)\n"

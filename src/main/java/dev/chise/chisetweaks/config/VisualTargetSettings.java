@@ -2,22 +2,17 @@ package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
-import fi.dy.masa.malilib.config.IConfigBase;
-import fi.dy.masa.malilib.config.options.ConfigBoolean;
-import fi.dy.masa.malilib.util.StringUtils;
 
 import java.util.List;
 
 /**
  * Fine-grained target switches shown in the Chise category settings UI.
  *
- * <p>Parent features remain the primary on/off switches. Ore Highlights is intentionally
- * configured by resource family: a normal ore and its deepslate variant share one switch because
- * the user is selecting the resource to find, not the stone host it generated in.</p>
+ * <p>The target model is fully Chise-owned. Normal/deepslate ore variants intentionally share one
+ * resource switch because the user selects a resource family, not a host-stone implementation.</p>
  */
 public final class VisualTargetSettings {
     private static final List<Entry> ENTRIES = List.of(
-            // Placement Guide targets.
             entry(Target.PLACEMENT_ANVIL, "visualTargetPlacementAnvil",
                     "Placement: Anvil", "設置方向：金床",
                     "Allow Placement Guide to mark anvils.", "設置方向ガイドで金床を表示対象にします。"),
@@ -52,7 +47,6 @@ public final class VisualTargetSettings {
                     "Placement: Logs & Wood", "設置方向：原木・木材",
                     "Allow Placement Guide to mark log, wood, stem and hyphae axes.", "設置方向ガイドで原木・木・幹・菌糸の軸を表示対象にします。"),
 
-            // Overworld ore families. Normal and deepslate variants deliberately share one row.
             entry(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre",
                     "Ore: Coal", "鉱石：石炭",
                     "Toggle normal and deepslate Coal Ore together.", "通常版と深層岩版の石炭鉱石を1つのスイッチで切り替えます。"),
@@ -77,8 +71,6 @@ public final class VisualTargetSettings {
             entry(Target.MATERIAL_EMERALD_ORE, "visualTargetMaterialEmeraldOre",
                     "Ore: Emerald", "鉱石：エメラルド",
                     "Toggle normal and deepslate Emerald Ore together.", "通常版と深層岩版のエメラルド鉱石を1つのスイッチで切り替えます。"),
-
-            // Nether mining resources.
             entry(Target.MATERIAL_NETHER_GOLD_ORE, "visualTargetMaterialNetherGoldOre",
                     "Nether Resource: Gold Ore", "ネザー資源：金鉱石",
                     "Highlight Nether Gold Ore without changing Netherrack.", "ネザーラックは変更せず、ネザー金鉱石だけを強調します。"),
@@ -87,9 +79,7 @@ public final class VisualTargetSettings {
                     "Highlight Nether Quartz Ore without changing Netherrack.", "ネザーラックは変更せず、ネザークォーツ鉱石だけを強調します。"),
             entry(Target.MATERIAL_ANCIENT_DEBRIS, "visualTargetMaterialAncientDebris",
                     "Nether Resource: Ancient Debris", "ネザー資源：古代の残骸",
-                    "Highlight Ancient Debris with its own muted whorl identity.", "古代の残骸を、銅とは異なる落ち着いた渦巻き表現で強調します。"),
-
-            // Useful non-ore materials stay selectable, but are not presented as ores.
+                    "Highlight Ancient Debris with its own muted whorl identity.", "古代の残骸を独立した表現で強調します。"),
             entry(Target.MATERIAL_OBSIDIAN, "visualTargetMaterialObsidian",
                     "Special Material: Obsidian", "特殊資材：黒曜石",
                     "Highlight Obsidian independently from Crying Obsidian.", "黒曜石を泣く黒曜石とは別に切り替えます。"),
@@ -97,7 +87,6 @@ public final class VisualTargetSettings {
                     "Special Material: Crying Obsidian", "特殊資材：泣く黒曜石",
                     "Highlight Crying Obsidian independently from normal Obsidian.", "泣く黒曜石を通常の黒曜石とは別に切り替えます。"),
 
-            // Hidden Surface Trace targets.
             entry(Target.HIDDEN_BLUE_ICE, "visualTargetHiddenBlueIce",
                     "Hidden Surface: Blue Ice", "隠面：青氷",
                     "Allow Hidden Surface Trace to mark visible blue ice.", "隠面トレースで見えている青氷を表示対象にします。"),
@@ -111,8 +100,8 @@ public final class VisualTargetSettings {
                     "Hidden Surface: Sculk Catalyst", "隠面：スカルクカタリスト",
                     "Allow Hidden Surface Trace to mark sculk catalysts.", "隠面トレースでスカルクカタリストを表示対象にします。"));
 
-    public static final List<IConfigBase> ALL_OPTIONS = ENTRIES.stream()
-            .map(entry -> (IConfigBase) entry.option())
+    public static final List<ChiseBooleanSetting> ALL_OPTIONS = ENTRIES.stream()
+            .map(entry -> (ChiseBooleanSetting) entry.option())
             .toList();
 
     private static boolean initialized;
@@ -121,30 +110,14 @@ public final class VisualTargetSettings {
     private VisualTargetSettings() {}
 
     public static synchronized void init() {
-        if (initialized) {
-            syncFromStorage();
-            refreshTranslations();
-            return;
-        }
         syncFromStorage();
+        if (initialized) return;
         bindCallbacks();
         initialized = true;
-        refreshTranslations();
     }
 
-    public static void refreshTranslations() {
-        boolean japanese = "ja".equals(StringUtils.getTranslatedOrFallback(
-                "screen.chisetweaks.help.language.probe", "en"));
-        for (Entry entry : ENTRIES) {
-            String base = "config.option." + entry.option().getName().toLowerCase();
-            String fallbackName = japanese ? entry.japaneseName() : entry.englishName();
-            String fallbackComment = japanese ? entry.japaneseComment() : entry.englishComment();
-            entry.option().setPrettyName(StringUtils.getTranslatedOrFallback(
-                    base + ".name", fallbackName));
-            entry.option().setComment(StringUtils.getTranslatedOrFallback(
-                    base + ".comment", fallbackComment));
-        }
-    }
+    /** Retained as a source-compatible no-op; labels are now owned by each setting. */
+    public static void refreshTranslations() {}
 
     public static synchronized void setAllOreHighlightTargets(boolean enabled) {
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
@@ -160,7 +133,7 @@ public final class VisualTargetSettings {
         try {
             int mask = LocalFeatureConfig.getInstance().visualTargetMask;
             for (Entry entry : ENTRIES) {
-                entry.option().setBooleanValue(
+                entry.option().setBooleanValueSilently(
                         VisualTargetSelectionPolicy.isEnabled(mask, entry.target()));
             }
         } finally {
@@ -193,18 +166,14 @@ public final class VisualTargetSettings {
             String japaneseComment) {
         return new Entry(
                 target,
-                new ConfigBoolean(configName, true, englishComment),
-                englishName,
-                japaneseName,
-                englishComment,
-                japaneseComment);
+                new SimpleBooleanSetting(
+                        configName,
+                        true,
+                        englishName,
+                        japaneseName,
+                        englishComment,
+                        japaneseComment));
     }
 
-    private record Entry(
-            Target target,
-            ConfigBoolean option,
-            String englishName,
-            String japaneseName,
-            String englishComment,
-            String japaneseComment) {}
+    private record Entry(Target target, SimpleBooleanSetting option) {}
 }

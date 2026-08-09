@@ -24,10 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Repository-level contracts that are intentionally kept in Java so the normal
- * Gradle/JUnit quality gate owns source, metadata and CI structure validation.
- */
+/** Repository-wide security, compatibility, performance and release contracts. */
 final class RepositoryContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
     private static final Path MAIN = ROOT.resolve("src/main/java");
@@ -42,9 +39,7 @@ final class RepositoryContractTest {
                 chars(116, 97, 105, 99, 104, 105),
                 chars(97, 109, 97, 116, 101, 114, 97, 115),
                 chars(97, 115, 116, 114, 97, 108));
-        List<String> shortTokens = List.of(
-                chars(97, 109, 97),
-                chars(97, 115, 116));
+        List<String> shortTokens = List.of(chars(97, 109, 97), chars(97, 115, 116));
         Set<String> skipDirs = Set.of(".git", ".gradle", "build", "out", "run", "runs");
         Set<String> binarySuffixes = Set.of(".png", ".jpg", ".jpeg", ".gif", ".webp", ".jar", ".class", ".zip");
         List<String> failures = new ArrayList<>();
@@ -52,18 +47,14 @@ final class RepositoryContractTest {
         try (Stream<Path> paths = Files.walk(ROOT)) {
             for (Path path : paths.filter(Files::isRegularFile).toList()) {
                 Path relative = ROOT.relativize(path);
-                if (relative.iterator().hasNext() && containsAnyPart(relative, skipDirs)) {
-                    continue;
-                }
+                if (relative.iterator().hasNext() && containsAnyPart(relative, skipDirs)) continue;
                 String fileName = path.getFileName().toString().toLowerCase();
-                if (binarySuffixes.stream().anyMatch(fileName::endsWith)) {
-                    continue;
-                }
+                if (binarySuffixes.stream().anyMatch(fileName::endsWith)) continue;
                 String text;
                 try {
                     text = Files.readString(path, StandardCharsets.UTF_8).toLowerCase();
-                } catch (IOException ex) {
-                    failures.add(relative + ": " + ex.getMessage());
+                } catch (IOException failure) {
+                    failures.add(relative + ": " + failure.getMessage());
                     continue;
                 }
                 if (longTokens.stream().anyMatch(text::contains)) {
@@ -86,9 +77,7 @@ final class RepositoryContractTest {
     void productionSourceRetainsSecurityPerformanceAndMaintainabilityContracts() throws IOException {
         List<Path> javaFiles = javaFiles();
         Map<Path, String> textByFile = new HashMap<>();
-        for (Path path : javaFiles) {
-            textByFile.put(path, Files.readString(path, StandardCharsets.UTF_8));
-        }
+        for (Path path : javaFiles) textByFile.put(path, Files.readString(path, StandardCharsets.UTF_8));
         String allText = String.join("\n", textByFile.values());
 
         for (Map.Entry<Path, String> entry : textByFile.entrySet()) {
@@ -98,11 +87,14 @@ final class RepositoryContractTest {
             assertFalse(Pattern.compile("catch\\s*\\([^)]*\\)\\s*\\{\\s*}", Pattern.DOTALL).matcher(text).find(), entry.getKey().toString());
         }
 
-        assertFalse(allText.contains("WorksiteVisibilityFeature"));
-        assertFalse(allText.contains("getWorksiteVisibilityFeature"));
-        assertFalse(allText.contains("ChiseConfigStorage"));
-        assertFalse(allText.contains("SafeFileStorage"));
-        assertFalse(allText.contains("hasChunkAt("));
+        for (String forbidden : List.of(
+                "WorksiteVisibilityFeature",
+                "getWorksiteVisibilityFeature",
+                "ChiseConfigStorage",
+                "SafeFileStorage",
+                "hasChunkAt(")) {
+            assertFalse(allText.contains(forbidden), forbidden);
+        }
 
         Path secureStorage = MAIN.resolve("dev/chise/chisetweaks/core/security/SecureConfigStorage.java");
         assertTrue(Files.isRegularFile(secureStorage));
@@ -149,7 +141,7 @@ final class RepositoryContractTest {
     }
 
     @Test
-    void metadataTranslationsMixinsAndWrapperRemainConsistent() throws IOException {
+    void standaloneMetadataTranslationsMixinsAndWrapperRemainConsistent() throws IOException {
         for (String name : List.of("LICENSE", "LICENSE_MIT", "LICENSE_APACHE-2.0", "NOTICE")) {
             Path path = ROOT.resolve(name);
             assertTrue(Files.isRegularFile(path) && !Files.readString(path).isBlank(), name);
@@ -159,9 +151,11 @@ final class RepositoryContractTest {
         assertTrue(Set.of("unresolved", "resolved").contains(properties.get("provenance_status")));
         for (String key : List.of(
                 "mod_version", "minecraft_version", "loader_version", "fabric_api_version",
-                "malilib_version", "modmenu_version", "sodium_compat_version", "jacoco_version")) {
+                "sodium_version", "sodium_compat_version", "jacoco_version")) {
             assertTrue(properties.containsKey(key) && !properties.get(key).isBlank(), key);
         }
+        assertFalse(properties.containsKey("malilib_version"));
+        assertFalse(properties.containsKey("modmenu_version"));
 
         Map<String, String> en = jsonStringMap(LANG.resolve("en_us.json"));
         Map<String, String> ja = jsonStringMap(LANG.resolve("ja_jp.json"));
@@ -181,16 +175,32 @@ final class RepositoryContractTest {
         }
 
         JsonObject fabric = jsonObject(RESOURCES.resolve("fabric.mod.json"));
+        assertEquals("client", fabric.get("environment").getAsString());
         assertEquals("${version}", fabric.get("version").getAsString());
+
+        JsonObject entrypoints = fabric.getAsJsonObject("entrypoints");
+        assertTrue(entrypoints.has("client"));
+        assertFalse(entrypoints.has("main"));
+        assertFalse(entrypoints.has("modmenu"));
+
         JsonObject depends = fabric.getAsJsonObject("depends");
         assertEquals("${minecraft_version}", depends.get("minecraft").getAsString());
         assertEquals(">=${loader_version}", depends.get("fabricloader").getAsString());
         assertEquals(">=${fabric_api_version}", depends.get("fabric-api").getAsString());
-        assertEquals(">=${malilib_version}", depends.get("malilib").getAsString());
         assertEquals(">=25", depends.get("java").getAsString());
+        assertFalse(depends.has("malilib"));
+        assertFalse(depends.has("modmenu"));
+
         JsonObject recommends = fabric.getAsJsonObject("recommends");
-        assertEquals(">=${modmenu_version}", recommends.get("modmenu").getAsString());
         assertEquals(">=${sodium_compat_version}", recommends.get("sodium").getAsString());
+        assertFalse(recommends.has("modmenu"));
+
+        JsonObject chiseMetadata = fabric.getAsJsonObject("custom").getAsJsonObject("chisetweaks");
+        assertFalse(chiseMetadata.get("serverInstallationRequired").getAsBoolean());
+        assertFalse(chiseMetadata.get("customPlayProtocol").getAsBoolean());
+        assertEquals("standalone", chiseMetadata.get("settingsOwnership").getAsString());
+        assertFalse(chiseMetadata.get("externalConfigLibraryRequired").getAsBoolean());
+        assertFalse(chiseMetadata.get("modMenuRequired").getAsBoolean());
 
         Set<String> configuredMixins = new HashSet<>();
         fabric.getAsJsonArray("mixins").forEach(value -> configuredMixins.add(value.getAsString()));
@@ -243,7 +253,6 @@ final class RepositoryContractTest {
         assertTrue(release.contains("actions/download-artifact@v8.0.1"));
         assertTrue(verify.contains("./gradlew --no-daemon --stacktrace clean qualityGate build"));
         assertTrue(release.contains("sha256sum --check SHA256SUMS.txt"));
-
         assertTrue(release.contains("workflow_dispatch:"));
         assertTrue(release.contains("github.ref != 'refs/heads/main'"));
         assertTrue(release.contains("needs.verify.outputs.minecraft_version"));
@@ -277,19 +286,13 @@ final class RepositoryContractTest {
     }
 
     private static boolean containsAnyPart(Path path, Set<String> parts) {
-        for (Path part : path) {
-            if (parts.contains(part.toString())) {
-                return true;
-            }
-        }
+        for (Path part : path) if (parts.contains(part.toString())) return true;
         return false;
     }
 
     private static String chars(int... values) {
         StringBuilder builder = new StringBuilder(values.length);
-        for (int value : values) {
-            builder.append((char) value);
-        }
+        for (int value : values) builder.append((char) value);
         return builder.toString();
     }
 
@@ -297,9 +300,7 @@ final class RepositoryContractTest {
         Map<String, String> result = new HashMap<>();
         for (String raw : Files.readAllLines(path, StandardCharsets.UTF_8)) {
             String line = raw.trim();
-            if (line.isEmpty() || line.startsWith("#")) {
-                continue;
-            }
+            if (line.isEmpty() || line.startsWith("#")) continue;
             int separator = line.indexOf('=');
             assertTrue(separator > 0, "malformed property: " + raw);
             result.put(line.substring(0, separator).trim(), line.substring(separator + 1).trim());

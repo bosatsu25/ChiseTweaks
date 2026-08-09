@@ -1,7 +1,7 @@
 package dev.chise.chisetweaks.gui;
 
 /**
- * Pure geometry policy for the Chise settings screen.
+ * Pure geometry policy for the standalone Chise settings screen.
  *
  * <p>This class deliberately has no Minecraft dependencies so responsive layout contracts can be
  * tested headlessly in CI. The rendered screen consumes the exact same geometry that the tests
@@ -11,7 +11,7 @@ public final class ChiseTweaksSettingsLayout {
     private static final int OUTER_MARGIN = 12;
     private static final int MAX_CONTENT_WIDTH = 1180;
     private static final int NAV_GAP = 5;
-    private static final int NAV_COUNT = 5;
+    private static final int NAV_COUNT = 4;
     private static final int BULK_GAP = 8;
     private static final int BULK_WIDTH = 134;
 
@@ -24,17 +24,13 @@ public final class ChiseTweaksSettingsLayout {
         int contentWidth = Math.min(MAX_CONTENT_WIDTH, Math.max(336, safeWidth - OUTER_MARGIN * 2));
         int contentX = Math.max(OUTER_MARGIN, (safeWidth - contentWidth) / 2);
 
-        int selectorWidth = clamp(contentWidth / 5, 150, 190);
-        Rect selector = new Rect(contentX + contentWidth - selectorWidth, 10, selectorWidth, 20);
+        // Chise is now a single standalone settings surface, so there is no mod-selector widget.
+        Rect selector = Rect.EMPTY;
 
         int navY = 40;
         int navButtonWidth = clamp((contentWidth - NAV_GAP * (NAV_COUNT - 1)) / NAV_COUNT, 64, 112);
         int navTotalWidth = navButtonWidth * NAV_COUNT + NAV_GAP * (NAV_COUNT - 1);
-        int navX = contentX;
-        if (navTotalWidth < contentWidth) {
-            navX = contentX;
-        }
-        Rect navigation = new Rect(navX, navY, navTotalWidth, 20);
+        Rect navigation = new Rect(contentX, navY, navTotalWidth, 20);
 
         int searchY = 68;
         int searchWidth = categoryPage
@@ -96,33 +92,16 @@ public final class ChiseTweaksSettingsLayout {
             int rowHeight,
             int headerHeight) {
 
-        public boolean categoryPage() {
-            return !bulk.isEmpty();
-        }
-
-        public int panelContentTop() {
-            return panel.y() + 8;
-        }
-
-        public int panelContentBottom() {
-            return panel.bottom() - 8;
-        }
+        public boolean categoryPage() { return !bulk.isEmpty(); }
+        public int panelContentTop() { return panel.y() + 8; }
+        public int panelContentBottom() { return panel.bottom() - 8; }
     }
 
     public record Rect(int x, int y, int width, int height) {
         public static final Rect EMPTY = new Rect(0, 0, 0, 0);
-
-        public int right() {
-            return x + width;
-        }
-
-        public int bottom() {
-            return y + height;
-        }
-
-        public boolean isEmpty() {
-            return width <= 0 || height <= 0;
-        }
+        public int right() { return x + width; }
+        public int bottom() { return y + height; }
+        public boolean isEmpty() { return width <= 0 || height <= 0; }
 
         public boolean overlaps(Rect other) {
             if (other == null || isEmpty() || other.isEmpty()) return false;

@@ -20,7 +20,6 @@ final class ChiseTweaksSettingsLayoutTest {
     void categoryLayoutNeverOverlapsSearchBulkPanelOrFooter() {
         for (int[] viewport : VIEWPORTS) {
             var layout = ChiseTweaksSettingsLayout.calculate(viewport[0], viewport[1], true);
-
             assertFalse(layout.search().overlaps(layout.bulk()), viewportLabel(viewport));
             assertFalse(layout.navigation().overlaps(layout.search()), viewportLabel(viewport));
             assertFalse(layout.search().overlaps(layout.panel()), viewportLabel(viewport));
@@ -34,12 +33,11 @@ final class ChiseTweaksSettingsLayoutTest {
     }
 
     @Test
-    void approved854x480CategoryGeometryIsPinnedAgainstUiRegression() {
+    void approved854x480StandaloneGeometryIsPinnedAgainstUiRegression() {
         var layout = ChiseTweaksSettingsLayout.calculate(854, 480, true);
-
         assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 0, 830, 480), layout.content());
-        assertEquals(new ChiseTweaksSettingsLayout.Rect(676, 10, 166, 20), layout.selector());
-        assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 40, 580, 20), layout.navigation());
+        assertTrue(layout.selector().isEmpty());
+        assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 40, 463, 20), layout.navigation());
         assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 68, 688, 20), layout.search());
         assertEquals(new ChiseTweaksSettingsLayout.Rect(708, 68, 134, 20), layout.bulk());
         assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 98, 830, 342), layout.panel());
@@ -56,7 +54,6 @@ final class ChiseTweaksSettingsLayoutTest {
     @Test
     void wideScreensCapAndCenterTheContentInsteadOfStretchingControls() {
         var layout = ChiseTweaksSettingsLayout.calculate(2560, 1440, true);
-
         assertTrue(layout.content().width() <= 1180);
         assertTrue(layout.content().x() > 12);
         assertTrue(layout.controlWidth() <= 132);
@@ -76,13 +73,12 @@ final class ChiseTweaksSettingsLayoutTest {
     @Test
     void nonCategoryPagesGiveTheWholeSearchRowToSearch() {
         var layout = ChiseTweaksSettingsLayout.calculate(854, 480, false);
-
         assertTrue(layout.bulk().isEmpty());
         assertTrue(layout.search().width() == layout.content().width());
     }
 
     @Test
-    void fiveNavigationButtonsFitInsideTheContentAtEverySupportedViewport() {
+    void fourNavigationButtonsFitInsideTheContentAtEverySupportedViewport() {
         for (int[] viewport : VIEWPORTS) {
             var layout = ChiseTweaksSettingsLayout.calculate(viewport[0], viewport[1], true);
             assertTrue(layout.content().contains(layout.navigation()), viewportLabel(viewport));

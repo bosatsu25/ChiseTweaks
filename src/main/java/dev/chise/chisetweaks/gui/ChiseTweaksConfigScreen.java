@@ -1,7 +1,7 @@
 package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
-import fi.dy.masa.malilib.config.IConfigBoolean;
+import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -13,7 +13,7 @@ import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.Locale;
 
-/** Chise-owned compact settings UI matching the approved in-game visual contract. */
+/** Standalone ChiseTweaks settings UI. It does not depend on another mod's config surface. */
 public final class ChiseTweaksConfigScreen extends Screen {
     private static ChiseTweaksUiSection selectedSection = ChiseTweaksUiSection.PLACEMENT;
 
@@ -51,10 +51,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     protected void init() {
         super.init();
         controller.initialize();
-        geometry = ChiseTweaksSettingsLayout.calculate(
-                width,
-                height,
-                selectedSection.isCategoryPage());
+        geometry = ChiseTweaksSettingsLayout.calculate(width, height, true);
 
         createNavigation();
         createSearch();
@@ -76,16 +73,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
             button.active = section == ChiseTweaksUiSection.HELP || section != selectedSection;
             x += geometry.navButtonWidth() + geometry.navGap();
         }
-
-        Button selector = addRenderableWidget(Button.builder(
-                Component.literal("ChiseTweaks ▼"), ignored -> {})
-                .bounds(
-                        geometry.selector().x(),
-                        geometry.selector().y(),
-                        geometry.selector().width(),
-                        geometry.selector().height())
-                .build());
-        selector.active = false;
     }
 
     private void createSearch() {
@@ -105,16 +92,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
             updateRowPositions();
         });
 
-        if (selectedSection.isCategoryPage()) {
-            bulkButton = addRenderableWidget(Button.builder(
-                    bulkMessage(), ignored -> toggleBulk())
-                    .bounds(
-                            geometry.bulk().x(),
-                            geometry.bulk().y(),
-                            geometry.bulk().width(),
-                            geometry.bulk().height())
-                    .build());
-        }
+        bulkButton = addRenderableWidget(Button.builder(
+                bulkMessage(), ignored -> toggleBulk())
+                .bounds(
+                        geometry.bulk().x(),
+                        geometry.bulk().y(),
+                        geometry.bulk().width(),
+                        geometry.bulk().height())
+                .build());
     }
 
     private void createFooter() {
@@ -122,12 +107,11 @@ public final class ChiseTweaksConfigScreen extends Screen {
         int left = geometry.footer().x();
         int right = geometry.footer().right();
 
-        Button reset = addRenderableWidget(Button.builder(
+        addRenderableWidget(Button.builder(
                 Component.literal(controller.japanese() ? "設定をリセット" : "Reset section"),
                 ignored -> resetCurrentSection())
                 .bounds(left, y, 112, 20)
                 .build());
-        reset.active = selectedSection != ChiseTweaksUiSection.HOTKEYS;
 
         applyButton = addRenderableWidget(Button.builder(
                 Component.literal(controller.japanese() ? "適用" : "Apply"),
@@ -155,14 +139,13 @@ public final class ChiseTweaksConfigScreen extends Screen {
             case HEADER -> ChiseTweaksSettingRowView.header(definition);
             case BOOLEAN -> createBooleanRow(definition);
             case INTEGER -> createIntegerRow(definition);
-            case ACTION -> createActionRow(definition);
         };
     }
 
     private ChiseTweaksSettingRowView createBooleanRow(ChiseTweaksSettingRowDefinition definition) {
-        IConfigBoolean config = definition.booleanConfig();
+        ChiseBooleanSetting config = definition.booleanConfig();
         Button button = addRenderableWidget(Button.builder(toggleMessage(config), ignored -> {
-            config.setBooleanValue(!config.getBooleanValue());
+            config.toggleBooleanValue();
             markDirty();
         }).bounds(0, 0, geometry.controlWidth(), 18).build());
         return new ChiseTweaksSettingRowView(definition, button, null, null, null);
@@ -185,17 +168,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
             markDirty();
         }).bounds(0, 0, 24, 18).build());
         return new ChiseTweaksSettingRowView(definition, null, minus, value, plus);
-    }
-
-    private ChiseTweaksSettingRowView createActionRow(ChiseTweaksSettingRowDefinition definition) {
-        Button button = addRenderableWidget(Button.builder(
-                Component.literal(controller.japanese() ? "編集" : "Edit"),
-                ignored -> {
-                    if (minecraft != null) minecraft.setScreen(new ChiseTweaksHotkeyScreen(this));
-                })
-                .bounds(0, 0, geometry.controlWidth(), 18)
-                .build());
-        return new ChiseTweaksSettingRowView(definition, button, null, null, null);
     }
 
     private void navigate(ChiseTweaksUiSection section) {
@@ -252,10 +224,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 && mouseX <= geometry.panel().right()
                 && mouseY >= geometry.panel().y()
                 && mouseY <= geometry.panel().bottom()) {
-            scrollOffset = Mth.clamp(
-                    scrollOffset + (int) (-verticalAmount * 30),
-                    0,
-                    maxScroll);
+            scrollOffset = Mth.clamp(scrollOffset + (int) (-verticalAmount * 30), 0, maxScroll);
             updateRowPositions();
             return true;
         }
@@ -272,10 +241,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         extractor.fill(panel.x(), panel.bottom() - 1, panel.right(), panel.bottom(), 0xFF4C4C4C);
 
         for (ChiseTweaksSettingRowView row : filteredRows) {
-            if (!row.renderVisible
-                    || row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
-                continue;
-            }
+            if (!row.renderVisible || row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) continue;
             int y = row.screenY;
             extractor.fill(
                     panel.x() + 8,
@@ -315,12 +281,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                         0xFF78AFFF);
                 continue;
             }
-            extractor.text(
-                    font,
-                    row.definition.name(),
-                    geometry.nameX(),
-                    row.screenY + 6,
-                    0xFFFFFFFF);
+            extractor.text(font, row.definition.name(), geometry.nameX(), row.screenY + 6, 0xFFFFFFFF);
             extractor.text(
                     font,
                     row.renderedDescription,
@@ -347,9 +308,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
 
     private void rebuildFilteredRows() {
         filteredRows.clear();
-        String query = searchQuery == null
-                ? ""
-                : searchQuery.trim().toLowerCase(Locale.ROOT);
+        String query = searchQuery == null ? "" : searchQuery.trim().toLowerCase(Locale.ROOT);
         if (query.isEmpty()) {
             filteredRows.addAll(rows);
             return;
@@ -373,9 +332,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void refreshDescriptionCache() {
-        int descriptionMaxWidth = Math.max(
-                80,
-                geometry.controlX() - geometry.descriptionX() - 16);
+        int descriptionMaxWidth = Math.max(80, geometry.controlX() - geometry.descriptionX() - 16);
         for (ChiseTweaksSettingRowView row : rows) {
             row.renderedDescription = ellipsize(row.definition.description(), descriptionMaxWidth);
         }
@@ -397,17 +354,16 @@ public final class ChiseTweaksConfigScreen extends Screen {
 
         int offset = 0;
         for (ChiseTweaksSettingRowView row : filteredRows) {
-            int height = row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER
+            int rowHeight = row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER
                     ? geometry.headerHeight()
                     : geometry.rowHeight();
             int y = viewportTop + offset - scrollOffset;
             row.screenY = y;
-            row.renderVisible = y >= viewportTop && y + height <= viewportBottom;
-            if (row.renderVisible
-                    && row.definition.kind() != ChiseTweaksSettingRowDefinition.Kind.HEADER) {
+            row.renderVisible = y >= viewportTop && y + rowHeight <= viewportBottom;
+            if (row.renderVisible && row.definition.kind() != ChiseTweaksSettingRowDefinition.Kind.HEADER) {
                 positionWidgets(row, y);
             }
-            offset += height;
+            offset += rowHeight;
         }
     }
 
@@ -424,7 +380,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void positionWidgets(ChiseTweaksSettingRowView row, int y) {
         int controlY = y + 8;
         switch (row.definition.kind()) {
-            case BOOLEAN, ACTION -> {
+            case BOOLEAN -> {
                 row.primary.setPosition(geometry.controlX(), controlY);
                 row.primary.visible = true;
             }
@@ -462,11 +418,10 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private Component bulkMessage() {
         boolean turnOn = controller.shouldTurnBulkOn(selectedSection);
         return Component.literal(
-                (controller.japanese() ? "一括選択：" : "Select all: ")
-                        + (turnOn ? "ON" : "OFF"));
+                (controller.japanese() ? "一括選択：" : "Select all: ") + (turnOn ? "ON" : "OFF"));
     }
 
-    private static Component toggleMessage(IConfigBoolean value) {
+    private static Component toggleMessage(ChiseBooleanSetting value) {
         boolean enabled = value.getBooleanValue();
         return Component.literal(enabled ? "ON" : "OFF")
                 .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED);

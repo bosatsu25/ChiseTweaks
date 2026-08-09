@@ -1,6 +1,7 @@
 package dev.chise.chisetweaks.runtime;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
+import dev.chise.chisetweaks.config.ChiseStringListSetting;
 import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
@@ -8,18 +9,12 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
-import fi.dy.masa.malilib.config.IConfigBoolean;
-import fi.dy.masa.malilib.gui.GuiBase;
-import fi.dy.masa.malilib.hotkeys.IHotkeyCallback;
-import fi.dy.masa.malilib.hotkeys.KeyAction;
-import fi.dy.masa.malilib.hotkeys.KeyCallbackAdjustable;
-import fi.dy.masa.malilib.util.InfoUtils;
 
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-/** Callback wiring for ChiseTweaks feature toggles and bounded mode coordination. */
+/** Callback wiring for Chise-owned feature toggles and bounded mode coordination. */
 public final class FeatureControlBindings {
     private static final List<FeatureSwitch> WORKSITE_VISIBILITY_TOGGLES =
             FeatureSwitches.VALUES.stream()
@@ -30,16 +25,9 @@ public final class FeatureControlBindings {
     private FeatureControlBindings() {}
 
     public static void init() {
-        bindFeatureSwitchHotkeys();
         bindWorksiteVisibilityCallbacks();
         bindBuilderFocusLists();
         bindSceneFilterRefresh();
-    }
-
-    private static void bindFeatureSwitchHotkeys() {
-        for (FeatureSwitch feature : FeatureSwitches.VALUES) {
-            feature.getKeybind().setCallback(toggleCallback(feature));
-        }
     }
 
     private static void bindSceneFilterRefresh() {
@@ -50,23 +38,23 @@ public final class FeatureControlBindings {
     }
 
     private static void bindBuilderFocusLists() {
-        bindSanitized(
-                BuilderFocusConfig.BLOCK_BLACKLIST,
-                BuilderFocusVisibility::buildLists);
-        bindSanitized(
-                BuilderFocusConfig.BLOCK_WHITELIST,
-                BuilderFocusVisibility::buildLists);
+        bindSanitized(BuilderFocusConfig.BLOCK_BLACKLIST, BuilderFocusVisibility::buildLists);
+        bindSanitized(BuilderFocusConfig.BLOCK_WHITELIST, BuilderFocusVisibility::buildLists);
         BuilderFocusConfig.BLOCK_RULE_MODE.setValueChangeCallback(
-                config -> BuilderFocusVisibility.buildLists());
+                config -> {
+                    BuilderFocusVisibility.buildLists();
+                    FeatureConfig.saveToFile();
+                });
 
-        bindSanitized(
-                BuilderFocusConfig.ENTITY_BLACKLIST,
-                BuilderFocusVisibility::buildEntityLists);
-        bindSanitized(
-                BuilderFocusConfig.ENTITY_WHITELIST,
-                BuilderFocusVisibility::buildEntityLists);
+        bindSanitized(BuilderFocusConfig.ENTITY_BLACKLIST, BuilderFocusVisibility::buildEntityLists);
+        bindSanitized(BuilderFocusConfig.ENTITY_WHITELIST, BuilderFocusVisibility::buildEntityLists);
         BuilderFocusConfig.ENTITY_RULE_MODE.setValueChangeCallback(
-                config -> BuilderFocusVisibility.buildEntityLists());
+                config -> {
+                    BuilderFocusVisibility.buildEntityLists();
+                    FeatureConfig.saveToFile();
+                });
+        BuilderFocusConfig.REFRESH_RENDERER.setValueChangeCallback(
+                config -> FeatureConfig.saveToFile());
     }
 
     private static void bindWorksiteVisibilityCallbacks() {
@@ -131,31 +119,15 @@ public final class FeatureControlBindings {
 
     private static WorksiteVisibilitySelectionPolicy.Mode modeOf(FeatureSwitch toggle) {
         WorksiteVisibilitySelectionPolicy.Mode mode = toggle.definition().worksiteMode();
-        if (mode == null) {
-            throw new IllegalArgumentException("Not a scan visibility toggle: " + toggle);
-        }
+        if (mode == null) throw new IllegalArgumentException("Not a scan visibility toggle: " + toggle);
         return mode;
     }
 
-    private static void bindSanitized(
-            fi.dy.masa.malilib.config.options.ConfigStringList config,
-            Runnable rebuild) {
+    private static void bindSanitized(ChiseStringListSetting config, Runnable rebuild) {
         config.setValueChangeCallback(ignored -> {
             FeatureConfig.sanitizeStringLists();
             rebuild.run();
             FeatureConfig.saveToFile();
-        });
-    }
-
-    private static IHotkeyCallback toggleCallback(IConfigBoolean config) {
-        return new KeyCallbackAdjustable(config, (KeyAction action, fi.dy.masa.malilib.hotkeys.IKeybind key) -> {
-            config.toggleBooleanValue();
-            boolean enabled = config.getBooleanValue();
-            String status = (enabled ? GuiBase.TXT_GREEN : GuiBase.TXT_RED)
-                    + (enabled ? "ON" : "OFF")
-                    + GuiBase.TXT_RST;
-            InfoUtils.printActionbarMessage("%s %s", config.getPrettyName(), status);
-            return true;
         });
     }
 }

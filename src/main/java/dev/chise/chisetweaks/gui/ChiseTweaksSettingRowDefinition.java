@@ -1,7 +1,7 @@
 package dev.chise.chisetweaks.gui;
 
-import fi.dy.masa.malilib.config.IConfigBoolean;
-import fi.dy.masa.malilib.config.options.ConfigInteger;
+import dev.chise.chisetweaks.config.ChiseBooleanSetting;
+import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 
 /** Immutable row description kept separate from Minecraft widget state. */
 record ChiseTweaksSettingRowDefinition(
@@ -9,8 +9,8 @@ record ChiseTweaksSettingRowDefinition(
         String id,
         String name,
         String description,
-        IConfigBoolean booleanConfig,
-        ConfigInteger integerConfig,
+        ChiseBooleanSetting booleanConfig,
+        ChiseIntegerSetting integerConfig,
         int step) {
 
     static ChiseTweaksSettingRowDefinition header(String id, String name) {
@@ -22,7 +22,7 @@ record ChiseTweaksSettingRowDefinition(
             String id,
             String name,
             String description,
-            IConfigBoolean config) {
+            ChiseBooleanSetting config) {
         return new ChiseTweaksSettingRowDefinition(
                 Kind.BOOLEAN, id, name, description, config, null, 0);
     }
@@ -31,24 +31,15 @@ record ChiseTweaksSettingRowDefinition(
             String id,
             String name,
             String description,
-            ConfigInteger config,
+            ChiseIntegerSetting config,
             int step) {
         return new ChiseTweaksSettingRowDefinition(
                 Kind.INTEGER, id, name, description, null, config, Math.max(1, step));
     }
 
-    static ChiseTweaksSettingRowDefinition action(
-            String id,
-            String name,
-            String description) {
-        return new ChiseTweaksSettingRowDefinition(
-                Kind.ACTION, id, name, description, null, null, 0);
-    }
-
     enum Kind {
         HEADER,
         BOOLEAN,
-        INTEGER,
-        ACTION
+        INTEGER
     }
 }
