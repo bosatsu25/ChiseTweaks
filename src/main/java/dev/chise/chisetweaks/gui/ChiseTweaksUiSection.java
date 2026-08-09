@@ -1,13 +1,12 @@
 package dev.chise.chisetweaks.gui;
 
-import fi.dy.masa.malilib.util.StringUtils;
+import net.minecraft.network.chat.Component;
 
-/** Stable top-level navigation shared by the Chise settings and guide screens. */
+/** Stable top-level navigation for the standalone Chise settings and guide screens. */
 public enum ChiseTweaksUiSection {
     PLACEMENT("Placement & Direction", "設置・向き"),
     RESOURCES("Resources", "資源"),
     VISIBILITY("Visibility", "見やすさ"),
-    HOTKEYS("Keybinds", "キー設定"),
     HELP("Guide", "使い方");
 
     private final String english;
@@ -23,11 +22,11 @@ public enum ChiseTweaksUiSection {
     }
 
     public boolean isCategoryPage() {
-        return this == PLACEMENT || this == RESOURCES || this == VISIBILITY;
+        return this != HELP;
     }
 
     private static boolean isJapanese() {
-        return "ja".equals(StringUtils.getTranslatedOrFallback(
-                "screen.chisetweaks.help.language.probe", "en"));
+        String probe = Component.translatable("screen.chisetweaks.help.language.probe").getString();
+        return "ja".equalsIgnoreCase(probe);
     }
 }
