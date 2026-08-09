@@ -42,6 +42,23 @@ final class RuntimeBugHardeningContractTest {
     }
 
     @Test
+    void sceneFilterBlockRenderPathUsesCompiledBlockSetsWithoutPerBlockStrings() throws IOException {
+        String source = read("src/main/java/dev/chise/chisetweaks/feature/rendering/BuilderFocusVisibility.java");
+        String hotPath = between(
+                source,
+                "public static boolean shouldHide(Block block)",
+                "public static boolean shouldHide(EntityType<?> type)");
+
+        assertTrue(hotPath.contains("blockRules.hides(block)"));
+        assertTrue(hotPath.contains("BuiltInRegistries.BLOCK.getKey(block) == null"));
+        assertFalse(hotPath.contains(".toString()"));
+        assertFalse(hotPath.contains("Set.copyOf"));
+        assertFalse(hotPath.contains("new "));
+        assertTrue(source.contains("private static BlockRules compileBlockRules"));
+        assertTrue(source.contains("for (Block block : BuiltInRegistries.BLOCK)"));
+    }
+
+    @Test
     void worksiteInspectorFailsOpenForMissingRegistryIdentity() throws IOException {
         String source = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteBlockInspector.java");
 
