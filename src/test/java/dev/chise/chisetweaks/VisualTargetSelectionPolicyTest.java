@@ -21,11 +21,39 @@ final class VisualTargetSelectionPolicyTest {
             assertTrue(VisualTargetSelectionPolicy.isEnabled(
                     VisualTargetSelectionPolicy.ALL_TARGETS_MASK, target));
         }
-        assertEquals(25, Target.values().length);
+        assertEquals(28, Target.values().length);
         assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK, combined);
         assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
                 VisualTargetSelectionPolicy.sanitizeMask(-1));
         assertEquals(0, VisualTargetSelectionPolicy.sanitizeMask(0));
+    }
+
+    @Test
+    void appendedNetherBitsPreserveAllLegacyBitAssignments() {
+        assertEquals(1 << 21, Target.HIDDEN_BLUE_ICE.bitMask());
+        assertEquals(1 << 22, Target.HIDDEN_DEAD_CORAL.bitMask());
+        assertEquals(1 << 23, Target.HIDDEN_POWDER_SNOW.bitMask());
+        assertEquals(1 << 24, Target.HIDDEN_SCULK_CATALYST.bitMask());
+        assertEquals(1 << 25, Target.MATERIAL_CRYING_OBSIDIAN.bitMask());
+        assertEquals(1 << 26, Target.MATERIAL_NETHER_GOLD_ORE.bitMask());
+        assertEquals(1 << 27, Target.MATERIAL_NETHER_QUARTZ_ORE.bitMask());
+    }
+
+    @Test
+    void legacyMasksGainNewTargetsExactlyOnce() {
+        int legacyMask = (1 << 25) - 1;
+        int migrated = VisualTargetSelectionPolicy.migrateMask(
+                legacyMask,
+                VisualTargetSelectionPolicy.LEGACY_SCHEMA_VERSION);
+        assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK, migrated);
+
+        int explicitlyDisabled = VisualTargetSelectionPolicy.withEnabled(
+                VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
+                Target.MATERIAL_NETHER_QUARTZ_ORE,
+                false);
+        assertEquals(explicitlyDisabled, VisualTargetSelectionPolicy.migrateMask(
+                explicitlyDisabled,
+                VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION));
     }
 
     @Test
@@ -82,11 +110,17 @@ final class VisualTargetSelectionPolicyTest {
     }
 
     @Test
-    void materialOrePairsShareOneSwitch() {
+    void materialOrePairsAndNetherResourcesFollowTheirSwitches() {
         assertFamily(Target.MATERIAL_OBSIDIAN, BlockInspectionCategory.MATERIAL_HIGHLIGHT,
                 "minecraft:obsidian");
+        assertFamily(Target.MATERIAL_CRYING_OBSIDIAN, BlockInspectionCategory.MATERIAL_HIGHLIGHT,
+                "minecraft:crying_obsidian");
         assertFamily(Target.MATERIAL_ANCIENT_DEBRIS, BlockInspectionCategory.MATERIAL_HIGHLIGHT,
                 "minecraft:ancient_debris");
+        assertFamily(Target.MATERIAL_NETHER_GOLD_ORE, BlockInspectionCategory.MATERIAL_HIGHLIGHT,
+                "minecraft:nether_gold_ore");
+        assertFamily(Target.MATERIAL_NETHER_QUARTZ_ORE, BlockInspectionCategory.MATERIAL_HIGHLIGHT,
+                "minecraft:nether_quartz_ore");
         assertOrePair(Target.MATERIAL_DIAMOND_ORE, "diamond");
         assertOrePair(Target.MATERIAL_GOLD_ORE, "gold");
         assertOrePair(Target.MATERIAL_EMERALD_ORE, "emerald");
@@ -95,6 +129,10 @@ final class VisualTargetSelectionPolicyTest {
         assertOrePair(Target.MATERIAL_COPPER_ORE, "copper");
         assertOrePair(Target.MATERIAL_LAPIS_ORE, "lapis");
         assertOrePair(Target.MATERIAL_REDSTONE_ORE, "redstone");
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
+                "minecraft:netherrack",
+                BlockInspectionCategory.MATERIAL_HIGHLIGHT));
     }
 
     @Test
