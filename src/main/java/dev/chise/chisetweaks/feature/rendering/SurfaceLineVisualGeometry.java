@@ -2,18 +2,11 @@ package dev.chise.chisetweaks.feature.rendering;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy;
 import net.minecraft.core.BlockPos;
 
 import java.util.List;
 
-/**
- * Public facade for Chise-owned surface-line geometry.
- *
- * <p>Generic primitives and placement-state geometry live in dedicated helpers so this class
- * stays focused on category-level visual composition. All hot-path helpers avoid temporary array
- * allocation; only vertices are emitted during a render frame.</p>
- */
+/** Category-level surface-line composition for retained worksite overlays. */
 public final class SurfaceLineVisualGeometry {
     private SurfaceLineVisualGeometry() {}
 
@@ -84,22 +77,6 @@ public final class SurfaceLineVisualGeometry {
                 vertices, pose, position, accentArgb, Math.max(1.3f, lineWidth * 0.62f));
     }
 
-    public static void drawMaterialSkin(
-            VertexConsumer vertices,
-            PoseStack.Pose pose,
-            BlockPos position,
-            int primaryArgb,
-            int pulseArgb,
-            int phase,
-            float lineWidth) {
-        SurfaceLinePrimitives.drawFaceVeins(
-                vertices, pose, position, primaryArgb,
-                Math.max(1.3f, lineWidth * 0.58f), phase);
-        SurfaceLinePrimitives.drawFaceVeins(
-                vertices, pose, position, pulseArgb,
-                Math.max(1.0f, lineWidth * 0.38f), phase + 1);
-    }
-
     public static void drawNetherSkin(
             VertexConsumer vertices,
             PoseStack.Pose pose,
@@ -116,26 +93,6 @@ public final class SurfaceLineVisualGeometry {
                 Math.max(1.0f, lineWidth * 0.42f));
     }
 
-    public static void drawPlacementSkin(
-            VertexConsumer vertices,
-            PoseStack.Pose pose,
-            BlockPos position,
-            String blockId,
-            OrientationOverlayPolicy.Overlay overlay,
-            int primaryArgb,
-            int accentArgb,
-            float lineWidth) {
-        PlacementGuideLineGeometry.draw(
-                vertices,
-                pose,
-                position,
-                blockId,
-                overlay,
-                primaryArgb,
-                accentArgb,
-                lineWidth);
-    }
-
     /** Compact far-distance marker used to bound GPU vertex work. */
     public static void drawCompactFrame(
             VertexConsumer vertices,
@@ -144,19 +101,6 @@ public final class SurfaceLineVisualGeometry {
             int argb,
             float lineWidth) {
         SurfaceLinePrimitives.drawFaceFrame(vertices, pose, position, argb, lineWidth);
-    }
-
-    /** Compact far-distance placement marker that retains the facing cue. */
-    public static void drawCompactPlacementSkin(
-            VertexConsumer vertices,
-            PoseStack.Pose pose,
-            BlockPos position,
-            OrientationOverlayPolicy.Overlay overlay,
-            int primaryArgb,
-            int accentArgb,
-            float lineWidth) {
-        PlacementGuideLineGeometry.drawCompact(
-                vertices, pose, position, overlay, primaryArgb, accentArgb, lineWidth);
     }
 
     private static boolean has(List<String> details, String token) {
