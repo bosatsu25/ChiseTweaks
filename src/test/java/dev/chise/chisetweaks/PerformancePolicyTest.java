@@ -50,6 +50,15 @@ final class PerformancePolicyTest {
     }
 
     @Test
+    void lineOfSightRayBudgetCapsWorstCaseClipAndAllocationWork() {
+        assertEquals(192, WorksiteVisibilityBudgetPolicy.MAX_LINE_OF_SIGHT_RAYS_PER_SCAN);
+        assertTrue(WorksiteVisibilityBudgetPolicy.MAX_LINE_OF_SIGHT_RAYS_PER_SCAN
+                >= WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS);
+        assertTrue(WorksiteVisibilityBudgetPolicy.MAX_LINE_OF_SIGHT_RAYS_PER_SCAN
+                < WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES * 7);
+    }
+
+    @Test
     void overlayDetailKeepsNearTargetsRichAndDistantTargetsCompact() {
         assertEquals(WorksiteOverlayDetailPolicy.Detail.FULL,
                 WorksiteOverlayDetailPolicy.detailFor(0.0));
