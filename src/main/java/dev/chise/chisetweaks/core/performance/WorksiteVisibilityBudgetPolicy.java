@@ -12,6 +12,7 @@ public final class WorksiteVisibilityBudgetPolicy {
     public static final int MAX_HUD_RESULTS = 8;
     public static final int MAX_OVERLAY_RESULTS = 24;
     public static final int MAX_HUD_DETAILS = 8;
+    public static final int MAX_LOADED_CHUNK_PROBES = maximumLoadedChunkProbesFor(MAX_HORIZONTAL_RADIUS);
 
     private WorksiteVisibilityBudgetPolicy() {
     }
@@ -44,6 +45,20 @@ public final class WorksiteVisibilityBudgetPolicy {
         int horizontal = clampHorizontalRadius(horizontalRadius);
         int vertical = clampVerticalRadius(verticalRadius);
         return (horizontal * 2 + 1) * (horizontal * 2 + 1) * (vertical * 2 + 1);
+    }
+
+    /**
+     * Worst-case loaded-chunk probes needed to cover the horizontal scan square.
+     *
+     * <p>The scanner checks each intersected chunk once, then reuses that result for every block
+     * column and Y level. With the current radius cap this is at most four chunk probes per scan,
+     * instead of one chunk-source lookup per candidate block.</p>
+     */
+    public static int maximumLoadedChunkProbesFor(int horizontalRadius) {
+        int horizontal = clampHorizontalRadius(horizontalRadius);
+        int width = horizontal * 2 + 1;
+        int chunksPerAxis = (width + 30) / 16;
+        return chunksPerAxis * chunksPerAxis;
     }
 
     private static int clamp(int value, int min, int max) {
