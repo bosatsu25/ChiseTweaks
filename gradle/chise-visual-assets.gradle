@@ -10,11 +10,6 @@ def argb = { a, r, g, b ->
 
 def clampChannel = { value -> Math.max(0, Math.min(255, Math.round(value as double) as int)) }
 
-def scaledColor = { rgb, factor, alpha ->
-    double f = factor as double
-    argb(alpha, clampChannel(rgb[0] * f), clampChannel(rgb[1] * f), clampChannel(rgb[2] * f))
-}
-
 def whiteMix = { rgb, mix, alpha ->
     double amount = mix as double
     argb(
@@ -51,29 +46,45 @@ def line = { image, x0Raw, y0Raw, x1Raw, y1Raw, colorRaw ->
 }
 
 def materialSpecs = [
-        [key: 'diamond', color: [34, 225, 255], accent: [205, 252, 255], motif: 'crystal', thickness: 0.52d],
-        [key: 'gold', color: [255, 190, 18], accent: [255, 246, 170], motif: 'dotted', thickness: 0.40d],
-        [key: 'emerald', color: [20, 238, 92], accent: [188, 255, 210], motif: 'runes', thickness: 0.44d],
-        [key: 'coal', color: [220, 230, 242], accent: [255, 255, 255], motif: 'brackets', thickness: 0.34d],
-        [key: 'iron', color: [255, 190, 145], accent: [255, 238, 215], motif: 'double', thickness: 0.38d],
-        [key: 'copper', color: [255, 105, 38], accent: [55, 210, 185], motif: 'wave', thickness: 0.46d],
-        [key: 'lapis', color: [55, 112, 255], accent: [188, 210, 255], motif: 'nodes', thickness: 0.44d],
-        [key: 'redstone', color: [255, 42, 42], accent: [255, 195, 195], motif: 'sparks', thickness: 0.50d],
-        [key: 'ancient_debris', color: [218, 128, 48], accent: [255, 221, 160], motif: 'ancient', thickness: 0.46d],
-        [key: 'obsidian', color: [174, 70, 255], accent: [229, 196, 255], motif: 'jagged', thickness: 0.54d]
+        [key: 'diamond', color: [34, 225, 255], accent: [220, 254, 255], motif: 'crystal', thickness: 0.96d],
+        [key: 'gold', color: [255, 190, 18], accent: [255, 248, 180], motif: 'dotted', thickness: 0.86d],
+        [key: 'emerald', color: [20, 238, 92], accent: [202, 255, 219], motif: 'runes', thickness: 0.90d],
+        [key: 'coal', color: [220, 230, 242], accent: [255, 255, 255], motif: 'brackets', thickness: 0.76d],
+        [key: 'iron', color: [255, 190, 145], accent: [255, 241, 220], motif: 'double', thickness: 0.82d],
+        [key: 'copper', color: [255, 105, 38], accent: [55, 210, 185], motif: 'wave', thickness: 0.90d],
+        [key: 'lapis', color: [55, 112, 255], accent: [198, 218, 255], motif: 'nodes', thickness: 0.90d],
+        [key: 'redstone', color: [255, 42, 42], accent: [255, 205, 205], motif: 'sparks', thickness: 0.96d],
+        [key: 'ancient_debris', color: [218, 128, 48], accent: [255, 225, 170], motif: 'ancient', thickness: 0.90d],
+        [key: 'obsidian', color: [174, 70, 255], accent: [235, 208, 255], motif: 'jagged', thickness: 1.00d]
 ]
+
+def drawSparkle = { image, frame, top, bright, accent ->
+    def anchors = [[1, 1], [14, 1], [14, 14], [1, 14]]
+    def anchor = anchors[(frame.intdiv(2)) % anchors.size()]
+    int x = anchor[0]
+    int y = top + anchor[1]
+    putPixel(image, x, y, accent)
+    putPixel(image, x - 1, y, bright)
+    putPixel(image, x + 1, y, bright)
+    putPixel(image, x, y - 1, bright)
+    putPixel(image, x, y + 1, bright)
+    if ((frame & 1) == 1) {
+        putPixel(image, x - 1, y - 1, accent)
+        putPixel(image, x + 1, y + 1, accent)
+    }
+}
 
 def writeBorderTexture = { output, spec ->
     def image = new BufferedImage(16, 128, BufferedImage.TYPE_INT_ARGB)
-    def pulse = [0.72d, 0.84d, 0.98d, 1.12d, 1.32d, 1.12d, 0.98d, 0.84d]
+    def brightnessMix = [0.00d, 0.06d, 0.14d, 0.24d, 0.44d, 0.24d, 0.14d, 0.06d]
     def rgb = spec.color
     def accentRgb = spec.accent
 
     (0..<8).each { frame ->
         int top = frame * 16
-        int base = scaledColor(rgb, pulse[frame], 255)
-        int bright = whiteMix(rgb, frame == 4 ? 0.72d : 0.40d, 255)
-        int accent = whiteMix(accentRgb, 0.20d, 255)
+        int base = whiteMix(rgb, brightnessMix[frame], 255)
+        int bright = whiteMix(rgb, frame == 4 ? 0.82d : 0.52d, 255)
+        int accent = whiteMix(accentRgb, frame == 4 ? 0.88d : 0.48d, 255)
         (0..<16).each { y -> (0..<16).each { x -> image.setRGB(x, top + y, base) } }
 
         int sweep = Math.floorMod(frame * 2, 16)
@@ -131,6 +142,7 @@ def writeBorderTexture = { output, spec ->
                 }
                 break
         }
+        drawSparkle(image, frame, top, bright, accent)
     }
 
     output.parentFile.mkdirs()
@@ -139,7 +151,7 @@ def writeBorderTexture = { output, spec ->
 
 def writeAnimationMeta = { output ->
     output.parentFile.mkdirs()
-    output.setText(JsonOutput.prettyPrint(JsonOutput.toJson([animation: [frametime: 2, interpolate: true]])) + '\n', 'UTF-8')
+    output.setText(JsonOutput.prettyPrint(JsonOutput.toJson([animation: [frametime: 1, interpolate: true]])) + '\n', 'UTF-8')
 }
 
 def allFaces = { texture ->
@@ -150,41 +162,60 @@ def allFaces = { texture ->
     faces
 }
 
-def rodFaces = { texture ->
+def outwardEdgeFaces = { axis, firstHigh, secondHigh, texture ->
     def faces = [:]
-    ['down', 'up', 'north', 'south', 'west', 'east'].each { side -> faces[side] = [texture: texture, uv: [0, 0, 16, 16]] }
+    switch (axis) {
+        case 'x':
+            faces[firstHigh ? 'up' : 'down'] = [texture: texture, uv: [0, 0, 16, 16]]
+            faces[secondHigh ? 'south' : 'north'] = [texture: texture, uv: [0, 0, 16, 16]]
+            break
+        case 'y':
+            faces[firstHigh ? 'east' : 'west'] = [texture: texture, uv: [0, 0, 16, 16]]
+            faces[secondHigh ? 'south' : 'north'] = [texture: texture, uv: [0, 0, 16, 16]]
+            break
+        case 'z':
+            faces[firstHigh ? 'east' : 'west'] = [texture: texture, uv: [0, 0, 16, 16]]
+            faces[secondHigh ? 'up' : 'down'] = [texture: texture, uv: [0, 0, 16, 16]]
+            break
+        default:
+            throw new GradleException("Unknown ore-highlight edge axis: ${axis}")
+    }
     faces
 }
 
 def addBorderRods = { elements, thicknessRaw, texture ->
     double thickness = thicknessRaw as double
-    double low = -0.06d
-    double high = 16.06d
-    double t1 = 16.0d - thickness
-    [[low, low], [low, t1], [t1, low], [t1, t1]].each { pair ->
-        elements << ['from': [low, pair[0], pair[1]], 'to': [high, pair[0] + thickness, pair[1] + thickness], shade: false, faces: rodFaces(texture)]
-        elements << ['from': [pair[0], low, pair[1]], 'to': [pair[0] + thickness, high, pair[1] + thickness], shade: false, faces: rodFaces(texture)]
-        elements << ['from': [pair[0], pair[1], low], 'to': [pair[0] + thickness, pair[1] + thickness, high], shade: false, faces: rodFaces(texture)]
-    }
-}
+    double edgeOffset = 0.06d
+    double low = -edgeOffset
+    double high = 16.0d + edgeOffset
+    double highStart = 16.0d - thickness + edgeOffset
 
-def addCornerNodes = { elements, sizeRaw, texture ->
-    double size = sizeRaw as double
-    double low = -0.12d
-    double highStart = 16.0d - size + 0.12d
-    [low, highStart].each { x ->
-        [low, highStart].each { y ->
-            [low, highStart].each { z ->
-                elements << ['from': [x, y, z], 'to': [x + size, y + size, z + size], shade: false, faces: rodFaces(texture)]
-            }
+    [false, true].each { firstHigh ->
+        [false, true].each { secondHigh ->
+            double first = firstHigh ? highStart : low
+            double second = secondHigh ? highStart : low
+            elements << [
+                    'from': [low, first, second],
+                    'to': [high, first + thickness, second + thickness],
+                    shade: false,
+                    faces: outwardEdgeFaces('x', firstHigh, secondHigh, texture)]
+            elements << [
+                    'from': [first, low, second],
+                    'to': [first + thickness, high, second + thickness],
+                    shade: false,
+                    faces: outwardEdgeFaces('y', firstHigh, secondHigh, texture)]
+            elements << [
+                    'from': [first, second, low],
+                    'to': [first + thickness, second + thickness, high],
+                    shade: false,
+                    faces: outwardEdgeFaces('z', firstHigh, secondHigh, texture)]
         }
     }
 }
 
-def cubeModel = { baseTexture, highlightTexture, thickness, nodes ->
+def cubeModel = { baseTexture, highlightTexture, thickness ->
     def elements = [['from': [0, 0, 0], 'to': [16, 16, 16], faces: allFaces('#base')]]
     addBorderRods(elements, thickness, '#highlight')
-    if (nodes) addCornerNodes(elements, Math.max(0.70d, (thickness as double) + 0.28d), '#highlight')
     [ambientocclusion: true, textures: [base: baseTexture, highlight: highlightTexture, particle: baseTexture], elements: elements]
 }
 
@@ -199,10 +230,14 @@ def ancientDebrisModel = { highlightTexture, thickness ->
     ]
     def elements = [['from': [0, 0, 0], 'to': [16, 16, 16], faces: baseFaces]]
     addBorderRods(elements, thickness, '#highlight')
-    addCornerNodes(elements, (thickness as double) + 0.36d, '#highlight')
     [
             ambientocclusion: true,
-            textures: [top: 'minecraft:block/ancient_debris_top', side: 'minecraft:block/ancient_debris_side', highlight: highlightTexture, particle: 'minecraft:block/ancient_debris_side'],
+            textures: [
+                    top: 'minecraft:block/ancient_debris_top',
+                    side: 'minecraft:block/ancient_debris_side',
+                    highlight: highlightTexture,
+                    particle: 'minecraft:block/ancient_debris_side'
+            ],
             elements: elements
     ]
 }
@@ -248,9 +283,8 @@ def generateChiseVisualAssets = tasks.register('generateChiseVisualAssets') {
 
         modelSpecs.each { modelSpec ->
             def materialSpec = specsByKey[modelSpec.highlight]
-            boolean nodes = materialSpec.motif in ['crystal', 'nodes', 'jagged']
             String texture = "chisetweaks:block/visual/material/${modelSpec.highlight}_highlight"
-            writeModel(new File(modelDir, "${modelSpec.id}.json"), cubeModel(modelSpec.base, texture, materialSpec.thickness, nodes))
+            writeModel(new File(modelDir, "${modelSpec.id}.json"), cubeModel(modelSpec.base, texture, materialSpec.thickness))
         }
 
         def ancientSpec = specsByKey['ancient_debris']
