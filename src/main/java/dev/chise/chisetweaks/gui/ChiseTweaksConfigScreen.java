@@ -21,16 +21,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Compact settings UI whose primary view is the former dedicated keybind list.
+ * Task-oriented Chise settings UI.
  *
- * <p>The first tab intentionally preserves the established MaLiLib row layout. Fine-grained
- * visual target selection belongs to Target Lists rather than duplicating parent feature rows.</p>
+ * <p>The primary feature view keeps the established MaLiLib toggle/keybind rows. Target Lists add
+ * a second navigation layer so placement, mining/resources, visual-support and explicit rule-list
+ * settings are not mixed into one long list. This keeps the persistence/runtime model unchanged
+ * while moving the screen closer to the compact category-based Chise UI.</p>
  */
 public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     private static ConfigGuiTab selectedTab = ConfigGuiTab.FEATURES;
+    private static TargetListCategory selectedTargetCategory = TargetListCategory.MINING_RESOURCES;
 
     public ChiseTweaksConfigScreen() {
-        super(10, 52, ChiseTweaksMetadata.MOD_ID, null,
+        // Reserve two additional rows for Target Lists category and bulk-action navigation.
+        super(10, 100, ChiseTweaksMetadata.MOD_ID, null,
                 ChiseTweaksMetadata.MOD_NAME + " %s", ChiseTweaksMetadata.MOD_VERSION);
         VisualTargetSettings.resetTransientControls();
     }
@@ -42,11 +46,24 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
         ConfigUiLocalization.refresh();
         super.initGui();
         clearOptions();
-        int x = 10;
-        for (ConfigGuiTab tab : ConfigGuiTab.values()) x += createButton(x, 26, tab);
+
+        int tabX = 10;
+        for (ConfigGuiTab tab : ConfigGuiTab.values()) {
+            tabX += createButton(tabX, 26, tab);
+        }
+
         if (selectedTab == ConfigGuiTab.LISTS) {
-            for (TargetListAction action : TargetListAction.values()) {
-                x += createTargetActionButton(x, 26, action);
+            int categoryX = 10;
+            for (TargetListCategory category : TargetListCategory.values()) {
+                categoryX += createCategoryButton(categoryX, 50, category);
+            }
+
+            // Solo and bulk controls are meaningful only for Ore Highlights resource families.
+            if (selectedTargetCategory == TargetListCategory.MINING_RESOURCES) {
+                int actionX = 10;
+                for (TargetListAction action : TargetListAction.values()) {
+                    actionX += createTargetActionButton(actionX, 74, action);
+                }
             }
         }
     }
@@ -55,6 +72,13 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
         ButtonGeneric button = new ButtonGeneric(x, y, -1, 20, tab.getDisplayName());
         button.setEnabled(tab == ConfigGuiTab.HELP || selectedTab != tab);
         addButton(button, new ButtonListener(tab, this));
+        return button.getWidth() + 2;
+    }
+
+    private int createCategoryButton(int x, int y, TargetListCategory category) {
+        ButtonGeneric button = new ButtonGeneric(x, y, -1, 20, category.getDisplayName());
+        button.setEnabled(selectedTargetCategory != category);
+        addButton(button, new CategoryButtonListener(category, this));
         return button.getWidth() + 2;
     }
 
@@ -68,14 +92,15 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     protected int getConfigWidth() {
         return switch (selectedTab) {
             case FEATURES -> 260;
-            case LISTS -> 360;
+            case LISTS -> 430;
             case HELP -> 220;
         };
     }
 
     @Override
     protected boolean useKeybindSearch() {
-        return selectedTab == ConfigGuiTab.FEATURES;
+        // MaLiLib's built-in search also gives Target Lists the compact search-first workflow.
+        return selectedTab == ConfigGuiTab.FEATURES || selectedTab == ConfigGuiTab.LISTS;
     }
 
     @Override
@@ -87,21 +112,31 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
         };
     }
 
-    /** Uses exactly the former Hotkeys-screen row model. */
+    /** Uses exactly the established toggle/keybind row model. */
     private List<ConfigOptionWrapper> createFeatureAndHotkeyOptions() {
         ArrayList<BooleanHotkeyGuiWrapper> toggles = new ArrayList<>();
-        for (FeatureSwitch toggle : FeatureSwitches.VALUES) toggles.add(wrapConfig(toggle));
+        for (FeatureSwitch toggle : FeatureSwitches.VALUES) {
+            toggles.add(wrapConfig(toggle));
+        }
         return ConfigOptionWrapper.createFor(toggles);
     }
 
     /**
-     * Target Lists owns Scene Filter rules and fine-grained visual target switches. Ore rows are
-     * normal ON/OFF toggles; Solo only changes how an ON click is applied to Ore Highlights.
+     * Target Lists exposes one user-oriented category at a time. Fine-grained visual targets are
+     * grouped by their stable config-name family; explicit Scene Filter allow/deny lists live in
+     * Other so they do not get mixed with block-family switches.
      */
     private List<ConfigOptionWrapper> createTargetListOptions() {
         ArrayList<IConfigBase> options = new ArrayList<>();
-        options.addAll(VisualTargetSettings.ALL_OPTIONS);
-        options.addAll(BuilderFocusConfig.RULE_OPTIONS);
+        if (selectedTargetCategory == TargetListCategory.OTHER) {
+            options.addAll(BuilderFocusConfig.RULE_OPTIONS);
+        } else {
+            for (IConfigBase option : VisualTargetSettings.ALL_OPTIONS) {
+                if (selectedTargetCategory.matches(option.getName())) {
+                    options.add(option);
+                }
+            }
+        }
         return ConfigOptionWrapper.createFor(options);
     }
 
@@ -131,6 +166,29 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
                 return;
             }
             selectedTab = tab;
+            if (tab != ConfigGuiTab.LISTS) {
+                VisualTargetSettings.resetTransientControls();
+            }
+            refreshList(parent);
+        }
+    }
+
+    private static final class CategoryButtonListener implements IButtonActionListener {
+        private final TargetListCategory category;
+        private final ChiseTweaksConfigScreen parent;
+
+        private CategoryButtonListener(TargetListCategory category, ChiseTweaksConfigScreen parent) {
+            this.category = category;
+            this.parent = parent;
+        }
+
+        @Override
+        public void actionPerformedWithButton(ButtonBase button, int mouseButton) {
+            if (selectedTargetCategory == category) {
+                return;
+            }
+            VisualTargetSettings.resetTransientControls();
+            selectedTargetCategory = category;
             refreshList(parent);
         }
     }
@@ -161,20 +219,43 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
         }
     }
 
+    private enum TargetListCategory {
+        DECORATION("visualTargetPlacement", "Decoration", "装飾"),
+        MINING_RESOURCES("visualTargetMaterial", "Mining / Resources", "採掘・資源"),
+        VISUAL_SUPPORT("visualTargetHidden", "Visual Support", "視認支援"),
+        OTHER("", "Other", "その他");
+
+        private final String configPrefix;
+        private final String english;
+        private final String japanese;
+
+        TargetListCategory(String configPrefix, String english, String japanese) {
+            this.configPrefix = configPrefix;
+            this.english = english;
+            this.japanese = japanese;
+        }
+
+        boolean matches(String configName) {
+            return this != OTHER && configName != null && configName.startsWith(configPrefix);
+        }
+
+        String getDisplayName() {
+            return isJapanese() ? japanese : english;
+        }
+    }
+
     private enum TargetListAction {
         SOLO,
         ALL_ON,
         ALL_OFF;
 
         String getDisplayName() {
-            boolean japanese = "ja".equals(StringUtils.getTranslatedOrFallback(
-                    "screen.chisetweaks.help.language.probe", "en"));
             return switch (this) {
-                case SOLO -> japanese
+                case SOLO -> isJapanese()
                         ? "Solo選択: " + (VisualTargetSettings.isSoloOreSelectionEnabled() ? "ON" : "OFF")
                         : "Solo: " + (VisualTargetSettings.isSoloOreSelectionEnabled() ? "ON" : "OFF");
-                case ALL_ON -> japanese ? "対象 全ON" : "Targets: All ON";
-                case ALL_OFF -> japanese ? "対象 全OFF" : "Targets: All OFF";
+                case ALL_ON -> isJapanese() ? "対象 全ON" : "Targets: All ON";
+                case ALL_OFF -> isJapanese() ? "対象 全OFF" : "Targets: All OFF";
             };
         }
     }
@@ -192,5 +273,10 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
             return StringUtils.getTranslatedOrFallback(
                     "gui.chisetweaks.tab." + name().toLowerCase(), fallback);
         }
+    }
+
+    private static boolean isJapanese() {
+        return "ja".equals(StringUtils.getTranslatedOrFallback(
+                "screen.chisetweaks.help.language.probe", "en"));
     }
 }
