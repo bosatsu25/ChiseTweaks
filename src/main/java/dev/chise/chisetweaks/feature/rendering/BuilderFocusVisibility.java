@@ -4,7 +4,6 @@ import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseRuleMode;
 import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
-import dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -62,23 +61,21 @@ public final class BuilderFocusVisibility {
     }
 
     public static boolean shouldHide(EntityType<?> type) {
-        return type != null && entityRules.hides(type);
+        if (type == null || !FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue()) return false;
+        // Unknown/unregistered types fail open instead of disappearing under a whitelist.
+        if (BuiltInRegistries.ENTITY_TYPE.getKey(type) == null) return false;
+        return entityRules.hides(type);
     }
 
     public static boolean shouldHide(Entity entity) {
-        if (entity == null) return false;
+        if (entity == null || !FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue()) return false;
         Minecraft client = Minecraft.getInstance();
-        boolean localPlayer = client.player != null && entity == client.player;
-        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
-        BuilderEntityVisibilityPolicy.Decision decision = BuilderEntityVisibilityPolicy.evaluate(
-                new BuilderEntityVisibilityPolicy.Input(
-                        FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue(),
-                        localPlayer,
-                        id == null ? "" : id.toString(),
-                        toPolicyMode(entityRules.mode()),
-                        ids(entityRules.blacklist()),
-                        ids(entityRules.whitelist())));
-        return decision == BuilderEntityVisibilityPolicy.Decision.HIDE;
+        if (client.player != null && entity == client.player) return false;
+        EntityType<?> type = entity.getType();
+        // Resolve registration only as a safety check. The hot render path then evaluates the
+        // cached EntityType sets directly, avoiding temporary String/Set allocations per entity.
+        if (BuiltInRegistries.ENTITY_TYPE.getKey(type) == null) return false;
+        return entityRules.hides(type);
     }
 
     public static boolean applyPreset(String presetId) {
@@ -114,23 +111,6 @@ public final class BuilderFocusVisibility {
         buildEntityLists();
         FeatureConfig.saveToFile();
         return true;
-    }
-
-    private static BuilderEntityVisibilityPolicy.Mode toPolicyMode(ChiseRuleMode mode) {
-        return switch (mode) {
-            case BLACKLIST -> BuilderEntityVisibilityPolicy.Mode.BLACKLIST;
-            case WHITELIST -> BuilderEntityVisibilityPolicy.Mode.WHITELIST;
-            case NONE -> BuilderEntityVisibilityPolicy.Mode.NONE;
-        };
-    }
-
-    private static Set<String> ids(Set<EntityType<?>> types) {
-        LinkedHashSet<String> result = new LinkedHashSet<>();
-        for (EntityType<?> type : types) {
-            Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
-            if (id != null) result.add(id.toString());
-        }
-        return Set.copyOf(result);
     }
 
     private static BlockConfigFingerprint currentBlockFingerprint() {
