@@ -9,9 +9,17 @@ public final class WorksiteVisibilityBudgetPolicy {
     public static final int MIN_INTERVAL_TICKS = 5;
     public static final int MAX_INTERVAL_TICKS = 100;
     public static final int MAX_SCAN_CANDIDATES = 128;
-    public static final int MAX_HUD_RESULTS = 8;
     public static final int MAX_OVERLAY_RESULTS = 24;
-    public static final int MAX_HUD_DETAILS = 8;
+
+    /**
+     * Hard CPU/allocation budget for ray based line-of-sight checks in one scan.
+     *
+     * <p>Each clip query creates short-lived Minecraft geometry/context objects. Capping the
+     * number of rays therefore bounds both main-thread work and scan-triggered allocation spikes,
+     * even when many high-priority candidates are hidden behind terrain.</p>
+     */
+    public static final int MAX_LINE_OF_SIGHT_RAYS_PER_SCAN = 192;
+
     public static final int MAX_LOADED_CHUNK_PROBES = maximumLoadedChunkProbesFor(MAX_HORIZONTAL_RADIUS);
 
     private WorksiteVisibilityBudgetPolicy() {
@@ -27,14 +35,6 @@ public final class WorksiteVisibilityBudgetPolicy {
 
     public static int clampIntervalTicks(int requested) {
         return clamp(requested, MIN_INTERVAL_TICKS, MAX_INTERVAL_TICKS);
-    }
-
-    public static int clampResults(int requested) {
-        return clampHudResults(requested);
-    }
-
-    public static int clampHudResults(int requested) {
-        return clamp(requested, 1, MAX_HUD_RESULTS);
     }
 
     public static int clampOverlayResults(int requested) {
