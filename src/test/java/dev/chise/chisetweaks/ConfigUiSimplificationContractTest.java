@@ -106,7 +106,8 @@ final class ConfigUiSimplificationContractTest {
     void guideUsesSameStandaloneNavigationAndAddsSearch() throws IOException {
         String help = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksHelpScreen.java");
         assertTrue(help.contains("createNavigation()"));
-        assertTrue(help.contains("for (ChiseTweaksUiSection section : ChiseTweaksUiSection.values())"));
+        assertTrue(help.contains("ChiseTweaksUiSection[] sections = ChiseTweaksUiSection.values()"));
+        assertTrue(help.contains("for (ChiseTweaksUiSection section : sections)"));
         assertTrue(help.contains("new ChiseTweaksConfigScreen(section)"));
         assertTrue(help.contains("EditBox"));
         assertTrue(help.contains("filteredEntries()"));
