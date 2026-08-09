@@ -66,11 +66,23 @@ final class StandaloneClientDependencyContractTest {
     }
 
     @Test
-    void standaloneUiExistsButOpeningGestureIsIntentionallyNotFixedYet() throws IOException {
+    void standaloneUiHasVanillaOptionsLauncherWithoutFixedKeyChord() throws IOException {
         Path screen = MAIN.resolve("dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+        Path launcher = MAIN.resolve("dev/chise/chisetweaks/gui/ChiseTweaksScreenLauncher.java");
         assertTrue(Files.isRegularFile(screen));
+        assertTrue(Files.isRegularFile(launcher));
+
         String client = Files.readString(
                 MAIN.resolve("dev/chise/chisetweaks/ChiseTweaksClient.java"), StandardCharsets.UTF_8);
+        String launcherSource = Files.readString(launcher, StandardCharsets.UTF_8);
+
+        assertTrue(client.contains("ChiseTweaksScreenLauncher::register"));
+        assertTrue(launcherSource.contains("ScreenEvents.AFTER_INIT"));
+        assertTrue(launcherSource.contains("OptionsScreen"));
+        assertTrue(launcherSource.contains("Screens.getButtons(screen)"));
+        assertTrue(launcherSource.contains("new ChiseTweaksConfigScreen()"));
+        assertTrue(launcherSource.contains("settings.setParent(parent)"));
+
         assertFalse(client.contains("KeyMapping"));
         assertFalse(client.contains("C+T"));
         assertFalse(client.contains("GLFW_KEY_C"));
