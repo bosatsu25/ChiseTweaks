@@ -58,7 +58,7 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
                 categoryX += createCategoryButton(categoryX, 50, category);
             }
 
-            // Solo and bulk controls are meaningful only for Ore Highlights resource families.
+            // Bulk controls are meaningful only for Ore Highlights resource families.
             if (selectedTargetCategory == TargetListCategory.MINING_RESOURCES) {
                 int actionX = 10;
                 for (TargetListAction action : TargetListAction.values()) {
@@ -205,15 +205,8 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
         @Override
         public void actionPerformedWithButton(ButtonBase button, int mouseButton) {
             switch (action) {
-                case SOLO -> VisualTargetSettings.toggleSoloOreSelection();
-                case ALL_ON -> {
-                    VisualTargetSettings.resetTransientControls();
-                    VisualTargetSettings.setAllOreHighlightTargets(true);
-                }
-                case ALL_OFF -> {
-                    VisualTargetSettings.resetTransientControls();
-                    VisualTargetSettings.setAllOreHighlightTargets(false);
-                }
+                case ALL_ON -> VisualTargetSettings.setAllOreHighlightTargets(true);
+                case ALL_OFF -> VisualTargetSettings.setAllOreHighlightTargets(false);
             }
             refreshList(parent);
         }
@@ -245,15 +238,11 @@ public final class ChiseTweaksConfigScreen extends GuiConfigsBase {
     }
 
     private enum TargetListAction {
-        SOLO,
         ALL_ON,
         ALL_OFF;
 
         String getDisplayName() {
             return switch (this) {
-                case SOLO -> isJapanese()
-                        ? "Solo選択: " + (VisualTargetSettings.isSoloOreSelectionEnabled() ? "ON" : "OFF")
-                        : "Solo: " + (VisualTargetSettings.isSoloOreSelectionEnabled() ? "ON" : "OFF");
                 case ALL_ON -> isJapanese() ? "対象 全ON" : "Targets: All ON";
                 case ALL_OFF -> isJapanese() ? "対象 全OFF" : "Targets: All OFF";
             };
