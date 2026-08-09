@@ -139,6 +139,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
             case HEADER -> ChiseTweaksSettingRowView.header(definition);
             case BOOLEAN -> createBooleanRow(definition);
             case INTEGER -> createIntegerRow(definition);
+            case ACTION -> createActionRow(definition);
         };
     }
 
@@ -155,7 +156,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         var config = definition.integerConfig();
         int step = definition.step();
         Button minus = addRenderableWidget(Button.builder(Component.literal("−"), ignored -> {
-            config.setIntegerValue(config.getIntegerValue() - step);
+            config.setIntegerValue(saturatedStep(config.getIntegerValue(), -step));
             markDirty();
         }).bounds(0, 0, 24, 18).build());
         Button value = addRenderableWidget(Button.builder(
@@ -164,10 +165,29 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 .build());
         value.active = false;
         Button plus = addRenderableWidget(Button.builder(Component.literal("+"), ignored -> {
-            config.setIntegerValue(config.getIntegerValue() + step);
+            config.setIntegerValue(saturatedStep(config.getIntegerValue(), step));
             markDirty();
         }).bounds(0, 0, 24, 18).build());
         return new ChiseTweaksSettingRowView(definition, null, minus, value, plus);
+    }
+
+    private ChiseTweaksSettingRowView createActionRow(ChiseTweaksSettingRowDefinition definition) {
+        Button button = addRenderableWidget(Button.builder(
+                Component.literal(definition.actionLabel()),
+                ignored -> runRowAction(definition.action()))
+                .bounds(0, 0, geometry.controlWidth(), 18)
+                .build());
+        return new ChiseTweaksSettingRowView(definition, button, null, null, null);
+    }
+
+    private void runRowAction(ChiseTweaksSettingRowDefinition.Action action) {
+        if (minecraft == null || action == null) return;
+        applyChanges();
+        ChiseSceneFilterEditorScreen.Target target = switch (action) {
+            case EDIT_BLOCK_FILTER -> ChiseSceneFilterEditorScreen.Target.BLOCKS;
+            case EDIT_ENTITY_FILTER -> ChiseSceneFilterEditorScreen.Target.ENTITIES;
+        };
+        minecraft.setScreen(new ChiseSceneFilterEditorScreen(this, target, controller.japanese()));
     }
 
     private void navigate(ChiseTweaksUiSection section) {
@@ -444,7 +464,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void positionWidgets(ChiseTweaksSettingRowView row, int y) {
         int controlY = y + Math.max(0, (geometry.rowHeight() - 18) / 2);
         switch (row.definition.kind()) {
-            case BOOLEAN -> {
+            case BOOLEAN, ACTION -> {
                 row.primary.setPosition(geometry.booleanControlX(), controlY);
                 row.primary.visible = true;
             }
@@ -482,6 +502,13 @@ public final class ChiseTweaksConfigScreen extends Screen {
         boolean turnOn = controller.shouldTurnBulkOn(selectedSection);
         return Component.literal(
                 (controller.japanese() ? "一括選択：" : "Select all: ") + (turnOn ? "ON" : "OFF"));
+    }
+
+    private static int saturatedStep(int current, int step) {
+        long next = (long) current + step;
+        if (next > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+        if (next < Integer.MIN_VALUE) return Integer.MIN_VALUE;
+        return (int) next;
     }
 
     private static Component toggleMessage(ChiseBooleanSetting value) {
