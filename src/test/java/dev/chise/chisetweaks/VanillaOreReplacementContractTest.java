@@ -12,12 +12,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class VanillaOreReplacementContractTest {
@@ -53,9 +56,11 @@ final class VanillaOreReplacementContractTest {
         assertEquals(EXPECTED_VANILLA_ORE_BLOCKS, VanillaOreVisualCatalog.blockIds());
 
         LinkedHashSet<String> observed = new LinkedHashSet<>();
+        int expectedTargetMask = 0;
         for (var family : VanillaOreVisualCatalog.families()) {
             assertNotNull(family.target());
             assertFalse(family.highlightKey().isBlank());
+            expectedTargetMask |= family.target().bitMask();
             for (String blockId : family.blockIds()) {
                 assertTrue(observed.add(blockId), "duplicate: " + blockId);
                 assertEquals(family.target(), VanillaOreVisualCatalog.targetForBlockId(blockId));
@@ -63,6 +68,35 @@ final class VanillaOreReplacementContractTest {
             }
         }
         assertEquals(EXPECTED_VANILLA_ORE_BLOCKS, observed);
+        assertEquals(expectedTargetMask, VanillaOreVisualCatalog.TARGET_MASK);
+        assertEquals(11, Integer.bitCount(VanillaOreVisualCatalog.TARGET_MASK));
+    }
+
+    @Test
+    void catalogLookupNormalizesInputAndRejectsUnknownBlocksSafely() {
+        assertEquals(
+                Target.MATERIAL_DIAMOND_ORE,
+                VanillaOreVisualCatalog.targetForBlockId("  MINECRAFT:DIAMOND_ORE  "));
+        assertEquals("diamond", VanillaOreVisualCatalog.highlightKeyForBlockId("Minecraft:Diamond_Ore"));
+        assertTrue(VanillaOreVisualCatalog.isVanillaOreBlock("minecraft:ancient_debris"));
+        assertFalse(VanillaOreVisualCatalog.isVanillaOreBlock("minecraft:stone"));
+        assertFalse(VanillaOreVisualCatalog.isVanillaOreBlock(null));
+        assertNull(VanillaOreVisualCatalog.targetForBlockId(null));
+        assertNull(VanillaOreVisualCatalog.targetForBlockId("minecraft:stone"));
+        assertEquals("", VanillaOreVisualCatalog.highlightKeyForBlockId(null));
+        assertEquals("", VanillaOreVisualCatalog.highlightKeyForBlockId("minecraft:stone"));
+    }
+
+    @Test
+    void familyDefinitionRejectsInvalidCatalogEntries() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new VanillaOreVisualCatalog.Family(null, "diamond", List.of("minecraft:diamond_ore")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new VanillaOreVisualCatalog.Family(Target.MATERIAL_DIAMOND_ORE, " ", List.of("minecraft:diamond_ore")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new VanillaOreVisualCatalog.Family(Target.MATERIAL_DIAMOND_ORE, "diamond", List.of()));
+        assertThrows(IllegalArgumentException.class,
+                () -> new VanillaOreVisualCatalog.Family(Target.MATERIAL_DIAMOND_ORE, "diamond", List.of("example:diamond_ore")));
     }
 
     @Test
@@ -88,6 +122,9 @@ final class VanillaOreReplacementContractTest {
                 VisualModelSelectionPolicy.VANILLA_ORE_MODEL_TARGET_MASK);
         assertTrue(VisualModelSelectionPolicy.useAllVanillaOres(
                 VisualModelSelectionPolicy.VANILLA_ORE_MODEL_TARGET_MASK));
+        assertFalse(VisualModelSelectionPolicy.useAllVanillaOres(
+                VisualModelSelectionPolicy.VANILLA_ORE_MODEL_TARGET_MASK
+                        & ~Target.MATERIAL_COAL_ORE.bitMask()));
 
         assertEquals(0,
                 VisualModelSelectionPolicy.VANILLA_ORE_MODEL_TARGET_MASK
