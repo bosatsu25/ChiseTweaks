@@ -144,7 +144,7 @@ final class ChiseTweaksSettingsController {
     private void addResourceRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         header(rows, "header.resources", "資源", "Resources");
         bool(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
-                "鉱石・資源ハイライト",
+                "鉱石ハイライト",
                 "バニラ鉱石" + VanillaOreVisualCatalog.blockVariantCount()
                         + "ブロック種をリソースパックなしで発光枠表示する");
         bool(rows, "nether", FeatureSwitches.NETHER_PALETTE,
@@ -195,9 +195,9 @@ final class ChiseTweaksSettingsController {
                 "表示を残す／隠すエンティティIDと方式を編集する",
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
 
-        header(rows, "header.visibilityDetails", "溶岩源・視認の詳細設定", "Lava source & visibility details");
+        header(rows, "header.visibilityDetails", "Lava Analyzer・視認の詳細設定", "Lava Analyzer & visibility details");
         bool(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
-                "溶岩源ガイド", "溶岩源を深緑の発光枠で1ブロックずつ表示する");
+                "Lava Analyzer", "溶岩源を解析し、深緑の発光枠で1ブロックずつ表示する");
         integer(rows, "scanRange", LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS,
                 "視認スキャン範囲", "周辺を確認する水平範囲", 1);
         integer(rows, "scanInterval", LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL,
