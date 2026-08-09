@@ -17,7 +17,10 @@ public final class VisualModelSelectionPolicy {
                     | Target.MATERIAL_IRON_ORE.bitMask()
                     | Target.MATERIAL_COPPER_ORE.bitMask()
                     | Target.MATERIAL_LAPIS_ORE.bitMask()
-                    | Target.MATERIAL_REDSTONE_ORE.bitMask();
+                    | Target.MATERIAL_REDSTONE_ORE.bitMask()
+                    | Target.MATERIAL_CRYING_OBSIDIAN.bitMask()
+                    | Target.MATERIAL_NETHER_GOLD_ORE.bitMask()
+                    | Target.MATERIAL_NETHER_QUARTZ_ORE.bitMask();
 
     private VisualModelSelectionPolicy() {}
 
