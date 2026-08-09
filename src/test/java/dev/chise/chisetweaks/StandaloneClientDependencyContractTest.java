@@ -53,7 +53,7 @@ final class StandaloneClientDependencyContractTest {
             assertFalse(properties.contains(forbidden), forbidden + " in gradle.properties");
         }
 
-        assertTrue(build.contains("modCompileOnly \"com.terraformersmc:modmenu:${project.modmenu_version}\""));
+        assertTrue(build.contains("compileOnly \"com.terraformersmc:modmenu:${project.modmenu_version}\""));
         assertTrue(properties.contains("modmenu_version="));
         assertFalse(build.contains("modImplementation \"com.terraformersmc:modmenu"));
         assertFalse(build.contains("implementation \"com.terraformersmc:modmenu"));
