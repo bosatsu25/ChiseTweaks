@@ -184,24 +184,8 @@ public final class VisualTargetSelectionPolicy {
         if (id.equals("minecraft:crying_obsidian")) {
             return isEnabled(mask, Target.MATERIAL_CRYING_OBSIDIAN);
         }
-        if (id.equals("minecraft:ancient_debris")) {
-            return isEnabled(mask, Target.MATERIAL_ANCIENT_DEBRIS);
-        }
-        if (id.equals("minecraft:nether_gold_ore")) {
-            return isEnabled(mask, Target.MATERIAL_NETHER_GOLD_ORE);
-        }
-        if (id.equals("minecraft:nether_quartz_ore")) {
-            return isEnabled(mask, Target.MATERIAL_NETHER_QUARTZ_ORE);
-        }
-        if (orePair(id, "diamond")) return isEnabled(mask, Target.MATERIAL_DIAMOND_ORE);
-        if (orePair(id, "gold")) return isEnabled(mask, Target.MATERIAL_GOLD_ORE);
-        if (orePair(id, "emerald")) return isEnabled(mask, Target.MATERIAL_EMERALD_ORE);
-        if (orePair(id, "coal")) return isEnabled(mask, Target.MATERIAL_COAL_ORE);
-        if (orePair(id, "iron")) return isEnabled(mask, Target.MATERIAL_IRON_ORE);
-        if (orePair(id, "copper")) return isEnabled(mask, Target.MATERIAL_COPPER_ORE);
-        if (orePair(id, "lapis")) return isEnabled(mask, Target.MATERIAL_LAPIS_ORE);
-        if (orePair(id, "redstone")) return isEnabled(mask, Target.MATERIAL_REDSTONE_ORE);
-        return false;
+        Target vanillaOreTarget = VanillaOreVisualCatalog.targetForBlockId(id);
+        return vanillaOreTarget != null && isEnabled(mask, vanillaOreTarget);
     }
 
     private static boolean hiddenEnabled(int mask, String id) {
@@ -217,11 +201,6 @@ public final class VisualTargetSelectionPolicy {
             return isEnabled(mask, Target.HIDDEN_DEAD_CORAL);
         }
         return false;
-    }
-
-    private static boolean orePair(String id, String ore) {
-        return id.equals("minecraft:" + ore + "_ore")
-                || id.equals("minecraft:deepslate_" + ore + "_ore");
     }
 
     private static String normalize(String raw) {

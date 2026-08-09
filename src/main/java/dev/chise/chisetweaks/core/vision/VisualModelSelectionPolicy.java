@@ -7,20 +7,16 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
  * pipeline instead of the bounded world-line overlay.
  */
 public final class VisualModelSelectionPolicy {
-    public static final int MATERIAL_MODEL_TARGET_MASK =
+    /** Every vanilla ore family covered by the Chise-owned replacement catalog. */
+    public static final int VANILLA_ORE_MODEL_TARGET_MASK = VanillaOreVisualCatalog.TARGET_MASK;
+
+    /** Non-ore special materials that keep the same model-backed highlight treatment. */
+    public static final int SPECIAL_MATERIAL_MODEL_TARGET_MASK =
             Target.MATERIAL_OBSIDIAN.bitMask()
-                    | Target.MATERIAL_ANCIENT_DEBRIS.bitMask()
-                    | Target.MATERIAL_DIAMOND_ORE.bitMask()
-                    | Target.MATERIAL_GOLD_ORE.bitMask()
-                    | Target.MATERIAL_EMERALD_ORE.bitMask()
-                    | Target.MATERIAL_COAL_ORE.bitMask()
-                    | Target.MATERIAL_IRON_ORE.bitMask()
-                    | Target.MATERIAL_COPPER_ORE.bitMask()
-                    | Target.MATERIAL_LAPIS_ORE.bitMask()
-                    | Target.MATERIAL_REDSTONE_ORE.bitMask()
-                    | Target.MATERIAL_CRYING_OBSIDIAN.bitMask()
-                    | Target.MATERIAL_NETHER_GOLD_ORE.bitMask()
-                    | Target.MATERIAL_NETHER_QUARTZ_ORE.bitMask();
+                    | Target.MATERIAL_CRYING_OBSIDIAN.bitMask();
+
+    public static final int MATERIAL_MODEL_TARGET_MASK =
+            VANILLA_ORE_MODEL_TARGET_MASK | SPECIAL_MATERIAL_MODEL_TARGET_MASK;
 
     private VisualModelSelectionPolicy() {}
 
@@ -34,6 +30,11 @@ public final class VisualModelSelectionPolicy {
     public static boolean useMaterialTarget(int activeMaterialMask, Target target) {
         return isMaterialTarget(target)
                 && VisualTargetSelectionPolicy.isEnabled(activeMaterialMask, target);
+    }
+
+    /** Returns whether all vanilla ore families are active inside an already-normalized mask. */
+    public static boolean useAllVanillaOres(int activeMaterialMask) {
+        return (activeMaterialMask & VANILLA_ORE_MODEL_TARGET_MASK) == VANILLA_ORE_MODEL_TARGET_MASK;
     }
 
     /** Kept as a small compatibility helper for tests/callers that only care about diamond. */

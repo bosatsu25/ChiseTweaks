@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.core.vision;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -29,28 +30,7 @@ public final class BlockInspectionPolicy {
             "facing", "axis", "half", "type", "shape", "face", "open",
             "lit", "honey_level", "in_wall", "powered");
 
-    private static final Set<String> MATERIAL_HIGHLIGHT_IDS = Set.of(
-            "minecraft:obsidian",
-            "minecraft:crying_obsidian",
-            "minecraft:ancient_debris",
-            "minecraft:nether_gold_ore",
-            "minecraft:nether_quartz_ore",
-            "minecraft:coal_ore",
-            "minecraft:deepslate_coal_ore",
-            "minecraft:iron_ore",
-            "minecraft:deepslate_iron_ore",
-            "minecraft:copper_ore",
-            "minecraft:deepslate_copper_ore",
-            "minecraft:gold_ore",
-            "minecraft:deepslate_gold_ore",
-            "minecraft:diamond_ore",
-            "minecraft:deepslate_diamond_ore",
-            "minecraft:emerald_ore",
-            "minecraft:deepslate_emerald_ore",
-            "minecraft:lapis_ore",
-            "minecraft:deepslate_lapis_ore",
-            "minecraft:redstone_ore",
-            "minecraft:deepslate_redstone_ore");
+    private static final Set<String> MATERIAL_HIGHLIGHT_IDS = createMaterialHighlightIds();
 
     private static final Set<String> NETHER_PALETTE_IDS = Set.of(
             "minecraft:netherrack",
@@ -170,6 +150,13 @@ public final class BlockInspectionPolicy {
 
     public static Set<String> materialHighlightIds() { return MATERIAL_HIGHLIGHT_IDS; }
     public static Set<String> netherPaletteIds() { return NETHER_PALETTE_IDS; }
+
+    private static Set<String> createMaterialHighlightIds() {
+        LinkedHashSet<String> ids = new LinkedHashSet<>(VanillaOreVisualCatalog.blockIds());
+        ids.add("minecraft:obsidian");
+        ids.add("minecraft:crying_obsidian");
+        return Set.copyOf(ids);
+    }
 
     private static boolean isTechnical(String id) {
         return id.equals("minecraft:tripwire") || id.equals("minecraft:tripwire_hook");
