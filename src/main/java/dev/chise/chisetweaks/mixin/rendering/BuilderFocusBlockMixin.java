@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.mixin.rendering;
 
-import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.world.level.block.RenderShape;
@@ -12,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Applies Builder Focus block rules at the state render-shape boundary. */
+/** Applies Chise-owned Scene Filter block rules at the state render-shape boundary. */
 @Mixin(BlockBehaviour.BlockStateBase.class)
 public abstract class BuilderFocusBlockMixin {
     @Shadow protected abstract BlockState asState();
@@ -20,7 +19,7 @@ public abstract class BuilderFocusBlockMixin {
     @Inject(method = "getRenderShape", at = @At("HEAD"), cancellable = true)
     private void chiseTweaks$hideFilteredBlock(CallbackInfoReturnable<RenderShape> result) {
         if (!FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue()) return;
-        if (!BuilderFocusVisibility.BLOCKS_LIST.isAllowed(asState().getBlock())) {
+        if (BuilderFocusVisibility.shouldHide(asState().getBlock())) {
             result.setReturnValue(RenderShape.INVISIBLE);
         }
     }
