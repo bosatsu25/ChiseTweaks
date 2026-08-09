@@ -5,7 +5,6 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.feature.rendering.model.ChiseVisualModelPlugin;
-import dev.chise.chisetweaks.gui.ChiseTweaksScreenLauncher;
 import dev.chise.chisetweaks.runtime.ClientSessionState;
 import dev.chise.chisetweaks.runtime.FeatureControlBindings;
 import dev.chise.chisetweaks.runtime.FeatureManager;
@@ -30,7 +29,6 @@ public final class ChiseTweaksClient implements ClientModInitializer {
         SafeStartup.run("local-settings", LocalFeatureSettings::init);
         SafeStartup.run("visual-target-settings", VisualTargetSettings::init);
         SafeStartup.run("feature-bindings", FeatureControlBindings::init);
-        SafeStartup.run("settings-launcher", ChiseTweaksScreenLauncher::register);
         SafeStartup.run("visual-model-plugin", ChiseVisualModelPlugin::register);
         SafeStartup.run("feature-manager", () -> FeatureManager.getInstance().init());
         SafeStartup.run("connection-lifecycle", () -> {
