@@ -17,8 +17,10 @@ public final class ConfigUiLocalization {
     private static void localize(Iterable<? extends IConfigBase> options) {
         for (IConfigBase option : options) {
             String base = "config.option." + option.getName().toLowerCase();
-            option.setPrettyName(StringUtils.getTranslatedOrFallback(
-                    base + ".name", StringUtils.splitCamelCase(option.getName())));
+            String displayName = StringUtils.getTranslatedOrFallback(
+                    base + ".name", StringUtils.splitCamelCase(option.getName()));
+            option.setPrettyName(displayName);
+            option.setTranslatedName(displayName);
             option.setComment(StringUtils.getTranslatedOrFallback(
                     base + ".comment", option.getComment()));
         }
