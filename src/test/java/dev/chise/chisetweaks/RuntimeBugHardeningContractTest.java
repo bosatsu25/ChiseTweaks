@@ -1,0 +1,82 @@
+package dev.chise.chisetweaks;
+
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/** Source contracts for runtime bugs that depend on Minecraft/Sodium integration surfaces. */
+final class RuntimeBugHardeningContractTest {
+    private static final Path ROOT = Path.of(System.getProperty("user.dir"));
+
+    @Test
+    void sodiumLavaHighlightDoesNotTreatOpaqueWhiteAsNoHighlight() throws IOException {
+        String mixin = read("src/main/java/dev/chise/chisetweaks/mixin/sodium/LavaHighlightRendererMixin.java");
+
+        assertTrue(mixin.contains("boolean applyHighlight = false"));
+        assertTrue(mixin.contains("if (!applyHighlight)"));
+        assertFalse(mixin.contains("requestedColor = -1"));
+        assertFalse(mixin.contains("requestedColor == -1"));
+    }
+
+    @Test
+    void sceneFilterEntityRenderPathUsesCachedEntityTypesWithoutPerEntityCollections() throws IOException {
+        String source = read("src/main/java/dev/chise/chisetweaks/feature/rendering/BuilderFocusVisibility.java");
+        String hotPath = between(
+                source,
+                "public static boolean shouldHide(Entity entity)",
+                "public static boolean applyPreset");
+
+        assertTrue(hotPath.contains("FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue()"));
+        assertTrue(hotPath.contains("entity == client.player"));
+        assertTrue(hotPath.contains("entityRules.hides(type)"));
+        assertFalse(hotPath.contains("BuilderEntityVisibilityPolicy.Input"));
+        assertFalse(hotPath.contains("new LinkedHashSet"));
+        assertFalse(hotPath.contains("Set.copyOf"));
+        assertFalse(hotPath.contains(".toString()"));
+    }
+
+    @Test
+    void worksiteInspectorFailsOpenForMissingRegistryIdentity() throws IOException {
+        String source = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteBlockInspector.java");
+
+        assertTrue(source.contains("Identifier registryId = BuiltInRegistries.BLOCK.getKey(block)"));
+        assertTrue(source.contains("registryId == null ? \"\" : registryId.toString()"));
+        assertTrue(source.contains("id.isEmpty()"));
+        assertFalse(source.contains("BuiltInRegistries.BLOCK.getKey(block).toString()"));
+    }
+
+    @Test
+    void featureConfigContainsRuntimeFailuresAtBothPersistenceBoundaries() throws IOException {
+        String source = read("src/main/java/dev/chise/chisetweaks/config/FeatureConfig.java");
+
+        assertEquals(2, occurrences(source, "catch (IOException | RuntimeException exception)"));
+    }
+
+    private static String read(String relative) throws IOException {
+        return Files.readString(ROOT.resolve(relative));
+    }
+
+    private static String between(String source, String startToken, String endToken) {
+        int start = source.indexOf(startToken);
+        int end = source.indexOf(endToken, start + startToken.length());
+        assertTrue(start >= 0, startToken);
+        assertTrue(end > start, endToken);
+        return source.substring(start, end);
+    }
+
+    private static int occurrences(String source, String token) {
+        int count = 0;
+        int index = 0;
+        while ((index = source.indexOf(token, index)) >= 0) {
+            count++;
+            index += token.length();
+        }
+        return count;
+    }
+}
