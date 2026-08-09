@@ -9,44 +9,74 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Regression contract for the source-only, full-bright lava visibility guide. */
+/** Regression contract for the bounded, full-bright Lava Analyzer. */
 final class LavaSourceGuideContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
-    void semanticStyleUsesReservedDeepGreenAndSourceOnlySelection() throws IOException {
+    void semanticStyleUsesReservedDeepGreenAndSmoothProximityGradient() throws IOException {
         assertEquals(0xFF075B32, LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB);
+        assertEquals(0xFF021A0E, LavaVisionPalettePolicy.FAR_OUTLINE_ARGB);
+        assertEquals(2.0, LavaVisionPalettePolicy.NEAR_DISTANCE_BLOCKS);
+        assertEquals(8.0, LavaVisionPalettePolicy.FAR_DISTANCE_BLOCKS);
         assertTrue(LavaVisionPalettePolicy.SOURCE_LINE_WIDTH >= 3.0f);
+        assertTrue(LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS > 0.0f);
 
+        assertEquals(LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB,
+                LavaVisionPalettePolicy.colorForDistance(0.0));
+        assertEquals(LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB,
+                LavaVisionPalettePolicy.colorForDistance(2.0));
+        assertEquals(LavaVisionPalettePolicy.FAR_OUTLINE_ARGB,
+                LavaVisionPalettePolicy.colorForDistance(8.0));
+        assertEquals(LavaVisionPalettePolicy.FAR_OUTLINE_ARGB,
+                LavaVisionPalettePolicy.colorForDistance(Double.POSITIVE_INFINITY));
+
+        int mid = LavaVisionPalettePolicy.colorForDistance(5.0);
+        assertNotEquals(LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB, mid);
+        assertNotEquals(LavaVisionPalettePolicy.FAR_OUTLINE_ARGB, mid);
+
+        String visualAssets = read("gradle/chise-visual-assets.gradle");
+        assertFalse(visualAssets.contains("[7, 91, 50]"));
+        assertFalse(visualAssets.contains("[2, 26, 14]"));
+    }
+
+    @Test
+    void selectionRemainsSourceOnlyAndSkipsDenseInteriorLava() {
         assertFalse(LavaVisionPalettePolicy.shouldHighlight(false, true, true));
         assertFalse(LavaVisionPalettePolicy.shouldHighlight(true, false, true));
         assertFalse(LavaVisionPalettePolicy.shouldHighlight(true, true, false));
         assertTrue(LavaVisionPalettePolicy.shouldHighlight(true, true, true));
-
-        // Keep the semantic source marker distinct from every generated ore/material RGB triplet.
-        String visualAssets = read("gradle/chise-visual-assets.gradle");
-        assertFalse(visualAssets.contains("[7, 91, 50]"));
     }
 
     @Test
-    void runtimeUsesBoundedCachedWorldLinesInsteadOfFluidTinting() throws IOException {
+    void runtimeUsesBoundedCachedSourcesAndDedicatedAnalyzerRenderer() throws IOException {
         String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
+        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java");
 
         assertTrue(feature.contains("implements TickingFeature, SessionAwareFeature"));
         assertTrue(feature.contains("FluidState"));
         assertTrue(feature.contains("isSource()"));
-        assertTrue(feature.contains("WorldLineGeometry.drawBox"));
-        assertTrue(feature.contains("LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB"));
         assertTrue(feature.contains("LavaVisionPalettePolicy.shouldHighlight"));
-        assertTrue(feature.contains("RenderTypes.lines()"));
         assertTrue(feature.contains("MAX_OVERLAY_RESULTS"));
         assertTrue(feature.contains("getChunkSource().hasChunk("));
-        assertTrue(feature.contains("visibleSources = List.copyOf(prepared)"));
+        assertTrue(feature.contains("analyzedSources = List.copyOf(prepared)"));
+        assertTrue(feature.contains("analyzerRenderer.render(context, snapshot)"));
+        assertTrue(feature.contains("ClientLifecycleEvents.CLIENT_STOPPING"));
         assertFalse(feature.contains("FluidRenderingRegistry"));
         assertFalse(feature.contains("LavaFluidRenderHandler"));
         assertFalse(feature.contains("System.nanoTime()"));
+
+        assertTrue(renderer.contains("RenderPipelines.DEBUG_FILLED_SNIPPET"));
+        assertTrue(renderer.contains("withDepthStencilState(Optional.empty())"));
+        assertTrue(renderer.contains("pipeline/lava_analyzer_through_walls"));
+        assertTrue(renderer.contains("LavaVisionPalettePolicy.colorForDistance"));
+        assertTrue(renderer.contains("ANALYZER_EDGE_THICKNESS"));
+        assertTrue(renderer.contains("drawWireBox"));
+        assertTrue(renderer.contains("MappableRingBuffer"));
+        assertTrue(renderer.contains("allocator.close()"));
     }
 
     @Test
@@ -57,7 +87,7 @@ final class LavaSourceGuideContractTest {
     }
 
     @Test
-    void userFacingMetadataUsesLavaAnalyzerWithoutRequiringSodium() throws IOException {
+    void userFacingMetadataUsesLavaAnalyzerWithoutSodiumDependency() throws IOException {
         String definitions = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
         String lavaDefinition = between(definitions, "LAVA_HIGHLIGHT(", ");\n\n    public static final");
 
