@@ -87,8 +87,10 @@ public final class LocalFeatureSettings {
     public static void refreshTranslations() {
         for (IConfigBase option : ALL_OPTIONS) {
             String base = "config.option." + option.getName().toLowerCase();
-            option.setPrettyName(StringUtils.getTranslatedOrFallback(
-                    base + ".name", StringUtils.splitCamelCase(option.getName())));
+            String displayName = StringUtils.getTranslatedOrFallback(
+                    base + ".name", StringUtils.splitCamelCase(option.getName()));
+            option.setPrettyName(displayName);
+            option.setTranslatedName(displayName);
             option.setComment(StringUtils.getTranslatedOrFallback(
                     base + ".comment", option.getComment()));
         }

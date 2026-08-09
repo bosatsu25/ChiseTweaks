@@ -2,7 +2,7 @@ package dev.chise.chisetweaks;
 
 import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
-import dev.chise.chisetweaks.gui.ChiseTweaksConfigScreen;
+import dev.chise.chisetweaks.gui.ChiseTweaksHotkeyScreen;
 import dev.chise.chisetweaks.runtime.ClientInputHandler;
 import dev.chise.chisetweaks.runtime.FeatureControlBindings;
 import fi.dy.masa.malilib.config.ConfigManager;
@@ -20,10 +20,14 @@ public final class ClientFeatureBootstrap implements IInitializationHandler {
     public void registerModHandlers() {
         ConfigManager.getInstance().registerConfigHandler(
                 ChiseTweaksMetadata.MOD_ID, new FeatureConfig());
+
+        // MaLiLib's registry contract requires a GuiBase. The user-facing Mod Menu entry is the
+        // Chise-owned Screen; this fallback keeps MaLiLib's own config registry functional by
+        // opening the dedicated multi-key editor instead of forcing the main UI back onto GuiBase.
         Registry.CONFIG_SCREEN.registerConfigScreenFactory(new ModInfo(
                 ChiseTweaksMetadata.MOD_ID,
                 ChiseTweaksMetadata.MOD_NAME,
-                ChiseTweaksConfigScreen::new));
+                ChiseTweaksHotkeyScreen::new));
 
         ClientInputHandler input = ClientInputHandler.getInstance();
         InputEventHandler.getKeybindManager().registerKeybindProvider(input);
