@@ -3,7 +3,7 @@
   "id": "chisetweaks",
   "version": "${version}",
   "name": "ChiseTweaks",
-  "description": "Client-only building assistance and visual inspection tools for large Minecraft builds and technical facilities.",
+  "description": "Standalone client-only building assistance and visual inspection tools for large Minecraft builds and technical facilities.",
   "license": [
     "MIT",
     "Apache-2.0"
@@ -14,14 +14,8 @@
   "icon": "assets/chisetweaks/icon.png",
   "environment": "client",
   "entrypoints": {
-    "main": [
-      "dev.chise.chisetweaks.ChiseTweaks"
-    ],
     "client": [
       "dev.chise.chisetweaks.ChiseTweaksClient"
-    ],
-    "modmenu": [
-      "dev.chise.chisetweaks.compat.ChiseTweaksModMenu"
     ]
   },
   "mixins": [
@@ -32,11 +26,9 @@
     "minecraft": "${minecraft_version}",
     "fabricloader": ">=${loader_version}",
     "fabric-api": ">=${fabric_api_version}",
-    "java": ">=25",
-    "malilib": ">=${malilib_version}"
+    "java": ">=25"
   },
   "recommends": {
-    "modmenu": ">=${modmenu_version}",
     "sodium": ">=${sodium_compat_version}"
   },
   "custom": {
@@ -50,7 +42,10 @@
       "automaticModDownload": false,
       "automaticJarReplacement": false,
       "featureFailureMode": "quarantine",
-      "mixinFailureMode": "fail-soft"
+      "mixinFailureMode": "fail-soft",
+      "settingsOwnership": "standalone",
+      "externalConfigLibraryRequired": false,
+      "modMenuRequired": false
     }
   }
 }
