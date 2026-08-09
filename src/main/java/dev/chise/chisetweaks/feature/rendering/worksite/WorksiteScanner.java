@@ -51,19 +51,19 @@ final class WorksiteScanner {
             {0.50, 0.50, 0.82}
     };
 
-    private static final Comparator<ScanCandidate> SCAN_ORDER = Comparator
-            .comparingInt((ScanCandidate candidate) -> candidate.style().priority()).reversed()
-            .thenComparingDouble(ScanCandidate::distanceSquared);
+    private static final Comparator<WorksiteScanCandidate> SCAN_ORDER = Comparator
+            .comparingInt((WorksiteScanCandidate candidate) -> candidate.style().priority()).reversed()
+            .thenComparingDouble(WorksiteScanCandidate::distanceSquared);
 
     private final WorksiteBlockInspector blockInspector;
-    private final PriorityQueue<ScanCandidate> candidateBuffer = new PriorityQueue<>(
+    private final PriorityQueue<WorksiteScanCandidate> candidateBuffer = new PriorityQueue<>(
             WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES,
             SCAN_ORDER.reversed());
-    private final ArrayList<ScanCandidate> orderedBuffer = new ArrayList<>(
+    private final ArrayList<WorksiteScanCandidate> orderedBuffer = new ArrayList<>(
             WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES);
     private final ArrayList<WorksiteVisibleTarget> visibleBuffer = new ArrayList<>(
             WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS);
-    private final ScanCandidate[] candidatePool = createCandidatePool();
+    private final WorksiteScanCandidate[] candidatePool = createCandidatePool();
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private final BlockPos.MutableBlockPos visibilityCursor = new BlockPos.MutableBlockPos();
     private final boolean[] loadedChunkBuffer = new boolean[
@@ -147,7 +147,7 @@ final class WorksiteScanner {
 
         orderedBuffer.addAll(candidateBuffer);
         orderedBuffer.sort(SCAN_ORDER);
-        for (ScanCandidate candidate : orderedBuffer) {
+        for (WorksiteScanCandidate candidate : orderedBuffer) {
             if (visibleBuffer.size() >= overlayLimit || remainingLineOfSightRays <= 0) break;
             WorksiteVisibleTarget target = materializeVisibleTarget(client, eyePosition, candidate);
             if (target != null) visibleBuffer.add(target);
@@ -161,7 +161,7 @@ final class WorksiteScanner {
             Vec3 eyePosition,
             BlockPos position,
             Set<BlockInspectionCategory> activeCategories,
-            PriorityQueue<ScanCandidate> candidates) {
+            PriorityQueue<WorksiteScanCandidate> candidates) {
         BlockState state = client.level.getBlockState(position);
         WorksiteBlockDescriptor descriptor = blockInspector.describe(state);
         BlockInspectionCategory category =
@@ -179,7 +179,7 @@ final class WorksiteScanner {
         double dy = position.getY() + 0.5 - eyePosition.y;
         double dz = position.getZ() + 0.5 - eyePosition.z;
         double distanceSquared = dx * dx + dy * dy + dz * dz;
-        ScanCandidate weakest = candidates.peek();
+        WorksiteScanCandidate weakest = candidates.peek();
         int weakestPriority = weakest == null ? Integer.MIN_VALUE : weakest.style().priority();
         double weakestDistanceSquared = weakest == null
                 ? Double.POSITIVE_INFINITY
@@ -192,13 +192,13 @@ final class WorksiteScanner {
                 weakestPriority,
                 weakestDistanceSquared)) return;
 
-        ScanCandidate candidate;
+        WorksiteScanCandidate candidate;
         if (candidates.size() == WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES) {
             candidate = candidates.poll();
         } else {
             candidate = candidatePool[nextCandidateSlot++];
         }
-        candidate.set(
+        candidate.assign(
                 position.getX(),
                 position.getY(),
                 position.getZ(),
@@ -213,7 +213,7 @@ final class WorksiteScanner {
     private WorksiteVisibleTarget materializeVisibleTarget(
             Minecraft client,
             Vec3 eyePosition,
-            ScanCandidate candidate) {
+            WorksiteScanCandidate candidate) {
         if (remainingLineOfSightRays <= 0) return null;
         visibilityCursor.set(candidate.x(), candidate.y(), candidate.z());
         if (!lineOfSight(client, eyePosition, visibilityCursor, candidate.category())) return null;
@@ -267,73 +267,12 @@ final class WorksiteScanner {
         };
     }
 
-    private static ScanCandidate[] createCandidatePool() {
-        ScanCandidate[] pool = new ScanCandidate[WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES];
+    private static WorksiteScanCandidate[] createCandidatePool() {
+        WorksiteScanCandidate[] pool =
+                new WorksiteScanCandidate[WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES];
         for (int index = 0; index < pool.length; index++) {
-            pool[index] = new ScanCandidate();
+            pool[index] = new WorksiteScanCandidate();
         }
         return pool;
-    }
-
-    private static final class ScanCandidate {
-        private int x;
-        private int y;
-        private int z;
-        private BlockState state;
-        private String blockId;
-        private BlockInspectionCategory category;
-        private VisualAssistanceStylePolicy.OverlayStyle style;
-        private double distanceSquared;
-
-        void set(
-                int x,
-                int y,
-                int z,
-                BlockState state,
-                String blockId,
-                BlockInspectionCategory category,
-                VisualAssistanceStylePolicy.OverlayStyle style,
-                double distanceSquared) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.state = state;
-            this.blockId = blockId;
-            this.category = category;
-            this.style = style;
-            this.distanceSquared = distanceSquared;
-        }
-
-        int x() {
-            return x;
-        }
-
-        int y() {
-            return y;
-        }
-
-        int z() {
-            return z;
-        }
-
-        BlockState state() {
-            return state;
-        }
-
-        String blockId() {
-            return blockId;
-        }
-
-        BlockInspectionCategory category() {
-            return category;
-        }
-
-        VisualAssistanceStylePolicy.OverlayStyle style() {
-            return style;
-        }
-
-        double distanceSquared() {
-            return distanceSquared;
-        }
     }
 }
