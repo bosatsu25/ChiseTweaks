@@ -11,11 +11,13 @@ record ChiseTweaksSettingRowDefinition(
         String description,
         ChiseBooleanSetting booleanConfig,
         ChiseIntegerSetting integerConfig,
-        int step) {
+        int step,
+        Action action,
+        String actionLabel) {
 
     static ChiseTweaksSettingRowDefinition header(String id, String name) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.HEADER, id, name, "", null, null, 0);
+                Kind.HEADER, id, name, "", null, null, 0, null, "");
     }
 
     static ChiseTweaksSettingRowDefinition bool(
@@ -24,7 +26,7 @@ record ChiseTweaksSettingRowDefinition(
             String description,
             ChiseBooleanSetting config) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.BOOLEAN, id, name, description, config, null, 0);
+                Kind.BOOLEAN, id, name, description, config, null, 0, null, "");
     }
 
     static ChiseTweaksSettingRowDefinition integer(
@@ -34,12 +36,36 @@ record ChiseTweaksSettingRowDefinition(
             ChiseIntegerSetting config,
             int step) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.INTEGER, id, name, description, null, config, Math.max(1, step));
+                Kind.INTEGER, id, name, description, null, config, Math.max(1, step), null, "");
+    }
+
+    static ChiseTweaksSettingRowDefinition action(
+            String id,
+            String name,
+            String description,
+            Action action,
+            String actionLabel) {
+        return new ChiseTweaksSettingRowDefinition(
+                Kind.ACTION,
+                id,
+                name,
+                description,
+                null,
+                null,
+                0,
+                action,
+                actionLabel == null ? "" : actionLabel);
     }
 
     enum Kind {
         HEADER,
         BOOLEAN,
-        INTEGER
+        INTEGER,
+        ACTION
+    }
+
+    enum Action {
+        EDIT_BLOCK_FILTER,
+        EDIT_ENTITY_FILTER
     }
 }
