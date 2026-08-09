@@ -16,7 +16,7 @@ final class LavaSourceGuideContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
-    void semanticStyleUsesReservedDeepGreenAndSourceOnlySelection() {
+    void semanticStyleUsesReservedDeepGreenAndSourceOnlySelection() throws IOException {
         assertEquals(0xFF075B32, LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB);
         assertTrue(LavaVisionPalettePolicy.SOURCE_LINE_WIDTH >= 3.0f);
 
@@ -24,6 +24,10 @@ final class LavaSourceGuideContractTest {
         assertFalse(LavaVisionPalettePolicy.shouldHighlight(true, false, true));
         assertFalse(LavaVisionPalettePolicy.shouldHighlight(true, true, false));
         assertTrue(LavaVisionPalettePolicy.shouldHighlight(true, true, true));
+
+        // Keep the semantic source marker distinct from every generated ore/material RGB triplet.
+        String visualAssets = read("gradle/chise-visual-assets.gradle");
+        assertFalse(visualAssets.contains("[7, 91, 50]"));
     }
 
     @Test
@@ -35,6 +39,7 @@ final class LavaSourceGuideContractTest {
         assertTrue(feature.contains("isSource()"));
         assertTrue(feature.contains("WorldLineGeometry.drawBox"));
         assertTrue(feature.contains("LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB"));
+        assertTrue(feature.contains("LavaVisionPalettePolicy.shouldHighlight"));
         assertTrue(feature.contains("RenderTypes.lines()"));
         assertTrue(feature.contains("MAX_OVERLAY_RESULTS"));
         assertTrue(feature.contains("getChunkSource().hasChunk("));
