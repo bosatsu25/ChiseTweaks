@@ -27,43 +27,49 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
-    void mainSettingsScreenIsChiseOwnedInsteadOfAStretchedMalilibConfigList() throws IOException {
+    void mainSettingsScreenIsAChiseOwnedViewWithDomainLogicDelegated() throws IOException {
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+        String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
 
         assertTrue(screen.contains("extends Screen"));
         assertTrue(screen.contains("GuiGraphicsExtractor"));
         assertTrue(screen.contains("EditBox"));
         assertTrue(screen.contains("ChiseTweaksSettingsLayout.calculate"));
-        assertTrue(screen.contains("設定をリセット"));
-        assertTrue(screen.contains("適用"));
-        assertTrue(screen.contains("完了"));
+        assertTrue(screen.contains("ChiseTweaksSettingsController"));
+        assertTrue(controller.contains("rowsFor(ChiseTweaksUiSection section)"));
+        assertTrue(controller.contains("toggleBulk(ChiseTweaksUiSection section)"));
+        assertTrue(controller.contains("resetSection(ChiseTweaksUiSection section)"));
         assertFalse(screen.contains("extends GuiConfigsBase"));
-        assertFalse(screen.contains("BooleanHotkeyGuiWrapper"));
+        assertFalse(screen.contains("VisualTargetSettings.ALL_OPTIONS"));
+        assertFalse(screen.contains("FeatureSwitches.MATERIAL_HIGHLIGHTS"));
     }
 
     @Test
-    void categoryPagesExposeCompactFeatureTargetAndDescriptionRows() throws IOException {
-        String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+    void categoryContentLivesInTheControllerAndKeepsApprovedVisibilityGroups() throws IOException {
+        String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
 
-        assertTrue(screen.contains("細線トレース"));
-        assertTrue(screen.contains("見えにくいブロックの対象"));
-        assertTrue(screen.contains("表示を絞る対象"));
-        assertTrue(screen.contains("溶岩・視認の詳細設定"));
-        assertTrue(screen.contains("視認スキャン範囲"));
-        assertTrue(screen.contains("スキャン間隔"));
-        assertTrue(screen.contains("toggleMessage(config)"));
-        assertTrue(screen.contains("geometry.controlWidth()"));
+        assertTrue(controller.contains("case PLACEMENT -> addPlacementRows(rows)"));
+        assertTrue(controller.contains("case RESOURCES -> addResourceRows(rows)"));
+        assertTrue(controller.contains("case VISIBILITY -> addVisibilityRows(rows)"));
+        assertTrue(controller.contains("細線トレース"));
+        assertTrue(controller.contains("見えにくいブロックの対象"));
+        assertTrue(controller.contains("表示を絞る対象"));
+        assertTrue(controller.contains("溶岩・視認の詳細設定"));
+        assertTrue(controller.contains("視認スキャン範囲"));
+        assertTrue(controller.contains("スキャン間隔"));
     }
 
     @Test
-    void categorySearchAndBulkSelectionShareOneRowWithoutKeySearchControls() throws IOException {
+    void categorySearchAndBulkSelectionStayCompactWithoutKeySearchControls() throws IOException {
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+        String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
 
         assertTrue(screen.contains("searchBox.setResponder"));
         assertTrue(screen.contains("一括選択："));
         assertTrue(screen.contains("geometry.search()"));
         assertTrue(screen.contains("geometry.bulk()"));
-        assertTrue(screen.contains("toggleBulk()"));
+        assertTrue(screen.contains("controller.toggleBulk(selectedSection)"));
+        assertTrue(controller.contains("VisualTargetGroupPolicy.withAll"));
         assertFalse(screen.contains("NONE"));
         assertFalse(screen.contains("Solo選択"));
         assertFalse(screen.contains("SOLO"));
@@ -72,17 +78,20 @@ final class ConfigUiSimplificationContractTest {
     @Test
     void fullHotkeyEditorIsIsolatedBehindTheKeybindDestination() throws IOException {
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+        String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String hotkeys = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksHotkeyScreen.java");
 
         assertTrue(screen.contains("new ChiseTweaksHotkeyScreen(this)"));
-        assertTrue(screen.contains("キー割り当てを編集する"));
+        assertTrue(controller.contains("キー割り当てを編集する"));
+        assertTrue(controller.contains("case HOTKEYS -> addHotkeyRows(rows)"));
         assertTrue(hotkeys.contains("extends GuiConfigsBase"));
         assertTrue(hotkeys.contains("BooleanHotkeyGuiWrapper"));
         assertTrue(hotkeys.contains("return true;"));
+        assertFalse(screen.contains("BooleanHotkeyGuiWrapper"));
     }
 
     @Test
-    void responsiveGeometryHasAHeadlessPolicyAndDedicatedAutomatedTests() throws IOException {
+    void responsiveGeometryHasAHeadlessPolicyAndPinnedAutomatedTests() throws IOException {
         String layout = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsLayout.java");
         String test = read("src/test/java/dev/chise/chisetweaks/ChiseTweaksSettingsLayoutTest.java");
 
@@ -93,7 +102,7 @@ final class ConfigUiSimplificationContractTest {
         assertTrue(test.contains("640, 360"));
         assertTrue(test.contains("854, 480"));
         assertTrue(test.contains("2560, 1440"));
-        assertTrue(test.contains("categoryLayoutNeverOverlapsSearchBulkPanelOrFooter"));
+        assertTrue(test.contains("approved854x480CategoryGeometryIsPinnedAgainstUiRegression"));
     }
 
     @Test
@@ -140,6 +149,7 @@ final class ConfigUiSimplificationContractTest {
         String engine = Files.readString(worksite.resolve("WorksiteVisibilityEngine.java"));
         assertTrue(engine.contains("WorksiteOverlayRenderer"));
         assertTrue(engine.contains("overlayRenderer.updateTargets(targets)"));
+        assertTrue(engine.contains("config.worksiteVisibilityWorldOverlay"));
         assertFalse(engine.contains("hudPresenter"));
     }
 
