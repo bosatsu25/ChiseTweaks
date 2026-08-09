@@ -11,11 +11,13 @@ import java.util.List;
 /**
  * Fine-grained target switches shown only in the Target Lists tab.
  *
- * <p>Parent features remain in Features & Keybinds. These switches only narrow the target families
- * handled by Placement Guide, Ore Highlights and Hidden Surface Trace.</p>
+ * <p>Parent features remain in Features & Keybinds. Ore Highlights is intentionally configured
+ * by resource family: a normal ore and its deepslate variant share one switch because the user
+ * is selecting the resource to find, not the stone host it generated in.</p>
  */
 public final class VisualTargetSettings {
     private static final List<Entry> ENTRIES = List.of(
+            // Placement Guide targets.
             entry(Target.PLACEMENT_ANVIL, "visualTargetPlacementAnvil",
                     "Placement: Anvil", "設置方向：金床",
                     "Allow Placement Guide to mark anvils.", "設置方向ガイドで金床を表示対象にします。"),
@@ -50,46 +52,52 @@ public final class VisualTargetSettings {
                     "Placement: Logs & Wood", "設置方向：原木・木材",
                     "Allow Placement Guide to mark log, wood, stem and hyphae axes.", "設置方向ガイドで原木・木・幹・菌糸の軸を表示対象にします。"),
 
-            entry(Target.MATERIAL_OBSIDIAN, "visualTargetMaterialObsidian",
-                    "Highlight: Obsidian", "ハイライト：黒曜石",
-                    "Allow Ore Highlights to mark visible obsidian.", "鉱石ハイライトで見えている黒曜石を表示対象にします。"),
-            entry(Target.MATERIAL_ANCIENT_DEBRIS, "visualTargetMaterialAncientDebris",
-                    "Highlight: Ancient Debris", "ハイライト：古代の残骸",
-                    "Allow Ore Highlights to mark visible ancient debris.", "鉱石ハイライトで見えている古代の残骸を表示対象にします。"),
-            entry(Target.MATERIAL_DIAMOND_ORE, "visualTargetMaterialDiamondOre",
-                    "Ore: Diamond", "鉱石：ダイヤモンド",
-                    "Highlight both normal and deepslate diamond ore.", "通常版と深層岩版のダイヤモンド鉱石をまとめて切り替えます。"),
-            entry(Target.MATERIAL_GOLD_ORE, "visualTargetMaterialGoldOre",
-                    "Ore: Gold", "鉱石：金",
-                    "Highlight both normal and deepslate gold ore.", "通常版と深層岩版の金鉱石をまとめて切り替えます。"),
-            entry(Target.MATERIAL_EMERALD_ORE, "visualTargetMaterialEmeraldOre",
-                    "Ore: Emerald", "鉱石：エメラルド",
-                    "Highlight both normal and deepslate emerald ore.", "通常版と深層岩版のエメラルド鉱石をまとめて切り替えます。"),
+            // Overworld ore families. Normal and deepslate variants deliberately share one row.
             entry(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre",
                     "Ore: Coal", "鉱石：石炭",
-                    "Highlight both normal and deepslate coal ore.", "通常版と深層岩版の石炭鉱石をまとめて切り替えます。"),
+                    "Toggle normal and deepslate Coal Ore together.", "通常版と深層岩版の石炭鉱石を1つのスイッチで切り替えます。"),
             entry(Target.MATERIAL_IRON_ORE, "visualTargetMaterialIronOre",
                     "Ore: Iron", "鉱石：鉄",
-                    "Highlight both normal and deepslate iron ore.", "通常版と深層岩版の鉄鉱石をまとめて切り替えます。"),
+                    "Toggle normal and deepslate Iron Ore together.", "通常版と深層岩版の鉄鉱石を1つのスイッチで切り替えます。"),
             entry(Target.MATERIAL_COPPER_ORE, "visualTargetMaterialCopperOre",
                     "Ore: Copper", "鉱石：銅",
-                    "Highlight both normal and deepslate copper ore.", "通常版と深層岩版の銅鉱石をまとめて切り替えます。"),
+                    "Toggle normal and deepslate Copper Ore together.", "通常版と深層岩版の銅鉱石を1つのスイッチで切り替えます。"),
+            entry(Target.MATERIAL_GOLD_ORE, "visualTargetMaterialGoldOre",
+                    "Ore: Gold", "鉱石：金",
+                    "Toggle normal and deepslate Gold Ore together.", "通常版と深層岩版の金鉱石を1つのスイッチで切り替えます。"),
             entry(Target.MATERIAL_LAPIS_ORE, "visualTargetMaterialLapisOre",
                     "Ore: Lapis", "鉱石：ラピスラズリ",
-                    "Highlight both normal and deepslate lapis ore.", "通常版と深層岩版のラピスラズリ鉱石をまとめて切り替えます。"),
+                    "Toggle normal and deepslate Lapis Ore together.", "通常版と深層岩版のラピスラズリ鉱石を1つのスイッチで切り替えます。"),
             entry(Target.MATERIAL_REDSTONE_ORE, "visualTargetMaterialRedstoneOre",
                     "Ore: Redstone", "鉱石：レッドストーン",
-                    "Highlight both normal and deepslate redstone ore.", "通常版と深層岩版のレッドストーン鉱石をまとめて切り替えます。"),
-            entry(Target.MATERIAL_CRYING_OBSIDIAN, "visualTargetMaterialCryingObsidian",
-                    "Highlight: Crying Obsidian", "ハイライト：泣く黒曜石",
-                    "Highlight crying obsidian separately from normal obsidian.", "泣く黒曜石を通常の黒曜石とは別に切り替えます。"),
-            entry(Target.MATERIAL_NETHER_GOLD_ORE, "visualTargetMaterialNetherGoldOre",
-                    "Ore: Nether Gold", "鉱石：ネザー金",
-                    "Highlight Nether gold ore without changing Netherrack.", "ネザーラックは変更せず、ネザー金鉱石だけを強調します。"),
-            entry(Target.MATERIAL_NETHER_QUARTZ_ORE, "visualTargetMaterialNetherQuartzOre",
-                    "Ore: Nether Quartz", "鉱石：ネザークォーツ",
-                    "Highlight Nether quartz ore without changing Netherrack.", "ネザーラックは変更せず、ネザークォーツ鉱石だけを強調します。"),
+                    "Toggle normal and deepslate Redstone Ore together.", "通常版と深層岩版のレッドストーン鉱石を1つのスイッチで切り替えます。"),
+            entry(Target.MATERIAL_DIAMOND_ORE, "visualTargetMaterialDiamondOre",
+                    "Ore: Diamond", "鉱石：ダイヤモンド",
+                    "Toggle normal and deepslate Diamond Ore together.", "通常版と深層岩版のダイヤモンド鉱石を1つのスイッチで切り替えます。"),
+            entry(Target.MATERIAL_EMERALD_ORE, "visualTargetMaterialEmeraldOre",
+                    "Ore: Emerald", "鉱石：エメラルド",
+                    "Toggle normal and deepslate Emerald Ore together.", "通常版と深層岩版のエメラルド鉱石を1つのスイッチで切り替えます。"),
 
+            // Nether mining resources.
+            entry(Target.MATERIAL_NETHER_GOLD_ORE, "visualTargetMaterialNetherGoldOre",
+                    "Nether Resource: Gold Ore", "ネザー資源：金鉱石",
+                    "Highlight Nether Gold Ore without changing Netherrack.", "ネザーラックは変更せず、ネザー金鉱石だけを強調します。"),
+            entry(Target.MATERIAL_NETHER_QUARTZ_ORE, "visualTargetMaterialNetherQuartzOre",
+                    "Nether Resource: Quartz Ore", "ネザー資源：クォーツ鉱石",
+                    "Highlight Nether Quartz Ore without changing Netherrack.", "ネザーラックは変更せず、ネザークォーツ鉱石だけを強調します。"),
+            entry(Target.MATERIAL_ANCIENT_DEBRIS, "visualTargetMaterialAncientDebris",
+                    "Nether Resource: Ancient Debris", "ネザー資源：古代の残骸",
+                    "Highlight Ancient Debris with its own muted whorl identity.", "古代の残骸を、銅とは異なる落ち着いた渦巻き表現で強調します。"),
+
+            // Useful non-ore materials stay selectable, but are not presented as ores.
+            entry(Target.MATERIAL_OBSIDIAN, "visualTargetMaterialObsidian",
+                    "Special Material: Obsidian", "特殊資材：黒曜石",
+                    "Highlight Obsidian independently from Crying Obsidian.", "黒曜石を泣く黒曜石とは別に切り替えます。"),
+            entry(Target.MATERIAL_CRYING_OBSIDIAN, "visualTargetMaterialCryingObsidian",
+                    "Special Material: Crying Obsidian", "特殊資材：泣く黒曜石",
+                    "Highlight Crying Obsidian independently from normal Obsidian.", "泣く黒曜石を通常の黒曜石とは別に切り替えます。"),
+
+            // Hidden Surface Trace targets.
             entry(Target.HIDDEN_BLUE_ICE, "visualTargetHiddenBlueIce",
                     "Hidden Surface: Blue Ice", "隠面：青氷",
                     "Allow Hidden Surface Trace to mark visible blue ice.", "隠面トレースで見えている青氷を表示対象にします。"),
