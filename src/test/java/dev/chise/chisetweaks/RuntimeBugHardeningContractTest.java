@@ -109,6 +109,11 @@ final class RuntimeBugHardeningContractTest {
         assertTrue(editor.contains("Identifier.tryParse(raw)"));
         assertTrue(editor.contains("ConfigListPolicy.sanitize(updated)"));
         assertTrue(editor.contains("ConfigListPolicy.MAX_ENTRIES"));
+        assertTrue(editor.contains("if (!isRegisteredTarget(id))"));
+        assertTrue(editor.contains("for (Block block : BuiltInRegistries.BLOCK)"));
+        assertTrue(editor.contains("for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE)"));
+        assertTrue(editor.contains("case NONE -> ChiseRuleMode.BLACKLIST"));
+        assertTrue(editor.contains("case BLACKLIST -> ChiseRuleMode.WHITELIST"));
         assertTrue(editor.contains("pageSize = Math.max(2, Math.min(10"));
         assertTrue(editor.contains(".bounds(panelX + 8, footerY, 58, 20)"));
         assertTrue(editor.contains(".bounds(panelX + 132, footerY, 104, 20)"));
