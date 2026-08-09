@@ -92,6 +92,7 @@ def qualityGateClasses = [
         'dev/chise/chisetweaks/core/policy/OrientationOverlayPolicy*.class',
         'dev/chise/chisetweaks/core/policy/PumpkinScaffoldPolicy*.class',
         'dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy*.class',
+        'dev/chise/chisetweaks/core/vision/OreHighlightLightingPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy*.class'
 ]
 
@@ -140,6 +141,7 @@ pitest {
         'dev.chise.chisetweaks.core.policy.PumpkinScaffoldPolicy',
         'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
         'dev.chise.chisetweaks.core.security.SecureConfigStorage',
+        'dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy',
         'dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy'
     ]
     targetTests = [

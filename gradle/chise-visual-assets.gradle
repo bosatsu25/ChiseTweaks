@@ -4,6 +4,8 @@ import javax.imageio.ImageIO
 
 def generatedVisualAssetsDir = layout.buildDirectory.dir('generated/chiseVisualAssets')
 
+def OVERLAY_OFFSET = 0.03d
+
 def argb = { a, r, g, b ->
     (((a as int) << 24) | ((r as int) << 16) | ((g as int) << 8) | (b as int)) as int
 }
@@ -18,6 +20,8 @@ def whiteMix = { rgb, mix, alpha ->
             clampChannel(rgb[1] + (255 - rgb[1]) * amount),
             clampChannel(rgb[2] + (255 - rgb[2]) * amount))
 }
+
+def solidColor = { rgb, alpha -> argb(alpha, rgb[0], rgb[1], rgb[2]) }
 
 def putPixel = { image, x, y, color ->
     int px = x as int
@@ -45,18 +49,33 @@ def line = { image, x0Raw, y0Raw, x1Raw, y1Raw, colorRaw ->
     }
 }
 
+// One semantic definition per material family. Normal/deepslate variants share the same
+// Chise overlay so adding a new rendering effect does not duplicate texture assets.
 def materialSpecs = [
-        [key: 'diamond', color: [34, 225, 255], accent: [220, 254, 255], motif: 'crystal', thickness: 0.96d],
-        [key: 'gold', color: [255, 190, 18], accent: [255, 248, 180], motif: 'dotted', thickness: 0.86d],
-        [key: 'emerald', color: [20, 238, 92], accent: [202, 255, 219], motif: 'runes', thickness: 0.90d],
-        [key: 'coal', color: [220, 230, 242], accent: [255, 255, 255], motif: 'brackets', thickness: 0.76d],
-        [key: 'iron', color: [255, 190, 145], accent: [255, 241, 220], motif: 'double', thickness: 0.82d],
-        [key: 'copper', color: [255, 105, 38], accent: [55, 210, 185], motif: 'wave', thickness: 0.90d],
-        [key: 'lapis', color: [55, 112, 255], accent: [198, 218, 255], motif: 'nodes', thickness: 0.90d],
-        [key: 'redstone', color: [255, 42, 42], accent: [255, 205, 205], motif: 'sparks', thickness: 0.96d],
-        [key: 'ancient_debris', color: [218, 128, 48], accent: [255, 225, 170], motif: 'ancient', thickness: 0.90d],
-        [key: 'obsidian', color: [174, 70, 255], accent: [235, 208, 255], motif: 'jagged', thickness: 1.00d]
+        [key: 'diamond', frame: [34, 225, 255], ore: [38, 190, 225], accent: [220, 254, 255], motif: 'crystal'],
+        [key: 'gold', frame: [255, 190, 18], ore: [232, 160, 8], accent: [255, 248, 180], motif: 'dotted'],
+        [key: 'emerald', frame: [20, 238, 92], ore: [10, 188, 68], accent: [202, 255, 219], motif: 'runes'],
+        [key: 'coal', frame: [228, 236, 246], ore: [26, 28, 32], accent: [255, 255, 255], motif: 'brackets'],
+        [key: 'iron', frame: [255, 190, 145], ore: [202, 145, 105], accent: [255, 241, 220], motif: 'double'],
+        [key: 'copper', frame: [255, 105, 38], ore: [215, 76, 25], accent: [55, 210, 185], motif: 'wave'],
+        [key: 'lapis', frame: [55, 112, 255], ore: [34, 68, 205], accent: [198, 218, 255], motif: 'nodes'],
+        [key: 'redstone', frame: [255, 42, 42], ore: [220, 18, 18], accent: [255, 205, 205], motif: 'sparks'],
+        [key: 'ancient_debris', frame: [218, 128, 48], ore: [154, 82, 39], accent: [255, 225, 170], motif: 'ancient'],
+        [key: 'obsidian', frame: [174, 70, 255], ore: [101, 38, 164], accent: [235, 208, 255], motif: 'jagged']
 ]
+
+def drawOuterFrame = { image, top, frameColor, brightColor, frame ->
+    line(image, 0, top, 15, top, frameColor)
+    line(image, 0, top + 15, 15, top + 15, frameColor)
+    line(image, 0, top, 0, top + 15, frameColor)
+    line(image, 15, top, 15, top + 15, frameColor)
+
+    int sweep = Math.floorMod(frame * 3, 12) + 2
+    putPixel(image, sweep, top, brightColor)
+    putPixel(image, 15, top + sweep, brightColor)
+    putPixel(image, 15 - sweep, top + 15, brightColor)
+    putPixel(image, 0, top + 15 - sweep, brightColor)
+}
 
 def drawSparkle = { image, frame, top, bright, accent ->
     def anchors = [[1, 1], [14, 1], [14, 14], [1, 14]]
@@ -74,74 +93,89 @@ def drawSparkle = { image, frame, top, bright, accent ->
     }
 }
 
-def writeBorderTexture = { output, spec ->
+// Sparse interior marks carry the ore-family colour even at light level 0 without hiding
+// the underlying vanilla/resource-pack texture. They are intentionally not a copied ore mask.
+def drawOreAccents = { image, spec, frame, top, oreColor, bright, accent ->
+    int sweep = Math.floorMod(frame * 2, 10) + 3
+    switch (spec.motif) {
+        case 'crystal':
+            [[4, 4], [11, 5], [7, 11]].each { p ->
+                putPixel(image, p[0], top + p[1], oreColor)
+                putPixel(image, p[0] - 1, top + p[1], bright)
+                putPixel(image, p[0] + 1, top + p[1], bright)
+                putPixel(image, p[0], top + p[1] - 1, bright)
+                putPixel(image, p[0], top + p[1] + 1, bright)
+            }
+            break
+        case 'dotted':
+            [[3, 4], [8, 3], [12, 7], [5, 10], [10, 12]].each { p -> putPixel(image, p[0], top + p[1], oreColor) }
+            putPixel(image, sweep, top + 8, bright)
+            break
+        case 'runes':
+            [[3, 4], [10, 4], [5, 10], [12, 11]].each { p ->
+                line(image, p[0], top + p[1], p[0] + 2, top + p[1], oreColor)
+                putPixel(image, p[0], top + p[1] + 1, accent)
+            }
+            break
+        case 'brackets':
+            [[3, 4], [10, 4], [4, 10], [11, 11]].each { p ->
+                putPixel(image, p[0], top + p[1], oreColor)
+                putPixel(image, p[0] + 1, top + p[1], oreColor)
+                putPixel(image, p[0], top + p[1] + 1, bright)
+            }
+            break
+        case 'double':
+            line(image, 4, top + 5, 7, top + 5, oreColor)
+            line(image, 9, top + 10, 12, top + 10, oreColor)
+            putPixel(image, sweep, top + 7, accent)
+            break
+        case 'wave':
+            (3..12).each { x ->
+                int y = 7 + ((x + frame) % 3) - 1
+                putPixel(image, x, top + y, x % 4 == 0 ? accent : oreColor)
+            }
+            break
+        case 'nodes':
+            [[4, 4], [11, 4], [7, 8], [4, 12], [11, 11]].each { p ->
+                putPixel(image, p[0], top + p[1], oreColor)
+                putPixel(image, p[0] + 1, top + p[1], bright)
+            }
+            break
+        case 'sparks':
+            (0..<7).each { i ->
+                int x = 3 + Math.floorMod(frame + i * 3, 10)
+                int y = 3 + Math.floorMod(frame * 2 + i * 5, 10)
+                putPixel(image, x, top + y, (i & 1) == 0 ? oreColor : bright)
+            }
+            break
+        case 'ancient':
+            line(image, 4, top + 4, 7, top + 7, oreColor)
+            line(image, 7, top + 7, 4, top + 10, accent)
+            line(image, 10, top + 4, 12, top + 6, oreColor)
+            line(image, 12, top + 9, 10, top + 11, bright)
+            break
+        case 'jagged':
+            line(image, 4, top + 4, 7, top + 7, oreColor)
+            line(image, 7, top + 7, 5, top + 10, accent)
+            line(image, 9, top + 5, 12, top + 8, oreColor)
+            line(image, 12, top + 8, 10, top + 12, bright)
+            break
+    }
+}
+
+def writeHighlightTexture = { output, spec ->
     def image = new BufferedImage(16, 128, BufferedImage.TYPE_INT_ARGB)
-    def brightnessMix = [0.00d, 0.06d, 0.14d, 0.24d, 0.44d, 0.24d, 0.14d, 0.06d]
-    def rgb = spec.color
-    def accentRgb = spec.accent
+    def brightnessMix = [0.00d, 0.05d, 0.12d, 0.20d, 0.40d, 0.20d, 0.12d, 0.05d]
 
     (0..<8).each { frame ->
         int top = frame * 16
-        int base = whiteMix(rgb, brightnessMix[frame], 255)
-        int bright = whiteMix(rgb, frame == 4 ? 0.82d : 0.52d, 255)
-        int accent = whiteMix(accentRgb, frame == 4 ? 0.88d : 0.48d, 255)
-        (0..<16).each { y -> (0..<16).each { x -> image.setRGB(x, top + y, base) } }
+        int frameColor = whiteMix(spec.frame, brightnessMix[frame], 255)
+        int bright = whiteMix(spec.frame, frame == 4 ? 0.86d : 0.56d, 255)
+        int accent = whiteMix(spec.accent, frame == 4 ? 0.90d : 0.50d, 255)
+        int oreColor = solidColor(spec.ore, 235)
 
-        int sweep = Math.floorMod(frame * 2, 16)
-        switch (spec.motif) {
-            case 'crystal':
-                line(image, sweep, top, Math.max(0, sweep - 5), top + 15, bright)
-                line(image, Math.min(15, sweep + 3), top, Math.max(0, sweep - 2), top + 15, accent)
-                break
-            case 'dotted':
-                (1..<16).step(3) { y ->
-                    putPixel(image, sweep, top + y, bright)
-                    putPixel(image, Math.floorMod(sweep + 8, 16), top + y, accent)
-                }
-                break
-            case 'runes':
-                (1..<15).step(4) { y -> line(image, Math.max(0, sweep - 1), top + y, Math.min(15, sweep + 1), top + y, bright) }
-                break
-            case 'brackets':
-                line(image, sweep, top + 2, sweep, top + 6, bright)
-                line(image, sweep, top + 9, sweep, top + 13, accent)
-                break
-            case 'double':
-                int second = Math.floorMod(sweep + 5, 16)
-                line(image, sweep, top, sweep, top + 15, bright)
-                line(image, second, top, second, top + 15, accent)
-                break
-            case 'wave':
-                (0..<16).each { y ->
-                    int x = Math.floorMod(sweep + (((y.intdiv(2)) % 3) - 1), 16)
-                    putPixel(image, x, top + y, y % 4 == 0 ? accent : bright)
-                }
-                break
-            case 'nodes':
-                [2, 7, 12].each { y ->
-                    putPixel(image, sweep, top + y, bright)
-                    putPixel(image, Math.floorMod(sweep + 1, 16), top + y, accent)
-                }
-                break
-            case 'sparks':
-                (0..<7).each { i ->
-                    int x = Math.floorMod(sweep + i * 5, 16)
-                    int y = Math.floorMod(frame * 3 + i * 7, 16)
-                    putPixel(image, x, top + y, (i & 1) == 0 ? bright : accent)
-                }
-                break
-            case 'ancient':
-                line(image, sweep, top + 1, Math.floorMod(sweep + 4, 16), top + 5, bright)
-                line(image, Math.floorMod(sweep + 4, 16), top + 10, sweep, top + 14, accent)
-                break
-            case 'jagged':
-                (0..<16).step(2) { y ->
-                    int x = Math.floorMod(sweep + ((y.intdiv(2)) % 2 == 0 ? 0 : 2), 16)
-                    putPixel(image, x, top + y, bright)
-                    putPixel(image, Math.floorMod(x + 1, 16), top + y, accent)
-                }
-                break
-        }
+        drawOuterFrame(image, top, frameColor, bright, frame)
+        drawOreAccents(image, spec, frame, top, oreColor, bright, accent)
         drawSparkle(image, frame, top, bright, accent)
     }
 
@@ -154,7 +188,7 @@ def writeAnimationMeta = { output ->
     output.setText(JsonOutput.prettyPrint(JsonOutput.toJson([animation: [frametime: 1, interpolate: true]])) + '\n', 'UTF-8')
 }
 
-def allFaces = { texture ->
+def cubeFaces = { texture ->
     def faces = [:]
     ['down', 'up', 'north', 'south', 'west', 'east'].each { side ->
         faces[side] = [texture: texture, cullface: side, uv: [0, 0, 16, 16]]
@@ -162,64 +196,27 @@ def allFaces = { texture ->
     faces
 }
 
-def outwardEdgeFaces = { axis, firstHigh, secondHigh, texture ->
-    def faces = [:]
-    switch (axis) {
-        case 'x':
-            faces[firstHigh ? 'up' : 'down'] = [texture: texture, uv: [0, 0, 16, 16]]
-            faces[secondHigh ? 'south' : 'north'] = [texture: texture, uv: [0, 0, 16, 16]]
-            break
-        case 'y':
-            faces[firstHigh ? 'east' : 'west'] = [texture: texture, uv: [0, 0, 16, 16]]
-            faces[secondHigh ? 'south' : 'north'] = [texture: texture, uv: [0, 0, 16, 16]]
-            break
-        case 'z':
-            faces[firstHigh ? 'east' : 'west'] = [texture: texture, uv: [0, 0, 16, 16]]
-            faces[secondHigh ? 'up' : 'down'] = [texture: texture, uv: [0, 0, 16, 16]]
-            break
-        default:
-            throw new GradleException("Unknown ore-highlight edge axis: ${axis}")
-    }
-    faces
+def overlayElement = { texture ->
+    [
+            from: [-OVERLAY_OFFSET, -OVERLAY_OFFSET, -OVERLAY_OFFSET],
+            to: [16.0d + OVERLAY_OFFSET, 16.0d + OVERLAY_OFFSET, 16.0d + OVERLAY_OFFSET],
+            shade: false,
+            faces: cubeFaces(texture)
+    ]
 }
 
-def addBorderRods = { elements, thicknessRaw, texture ->
-    double thickness = thicknessRaw as double
-    double edgeOffset = 0.06d
-    double low = -edgeOffset
-    double high = 16.0d + edgeOffset
-    double highStart = 16.0d - thickness + edgeOffset
-
-    [false, true].each { firstHigh ->
-        [false, true].each { secondHigh ->
-            double first = firstHigh ? highStart : low
-            double second = secondHigh ? highStart : low
-            elements << [
-                    'from': [low, first, second],
-                    'to': [high, first + thickness, second + thickness],
-                    shade: false,
-                    faces: outwardEdgeFaces('x', firstHigh, secondHigh, texture)]
-            elements << [
-                    'from': [first, low, second],
-                    'to': [first + thickness, high, second + thickness],
-                    shade: false,
-                    faces: outwardEdgeFaces('y', firstHigh, secondHigh, texture)]
-            elements << [
-                    'from': [first, second, low],
-                    'to': [first + thickness, second + thickness, high],
-                    shade: false,
-                    faces: outwardEdgeFaces('z', firstHigh, secondHigh, texture)]
-        }
-    }
+def cubeModel = { baseTexture, highlightTexture ->
+    [
+            ambientocclusion: true,
+            textures: [base: baseTexture, highlight: highlightTexture, particle: baseTexture],
+            elements: [
+                    [from: [0, 0, 0], to: [16, 16, 16], faces: cubeFaces('#base')],
+                    overlayElement('#highlight')
+            ]
+    ]
 }
 
-def cubeModel = { baseTexture, highlightTexture, thickness ->
-    def elements = [['from': [0, 0, 0], 'to': [16, 16, 16], faces: allFaces('#base')]]
-    addBorderRods(elements, thickness, '#highlight')
-    [ambientocclusion: true, textures: [base: baseTexture, highlight: highlightTexture, particle: baseTexture], elements: elements]
-}
-
-def ancientDebrisModel = { highlightTexture, thickness ->
+def ancientDebrisModel = { highlightTexture ->
     def baseFaces = [
             down: [texture: '#top', cullface: 'down', uv: [0, 0, 16, 16]],
             up: [texture: '#top', cullface: 'up', uv: [0, 0, 16, 16]],
@@ -228,8 +225,6 @@ def ancientDebrisModel = { highlightTexture, thickness ->
             west: [texture: '#side', cullface: 'west', uv: [0, 0, 16, 16]],
             east: [texture: '#side', cullface: 'east', uv: [0, 0, 16, 16]]
     ]
-    def elements = [['from': [0, 0, 0], 'to': [16, 16, 16], faces: baseFaces]]
-    addBorderRods(elements, thickness, '#highlight')
     [
             ambientocclusion: true,
             textures: [
@@ -238,7 +233,10 @@ def ancientDebrisModel = { highlightTexture, thickness ->
                     highlight: highlightTexture,
                     particle: 'minecraft:block/ancient_debris_side'
             ],
-            elements: elements
+            elements: [
+                    [from: [0, 0, 0], to: [16, 16, 16], faces: baseFaces],
+                    overlayElement('#highlight')
+            ]
     ]
 }
 
@@ -277,20 +275,18 @@ def generateChiseVisualAssets = tasks.register('generateChiseVisualAssets') {
         def specsByKey = materialSpecs.collectEntries { [(it.key): it] }
 
         materialSpecs.each { spec ->
-            writeBorderTexture(new File(textureDir, "${spec.key}_highlight.png"), spec)
+            writeHighlightTexture(new File(textureDir, "${spec.key}_highlight.png"), spec)
             writeAnimationMeta(new File(textureDir, "${spec.key}_highlight.png.mcmeta"))
         }
 
         modelSpecs.each { modelSpec ->
-            def materialSpec = specsByKey[modelSpec.highlight]
             String texture = "chisetweaks:block/visual/material/${modelSpec.highlight}_highlight"
-            writeModel(new File(modelDir, "${modelSpec.id}.json"), cubeModel(modelSpec.base, texture, materialSpec.thickness))
+            writeModel(new File(modelDir, "${modelSpec.id}.json"), cubeModel(modelSpec.base, texture))
         }
 
-        def ancientSpec = specsByKey['ancient_debris']
         writeModel(
                 new File(modelDir, 'ancient_debris.json'),
-                ancientDebrisModel('chisetweaks:block/visual/material/ancient_debris_highlight', ancientSpec.thickness))
+                ancientDebrisModel('chisetweaks:block/visual/material/ancient_debris_highlight'))
     }
 }
 
