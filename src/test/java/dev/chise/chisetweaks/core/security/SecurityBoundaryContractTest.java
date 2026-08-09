@@ -68,7 +68,7 @@ final class SecurityBoundaryContractTest {
     @Test
     void runtimeSecuritySanitizesDiagnosticsWithoutExpandingThem() {
         assertEquals("hello world", RuntimeSecurityPolicy.sanitizeDiagnosticValue(" hello\nworld "));
-        assertEquals("value $ name}", RuntimeSecurityPolicy.sanitizeDiagnosticValue("value ${name}"));
+        assertEquals("value $ {name}", RuntimeSecurityPolicy.sanitizeDiagnosticValue("value ${name}"));
         String longInput = "x".repeat(RuntimeSecurityPolicy.MAX_DIAGNOSTIC_VALUE_CHARS + 100);
         assertEquals(RuntimeSecurityPolicy.MAX_DIAGNOSTIC_VALUE_CHARS,
                 RuntimeSecurityPolicy.sanitizeDiagnosticValue(longInput).length());
