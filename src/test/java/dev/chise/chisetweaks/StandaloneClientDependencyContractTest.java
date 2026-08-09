@@ -17,48 +17,60 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class StandaloneClientDependencyContractTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
     private static final Path MAIN = ROOT.resolve("src/main/java");
+    private static final Path MOD_MENU_ADAPTER = MAIN.resolve(
+            "dev/chise/chisetweaks/compat/ChiseTweaksModMenu.java");
 
     @Test
-    void fabricMetadataHasNoExternalConfigEntrypointOrDependency() throws IOException {
+    void fabricMetadataKeepsStandaloneOwnershipAndOptionalModMenuEntrypoint() throws IOException {
         String descriptor = Files.readString(
                 ROOT.resolve("src/main/resources/fabric.mod.json"), StandardCharsets.UTF_8);
         String lower = descriptor.toLowerCase(Locale.ROOT);
 
         assertTrue(descriptor.contains("\"environment\": \"client\""));
         assertTrue(descriptor.contains("dev.chise.chisetweaks.ChiseTweaksClient"));
+        assertTrue(descriptor.contains("dev.chise.chisetweaks.compat.ChiseTweaksModMenu"));
         assertTrue(descriptor.contains("\"serverInstallationRequired\": false"));
         assertTrue(descriptor.contains("\"settingsOwnership\": \"standalone\""));
         assertTrue(descriptor.contains("\"externalConfigLibraryRequired\": false"));
         assertTrue(descriptor.contains("\"modMenuRequired\": false"));
+        assertTrue(descriptor.contains("\"modMenuIntegration\": \"optional\""));
         assertFalse(lower.contains("malilib"));
         assertFalse(lower.contains("litematica"));
         assertFalse(descriptor.contains("\"main\""));
-        assertFalse(descriptor.contains("\"modmenu\""));
-        assertFalse(descriptor.contains("\"modmenu\":"));
+        assertFalse(lower.contains("\"modmenu\": \">="));
+        assertFalse(lower.contains("\"modmenu\": \"*\""));
     }
 
     @Test
-    void buildHasNoExternalSettingsUiLibraries() throws IOException {
-        String build = Files.readString(ROOT.resolve("build.gradle"), StandardCharsets.UTF_8)
-                .toLowerCase(Locale.ROOT);
+    void buildUsesModMenuOnlyAsCompileOnlyOptionalApi() throws IOException {
+        String build = Files.readString(ROOT.resolve("build.gradle"), StandardCharsets.UTF_8);
+        String lowerBuild = build.toLowerCase(Locale.ROOT);
         String properties = Files.readString(ROOT.resolve("gradle.properties"), StandardCharsets.UTF_8)
                 .toLowerCase(Locale.ROOT);
 
-        for (String forbidden : List.of("malilib", "modmenu", "litematica", "minihud", "tweakeroo")) {
-            assertFalse(build.contains(forbidden), forbidden + " in build.gradle");
+        for (String forbidden : List.of("malilib", "litematica", "minihud", "tweakeroo")) {
+            assertFalse(lowerBuild.contains(forbidden), forbidden + " in build.gradle");
             assertFalse(properties.contains(forbidden), forbidden + " in gradle.properties");
         }
+
+        assertTrue(build.contains("compileOnly \"com.terraformersmc:modmenu:${project.modmenu_version}\""));
+        assertTrue(properties.contains("modmenu_version="));
+        assertFalse(build.contains("modImplementation \"com.terraformersmc:modmenu"));
+        assertFalse(build.contains("implementation \"com.terraformersmc:modmenu"));
+        assertFalse(build.contains("runtimeOnly \"com.terraformersmc:modmenu"));
     }
 
     @Test
-    void productionJavaHasNoExternalSettingsOrMasaFamilyReferences() throws IOException {
+    void externalSettingsReferencesAreConfinedToOptionalModMenuAdapter() throws IOException {
         List<String> failures = new ArrayList<>();
         try (Stream<Path> files = Files.walk(MAIN)) {
             for (Path path : files.filter(value -> value.getFileName().toString().endsWith(".java")).toList()) {
                 String text = Files.readString(path, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
-                for (String forbidden : List.of(
-                        "fi.dy.masa", "malilib", "litematica", "modmenu", "minihud", "tweakeroo")) {
+                for (String forbidden : List.of("fi.dy.masa", "malilib", "litematica", "minihud", "tweakeroo")) {
                     if (text.contains(forbidden)) failures.add(ROOT.relativize(path) + " -> " + forbidden);
+                }
+                if (!path.equals(MOD_MENU_ADAPTER) && text.contains("modmenu")) {
+                    failures.add(ROOT.relativize(path) + " -> modmenu");
                 }
             }
         }
@@ -66,25 +78,33 @@ final class StandaloneClientDependencyContractTest {
     }
 
     @Test
-    void standaloneUiHasVanillaOptionsLauncherWithoutFixedKeyChord() throws IOException {
+    void optionalModMenuAdapterOpensTheSameChiseOwnedScreen() throws IOException {
+        assertTrue(Files.isRegularFile(MOD_MENU_ADAPTER));
+        String adapter = Files.readString(MOD_MENU_ADAPTER, StandardCharsets.UTF_8);
+
+        assertTrue(adapter.contains("implements ModMenuApi"));
+        assertTrue(adapter.contains("getModConfigScreenFactory()"));
+        assertTrue(adapter.contains("new ChiseTweaksConfigScreen()"));
+        assertTrue(adapter.contains("screen.setParent(parent)"));
+        assertFalse(adapter.contains("GuiConfigsBase"));
+        assertFalse(adapter.contains("fi.dy.masa"));
+    }
+
+    @Test
+    void settingsLauncherLivesInModMenuNotVanillaOptionsAndNoFixedKeyChordExists() throws IOException {
         Path screen = MAIN.resolve("dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
-        Path mixin = MAIN.resolve("dev/chise/chisetweaks/mixin/gui/OptionsScreenMixin.java");
+        Path optionsMixin = MAIN.resolve("dev/chise/chisetweaks/mixin/gui/OptionsScreenMixin.java");
+        Path launcherLayout = MAIN.resolve("dev/chise/chisetweaks/gui/ChiseTweaksLauncherLayout.java");
         assertTrue(Files.isRegularFile(screen));
-        assertTrue(Files.isRegularFile(mixin));
+        assertFalse(Files.exists(optionsMixin));
+        assertFalse(Files.exists(launcherLayout));
 
         String client = Files.readString(
                 MAIN.resolve("dev/chise/chisetweaks/ChiseTweaksClient.java"), StandardCharsets.UTF_8);
-        String mixinSource = Files.readString(mixin, StandardCharsets.UTF_8);
         String mixinConfig = Files.readString(
                 ROOT.resolve("src/main/resources/chisetweaks.features.mixins.json"), StandardCharsets.UTF_8);
 
-        assertTrue(mixinConfig.contains("gui.OptionsScreenMixin"));
-        assertTrue(mixinSource.contains("@Mixin(OptionsScreen.class)"));
-        assertTrue(mixinSource.contains("@Inject(method = \"init\", at = @At(\"TAIL\"))"));
-        assertTrue(mixinSource.contains("new ChiseTweaksConfigScreen()"));
-        assertTrue(mixinSource.contains("settings.setParent(this)"));
-        assertTrue(mixinSource.contains("ChiseTweaksLauncherLayout.place"));
-
+        assertFalse(mixinConfig.contains("gui.OptionsScreenMixin"));
         assertFalse(client.contains("KeyMapping"));
         assertFalse(client.contains("C+T"));
         assertFalse(client.contains("GLFW_KEY_C"));

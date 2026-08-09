@@ -104,10 +104,12 @@ def main() -> None:
         fail("packaged mod environment is not client")
 
     entrypoints = metadata.get("entrypoints", {})
-    if set(entrypoints) != {"client"}:
-        fail(f"standalone build must expose only the client entrypoint; found {sorted(entrypoints)}")
-    if entrypoints.get("client") != ["dev.chise.chisetweaks.ChiseTweaksClient"]:
-        fail("packaged client entrypoint is not ChiseTweaksClient")
+    expected_entrypoints = {
+        "client": ["dev.chise.chisetweaks.ChiseTweaksClient"],
+        "modmenu": ["dev.chise.chisetweaks.compat.ChiseTweaksModMenu"],
+    }
+    if entrypoints != expected_entrypoints:
+        fail(f"unexpected entrypoints {entrypoints!r}, expected {expected_entrypoints!r}")
 
     depends = metadata.get("depends", {})
     expected_depends = {
@@ -118,6 +120,8 @@ def main() -> None:
     }
     if depends != expected_depends:
         fail(f"packaged standalone dependencies {depends!r}, expected {expected_depends!r}")
+    if "modmenu" in depends:
+        fail("Mod Menu must remain optional and must not appear in hard dependencies")
 
     recommends = metadata.get("recommends", {})
     expected_recommends = {"sodium": f">={p['sodium_compat_version']}"}
@@ -134,7 +138,9 @@ def main() -> None:
     if custom.get("externalConfigLibraryRequired") is not False:
         fail("packaged metadata still requires an external config library")
     if custom.get("modMenuRequired") is not False:
-        fail("packaged metadata still requires a Mod Menu entrypoint")
+        fail("packaged metadata incorrectly requires Mod Menu")
+    if custom.get("modMenuIntegration") != "optional":
+        fail("packaged metadata does not identify Mod Menu integration as optional")
 
     args.report_dir.mkdir(parents=True, exist_ok=True)
     runtime_hash = sha256(runtime)
@@ -148,6 +154,7 @@ def main() -> None:
         "sources_sha256": sources_hash,
         "sources_size": sources.stat().st_size,
         "settings_ownership": "standalone",
+        "modmenu_integration": "optional",
     }
     (args.report_dir / "artifact-audit.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     (args.report_dir / "SHA256SUMS.txt").write_text(
@@ -157,6 +164,7 @@ def main() -> None:
         "## ChiseTweaks verified artifacts\n\n"
         f"- Version: `{version}`\n"
         "- Settings ownership: `standalone`\n"
+        "- Mod Menu integration: `optional`\n"
         f"- Runtime: `{runtime.name}` ({runtime.stat().st_size} bytes)\n"
         f"- Runtime SHA-256: `{runtime_hash}`\n"
         f"- Sources: `{sources.name}` ({sources.stat().st_size} bytes)\n"

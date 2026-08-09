@@ -150,12 +150,11 @@ final class RepositoryContractTest {
         Map<String, String> properties = readProperties(ROOT.resolve("gradle.properties"));
         assertTrue(Set.of("unresolved", "resolved").contains(properties.get("provenance_status")));
         for (String key : List.of(
-                "mod_version", "minecraft_version", "loader_version", "fabric_api_version",
+                "mod_version", "minecraft_version", "loader_version", "fabric_api_version", "modmenu_version",
                 "sodium_version", "sodium_compat_version", "jacoco_version")) {
             assertTrue(properties.containsKey(key) && !properties.get(key).isBlank(), key);
         }
         assertFalse(properties.containsKey("malilib_version"));
-        assertFalse(properties.containsKey("modmenu_version"));
 
         Map<String, String> en = jsonStringMap(LANG.resolve("en_us.json"));
         Map<String, String> ja = jsonStringMap(LANG.resolve("ja_jp.json"));
@@ -181,7 +180,7 @@ final class RepositoryContractTest {
         JsonObject entrypoints = fabric.getAsJsonObject("entrypoints");
         assertTrue(entrypoints.has("client"));
         assertFalse(entrypoints.has("main"));
-        assertFalse(entrypoints.has("modmenu"));
+        assertTrue(entrypoints.has("modmenu"));
 
         JsonObject depends = fabric.getAsJsonObject("depends");
         assertEquals("${minecraft_version}", depends.get("minecraft").getAsString());
@@ -201,6 +200,7 @@ final class RepositoryContractTest {
         assertEquals("standalone", chiseMetadata.get("settingsOwnership").getAsString());
         assertFalse(chiseMetadata.get("externalConfigLibraryRequired").getAsBoolean());
         assertFalse(chiseMetadata.get("modMenuRequired").getAsBoolean());
+        assertEquals("optional", chiseMetadata.get("modMenuIntegration").getAsString());
 
         Set<String> configuredMixins = new HashSet<>();
         fabric.getAsJsonArray("mixins").forEach(value -> configuredMixins.add(value.getAsString()));
