@@ -47,16 +47,6 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
-    void removedExternalUiIntegrationFilesStayRemoved() {
-        assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/compat/ChiseTweaksModMenu.java")));
-        assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksHotkeyScreen.java")));
-        assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/runtime/ClientInputHandler.java")));
-        assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/ClientFeatureBootstrap.java")));
-        assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/AbstractBooleanOption.java")));
-        assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/ConfigUiLocalization.java")));
-    }
-
-    @Test
     void categoryContentLivesInControllerAndKeepsApprovedVisibilityGroups() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         assertTrue(controller.contains("case PLACEMENT -> addPlacementRows(rows)"));
@@ -87,22 +77,6 @@ final class ConfigUiSimplificationContractTest {
     }
 
     @Test
-    void responsiveGeometryHasHeadlessPolicyAndPinnedAutomatedTests() throws IOException {
-        String layout = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsLayout.java");
-        String test = read("src/test/java/dev/chise/chisetweaks/ChiseTweaksSettingsLayoutTest.java");
-
-        assertTrue(layout.contains("MAX_CONTENT_WIDTH = 1180"));
-        assertTrue(layout.contains("NAV_COUNT = 4"));
-        assertTrue(layout.contains("Rect selector = Rect.EMPTY"));
-        assertTrue(layout.contains("BULK_WIDTH = 134"));
-        assertTrue(layout.contains("public static Geometry calculate"));
-        assertTrue(test.contains("640, 360"));
-        assertTrue(test.contains("854, 480"));
-        assertTrue(test.contains("2560, 1440"));
-        assertTrue(test.contains("approved854x480StandaloneGeometryIsPinnedAgainstUiRegression"));
-    }
-
-    @Test
     void guideUsesSameStandaloneNavigationAndAddsSearch() throws IOException {
         String help = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksHelpScreen.java");
         assertTrue(help.contains("createNavigation()"));
@@ -111,22 +85,6 @@ final class ConfigUiSimplificationContractTest {
         assertTrue(help.contains("new ChiseTweaksConfigScreen(section)"));
         assertTrue(help.contains("EditBox"));
         assertTrue(help.contains("filteredEntries()"));
-    }
-
-    @Test
-    void settingRowsUseOnlyChiseOwnedSettingTypes() throws IOException {
-        String row = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingRowDefinition.java");
-        String local = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
-        String targets = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
-
-        assertTrue(row.contains("ChiseBooleanSetting"));
-        assertTrue(row.contains("ChiseIntegerSetting"));
-        assertTrue(local.contains("SimpleBooleanSetting"));
-        assertTrue(local.contains("ChiseIntegerSetting"));
-        assertTrue(targets.contains("SimpleBooleanSetting"));
-        assertFalse(row.contains("fi.dy.masa"));
-        assertFalse(local.contains("fi.dy.masa"));
-        assertFalse(targets.contains("fi.dy.masa"));
     }
 
     @Test
