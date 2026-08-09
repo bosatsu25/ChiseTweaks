@@ -55,7 +55,7 @@ final class ConfigUiSimplificationContractTest {
         assertTrue(controller.contains("細線トレース"));
         assertTrue(controller.contains("見えにくいブロックの対象"));
         assertTrue(controller.contains("表示を絞る対象"));
-        assertTrue(controller.contains("溶岩・視認の詳細設定"));
+        assertTrue(controller.contains("溶岩源・視認の詳細設定"));
         assertTrue(controller.contains("視認スキャン範囲"));
         assertTrue(controller.contains("スキャン間隔"));
         assertFalse(controller.contains("addHotkeyRows"));

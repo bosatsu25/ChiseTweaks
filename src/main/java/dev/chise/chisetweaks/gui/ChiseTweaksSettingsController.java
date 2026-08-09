@@ -195,9 +195,9 @@ final class ChiseTweaksSettingsController {
                 "表示を残す／隠すエンティティIDと方式を編集する",
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
 
-        header(rows, "header.visibilityDetails", "溶岩・視認の詳細設定", "Lava & visibility details");
+        header(rows, "header.visibilityDetails", "溶岩源・視認の詳細設定", "Lava source & visibility details");
         bool(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
-                "溶岩ハイライト", "溶岩やマグマを強調表示する");
+                "溶岩源ガイド", "溶岩源を深緑の発光枠で1ブロックずつ表示する");
         integer(rows, "scanRange", LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS,
                 "視認スキャン範囲", "周辺を確認する水平範囲", 1);
         integer(rows, "scanInterval", LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL,
