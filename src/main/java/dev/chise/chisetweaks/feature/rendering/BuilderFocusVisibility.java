@@ -4,7 +4,6 @@ import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseRuleMode;
 import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
-import dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -14,18 +13,22 @@ import net.minecraft.world.level.block.Block;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
 /** Runtime snapshots for Chise-owned block/entity visibility rules. */
 public final class BuilderFocusVisibility {
     private static volatile BlockConfigFingerprint blockFingerprint = BlockConfigFingerprint.empty();
+    private static volatile BlockRules blockRules = BlockRules.none();
     private static volatile EntityRules entityRules = EntityRules.none();
 
     private BuilderFocusVisibility() {}
 
     public static void applyConfig() {
-        blockFingerprint = currentBlockFingerprint();
+        BlockConfigFingerprint next = currentBlockFingerprint();
+        blockFingerprint = next;
+        blockRules = compileBlockRules(next);
         buildEntityLists();
     }
 
@@ -33,6 +36,7 @@ public final class BuilderFocusVisibility {
         BlockConfigFingerprint next = currentBlockFingerprint();
         if (next.equals(blockFingerprint)) return;
         blockFingerprint = next;
+        blockRules = compileBlockRules(next);
 
         if (BuilderFocusConfig.REFRESH_RENDERER.getBooleanValue()) {
             Minecraft client = Minecraft.getInstance();
@@ -49,40 +53,30 @@ public final class BuilderFocusVisibility {
     }
 
     public static boolean shouldHide(Block block) {
-        if (block == null) return false;
-        BlockConfigFingerprint rules = blockFingerprint;
-        if (!rules.enabled() || rules.mode() == ChiseRuleMode.NONE) return false;
-        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
-        String value = id == null ? "" : id.toString();
-        return switch (rules.mode()) {
-            case BLACKLIST -> rules.blacklist().contains(value);
-            case WHITELIST -> !rules.whitelist().contains(value);
-            case NONE -> false;
-        };
+        if (block == null || BuiltInRegistries.BLOCK.getKey(block) == null) return false;
+        return blockRules.hides(block);
     }
 
     public static boolean shouldHide(EntityType<?> type) {
-        return type != null && entityRules.hides(type);
+        if (type == null || !FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue()) return false;
+        // Unknown/unregistered types fail open instead of disappearing under a whitelist.
+        if (BuiltInRegistries.ENTITY_TYPE.getKey(type) == null) return false;
+        return entityRules.hides(type);
     }
 
     public static boolean shouldHide(Entity entity) {
-        if (entity == null) return false;
+        if (entity == null || !FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue()) return false;
         Minecraft client = Minecraft.getInstance();
-        boolean localPlayer = client.player != null && entity == client.player;
-        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
-        BuilderEntityVisibilityPolicy.Decision decision = BuilderEntityVisibilityPolicy.evaluate(
-                new BuilderEntityVisibilityPolicy.Input(
-                        FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue(),
-                        localPlayer,
-                        id == null ? "" : id.toString(),
-                        toPolicyMode(entityRules.mode()),
-                        ids(entityRules.blacklist()),
-                        ids(entityRules.whitelist())));
-        return decision == BuilderEntityVisibilityPolicy.Decision.HIDE;
+        if (client.player != null && entity == client.player) return false;
+        EntityType<?> type = entity.getType();
+        // Resolve registration only as a safety check. The hot render path then evaluates the
+        // cached EntityType sets directly, avoiding temporary String/Set allocations per entity.
+        if (BuiltInRegistries.ENTITY_TYPE.getKey(type) == null) return false;
+        return entityRules.hides(type);
     }
 
     public static boolean applyPreset(String presetId) {
-        String preset = presetId == null ? "" : presetId.trim().toLowerCase(java.util.Locale.ROOT);
+        String preset = presetId == null ? "" : presetId.trim().toLowerCase(Locale.ROOT);
         switch (preset) {
             case "build_review" -> {
                 BuilderFocusConfig.ENTITY_RULE_MODE.setValue(ChiseRuleMode.BLACKLIST);
@@ -116,23 +110,6 @@ public final class BuilderFocusVisibility {
         return true;
     }
 
-    private static BuilderEntityVisibilityPolicy.Mode toPolicyMode(ChiseRuleMode mode) {
-        return switch (mode) {
-            case BLACKLIST -> BuilderEntityVisibilityPolicy.Mode.BLACKLIST;
-            case WHITELIST -> BuilderEntityVisibilityPolicy.Mode.WHITELIST;
-            case NONE -> BuilderEntityVisibilityPolicy.Mode.NONE;
-        };
-    }
-
-    private static Set<String> ids(Set<EntityType<?>> types) {
-        LinkedHashSet<String> result = new LinkedHashSet<>();
-        for (EntityType<?> type : types) {
-            Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
-            if (id != null) result.add(id.toString());
-        }
-        return Set.copyOf(result);
-    }
-
     private static BlockConfigFingerprint currentBlockFingerprint() {
         return new BlockConfigFingerprint(
                 FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue(),
@@ -141,15 +118,44 @@ public final class BuilderFocusVisibility {
                 Set.copyOf(BuilderFocusConfig.BLOCK_WHITELIST.getStrings()));
     }
 
+    private static BlockRules compileBlockRules(BlockConfigFingerprint fingerprint) {
+        return new BlockRules(
+                fingerprint.enabled(),
+                fingerprint.mode(),
+                resolveBlocks(fingerprint.blacklist()),
+                resolveBlocks(fingerprint.whitelist()));
+    }
+
+    private static Set<Block> resolveBlocks(Set<String> entries) {
+        Set<String> normalized = normalizeIds(entries);
+        if (normalized.isEmpty()) return Set.of();
+        LinkedHashSet<Block> resolved = new LinkedHashSet<>();
+        for (Block block : BuiltInRegistries.BLOCK) {
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+            if (id != null && normalized.contains(id.toString())) resolved.add(block);
+        }
+        return Set.copyOf(resolved);
+    }
+
     private static Set<EntityType<?>> resolveEntityTypes(List<String> entries) {
         LinkedHashSet<EntityType<?>> resolved = new LinkedHashSet<>();
         for (String raw : entries) {
-            Identifier id = Identifier.tryParse(raw);
+            Identifier id = Identifier.tryParse(raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT));
             if (id == null) continue;
             EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(id);
             if (type != null) resolved.add(type);
         }
         return Set.copyOf(resolved);
+    }
+
+    private static Set<String> normalizeIds(Iterable<String> entries) {
+        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        if (entries == null) return Set.of();
+        for (String raw : entries) {
+            Identifier id = Identifier.tryParse(raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT));
+            if (id != null) normalized.add(id.toString());
+        }
+        return Set.copyOf(normalized);
     }
 
     private record BlockConfigFingerprint(
@@ -165,6 +171,31 @@ public final class BuilderFocusVisibility {
 
         static BlockConfigFingerprint empty() {
             return new BlockConfigFingerprint(false, ChiseRuleMode.NONE, Set.of(), Set.of());
+        }
+    }
+
+    private record BlockRules(
+            boolean enabled,
+            ChiseRuleMode mode,
+            Set<Block> blacklist,
+            Set<Block> whitelist) {
+        private BlockRules {
+            Objects.requireNonNull(mode, "mode");
+            blacklist = Set.copyOf(blacklist);
+            whitelist = Set.copyOf(whitelist);
+        }
+
+        static BlockRules none() {
+            return new BlockRules(false, ChiseRuleMode.NONE, Set.of(), Set.of());
+        }
+
+        boolean hides(Block block) {
+            if (!enabled || mode == ChiseRuleMode.NONE) return false;
+            return switch (mode) {
+                case BLACKLIST -> blacklist.contains(block);
+                case WHITELIST -> !whitelist.contains(block);
+                case NONE -> false;
+            };
         }
     }
 

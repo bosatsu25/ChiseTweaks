@@ -16,11 +16,9 @@ import java.util.Locale;
 /** Standalone ChiseTweaks settings UI. It does not depend on another mod's config surface. */
 public final class ChiseTweaksConfigScreen extends Screen {
     private static ChiseTweaksUiSection selectedSection = ChiseTweaksUiSection.PLACEMENT;
-
     private final ChiseTweaksSettingsController controller;
     private final ArrayList<ChiseTweaksSettingRowView> rows = new ArrayList<>();
     private final ArrayList<ChiseTweaksSettingRowView> filteredRows = new ArrayList<>();
-
     private Screen parent;
     private ChiseTweaksSettingsLayout.Geometry geometry;
     private EditBox searchBox;
@@ -52,7 +50,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
         super.init();
         controller.initialize();
         geometry = ChiseTweaksSettingsLayout.calculate(width, height, true);
-
         createNavigation();
         createSearch();
         createFooter();
@@ -91,7 +88,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
             rebuildFilteredRows();
             updateRowPositions();
         });
-
         bulkButton = addRenderableWidget(Button.builder(
                 bulkMessage(), ignored -> toggleBulk())
                 .bounds(
@@ -106,20 +102,17 @@ public final class ChiseTweaksConfigScreen extends Screen {
         int y = geometry.footer().y();
         int left = geometry.footer().x();
         int right = geometry.footer().right();
-
         addRenderableWidget(Button.builder(
                 Component.literal(controller.japanese() ? "設定をリセット" : "Reset section"),
                 ignored -> resetCurrentSection())
                 .bounds(left, y, 112, 20)
                 .build());
-
         applyButton = addRenderableWidget(Button.builder(
                 Component.literal(controller.japanese() ? "適用" : "Apply"),
                 ignored -> applyChanges())
                 .bounds(left + 122, y, 92, 20)
                 .build());
         applyButton.active = dirty;
-
         addRenderableWidget(Button.builder(
                 Component.literal(controller.japanese() ? "完了" : "Done"),
                 ignored -> onClose())
@@ -139,6 +132,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
             case HEADER -> ChiseTweaksSettingRowView.header(definition);
             case BOOLEAN -> createBooleanRow(definition);
             case INTEGER -> createIntegerRow(definition);
+            case ACTION -> createActionRow(definition);
         };
     }
 
@@ -155,7 +149,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         var config = definition.integerConfig();
         int step = definition.step();
         Button minus = addRenderableWidget(Button.builder(Component.literal("−"), ignored -> {
-            config.setIntegerValue(config.getIntegerValue() - step);
+            config.setIntegerValue(saturatedStep(config.getIntegerValue(), -step));
             markDirty();
         }).bounds(0, 0, 24, 18).build());
         Button value = addRenderableWidget(Button.builder(
@@ -164,10 +158,28 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 .build());
         value.active = false;
         Button plus = addRenderableWidget(Button.builder(Component.literal("+"), ignored -> {
-            config.setIntegerValue(config.getIntegerValue() + step);
+            config.setIntegerValue(saturatedStep(config.getIntegerValue(), step));
             markDirty();
         }).bounds(0, 0, 24, 18).build());
         return new ChiseTweaksSettingRowView(definition, null, minus, value, plus);
+    }
+
+    private ChiseTweaksSettingRowView createActionRow(ChiseTweaksSettingRowDefinition definition) {
+        return new ChiseTweaksSettingRowView(
+                definition,
+                addRenderableWidget(Button.builder(Component.literal(definition.actionLabel()),
+                        ignored -> runRowAction(definition.action()))
+                        .bounds(0, 0, geometry.controlWidth(), 18).build()),
+                null, null, null);
+    }
+
+    private void runRowAction(ChiseTweaksSettingRowDefinition.Action action) {
+        if (minecraft == null || action == null) return;
+        applyChanges();
+        var target = action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
+                ? ChiseSceneFilterEditorScreen.Target.BLOCKS
+                : ChiseSceneFilterEditorScreen.Target.ENTITIES;
+        minecraft.setScreen(new ChiseSceneFilterEditorScreen(this, target, controller.japanese()));
     }
 
     private void navigate(ChiseTweaksUiSection section) {
@@ -239,7 +251,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
         extractor.fill(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xC8121212);
         extractor.fill(panel.x(), panel.y(), panel.right(), panel.y() + 1, 0xFF808080);
         extractor.fill(panel.x(), panel.bottom() - 1, panel.right(), panel.bottom(), 0xFF4C4C4C);
-
         for (ChiseTweaksSettingRowView row : filteredRows) {
             if (!row.renderVisible || row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) continue;
             int y = row.screenY;
@@ -262,14 +273,12 @@ public final class ChiseTweaksConfigScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float delta) {
         super.extractRenderState(extractor, mouseX, mouseY, delta);
         if (geometry == null) return;
-
         extractor.text(
                 font,
                 ChiseTweaksMetadata.MOD_NAME + " " + ChiseTweaksMetadata.MOD_VERSION,
                 geometry.content().x(),
                 14,
                 0xFFFFFFFF);
-
         for (ChiseTweaksSettingRowView row : filteredRows) {
             if (!row.renderVisible) continue;
             if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
@@ -297,13 +306,11 @@ public final class ChiseTweaksConfigScreen extends Screen {
                     geometry.nameWidth(),
                     nameY,
                     0xFFFFFFFF);
-
             int descriptionLines = row.renderedDescriptionLineCount();
             int descriptionY = row.screenY + (descriptionLines > 1 ? 22 : 27);
             drawDescriptionLines(extractor, row, descriptionY, lineHeight);
             return;
         }
-
         int nameY = row.screenY + Math.max(0, (geometry.rowHeight() - lineHeight) / 2);
         drawCenteredText(
                 extractor,
@@ -312,7 +319,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 geometry.nameWidth(),
                 nameY,
                 0xFFFFFFFF);
-
         int descriptionLines = row.renderedDescriptionLineCount();
         int descriptionHeight = Math.max(1, descriptionLines) * lineHeight;
         int descriptionY = row.screenY + Math.max(0, (geometry.rowHeight() - descriptionHeight) / 2);
@@ -375,7 +381,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
             filteredRows.addAll(rows);
             return;
         }
-
         ChiseTweaksSettingRowView pendingHeader = null;
         boolean headerAdded = false;
         for (ChiseTweaksSettingRowView row : rows) {
@@ -410,12 +415,10 @@ public final class ChiseTweaksConfigScreen extends Screen {
         int contentHeight = contentHeight();
         maxScroll = Math.max(0, contentHeight - viewport);
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
-
         for (ChiseTweaksSettingRowView row : rows) {
             row.renderVisible = false;
             row.setWidgetsVisible(false);
         }
-
         int offset = 0;
         for (ChiseTweaksSettingRowView row : filteredRows) {
             int rowHeight = row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER
@@ -444,7 +447,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void positionWidgets(ChiseTweaksSettingRowView row, int y) {
         int controlY = y + Math.max(0, (geometry.rowHeight() - 18) / 2);
         switch (row.definition.kind()) {
-            case BOOLEAN -> {
+            case BOOLEAN, ACTION -> {
                 row.primary.setPosition(geometry.booleanControlX(), controlY);
                 row.primary.visible = true;
             }
@@ -482,6 +485,11 @@ public final class ChiseTweaksConfigScreen extends Screen {
         boolean turnOn = controller.shouldTurnBulkOn(selectedSection);
         return Component.literal(
                 (controller.japanese() ? "一括選択：" : "Select all: ") + (turnOn ? "ON" : "OFF"));
+    }
+
+    private static int saturatedStep(int current, int step) {
+        long next = (long) current + step;
+        return (int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, next));
     }
 
     private static Component toggleMessage(ChiseBooleanSetting value) {

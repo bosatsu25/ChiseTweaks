@@ -1,5 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
+import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 import dev.chise.chisetweaks.config.FeatureConfig;
@@ -96,8 +97,25 @@ final class ChiseTweaksSettingsController {
                 FeatureSwitches.BUILDER_FOCUS_BLOCKS.resetToDefault();
                 FeatureSwitches.BUILDER_FOCUS_ENTITIES.resetToDefault();
                 LocalFeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
+
+                BuilderFocusConfig.REFRESH_RENDERER.resetToDefault();
+                BuilderFocusConfig.BLOCK_RULE_MODE.resetToDefault();
+                BuilderFocusConfig.BLOCK_WHITELIST.resetToDefault();
+                BuilderFocusConfig.BLOCK_BLACKLIST.resetToDefault();
+                BuilderFocusConfig.ENTITY_RULE_MODE.resetToDefault();
+                BuilderFocusConfig.ENTITY_WHITELIST.resetToDefault();
+                BuilderFocusConfig.ENTITY_BLACKLIST.resetToDefault();
+
+                LocalFeatureSettings.LAVA_SOURCE.resetToDefault();
+                LocalFeatureSettings.LAVA_FLOWING.resetToDefault();
+                LocalFeatureSettings.LAVA_SOURCE_COLOR.resetToDefault();
+                LocalFeatureSettings.LAVA_FLOWING_COLOR.resetToDefault();
                 LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.resetToDefault();
+                LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS.resetToDefault();
                 LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL.resetToDefault();
+                LocalFeatureSettings.WORKSITE_VISIBILITY_MAX_OVERLAYS.resetToDefault();
+                LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY.resetToDefault();
+                LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE.resetToDefault();
                 resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
             }
             case HELP -> { return false; }
@@ -163,9 +181,19 @@ final class ChiseTweaksSettingsController {
 
         header(rows, "header.sceneFilter", "表示を絞る対象", "Scene Filter");
         bool(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
-                "ブロック", "必要なブロックだけ見やすくする");
+                "ブロック", "登録したルールでブロック表示を絞る");
+        action(rows,
+                "focusBlocksEdit",
+                "ブロックの対象",
+                "表示を残す／隠すブロックIDと方式を編集する",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER);
         bool(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
-                "エンティティ", "必要なエンティティだけを表示する");
+                "エンティティ", "登録したルールでエンティティ表示を絞る");
+        action(rows,
+                "focusEntitiesEdit",
+                "エンティティの対象",
+                "表示を残す／隠すエンティティIDと方式を編集する",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
 
         header(rows, "header.visibilityDetails", "溶岩・視認の詳細設定", "Lava & visibility details");
         bool(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
@@ -221,6 +249,26 @@ final class ChiseTweaksSettingsController {
                 japanese ? japaneseDescription : config.getComment(false),
                 config,
                 step));
+    }
+
+    private void action(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String id,
+            String japaneseName,
+            String japaneseDescription,
+            ChiseTweaksSettingRowDefinition.Action action) {
+        rows.add(ChiseTweaksSettingRowDefinition.action(
+                id,
+                japanese ? japaneseName : switch (action) {
+                    case EDIT_BLOCK_FILTER -> "Block targets";
+                    case EDIT_ENTITY_FILTER -> "Entity targets";
+                },
+                japanese ? japaneseDescription : switch (action) {
+                    case EDIT_BLOCK_FILTER -> "Edit the block include/exclude mode and block IDs.";
+                    case EDIT_ENTITY_FILTER -> "Edit the entity include/exclude mode and entity IDs.";
+                },
+                action,
+                japanese ? "対象を編集" : "Edit targets"));
     }
 
     private void resetTargetGroup(VisualTargetGroupPolicy.Group group) {
