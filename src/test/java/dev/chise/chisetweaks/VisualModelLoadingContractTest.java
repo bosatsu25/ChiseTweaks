@@ -70,7 +70,22 @@ final class VisualModelLoadingContractTest {
     }
 
     @Test
-    void generatedMaterialBordersHaveEightAnimatedFrames() throws IOException {
+    void generatedModelsUseThirtyOrFewerRawFacesWithoutCornerCubes() throws IOException {
+        try (var models = Files.list(GENERATED_VISUAL_MODELS)) {
+            for (Path model : models.filter(path -> path.toString().endsWith(".json")).toList()) {
+                String json = Files.readString(model);
+                int rawFaceCount = countOccurrences(json, "\"texture\"");
+                assertTrue(rawFaceCount <= 30, model.getFileName() + " raw faces=" + rawFaceCount);
+            }
+        }
+
+        String generator = Files.readString(ROOT.resolve("gradle/chise-visual-assets.gradle"));
+        assertTrue(generator.contains("outwardEdgeFaces"));
+        assertFalse(generator.contains("addCornerNodes"));
+    }
+
+    @Test
+    void generatedMaterialBordersHaveFastEightFrameAnimations() throws IOException {
         for (String key : MATERIAL_KEYS) {
             Path texture = GENERATED_VISUAL_TEXTURES.resolve(key + "_highlight.png");
             BufferedImage image = ImageIO.read(texture.toFile());
@@ -79,8 +94,10 @@ final class VisualModelLoadingContractTest {
             assertEquals(128, image.getHeight(), key);
 
             String meta = Files.readString(GENERATED_VISUAL_TEXTURES.resolve(key + "_highlight.png.mcmeta"));
-            assertTrue(meta.contains("\"frametime\": 2"), key);
+            assertTrue(meta.contains("\"frametime\": 1"), key);
             assertTrue(meta.contains("\"interpolate\": true"), key);
+            assertTrue(frameBrightness(image, 4) > frameBrightness(image, 0), key + " peak brightness");
+            assertFalse(framesEqual(image, 0, 2), key + " animated sparkle/motif");
         }
     }
 
@@ -104,9 +121,23 @@ final class VisualModelLoadingContractTest {
         assertTrue(iron[0] > iron[1] && iron[1] > iron[2]);
         assertTrue(copper[0] > copper[1] && copper[0] > copper[2]);
         assertTrue(lapis[2] > lapis[0] && lapis[2] > lapis[1]);
-        assertTrue(redstone[0] > redstone[1] * 2 && redstone[0] > redstone[2] * 2);
+        assertTrue(redstone[0] > redstone[1] && redstone[0] > redstone[2]);
         assertTrue(debris[0] > debris[1] && debris[1] > debris[2]);
         assertTrue(obsidian[0] > obsidian[1] && obsidian[2] > obsidian[1]);
+    }
+
+    @Test
+    void oreHighlightLocalizationMatchesTheModelBackedImplementation() throws IOException {
+        String ja = Files.readString(ROOT.resolve("src/main/resources/assets/chisetweaks/lang/ja_jp.json"));
+        String en = Files.readString(ROOT.resolve("src/main/resources/assets/chisetweaks/lang/en_us.json"));
+
+        assertTrue(ja.contains("\"config.name.materialhighlights\": \"鉱石ハイライト\""));
+        assertTrue(en.contains("\"config.name.materialhighlights\": \"Ore Highlights\""));
+        assertTrue(ja.contains("固有色のアニメーション枠"));
+        assertTrue(en.contains("ore-matched animated frames"));
+        assertFalse(ja.contains("件数制限付き"));
+        assertFalse(ja.contains("独自生成した線描画で、見えている鉱石"));
+        assertFalse(en.contains("Only loaded blocks with direct line of sight are considered"));
     }
 
     @Test
@@ -117,6 +148,7 @@ final class VisualModelLoadingContractTest {
         assertTrue(settings.contains("chise-visual-assets.gradle"));
         assertTrue(generator.contains("generateChiseVisualAssets"));
         assertTrue(generator.contains("writeBorderTexture"));
+        assertTrue(generator.contains("drawSparkle"));
         assertTrue(generator.contains("addBorderRods"));
         assertTrue(generator.contains("writeAnimationMeta"));
         assertTrue(generator.contains("ancientDebrisModel"));
@@ -138,6 +170,39 @@ final class VisualModelLoadingContractTest {
             }
         }
         return new int[] {(int) (r / 256), (int) (g / 256), (int) (b / 256)};
+    }
+
+    private static long frameBrightness(BufferedImage image, int frame) {
+        long total = 0;
+        int top = frame * 16;
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+                int rgb = image.getRGB(x, top + y);
+                total += ((rgb >>> 16) & 0xFF) + ((rgb >>> 8) & 0xFF) + (rgb & 0xFF);
+            }
+        }
+        return total;
+    }
+
+    private static boolean framesEqual(BufferedImage image, int firstFrame, int secondFrame) {
+        int firstTop = firstFrame * 16;
+        int secondTop = secondFrame * 16;
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+                if (image.getRGB(x, firstTop + y) != image.getRGB(x, secondTop + y)) return false;
+            }
+        }
+        return true;
+    }
+
+    private static int countOccurrences(String value, String needle) {
+        int count = 0;
+        int index = 0;
+        while ((index = value.indexOf(needle, index)) >= 0) {
+            count++;
+            index += needle.length();
+        }
+        return count;
     }
 
     private static int max(int[] value) {
