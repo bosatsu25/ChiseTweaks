@@ -24,7 +24,7 @@ final class VisualModelLoadingContractTest {
             "copper", "lapis", "redstone", "ancient_debris", "obsidian");
 
     @Test
-    void allMaterialHighlightsUseFabricModelLoadingInsteadOfTheWorldLinePass() throws IOException {
+    void allOreHighlightsUseModelLoadingAndPostBakeFullBrightWrapping() throws IOException {
         String plugin = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java"));
 
@@ -32,6 +32,9 @@ final class VisualModelLoadingContractTest {
         assertTrue(plugin.contains("modifyBlockModelOnLoad"));
         assertTrue(plugin.contains("ModelModifier.OVERRIDE_PHASE"));
         assertTrue(plugin.contains("new SingleVariant.Unbaked(new Variant(replacement)).asRoot()"));
+        assertTrue(plugin.contains("modifyBlockModelAfterBake"));
+        assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
+        assertTrue(plugin.contains("new FullbrightOreHighlightModel(model)"));
         for (String block : List.of(
                 "OBSIDIAN", "ANCIENT_DEBRIS",
                 "DIAMOND_ORE", "DEEPSLATE_DIAMOND_ORE",
@@ -49,7 +52,24 @@ final class VisualModelLoadingContractTest {
     }
 
     @Test
-    void generatedModelsKeepVanillaTexturesAndAddGeometryOnlyHighlightFrames() throws IOException {
+    void fullBrightWrapperOnlyTransformsExpandedOverlayQuads() throws IOException {
+        String wrapper = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java"));
+
+        assertTrue(wrapper.contains("OreHighlightLightingPolicy.isOverlayVertex"));
+        assertTrue(wrapper.contains("quad.emissive(true)"));
+        assertTrue(wrapper.contains("quad.diffuseShade(false)"));
+        assertTrue(wrapper.contains("quad.ambientOcclusion(TriState.FALSE)"));
+        assertTrue(wrapper.contains("emitter.pushTransform"));
+        assertTrue(wrapper.contains("finally"));
+        assertTrue(wrapper.contains("emitter.popTransform()"));
+        assertTrue(wrapper.contains("FullbrightGeometryKey"));
+        assertFalse(wrapper.contains("setLightEmission"));
+        assertFalse(wrapper.contains("setBlock"));
+    }
+
+    @Test
+    void generatedModelsKeepBaseTexturesAndUseOneThinOverlayCube() throws IOException {
         try (var models = Files.list(GENERATED_VISUAL_MODELS)) {
             assertEquals(18, models.filter(path -> path.toString().endsWith(".json")).count());
         }
@@ -65,33 +85,38 @@ final class VisualModelLoadingContractTest {
         assertTrue(deepslateDiamond.contains("chisetweaks:block/visual/material/diamond_highlight"));
         assertTrue(debris.contains("minecraft:block/ancient_debris_top"));
         assertTrue(debris.contains("minecraft:block/ancient_debris_side"));
-        assertTrue(diamond.contains("-0.06"));
+        assertTrue(diamond.contains("-0.03"));
+        assertTrue(diamond.contains("16.03"));
         assertTrue(diamond.contains("\"shade\": false"));
     }
 
     @Test
-    void generatedModelsUseThirtyOrFewerRawFacesWithoutCornerCubes() throws IOException {
+    void generatedModelsAreCappedAtTwelveRawFacesAndHaveNoEdgeRods() throws IOException {
         try (var models = Files.list(GENERATED_VISUAL_MODELS)) {
             for (Path model : models.filter(path -> path.toString().endsWith(".json")).toList()) {
                 String json = Files.readString(model);
                 int rawFaceCount = countOccurrences(json, "\"texture\"");
-                assertTrue(rawFaceCount <= 30, model.getFileName() + " raw faces=" + rawFaceCount);
+                assertEquals(12, rawFaceCount, model.getFileName() + " raw faces=" + rawFaceCount);
             }
         }
 
         String generator = Files.readString(ROOT.resolve("gradle/chise-visual-assets.gradle"));
-        assertTrue(generator.contains("outwardEdgeFaces"));
+        assertTrue(generator.contains("overlayElement"));
+        assertFalse(generator.contains("addBorderRods"));
+        assertFalse(generator.contains("outwardEdgeFaces"));
         assertFalse(generator.contains("addCornerNodes"));
     }
 
     @Test
-    void generatedMaterialBordersHaveFastEightFrameAnimations() throws IOException {
+    void generatedHighlightTexturesStaySparseTransparentAndAnimated() throws IOException {
         for (String key : MATERIAL_KEYS) {
             Path texture = GENERATED_VISUAL_TEXTURES.resolve(key + "_highlight.png");
             BufferedImage image = ImageIO.read(texture.toFile());
             assertNotNull(image, key);
             assertEquals(16, image.getWidth(), key);
             assertEquals(128, image.getHeight(), key);
+            assertTrue(countTransparentPixels(image) > 8L * 100L, key + " transparent area");
+            assertTrue(countVisiblePixels(image) > 8L * 50L, key + " visible highlight area");
 
             String meta = Files.readString(GENERATED_VISUAL_TEXTURES.resolve(key + "_highlight.png.mcmeta"));
             assertTrue(meta.contains("\"frametime\": 1"), key);
@@ -102,22 +127,22 @@ final class VisualModelLoadingContractTest {
     }
 
     @Test
-    void generatedBorderFamiliesMatchTheirMaterialIdentity() throws IOException {
-        int[] diamond = averageFrame("diamond", 4);
-        int[] gold = averageFrame("gold", 4);
-        int[] emerald = averageFrame("emerald", 4);
-        int[] coal = averageFrame("coal", 4);
-        int[] iron = averageFrame("iron", 4);
-        int[] copper = averageFrame("copper", 4);
-        int[] lapis = averageFrame("lapis", 4);
-        int[] redstone = averageFrame("redstone", 4);
-        int[] debris = averageFrame("ancient_debris", 4);
-        int[] obsidian = averageFrame("obsidian", 4);
+    void generatedHighlightFamiliesMatchTheirOreIdentity() throws IOException {
+        int[] diamond = averageVisibleFrame("diamond", 4);
+        int[] gold = averageVisibleFrame("gold", 4);
+        int[] emerald = averageVisibleFrame("emerald", 4);
+        int[] coal = averageVisibleFrame("coal", 4);
+        int[] iron = averageVisibleFrame("iron", 4);
+        int[] copper = averageVisibleFrame("copper", 4);
+        int[] lapis = averageVisibleFrame("lapis", 4);
+        int[] redstone = averageVisibleFrame("redstone", 4);
+        int[] debris = averageVisibleFrame("ancient_debris", 4);
+        int[] obsidian = averageVisibleFrame("obsidian", 4);
 
         assertTrue(diamond[1] > diamond[0] && diamond[2] > diamond[0]);
         assertTrue(gold[0] > gold[2] && gold[1] > gold[2]);
         assertTrue(emerald[1] > emerald[0] && emerald[1] > emerald[2]);
-        assertTrue(max(coal) - min(coal) < 40);
+        assertTrue(max(coal) - min(coal) < 45);
         assertTrue(iron[0] > iron[1] && iron[1] > iron[2]);
         assertTrue(copper[0] > copper[1] && copper[0] > copper[2]);
         assertTrue(lapis[2] > lapis[0] && lapis[2] > lapis[1]);
@@ -127,14 +152,14 @@ final class VisualModelLoadingContractTest {
     }
 
     @Test
-    void oreHighlightLocalizationMatchesTheModelBackedImplementation() throws IOException {
+    void oreHighlightLocalizationDescribesFullBrightModelBackedRendering() throws IOException {
         String ja = Files.readString(ROOT.resolve("src/main/resources/assets/chisetweaks/lang/ja_jp.json"));
         String en = Files.readString(ROOT.resolve("src/main/resources/assets/chisetweaks/lang/en_us.json"));
 
         assertTrue(ja.contains("\"config.name.materialhighlights\": \"鉱石ハイライト\""));
         assertTrue(en.contains("\"config.name.materialhighlights\": \"Ore Highlights\""));
-        assertTrue(ja.contains("固有色のアニメーション枠"));
-        assertTrue(en.contains("ore-matched animated frames"));
+        assertTrue(ja.contains("最大光量相当"));
+        assertTrue(en.contains("full brightness"));
         assertFalse(ja.contains("件数制限付き"));
         assertFalse(ja.contains("独自生成した線描画で、見えている鉱石"));
         assertFalse(en.contains("Only loaded blocks with direct line of sight are considered"));
@@ -147,29 +172,35 @@ final class VisualModelLoadingContractTest {
 
         assertTrue(settings.contains("chise-visual-assets.gradle"));
         assertTrue(generator.contains("generateChiseVisualAssets"));
-        assertTrue(generator.contains("writeBorderTexture"));
+        assertTrue(generator.contains("writeHighlightTexture"));
+        assertTrue(generator.contains("drawOuterFrame"));
+        assertTrue(generator.contains("drawOreAccents"));
         assertTrue(generator.contains("drawSparkle"));
-        assertTrue(generator.contains("addBorderRods"));
+        assertTrue(generator.contains("overlayElement"));
         assertTrue(generator.contains("writeAnimationMeta"));
         assertTrue(generator.contains("ancientDebrisModel"));
     }
 
-    private static int[] averageFrame(String key, int frame) throws IOException {
+    private static int[] averageVisibleFrame(String key, int frame) throws IOException {
         BufferedImage image = ImageIO.read(
                 GENERATED_VISUAL_TEXTURES.resolve(key + "_highlight.png").toFile());
         long r = 0;
         long g = 0;
         long b = 0;
+        long visible = 0;
         int top = frame * 16;
         for (int y = 0; y < 16; y++) {
             for (int x = 0; x < 16; x++) {
                 int rgb = image.getRGB(x, top + y);
+                if (((rgb >>> 24) & 0xFF) == 0) continue;
                 r += (rgb >>> 16) & 0xFF;
                 g += (rgb >>> 8) & 0xFF;
                 b += rgb & 0xFF;
+                visible++;
             }
         }
-        return new int[] {(int) (r / 256), (int) (g / 256), (int) (b / 256)};
+        assertTrue(visible > 0, key);
+        return new int[] {(int) (r / visible), (int) (g / visible), (int) (b / visible)};
     }
 
     private static long frameBrightness(BufferedImage image, int frame) {
@@ -178,10 +209,26 @@ final class VisualModelLoadingContractTest {
         for (int y = 0; y < 16; y++) {
             for (int x = 0; x < 16; x++) {
                 int rgb = image.getRGB(x, top + y);
+                int alpha = (rgb >>> 24) & 0xFF;
+                if (alpha == 0) continue;
                 total += ((rgb >>> 16) & 0xFF) + ((rgb >>> 8) & 0xFF) + (rgb & 0xFF);
             }
         }
         return total;
+    }
+
+    private static long countTransparentPixels(BufferedImage image) {
+        long count = 0;
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                if (((image.getRGB(x, y) >>> 24) & 0xFF) == 0) count++;
+            }
+        }
+        return count;
+    }
+
+    private static long countVisiblePixels(BufferedImage image) {
+        return (long) image.getWidth() * image.getHeight() - countTransparentPixels(image);
     }
 
     private static boolean framesEqual(BufferedImage image, int firstFrame, int secondFrame) {
