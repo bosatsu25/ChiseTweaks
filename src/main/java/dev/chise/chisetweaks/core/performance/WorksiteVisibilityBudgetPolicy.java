@@ -41,6 +41,23 @@ public final class WorksiteVisibilityBudgetPolicy {
         return clamp(requested, 1, MAX_OVERLAY_RESULTS);
     }
 
+    /**
+     * Legacy compatibility alias retained until the old removed HUD API can be deleted in a
+     * breaking release. Runtime overlay code must use {@link #clampOverlayResults(int)}.
+     */
+    @Deprecated(forRemoval = true)
+    public static int clampResults(int requested) {
+        return clampHudResults(requested);
+    }
+
+    /**
+     * Legacy compatibility shim for historical tests/config callers. No HUD renderer remains.
+     */
+    @Deprecated(forRemoval = true)
+    public static int clampHudResults(int requested) {
+        return clamp(requested, 1, 8);
+    }
+
     public static int maximumBlocksFor(int horizontalRadius, int verticalRadius) {
         int horizontal = clampHorizontalRadius(horizontalRadius);
         int vertical = clampVerticalRadius(verticalRadius);
