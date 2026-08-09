@@ -12,6 +12,12 @@ public final class WorksiteVisibilityBudgetPolicy {
     public static final int MAX_OVERLAY_RESULTS = 24;
 
     /**
+     * Historical persisted result limit retained only so old config documents remain valid.
+     * The HUD renderer that originally consumed this setting no longer exists.
+     */
+    public static final int LEGACY_MAX_RESULTS = 8;
+
+    /**
      * Hard CPU/allocation budget for ray based line-of-sight checks in one scan.
      *
      * <p>Each clip query creates short-lived Minecraft geometry/context objects. Capping the
@@ -41,21 +47,9 @@ public final class WorksiteVisibilityBudgetPolicy {
         return clamp(requested, 1, MAX_OVERLAY_RESULTS);
     }
 
-    /**
-     * Legacy compatibility alias retained until the old removed HUD API can be deleted in a
-     * breaking release. Runtime overlay code must use {@link #clampOverlayResults(int)}.
-     */
-    @Deprecated(forRemoval = true)
-    public static int clampResults(int requested) {
-        return clampHudResults(requested);
-    }
-
-    /**
-     * Legacy compatibility shim for historical tests/config callers. No HUD renderer remains.
-     */
-    @Deprecated(forRemoval = true)
-    public static int clampHudResults(int requested) {
-        return clamp(requested, 1, 8);
+    /** Sanitizes the obsolete persisted result field without reviving the removed HUD path. */
+    public static int clampLegacyResults(int requested) {
+        return clamp(requested, 1, LEGACY_MAX_RESULTS);
     }
 
     public static int maximumBlocksFor(int horizontalRadius, int verticalRadius) {
