@@ -133,12 +133,15 @@ final class RepositoryContractTest {
         String scanner = textByFile.get(MAIN.resolve("dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java"));
         for (String required : List.of(
                 "MutableBlockPos",
-                "PriorityQueue<ScanCandidate>",
+                "PriorityQueue<WorksiteScanCandidate>",
+                "candidatePool",
                 "MAX_SCAN_CANDIDATES",
+                "MAX_LINE_OF_SIGHT_RAYS_PER_SCAN",
                 "getChunkSource().hasChunk(")) {
             assertTrue(scanner.contains(required), required);
         }
         assertFalse(scanner.contains("origin.offset("));
+        assertFalse(scanner.contains("new ScanCandidate("));
 
         String buildGradle = Files.readString(ROOT.resolve("build.gradle"), StandardCharsets.UTF_8);
         assertTrue(buildGradle.contains("dev.chise.chisetweaks.core.security.SecureConfigStorage"));

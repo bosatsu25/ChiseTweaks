@@ -51,11 +51,26 @@ final class WorksiteScanner {
             {0.50, 0.50, 0.82}
     };
 
-    private static final Comparator<ScanCandidate> SCAN_ORDER = Comparator
-            .comparingInt((ScanCandidate candidate) -> candidate.style().priority()).reversed()
-            .thenComparingDouble(ScanCandidate::distanceSquared);
+    private static final Comparator<WorksiteScanCandidate> SCAN_ORDER = Comparator
+            .comparingInt((WorksiteScanCandidate candidate) -> candidate.style().priority()).reversed()
+            .thenComparingDouble(WorksiteScanCandidate::distanceSquared);
 
     private final WorksiteBlockInspector blockInspector;
+    private final PriorityQueue<WorksiteScanCandidate> candidateBuffer = new PriorityQueue<>(
+            WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES,
+            SCAN_ORDER.reversed());
+    private final ArrayList<WorksiteScanCandidate> orderedBuffer = new ArrayList<>(
+            WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES);
+    private final ArrayList<WorksiteVisibleTarget> visibleBuffer = new ArrayList<>(
+            WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS);
+    private final WorksiteScanCandidate[] candidatePool = createCandidatePool();
+    private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+    private final BlockPos.MutableBlockPos visibilityCursor = new BlockPos.MutableBlockPos();
+    private final boolean[] loadedChunkBuffer = new boolean[
+            WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES];
+
+    private int nextCandidateSlot;
+    private int remainingLineOfSightRays;
 
     WorksiteScanner(WorksiteBlockInspector blockInspector) {
         this.blockInspector = blockInspector;
@@ -65,6 +80,11 @@ final class WorksiteScanner {
             Minecraft client,
             LocalFeatureConfig config,
             Set<BlockInspectionCategory> activeCategories) {
+        if (client == null || client.player == null || client.level == null
+                || activeCategories == null || activeCategories.isEmpty()) {
+            return List.of();
+        }
+
         int horizontalRadius = WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(
                 config.worksiteVisibilityHorizontalRadius);
         int verticalRadius = WorksiteVisibilityBudgetPolicy.clampVerticalRadius(
@@ -73,34 +93,66 @@ final class WorksiteScanner {
                 config.worksiteVisibilityMaxOverlayResults);
         BlockPos origin = client.player.blockPosition();
         Vec3 eyePosition = client.player.getEyePosition();
-        PriorityQueue<ScanCandidate> candidates = new PriorityQueue<>(
-                WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES,
-                SCAN_ORDER.reversed());
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+
+        candidateBuffer.clear();
+        orderedBuffer.clear();
+        visibleBuffer.clear();
+        nextCandidateSlot = 0;
+        remainingLineOfSightRays = WorksiteVisibilityBudgetPolicy.MAX_LINE_OF_SIGHT_RAYS_PER_SCAN;
 
         int originX = origin.getX();
         int originY = origin.getY();
         int originZ = origin.getZ();
-        for (int yOffset = -verticalRadius; yOffset <= verticalRadius; yOffset++) {
-            int y = originY + yOffset;
-            for (int zOffset = -horizontalRadius; zOffset <= horizontalRadius; zOffset++) {
-                int z = originZ + zOffset;
-                for (int xOffset = -horizontalRadius; xOffset <= horizontalRadius; xOffset++) {
-                    cursor.set(originX + xOffset, y, z);
-                    collectCandidate(client, config, eyePosition, cursor, activeCategories, candidates);
+        int minX = originX - horizontalRadius;
+        int maxX = originX + horizontalRadius;
+        int minZ = originZ - horizontalRadius;
+        int maxZ = originZ + horizontalRadius;
+        int minChunkX = minX >> 4;
+        int maxChunkX = maxX >> 4;
+        int minChunkZ = minZ >> 4;
+        int maxChunkZ = maxZ >> 4;
+        int chunkSpanX = maxChunkX - minChunkX + 1;
+        int chunkSpanZ = maxChunkZ - minChunkZ + 1;
+        int chunkCount = chunkSpanX * chunkSpanZ;
+        if (chunkCount > loadedChunkBuffer.length) {
+            // The policy constant and buffer size must evolve together. Fail closed instead of
+            // falling back to thousands of chunk-source probes if a future radius cap changes.
+            return List.of();
+        }
+
+        int chunkIndex = 0;
+        for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                loadedChunkBuffer[chunkIndex++] = client.level.getChunkSource().hasChunk(chunkX, chunkZ);
+            }
+        }
+
+        for (int z = minZ; z <= maxZ; z++) {
+            int loadedRow = ((z >> 4) - minChunkZ) * chunkSpanX;
+            for (int x = minX; x <= maxX; x++) {
+                int loadedIndex = loadedRow + ((x >> 4) - minChunkX);
+                if (!loadedChunkBuffer[loadedIndex]) continue;
+                for (int yOffset = -verticalRadius; yOffset <= verticalRadius; yOffset++) {
+                    cursor.set(x, originY + yOffset, z);
+                    collectCandidate(
+                            client,
+                            config,
+                            eyePosition,
+                            cursor,
+                            activeCategories,
+                            candidateBuffer);
                 }
             }
         }
 
-        ArrayList<ScanCandidate> orderedCandidates = new ArrayList<>(candidates);
-        orderedCandidates.sort(SCAN_ORDER);
-        ArrayList<WorksiteVisibleTarget> visible = new ArrayList<>(overlayLimit);
-        for (ScanCandidate candidate : orderedCandidates) {
-            if (visible.size() >= overlayLimit) break;
+        orderedBuffer.addAll(candidateBuffer);
+        orderedBuffer.sort(SCAN_ORDER);
+        for (WorksiteScanCandidate candidate : orderedBuffer) {
+            if (visibleBuffer.size() >= overlayLimit || remainingLineOfSightRays <= 0) break;
             WorksiteVisibleTarget target = materializeVisibleTarget(client, eyePosition, candidate);
-            if (target != null) visible.add(target);
+            if (target != null) visibleBuffer.add(target);
         }
-        return List.copyOf(visible);
+        return List.copyOf(visibleBuffer);
     }
 
     private void collectCandidate(
@@ -109,10 +161,7 @@ final class WorksiteScanner {
             Vec3 eyePosition,
             BlockPos position,
             Set<BlockInspectionCategory> activeCategories,
-            PriorityQueue<ScanCandidate> candidates) {
-        if (!client.level.getChunkSource().hasChunk(
-                position.getX() >> 4,
-                position.getZ() >> 4)) return;
+            PriorityQueue<WorksiteScanCandidate> candidates) {
         BlockState state = client.level.getBlockState(position);
         WorksiteBlockDescriptor descriptor = blockInspector.describe(state);
         BlockInspectionCategory category =
@@ -130,9 +179,11 @@ final class WorksiteScanner {
         double dy = position.getY() + 0.5 - eyePosition.y;
         double dz = position.getZ() + 0.5 - eyePosition.z;
         double distanceSquared = dx * dx + dy * dy + dz * dz;
-        ScanCandidate weakest = candidates.peek();
+        WorksiteScanCandidate weakest = candidates.peek();
         int weakestPriority = weakest == null ? Integer.MIN_VALUE : weakest.style().priority();
-        double weakestDistanceSquared = weakest == null ? Double.POSITIVE_INFINITY : weakest.distanceSquared();
+        double weakestDistanceSquared = weakest == null
+                ? Double.POSITIVE_INFINITY
+                : weakest.distanceSquared();
         if (!WorksiteCandidateRetentionPolicy.shouldRetain(
                 candidates.size(),
                 WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES,
@@ -141,7 +192,13 @@ final class WorksiteScanner {
                 weakestPriority,
                 weakestDistanceSquared)) return;
 
-        ScanCandidate candidate = new ScanCandidate(
+        WorksiteScanCandidate candidate;
+        if (candidates.size() == WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES) {
+            candidate = candidates.poll();
+        } else {
+            candidate = candidatePool[nextCandidateSlot++];
+        }
+        candidate.assign(
                 position.getX(),
                 position.getY(),
                 position.getZ(),
@@ -150,19 +207,18 @@ final class WorksiteScanner {
                 category,
                 style,
                 distanceSquared);
-        if (candidates.size() == WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES) {
-            candidates.poll();
-        }
         candidates.add(candidate);
     }
 
     private WorksiteVisibleTarget materializeVisibleTarget(
             Minecraft client,
             Vec3 eyePosition,
-            ScanCandidate candidate) {
-        BlockPos position = new BlockPos(candidate.x(), candidate.y(), candidate.z());
-        if (!lineOfSight(client, eyePosition, position, candidate.category())) return null;
+            WorksiteScanCandidate candidate) {
+        if (remainingLineOfSightRays <= 0) return null;
+        visibilityCursor.set(candidate.x(), candidate.y(), candidate.z());
+        if (!lineOfSight(client, eyePosition, visibilityCursor, candidate.category())) return null;
 
+        BlockPos position = new BlockPos(candidate.x(), candidate.y(), candidate.z());
         WorksiteMaterializedInspection inspection = blockInspector.materialize(
                 candidate.state(), candidate.blockId(), candidate.category());
         return new WorksiteVisibleTarget(
@@ -178,12 +234,14 @@ final class WorksiteScanner {
      * aiming at the block-volume centre. Every successful ray must still hit the
      * target block itself, so the visibility helper never becomes wall-through.
      */
-    private static boolean lineOfSight(
+    private boolean lineOfSight(
             Minecraft client,
             Vec3 eyePosition,
             BlockPos position,
             BlockInspectionCategory category) {
         for (double[] sample : samplesFor(category)) {
+            if (remainingLineOfSightRays <= 0) return false;
+            remainingLineOfSightRays--;
             Vec3 target = new Vec3(
                     position.getX() + sample[0],
                     position.getY() + sample[1],
@@ -194,7 +252,8 @@ final class WorksiteScanner {
                     ClipContext.Block.OUTLINE,
                     ClipContext.Fluid.NONE,
                     client.player));
-            if (result.getType() == HitResult.Type.BLOCK && result.getBlockPos().equals(position)) return true;
+            if (result.getType() == HitResult.Type.BLOCK
+                    && result.getBlockPos().equals(position)) return true;
         }
         return false;
     }
@@ -208,13 +267,12 @@ final class WorksiteScanner {
         };
     }
 
-    private record ScanCandidate(
-            int x,
-            int y,
-            int z,
-            BlockState state,
-            String blockId,
-            BlockInspectionCategory category,
-            VisualAssistanceStylePolicy.OverlayStyle style,
-            double distanceSquared) {}
+    private static WorksiteScanCandidate[] createCandidatePool() {
+        WorksiteScanCandidate[] pool =
+                new WorksiteScanCandidate[WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES];
+        for (int index = 0; index < pool.length; index++) {
+            pool[index] = new WorksiteScanCandidate();
+        }
+        return pool;
+    }
 }

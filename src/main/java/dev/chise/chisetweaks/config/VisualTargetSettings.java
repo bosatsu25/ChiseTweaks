@@ -9,11 +9,11 @@ import fi.dy.masa.malilib.util.StringUtils;
 import java.util.List;
 
 /**
- * Fine-grained target switches shown only in the Target Lists tab.
+ * Fine-grained target switches shown in the Chise category settings UI.
  *
- * <p>Parent features remain in Features & Keybinds. Ore Highlights is intentionally configured
- * by resource family: a normal ore and its deepslate variant share one switch because the user
- * is selecting the resource to find, not the stone host it generated in.</p>
+ * <p>Parent features remain the primary on/off switches. Ore Highlights is intentionally
+ * configured by resource family: a normal ore and its deepslate variant share one switch because
+ * the user is selecting the resource to find, not the stone host it generated in.</p>
  */
 public final class VisualTargetSettings {
     private static final List<Entry> ENTRIES = List.of(
@@ -117,7 +117,6 @@ public final class VisualTargetSettings {
 
     private static boolean initialized;
     private static boolean syncing;
-    private static boolean soloOreSelection;
 
     private VisualTargetSettings() {}
 
@@ -145,25 +144,6 @@ public final class VisualTargetSettings {
             entry.option().setComment(StringUtils.getTranslatedOrFallback(
                     base + ".comment", fallbackComment));
         }
-    }
-
-    public static boolean isSoloOreSelectionEnabled() {
-        return soloOreSelection;
-    }
-
-    /**
-     * Toggles transient Solo selection mode. Entering Solo clears only Ore Highlights targets so
-     * the next resource-row click behaves naturally: first click ON, second click OFF.
-     */
-    public static synchronized boolean toggleSoloOreSelection() {
-        soloOreSelection = !soloOreSelection;
-        if (soloOreSelection) setAllOreHighlightTargets(false);
-        return soloOreSelection;
-    }
-
-    /** Solo is a UI interaction mode, not persisted configuration. */
-    public static void resetTransientControls() {
-        soloOreSelection = false;
     }
 
     public static synchronized void setAllOreHighlightTargets(boolean enabled) {
@@ -197,25 +177,11 @@ public final class VisualTargetSettings {
     private static void save(Entry entry) {
         if (syncing) return;
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
-        boolean enabled = entry.option().getBooleanValue();
-
-        if (soloOreSelection
-                && enabled
-                && VisualTargetSelectionPolicy.isOreHighlightTarget(entry.target())) {
-            config.visualTargetMask = VisualTargetSelectionPolicy.withOnlyOreHighlightTarget(
-                    config.visualTargetMask,
-                    entry.target());
-        } else {
-            config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
-                    config.visualTargetMask,
-                    entry.target(),
-                    enabled);
-        }
-
+        config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
+                config.visualTargetMask,
+                entry.target(),
+                entry.option().getBooleanValue());
         config.save();
-        if (soloOreSelection && VisualTargetSelectionPolicy.isOreHighlightTarget(entry.target())) {
-            syncFromStorage();
-        }
     }
 
     private static Entry entry(

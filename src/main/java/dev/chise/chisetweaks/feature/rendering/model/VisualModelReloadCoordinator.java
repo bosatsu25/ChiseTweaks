@@ -1,6 +1,7 @@
 package dev.chise.chisetweaks.feature.rendering.model;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
+import dev.chise.chisetweaks.core.performance.VisualModelReloadThrottlePolicy;
 import net.minecraft.client.Minecraft;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -8,12 +9,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Coalesces client resource reloads needed when model-backed material targets change state.
  *
- * <p>The model-loading callback runs only during resource reload. This coordinator compares the
- * desired material target mask with the mask used for the last model load and requests at most one
- * reload at a time.</p>
+ * <p>The model-loading callback runs only during resource reload. Rapid target changes are
+ * debounced into one reload, and failures use a bounded retry backoff instead of retrying every
+ * client tick.</p>
  */
 final class VisualModelReloadCoordinator {
     private static final AtomicBoolean RELOAD_IN_FLIGHT = new AtomicBoolean();
+    private static final VisualModelReloadThrottlePolicy RELOAD_THROTTLE =
+            new VisualModelReloadThrottlePolicy();
     private static volatile boolean appliedStateKnown;
     private static volatile int appliedMaterialModelMask;
 
@@ -26,7 +29,12 @@ final class VisualModelReloadCoordinator {
 
     static void observe(Minecraft client, int desiredMaterialModelMask) {
         if (client == null || !appliedStateKnown) return;
-        if (desiredMaterialModelMask == appliedMaterialModelMask) return;
+        if (!RELOAD_THROTTLE.shouldRequestReload(
+                appliedMaterialModelMask,
+                desiredMaterialModelMask,
+                RELOAD_IN_FLIGHT.get())) {
+            return;
+        }
         if (!RELOAD_IN_FLIGHT.compareAndSet(false, true)) return;
 
         ChiseTweaksClient.LOGGER.info(
@@ -35,14 +43,18 @@ final class VisualModelReloadCoordinator {
                 Integer.toHexString(desiredMaterialModelMask));
         try {
             client.reloadResourcePacks().whenComplete((ignored, failure) -> {
-                RELOAD_IN_FLIGHT.set(false);
-                if (failure != null) {
+                if (failure == null) {
+                    RELOAD_THROTTLE.onReloadSucceeded();
+                } else {
+                    RELOAD_THROTTLE.onReloadFailed();
                     ChiseTweaksClient.LOGGER.warn(
                             "Chise material model resource reload failed after {}",
                             failure.getClass().getSimpleName());
                 }
+                RELOAD_IN_FLIGHT.set(false);
             });
         } catch (RuntimeException failure) {
+            RELOAD_THROTTLE.onReloadFailed();
             RELOAD_IN_FLIGHT.set(false);
             ChiseTweaksClient.LOGGER.warn(
                     "Unable to start Chise material model resource reload after {}",

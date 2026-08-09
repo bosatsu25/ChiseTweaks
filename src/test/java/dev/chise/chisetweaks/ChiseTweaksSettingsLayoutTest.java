@@ -3,6 +3,7 @@ package dev.chise.chisetweaks;
 import dev.chise.chisetweaks.gui.ChiseTweaksSettingsLayout;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,6 +31,26 @@ final class ChiseTweaksSettingsLayoutTest {
             assertTrue(layout.content().contains(layout.panel()), viewportLabel(viewport));
             assertTrue(layout.content().contains(layout.footer()), viewportLabel(viewport));
         }
+    }
+
+    @Test
+    void approved854x480CategoryGeometryIsPinnedAgainstUiRegression() {
+        var layout = ChiseTweaksSettingsLayout.calculate(854, 480, true);
+
+        assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 0, 830, 480), layout.content());
+        assertEquals(new ChiseTweaksSettingsLayout.Rect(676, 10, 166, 20), layout.selector());
+        assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 40, 580, 20), layout.navigation());
+        assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 68, 688, 20), layout.search());
+        assertEquals(new ChiseTweaksSettingsLayout.Rect(708, 68, 134, 20), layout.bulk());
+        assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 98, 830, 342), layout.panel());
+        assertEquals(new ChiseTweaksSettingsLayout.Rect(12, 450, 830, 20), layout.footer());
+        assertEquals(112, layout.navButtonWidth());
+        assertEquals(118, layout.controlWidth());
+        assertEquals(28, layout.nameX());
+        assertEquals(288, layout.descriptionX());
+        assertEquals(708, layout.controlX());
+        assertEquals(38, layout.rowHeight());
+        assertEquals(24, layout.headerHeight());
     }
 
     @Test

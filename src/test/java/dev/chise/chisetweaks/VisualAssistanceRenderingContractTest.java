@@ -14,23 +14,21 @@ final class VisualAssistanceRenderingContractTest {
 
     @Test
     void visualAssistanceKeepsSurfaceLinesForNonMaterialModesOnly() throws IOException {
-        String geometry = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/SurfaceLineVisualGeometry.java"));
-        String renderer = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java"));
-        String engine = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java"));
+        String facade = read("src/main/java/dev/chise/chisetweaks/feature/rendering/SurfaceLineVisualGeometry.java");
+        String placement = read("src/main/java/dev/chise/chisetweaks/feature/rendering/PlacementGuideLineGeometry.java");
+        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java");
+        String engine = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java");
 
-        assertTrue(geometry.contains("drawThreadSkin"));
-        assertTrue(geometry.contains("drawGlassSkin"));
-        assertTrue(geometry.contains("drawHiddenSurfaceSkin"));
-        assertTrue(geometry.contains("drawNetherSkin"));
-        assertTrue(geometry.contains("drawPlacementSkin"));
-        assertTrue(geometry.contains("drawSlab"));
-        assertTrue(geometry.contains("drawStairs"));
-        assertTrue(geometry.contains("drawTrapdoor"));
-        assertTrue(geometry.contains("drawFenceGate"));
-        assertTrue(geometry.contains("drawAxisSkin"));
+        assertTrue(facade.contains("drawThreadSkin"));
+        assertTrue(facade.contains("drawGlassSkin"));
+        assertTrue(facade.contains("drawHiddenSurfaceSkin"));
+        assertTrue(facade.contains("drawNetherSkin"));
+        assertTrue(facade.contains("drawPlacementSkin"));
+        assertTrue(placement.contains("drawSlab"));
+        assertTrue(placement.contains("drawStairs"));
+        assertTrue(placement.contains("drawTrapdoor"));
+        assertTrue(placement.contains("drawFenceGate"));
+        assertTrue(placement.contains("drawAxisSkin"));
 
         assertTrue(renderer.contains("case TECHNICAL_TRACE"));
         assertTrue(renderer.contains("case GLASS_INSPECTION"));
@@ -38,7 +36,6 @@ final class VisualAssistanceRenderingContractTest {
         assertTrue(renderer.contains("case MATERIAL_HIGHLIGHT -> { }"));
         assertTrue(renderer.contains("case NETHER_PALETTE"));
         assertTrue(renderer.contains("SurfaceLineVisualGeometry.drawPlacementSkin"));
-        assertTrue(renderer.contains("powered=true"));
         assertFalse(renderer.contains("SurfaceLineVisualGeometry.drawMaterialSkin"));
         assertFalse(renderer.contains("PULSE_COLORS"));
         assertFalse(renderer.contains("glassColor("));
@@ -49,23 +46,41 @@ final class VisualAssistanceRenderingContractTest {
     }
 
     @Test
+    void rendererPreparesFrameStateOnceAndBoundsEveryDistantWorldLineMode() throws IOException {
+        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java");
+        String target = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteRenderTarget.java");
+        String detail = read("src/main/java/dev/chise/chisetweaks/core/performance/WorksiteOverlayDetailPolicy.java");
+
+        assertTrue(renderer.contains("WorksiteRenderTarget.prepare(target)"));
+        assertTrue(renderer.contains("WorksiteOverlayDetailPolicy.Detail.COMPACT"));
+        assertTrue(renderer.contains("drawCompactFrame"));
+        assertTrue(renderer.contains("drawCompactPlacementSkin"));
+        assertTrue(renderer.contains("vertices, pose, target.position(), stateColor, 1.8f"));
+        assertTrue(target.contains("details.contains(\"powered=true\")"));
+        assertTrue(target.contains("blockId.endsWith(\"tripwire_hook\")"));
+        assertTrue(target.contains("Math.floorMod(source.position().hashCode(), 8)"));
+        assertTrue(detail.contains("FULL_DETAIL_DISTANCE_SQUARED = 49.0"));
+
+        assertFalse(renderer.contains("presentation().details().contains"));
+        assertFalse(renderer.contains("position().hashCode()"));
+        assertFalse(renderer.contains("endsWith(\"tripwire_hook\")"));
+    }
+
+    @Test
     void rendererBuildCanBeIdentifiedFromTheRuntimeLog() throws IOException {
-        String renderer = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java"));
-        String properties = Files.readString(ROOT.resolve("gradle.properties"));
+        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java");
+        String properties = read("gradle.properties");
 
         assertTrue(properties.contains("mod_version=0.6.10+mc26.1.2"));
-        assertTrue(renderer.contains("RENDERER_REVISION = \"surface-line-v2\""));
+        assertTrue(renderer.contains("RENDERER_REVISION = \"surface-line-v4-budgeted\""));
         assertTrue(renderer.contains("Visual renderer {} active in ChiseTweaks {}"));
         assertTrue(renderer.contains("rendererIdentityLogged"));
     }
 
     @Test
     void nonMaterialWorldLinePaletteAvoidsConfiguredSchematicOverlayColors() throws IOException {
-        String style = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy.java"));
-        String renderer = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java"));
+        String style = read("src/main/java/dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy.java");
+        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java");
         String combined = style + "\n" + renderer;
 
         for (String reserved : new String[] {
@@ -88,14 +103,18 @@ final class VisualAssistanceRenderingContractTest {
 
     @Test
     void visibilitySamplingTargetsThinAndShapedBlockGeometryWithoutWallThroughFallback() throws IOException {
-        String scanner = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java"));
+        String scanner = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java");
 
         assertTrue(scanner.contains("THIN_TECHNICAL_SAMPLES"));
         assertTrue(scanner.contains("GLASS_SAMPLES"));
         assertTrue(scanner.contains("SHAPED_BLOCK_SAMPLES"));
         assertTrue(scanner.contains("{0.50, 0.08, 0.50}"));
         assertTrue(scanner.contains("result.getBlockPos().equals(position)"));
+        assertTrue(scanner.contains("remainingLineOfSightRays--"));
         assertFalse(scanner.contains("return true; // wall-through"));
+    }
+
+    private static String read(String relative) throws IOException {
+        return Files.readString(ROOT.resolve(relative));
     }
 }

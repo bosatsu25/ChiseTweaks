@@ -83,7 +83,10 @@ jacoco {
 def qualityGateClasses = [
         'dev/chise/chisetweaks/config/FeatureConfigDocumentPolicy*.class',
         'dev/chise/chisetweaks/config/LocalFeatureConfigDocumentPolicy*.class',
+        'dev/chise/chisetweaks/core/performance/VisualModelReloadThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteCandidateRetentionPolicy*.class',
+        'dev/chise/chisetweaks/core/performance/WorksiteOverlayDetailPolicy*.class',
+        'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
         'dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy*.class',
         'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
@@ -95,6 +98,7 @@ def qualityGateClasses = [
         'dev/chise/chisetweaks/core/vision/OreHighlightLightingPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualAssistanceStylePolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualModelSelectionPolicy*.class',
+        'dev/chise/chisetweaks/core/vision/VisualTargetGroupPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetSelectionPolicy*.class'
 ]
 
@@ -133,7 +137,10 @@ pitest {
     targetClasses = [
         'dev.chise.chisetweaks.config.FeatureConfigDocumentPolicy',
         'dev.chise.chisetweaks.config.LocalFeatureConfigDocumentPolicy',
+        'dev.chise.chisetweaks.core.performance.VisualModelReloadThrottlePolicy',
         'dev.chise.chisetweaks.core.performance.WorksiteCandidateRetentionPolicy',
+        'dev.chise.chisetweaks.core.performance.WorksiteOverlayDetailPolicy',
+        'dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy',
         'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
         'dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy',
         'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
@@ -146,6 +153,7 @@ pitest {
         'dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy',
         'dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy',
         'dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy',
+        'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy'
     ]
     targetTests = [

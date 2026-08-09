@@ -46,7 +46,7 @@ final class LocalFeatureConfigHardeningTest {
                 config.worksiteVisibilityVerticalRadius);
         assertEquals(WorksiteVisibilityBudgetPolicy.MIN_INTERVAL_TICKS,
                 config.worksiteVisibilityIntervalTicks);
-        assertEquals(WorksiteVisibilityBudgetPolicy.MAX_HUD_RESULTS,
+        assertEquals(WorksiteVisibilityBudgetPolicy.LEGACY_MAX_RESULTS,
                 config.worksiteVisibilityMaxResults);
         assertEquals(WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS,
                 config.worksiteVisibilityMaxOverlayResults);
