@@ -58,6 +58,46 @@ final class RuntimeBugHardeningContractTest {
         assertEquals(2, occurrences(source, "catch (IOException | RuntimeException exception)"));
     }
 
+    @Test
+    void failedVisualResourceReloadDoesNotPretendTheStagedModelMaskWasApplied() throws IOException {
+        String coordinator = read(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/VisualModelReloadCoordinator.java");
+
+        assertTrue(coordinator.contains("stagedMaterialModelMask"));
+        assertTrue(coordinator.contains("stagedStateKnown"));
+        assertTrue(coordinator.contains("commitStagedState()"));
+        assertTrue(coordinator.contains("discardStagedState()"));
+        String failureBranch = between(coordinator, "} else {", "RELOAD_IN_FLIGHT.set(false)");
+        assertTrue(failureBranch.contains("discardStagedState()"));
+        assertTrue(failureBranch.contains("RELOAD_THROTTLE.onReloadFailed()"));
+        assertFalse(failureBranch.contains("commitStagedState()"));
+    }
+
+    @Test
+    void visualReloadThrottleSerializesTickAndCompletionState() throws IOException {
+        String throttle = read(
+                "src/main/java/dev/chise/chisetweaks/core/performance/VisualModelReloadThrottlePolicy.java");
+
+        assertTrue(throttle.contains("public synchronized boolean shouldRequestReload"));
+        assertTrue(throttle.contains("public synchronized void onReloadSucceeded"));
+        assertTrue(throttle.contains("public synchronized void onReloadFailed"));
+        assertTrue(throttle.contains("public synchronized void reset"));
+        assertTrue(throttle.contains("public synchronized int retryCooldownTicks"));
+    }
+
+    @Test
+    void sceneFilterEditorUsesBoundedValidatedListsAndCompactControls() throws IOException {
+        String editor = read("src/main/java/dev/chise/chisetweaks/gui/ChiseSceneFilterEditorScreen.java");
+
+        assertTrue(editor.contains("Identifier.tryParse(raw)"));
+        assertTrue(editor.contains("ConfigListPolicy.sanitize(updated)"));
+        assertTrue(editor.contains("ConfigListPolicy.MAX_ENTRIES"));
+        assertTrue(editor.contains("pageSize = Math.max(2, Math.min(10"));
+        assertTrue(editor.contains(".bounds(panelX + 8, footerY, 58, 20)"));
+        assertTrue(editor.contains(".bounds(panelX + 132, footerY, 104, 20)"));
+        assertTrue(editor.contains(".bounds(panelX + panelWidth - 88, footerY, 80, 20)"));
+    }
+
     private static String read(String relative) throws IOException {
         return Files.readString(ROOT.resolve(relative));
     }
