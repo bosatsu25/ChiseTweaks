@@ -15,7 +15,7 @@ import java.util.Locale;
 
 /** Standalone ChiseTweaks settings UI. It does not depend on another mod's config surface. */
 public final class ChiseTweaksConfigScreen extends Screen {
-    private static ChiseTweaksUiSection selectedSection = ChiseTweaksUiSection.PLACEMENT;
+    private static ChiseTweaksUiSection selectedSection = ChiseTweaksUiSection.RESOURCES;
     private final ChiseTweaksSettingsController controller;
     private final ArrayList<ChiseTweaksSettingRowView> rows = new ArrayList<>();
     private final ArrayList<ChiseTweaksSettingRowView> filteredRows = new ArrayList<>();
