@@ -19,14 +19,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.Map;
 
 /**
- * Chise-owned material-highlight block-model path.
+ * Chise-owned ore-highlight block-model path.
  *
- * <p>The vanilla/resource-pack texture remains the base layer. Chise adds only a thin animated
- * frame model around visible block edges. This keeps the material recognizable while making the
- * target easy to pick out at a distance.</p>
+ * <p>The vanilla/resource-pack block remains the normally lit base layer. Chise replaces only the
+ * selected ore model with a generated base-plus-overlay model, then wraps that baked model so the
+ * slightly expanded overlay quads render at full brightness. No world light, block emission,
+ * server state, or packets are modified.</p>
  */
 public final class ChiseVisualModelPlugin {
-    public static final String REVISION = "material-model-highlights-1";
+    public static final String REVISION = "ore-highlight-emissive-overlay-2";
 
     private static final Map<Block, ModelSpec> MODEL_REPLACEMENTS = Map.ofEntries(
             replacement(Blocks.OBSIDIAN, Target.MATERIAL_OBSIDIAN, "obsidian"),
@@ -65,8 +66,14 @@ public final class ChiseVisualModelPlugin {
                         return new SingleVariant.Unbaked(new Variant(replacement)).asRoot();
                     });
 
+            pluginContext.modifyBlockModelAfterBake().register(
+                    ModelModifier.WRAP_PHASE,
+                    (model, context) -> replacementModel(context.state(), activeMaterialMask) == null
+                            ? model
+                            : new FullbrightOreHighlightModel(model));
+
             ChiseTweaksClient.LOGGER.info(
-                    "Visual model {} active in ChiseTweaks {}; {} material target family/families use Chise block models",
+                    "Visual model {} active in ChiseTweaks {}; {} ore target family/families use full-bright Chise overlays",
                     REVISION,
                     ChiseTweaksMetadata.MOD_VERSION,
                     Integer.bitCount(activeMaterialMask));
