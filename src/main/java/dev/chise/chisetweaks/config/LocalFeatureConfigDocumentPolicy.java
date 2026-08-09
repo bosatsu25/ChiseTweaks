@@ -8,25 +8,20 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
 
-/** Schema gate for the small local JSON document before Gson materializes it. */
+/** Schema gate for the retained local JSON settings before Gson materializes them. */
 final class LocalFeatureConfigDocumentPolicy {
     private static final Set<String> BOOLEAN_KEYS = Set.of(
             "lavaHighlightEnabled",
-            "lavaHighlightSource",
-            "lavaHighlightFlowing",
             "worksiteVisibilityWorldOverlay",
             "worksiteVisibilityExclusiveMode");
     private static final Set<String> INTEGER_KEYS = Set.of(
-            "lavaSourceColor",
-            "lavaFlowingColor",
             "worksiteVisibilityHorizontalRadius",
             "worksiteVisibilityVerticalRadius",
             "worksiteVisibilityIntervalTicks",
             "worksiteVisibilityMaxResults",
             "worksiteVisibilityMaxOverlayResults",
             "visualTargetMask",
-            "visualTargetSchemaVersion",
-            "pumpkinScaffoldPlacementRange");
+            "visualTargetSchemaVersion");
 
     private LocalFeatureConfigDocumentPolicy() {}
 
@@ -44,7 +39,7 @@ final class LocalFeatureConfigDocumentPolicy {
                 if (!isExactInt(value)) throw new IllegalArgumentException("invalid integer config field: " + key);
                 merged.add(key, value.deepCopy());
             }
-            // Unknown keys are ignored for forward compatibility.
+            // Removed and unknown keys are ignored so old config files degrade safely.
         }
         return merged;
     }
