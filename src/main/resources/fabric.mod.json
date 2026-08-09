@@ -16,6 +16,9 @@
   "entrypoints": {
     "client": [
       "dev.chise.chisetweaks.ChiseTweaksClient"
+    ],
+    "modmenu": [
+      "dev.chise.chisetweaks.compat.ChiseTweaksModMenu"
     ]
   },
   "mixins": [
@@ -45,7 +48,8 @@
       "mixinFailureMode": "fail-soft",
       "settingsOwnership": "standalone",
       "externalConfigLibraryRequired": false,
-      "modMenuRequired": false
+      "modMenuRequired": false,
+      "modMenuIntegration": "optional"
     }
   }
 }
