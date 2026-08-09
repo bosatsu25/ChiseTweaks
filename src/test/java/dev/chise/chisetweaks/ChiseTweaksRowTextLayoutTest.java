@@ -23,8 +23,8 @@ final class ChiseTweaksRowTextLayoutTest {
                 10,
                 String::length);
 
-        assertEquals("かぼちゃを使った設", lines.first());
-        assertEquals("置作業を補助する", lines.second());
+        assertEquals("かぼちゃを使った設置", lines.first());
+        assertEquals("作業を補助する", lines.second());
         assertEquals("かぼちゃを使った設置作業を補助する", lines.first() + lines.second());
         assertEquals(2, lines.lineCount());
     }
