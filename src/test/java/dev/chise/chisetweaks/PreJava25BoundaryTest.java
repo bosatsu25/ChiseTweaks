@@ -21,10 +21,10 @@ final class PreJava25BoundaryTest {
         assertEquals(8, WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(8));
         assertEquals(8, WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(9));
 
-        assertEquals(1, WorksiteVisibilityBudgetPolicy.clampHudResults(0));
-        assertEquals(1, WorksiteVisibilityBudgetPolicy.clampHudResults(1));
-        assertEquals(8, WorksiteVisibilityBudgetPolicy.clampHudResults(8));
-        assertEquals(8, WorksiteVisibilityBudgetPolicy.clampHudResults(9));
+        assertEquals(1, WorksiteVisibilityBudgetPolicy.clampLegacyResults(0));
+        assertEquals(1, WorksiteVisibilityBudgetPolicy.clampLegacyResults(1));
+        assertEquals(8, WorksiteVisibilityBudgetPolicy.clampLegacyResults(8));
+        assertEquals(8, WorksiteVisibilityBudgetPolicy.clampLegacyResults(9));
 
         assertEquals(23, WorksiteVisibilityBudgetPolicy.clampOverlayResults(23));
         assertEquals(24, WorksiteVisibilityBudgetPolicy.clampOverlayResults(24));
