@@ -14,7 +14,8 @@ final class ChiseTweaksSettingRowView {
     final String searchableText;
     int screenY;
     boolean renderVisible;
-    String renderedDescription = "";
+    String renderedDescriptionLine1 = "";
+    String renderedDescriptionLine2 = "";
 
     ChiseTweaksSettingRowView(
             ChiseTweaksSettingRowDefinition definition,
@@ -32,6 +33,16 @@ final class ChiseTweaksSettingRowView {
 
     static ChiseTweaksSettingRowView header(ChiseTweaksSettingRowDefinition definition) {
         return new ChiseTweaksSettingRowView(definition, null, null, null, null);
+    }
+
+    void cacheDescription(ChiseTweaksRowTextLayout.WrappedLines lines) {
+        renderedDescriptionLine1 = lines == null ? "" : lines.first();
+        renderedDescriptionLine2 = lines == null ? "" : lines.second();
+    }
+
+    int renderedDescriptionLineCount() {
+        if (renderedDescriptionLine1.isEmpty()) return 0;
+        return renderedDescriptionLine2.isEmpty() ? 1 : 2;
     }
 
     void setWidgetsVisible(boolean visible) {
