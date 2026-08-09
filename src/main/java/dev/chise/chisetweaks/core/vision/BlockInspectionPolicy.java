@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/** Pure classification and bounded state-summary policy for visual inspection. */
+/** Pure classification and bounded state-summary policy for retained visual inspection features. */
 public final class BlockInspectionPolicy {
     private static final int MAX_DETAILS = 8;
     private static final int MAX_VALUE_LENGTH = 48;
@@ -26,9 +26,6 @@ public final class BlockInspectionPolicy {
             "bloom", "waterlogged", "facing");
     private static final Set<String> GLASS_PROPERTIES = Set.of(
             "north", "east", "south", "west", "waterlogged");
-    private static final Set<String> PLACEMENT_PROPERTIES = Set.of(
-            "facing", "axis", "half", "type", "shape", "face", "open",
-            "lit", "honey_level", "in_wall", "powered");
 
     private static final Set<String> MATERIAL_HIGHLIGHT_IDS = createMaterialHighlightIds();
 
@@ -83,7 +80,6 @@ public final class BlockInspectionPolicy {
             case TECHNICAL_TRACE -> TECHNICAL_PROPERTIES;
             case HIDDEN_SURFACE -> HIDDEN_PROPERTIES;
             case GLASS_INSPECTION -> GLASS_PROPERTIES;
-            case PLACEMENT_GUIDE -> PLACEMENT_PROPERTIES;
             case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> Set.of();
         };
 
@@ -120,7 +116,6 @@ public final class BlockInspectionPolicy {
         if (isTechnical(id)) result.add(BlockInspectionCategory.TECHNICAL_TRACE);
         if (isHiddenSurface(id)) result.add(BlockInspectionCategory.HIDDEN_SURFACE);
         if (isGlass(id)) result.add(BlockInspectionCategory.GLASS_INSPECTION);
-        if (isPlacementGuide(id)) result.add(BlockInspectionCategory.PLACEMENT_GUIDE);
         if (MATERIAL_HIGHLIGHT_IDS.contains(id)) result.add(BlockInspectionCategory.MATERIAL_HIGHLIGHT);
         if (NETHER_PALETTE_IDS.contains(id)) result.add(BlockInspectionCategory.NETHER_PALETTE);
         return Set.copyOf(result);
@@ -137,7 +132,6 @@ public final class BlockInspectionPolicy {
             case TECHNICAL_TRACE -> isTechnical(id);
             case HIDDEN_SURFACE -> isHiddenSurface(id);
             case GLASS_INSPECTION -> isGlass(id);
-            case PLACEMENT_GUIDE -> isPlacementGuide(id);
             case MATERIAL_HIGHLIGHT -> MATERIAL_HIGHLIGHT_IDS.contains(id);
             case NETHER_PALETTE -> NETHER_PALETTE_IDS.contains(id);
             case NONE -> false;
@@ -177,27 +171,6 @@ public final class BlockInspectionPolicy {
                 || id.equals("minecraft:tinted_glass")
                 || id.endsWith("_stained_glass")
                 || id.endsWith("_stained_glass_pane");
-    }
-
-    private static boolean isPlacementGuide(String id) {
-        if (!id.startsWith("minecraft:")) return false;
-        return id.equals("minecraft:anvil")
-                || id.equals("minecraft:beehive")
-                || id.equals("minecraft:campfire")
-                || id.equals("minecraft:soul_campfire")
-                || id.equals("minecraft:grindstone")
-                || id.equals("minecraft:bamboo_block")
-                || id.equals("minecraft:stripped_bamboo_block")
-                || id.endsWith("_fence_gate")
-                || id.endsWith("_froglight")
-                || id.endsWith("_glazed_terracotta")
-                || id.endsWith("_slab")
-                || id.endsWith("_stairs")
-                || id.endsWith("_trapdoor")
-                || id.endsWith("_log")
-                || id.endsWith("_wood")
-                || id.endsWith("_stem")
-                || id.endsWith("_hyphae");
     }
 
     private static String normalizeBlockId(String raw) {
