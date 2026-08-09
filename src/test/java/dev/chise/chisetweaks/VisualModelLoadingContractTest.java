@@ -152,14 +152,14 @@ final class VisualModelLoadingContractTest {
     }
 
     @Test
-    void oreHighlightLocalizationDescribesFullBrightModelBackedRendering() throws IOException {
+    void oreHighlightLocalizationMatchesTheModelBackedFeature() throws IOException {
         String ja = Files.readString(ROOT.resolve("src/main/resources/assets/chisetweaks/lang/ja_jp.json"));
         String en = Files.readString(ROOT.resolve("src/main/resources/assets/chisetweaks/lang/en_us.json"));
 
         assertTrue(ja.contains("\"config.name.materialhighlights\": \"鉱石ハイライト\""));
         assertTrue(en.contains("\"config.name.materialhighlights\": \"Ore Highlights\""));
-        assertTrue(ja.contains("最大光量相当"));
-        assertTrue(en.contains("full brightness"));
+        assertTrue(ja.contains("固有色のアニメーション枠"));
+        assertTrue(en.contains("ore-matched animated frames"));
         assertFalse(ja.contains("件数制限付き"));
         assertFalse(ja.contains("独自生成した線描画で、見えている鉱石"));
         assertFalse(en.contains("Only loaded blocks with direct line of sight are considered"));
