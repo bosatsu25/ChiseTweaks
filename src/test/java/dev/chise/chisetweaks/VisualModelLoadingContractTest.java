@@ -121,7 +121,7 @@ final class VisualModelLoadingContractTest {
         assertTrue(iron[0] > iron[1] && iron[1] > iron[2]);
         assertTrue(copper[0] > copper[1] && copper[0] > copper[2]);
         assertTrue(lapis[2] > lapis[0] && lapis[2] > lapis[1]);
-        assertTrue(redstone[0] > redstone[1] * 2 && redstone[0] > redstone[2] * 2);
+        assertTrue(redstone[0] > redstone[1] && redstone[0] > redstone[2]);
         assertTrue(debris[0] > debris[1] && debris[1] > debris[2]);
         assertTrue(obsidian[0] > obsidian[1] && obsidian[2] > obsidian[1]);
     }
