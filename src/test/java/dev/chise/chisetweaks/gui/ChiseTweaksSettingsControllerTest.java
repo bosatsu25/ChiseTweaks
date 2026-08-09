@@ -28,7 +28,9 @@ final class ChiseTweaksSettingsControllerTest {
                 "visibilityTargets",
                 "\"header.sceneFilter\"",
                 "\"focusBlocks\"",
+                "\"focusBlocksEdit\"",
                 "\"focusEntities\"",
+                "\"focusEntitiesEdit\"",
                 "\"header.visibilityDetails\"",
                 "\"lava\"",
                 "\"scanRange\"",
@@ -43,6 +45,8 @@ final class ChiseTweaksSettingsControllerTest {
         assertTrue(body.contains("\"ガラス検査\""));
         assertTrue(body.contains("\"視認スキャン範囲\""));
         assertTrue(body.contains("\"スキャン間隔\""));
+        assertTrue(body.contains("EDIT_BLOCK_FILTER"));
+        assertTrue(body.contains("EDIT_ENTITY_FILTER"));
     }
 
     @Test
@@ -94,18 +98,44 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void controllerHasNoKeybindPageOrSoloMode() throws IOException {
+    void controllerHasNoKeybindPageOrSoloModeAndUsesExplicitSceneFilterActions() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         String combined = (controller + "\n" + screen).toLowerCase();
 
         assertFalse(controller.contains("addHotkeyRows"));
         assertFalse(controller.contains("case HOTKEYS"));
-        assertFalse(controller.contains("ChiseTweaksSettingRowDefinition.action"));
+        assertTrue(controller.contains("ChiseTweaksSettingRowDefinition.action"));
+        assertTrue(screen.contains("ChiseSceneFilterEditorScreen"));
         assertFalse(screen.contains("ChiseTweaksHotkeyScreen"));
         assertFalse(screen.contains("BooleanHotkeyGuiWrapper"));
         assertFalse(combined.contains("solo選択"));
         assertFalse(combined.contains("case solo"));
+    }
+
+    @Test
+    void visibilityResetRestoresEveryOwnedAdvancedSetting() throws IOException {
+        String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
+        String reset = between(controller, "boolean resetSection", "void saveFeatureConfig");
+
+        for (String token : new String[] {
+                "BuilderFocusConfig.BLOCK_RULE_MODE.resetToDefault()",
+                "BuilderFocusConfig.BLOCK_WHITELIST.resetToDefault()",
+                "BuilderFocusConfig.BLOCK_BLACKLIST.resetToDefault()",
+                "BuilderFocusConfig.ENTITY_RULE_MODE.resetToDefault()",
+                "BuilderFocusConfig.ENTITY_WHITELIST.resetToDefault()",
+                "BuilderFocusConfig.ENTITY_BLACKLIST.resetToDefault()",
+                "LocalFeatureSettings.LAVA_SOURCE.resetToDefault()",
+                "LocalFeatureSettings.LAVA_FLOWING.resetToDefault()",
+                "LocalFeatureSettings.LAVA_SOURCE_COLOR.resetToDefault()",
+                "LocalFeatureSettings.LAVA_FLOWING_COLOR.resetToDefault()",
+                "LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS.resetToDefault()",
+                "LocalFeatureSettings.WORKSITE_VISIBILITY_MAX_OVERLAYS.resetToDefault()",
+                "LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY.resetToDefault()",
+                "LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE.resetToDefault()"
+        }) {
+            assertTrue(reset.contains(token), token);
+        }
     }
 
     private static String read(String relative) throws IOException {
