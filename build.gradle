@@ -144,7 +144,7 @@ pitest {
         'dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy',
         'dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy',
         'dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy',
-        'dev.chise/chisetweaks/core/vision/VisualTargetGroupPolicy',
+        'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy'
     ]
     targetTests = [
