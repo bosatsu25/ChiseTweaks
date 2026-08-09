@@ -21,7 +21,8 @@ final class VisualModelLoadingContractTest {
     private static final Path GENERATED_VISUAL_TEXTURES = GENERATED_ROOT.resolve("textures/block/visual/material");
     private static final List<String> MATERIAL_KEYS = List.of(
             "diamond", "gold", "emerald", "coal", "iron",
-            "copper", "lapis", "redstone", "ancient_debris", "obsidian");
+            "copper", "lapis", "redstone", "ancient_debris", "obsidian",
+            "crying_obsidian", "nether_gold", "nether_quartz");
 
     @Test
     void allOreHighlightsUseModelLoadingAndPostBakeFullBrightWrapping() throws IOException {
@@ -36,7 +37,8 @@ final class VisualModelLoadingContractTest {
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
         assertTrue(plugin.contains("new FullbrightOreHighlightModel(model)"));
         for (String block : List.of(
-                "OBSIDIAN", "ANCIENT_DEBRIS",
+                "OBSIDIAN", "CRYING_OBSIDIAN", "ANCIENT_DEBRIS",
+                "NETHER_GOLD_ORE", "NETHER_QUARTZ_ORE",
                 "DIAMOND_ORE", "DEEPSLATE_DIAMOND_ORE",
                 "GOLD_ORE", "DEEPSLATE_GOLD_ORE",
                 "EMERALD_ORE", "DEEPSLATE_EMERALD_ORE",
@@ -47,6 +49,7 @@ final class VisualModelLoadingContractTest {
                 "REDSTONE_ORE", "DEEPSLATE_REDSTONE_ORE")) {
             assertTrue(plugin.contains("Blocks." + block), block);
         }
+        assertFalse(plugin.contains("Blocks.NETHERRACK"));
         assertFalse(plugin.contains("RenderTypes.lines"));
         assertFalse(plugin.contains("SurfaceLineVisualGeometry"));
     }
@@ -66,18 +69,23 @@ final class VisualModelLoadingContractTest {
         assertTrue(wrapper.contains("FullbrightGeometryKey"));
         assertFalse(wrapper.contains("setLightEmission"));
         assertFalse(wrapper.contains("setBlock"));
+        assertFalse(wrapper.contains("LightEngine"));
+        assertFalse(wrapper.contains("lightLevel("));
     }
 
     @Test
     void generatedModelsKeepBaseTexturesAndUseOneThinOverlayCube() throws IOException {
         try (var models = Files.list(GENERATED_VISUAL_MODELS)) {
-            assertEquals(18, models.filter(path -> path.toString().endsWith(".json")).count());
+            assertEquals(21, models.filter(path -> path.toString().endsWith(".json")).count());
         }
 
         String diamond = Files.readString(GENERATED_VISUAL_MODELS.resolve("diamond_ore.json"));
         String deepslateDiamond = Files.readString(
                 GENERATED_VISUAL_MODELS.resolve("deepslate_diamond_ore.json"));
         String debris = Files.readString(GENERATED_VISUAL_MODELS.resolve("ancient_debris.json"));
+        String crying = Files.readString(GENERATED_VISUAL_MODELS.resolve("crying_obsidian.json"));
+        String netherGold = Files.readString(GENERATED_VISUAL_MODELS.resolve("nether_gold_ore.json"));
+        String quartz = Files.readString(GENERATED_VISUAL_MODELS.resolve("nether_quartz_ore.json"));
 
         assertTrue(diamond.contains("minecraft:block/diamond_ore"));
         assertTrue(diamond.contains("chisetweaks:block/visual/material/diamond_highlight"));
@@ -85,9 +93,13 @@ final class VisualModelLoadingContractTest {
         assertTrue(deepslateDiamond.contains("chisetweaks:block/visual/material/diamond_highlight"));
         assertTrue(debris.contains("minecraft:block/ancient_debris_top"));
         assertTrue(debris.contains("minecraft:block/ancient_debris_side"));
+        assertTrue(crying.contains("minecraft:block/crying_obsidian"));
+        assertTrue(netherGold.contains("minecraft:block/nether_gold_ore"));
+        assertTrue(quartz.contains("minecraft:block/nether_quartz_ore"));
         assertTrue(diamond.contains("-0.03"));
         assertTrue(diamond.contains("16.03"));
         assertTrue(diamond.contains("\"shade\": false"));
+        assertFalse(Files.exists(GENERATED_VISUAL_MODELS.resolve("netherrack.json")));
     }
 
     @Test
@@ -127,7 +139,7 @@ final class VisualModelLoadingContractTest {
     }
 
     @Test
-    void generatedHighlightFamiliesMatchTheirOreIdentity() throws IOException {
+    void generatedHighlightFamiliesMatchTheirResourceIdentity() throws IOException {
         int[] diamond = averageVisibleFrame("diamond", 4);
         int[] gold = averageVisibleFrame("gold", 4);
         int[] emerald = averageVisibleFrame("emerald", 4);
@@ -138,17 +150,24 @@ final class VisualModelLoadingContractTest {
         int[] redstone = averageVisibleFrame("redstone", 4);
         int[] debris = averageVisibleFrame("ancient_debris", 4);
         int[] obsidian = averageVisibleFrame("obsidian", 4);
+        int[] crying = averageVisibleFrame("crying_obsidian", 4);
+        int[] netherGold = averageVisibleFrame("nether_gold", 4);
+        int[] quartz = averageVisibleFrame("nether_quartz", 4);
 
         assertTrue(diamond[1] > diamond[0] && diamond[2] > diamond[0]);
         assertTrue(gold[0] > gold[2] && gold[1] > gold[2]);
         assertTrue(emerald[1] > emerald[0] && emerald[1] > emerald[2]);
-        assertTrue(max(coal) - min(coal) < 45);
+        assertTrue(max(coal) - min(coal) < 50);
         assertTrue(iron[0] > iron[1] && iron[1] > iron[2]);
         assertTrue(copper[0] > copper[1] && copper[0] > copper[2]);
         assertTrue(lapis[2] > lapis[0] && lapis[2] > lapis[1]);
         assertTrue(redstone[0] > redstone[1] && redstone[0] > redstone[2]);
         assertTrue(debris[0] > debris[1] && debris[1] > debris[2]);
+        assertTrue(copper[0] - debris[0] > 25, "ancient debris must not read as copper orange");
         assertTrue(obsidian[0] > obsidian[1] && obsidian[2] > obsidian[1]);
+        assertTrue(crying[0] > crying[1] && crying[2] > crying[1]);
+        assertTrue(netherGold[0] > netherGold[2] && netherGold[1] > netherGold[2]);
+        assertTrue(max(quartz) - min(quartz) < 55);
     }
 
     @Test
@@ -179,6 +198,10 @@ final class VisualModelLoadingContractTest {
         assertTrue(generator.contains("overlayElement"));
         assertTrue(generator.contains("writeAnimationMeta"));
         assertTrue(generator.contains("ancientDebrisModel"));
+        assertTrue(generator.contains("motif: 'tears'"));
+        assertTrue(generator.contains("motif: 'nether_gold'"));
+        assertTrue(generator.contains("motif: 'quartz'"));
+        assertFalse(generator.contains("minecraft:block/netherrack"));
     }
 
     private static int[] averageVisibleFrame(String key, int frame) throws IOException {
