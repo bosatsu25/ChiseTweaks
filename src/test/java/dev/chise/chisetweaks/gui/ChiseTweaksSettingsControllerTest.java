@@ -10,14 +10,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Source-level UI content contract; avoids bootstrapping Minecraft/MaLiLib in headless JUnit. */
+/** Source-level content contract for the standalone Chise settings controller. */
 final class ChiseTweaksSettingsControllerTest {
     private static final Path ROOT = Path.of(System.getProperty("user.dir"));
 
     @Test
     void visibilityScreenKeepsTheApprovedGroupAndControlOrder() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
-        String body = between(controller, "private void addVisibilityRows", "private void addHotkeyRows");
+        String body = between(controller, "private void addVisibilityRows", "private void header(");
 
         assertOrdered(body,
                 "\"header.visibility\"",
@@ -83,23 +83,22 @@ final class ChiseTweaksSettingsControllerTest {
                 "resourceTargets");
         assertTrue(resources.contains("\"資源\""));
         assertTrue(resources.contains("\"ハイライト対象\""));
+        assertTrue(resources.contains("\"鉱石や資源の視認性をON/OFFする\""));
     }
 
     @Test
-    void keybindPageStaysAnExplicitActionListAndCategoryPagesHaveNoSoloMode() throws IOException {
+    void controllerHasNoKeybindPageOrSoloMode() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
-
-        String hotkeys = between(controller, "private void addHotkeyRows", "private void header(");
-        assertTrue(hotkeys.contains("FeatureSwitches.VALUES"));
-        assertTrue(hotkeys.contains("ChiseTweaksSettingRowDefinition.action"));
-        assertTrue(hotkeys.contains("\"キー設定\""));
-        assertTrue(hotkeys.contains("\"キー割り当てを編集する\""));
-
         String combined = (controller + "\n" + screen).toLowerCase();
+
+        assertFalse(controller.contains("addHotkeyRows"));
+        assertFalse(controller.contains("case HOTKEYS"));
+        assertFalse(controller.contains("ChiseTweaksSettingRowDefinition.action"));
+        assertFalse(screen.contains("ChiseTweaksHotkeyScreen"));
+        assertFalse(screen.contains("BooleanHotkeyGuiWrapper"));
         assertFalse(combined.contains("solo選択"));
         assertFalse(combined.contains("case solo"));
-        assertFalse(screen.contains("BooleanHotkeyGuiWrapper"));
     }
 
     private static String read(String relative) throws IOException {

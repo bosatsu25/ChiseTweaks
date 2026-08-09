@@ -1,16 +1,10 @@
 package dev.chise.chisetweaks.config;
 
-import com.google.common.collect.ImmutableList;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
-/**
- * Stable registry of user-facing MaLiLib switches.
- *
- * <p>Runtime metadata remains in {@link FeatureDefinition}; this registry only associates each
- * user-visible definition with its config adapter and fallback help text.</p>
- */
+/** Stable registry of Chise-owned user-facing feature switches. */
 public final class FeatureSwitches {
     public static final FeatureSwitch PUMPKIN_SCAFFOLD = create(
             FeatureDefinition.PUMPKIN_SCAFFOLD,
@@ -40,7 +34,7 @@ public final class FeatureSwitches {
             FeatureDefinition.NETHER_PALETTE,
             "Apply bounded color-coded outlines to visible Nether construction materials.");
 
-    public static final ImmutableList<FeatureSwitch> VALUES = ImmutableList.copyOf(List.of(
+    public static final List<FeatureSwitch> VALUES = List.of(
             PUMPKIN_SCAFFOLD,
             BUILDER_FOCUS_BLOCKS,
             BUILDER_FOCUS_ENTITIES,
@@ -49,10 +43,9 @@ public final class FeatureSwitches {
             GLASS_INSPECTION,
             PLACEMENT_GUIDE,
             MATERIAL_HIGHLIGHTS,
-            NETHER_PALETTE));
+            NETHER_PALETTE);
 
     private FeatureSwitches() {}
-
 
     private static FeatureSwitch create(FeatureDefinition definition, String fallbackComment) {
         return new FeatureSwitch(definition, fallbackComment);

@@ -1,71 +1,57 @@
 package dev.chise.chisetweaks.config;
 
-import dev.chise.chisetweaks.core.definition.FeatureArea;
 import dev.chise.chisetweaks.core.policy.PumpkinScaffoldPolicy;
-import fi.dy.masa.malilib.config.IConfigBase;
-import fi.dy.masa.malilib.config.options.ConfigBoolean;
-import fi.dy.masa.malilib.config.options.ConfigInteger;
-import fi.dy.masa.malilib.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
-/** MaLiLib UI adapters for bounded client-side settings. */
+/** Chise-owned UI adapters for bounded client-side settings. */
 public final class LocalFeatureSettings {
-    public static final ConfigInteger PUMPKIN_SCAFFOLD_PLACEMENT_RANGE = new ConfigInteger(
+    public static final ChiseIntegerSetting PUMPKIN_SCAFFOLD_PLACEMENT_RANGE = new ChiseIntegerSetting(
             "localPumpkinScaffoldPlacementRange",
             PumpkinScaffoldPolicy.DEFAULT_PLACEMENT_RANGE,
             PumpkinScaffoldPolicy.MIN_PLACEMENT_RANGE,
             PumpkinScaffoldPolicy.MAX_PLACEMENT_RANGE,
-            "Maximum distance for a Pumpkin Scaffold air-placement attempt.");
+            "Pumpkin placement range", "かぼちゃ設置距離",
+            "Maximum distance for a Pumpkin Scaffold air-placement attempt.",
+            "かぼちゃを使った空中設置を試す最大距離です。");
 
-    public static final ConfigBoolean LAVA_SOURCE = new ConfigBoolean(
-            "localLavaHighlightSource", true, "Apply the source-lava highlight color.");
-    public static final ConfigBoolean LAVA_FLOWING = new ConfigBoolean(
-            "localLavaHighlightFlowing", true, "Apply the flowing-lava highlight color.");
-    public static final ConfigInteger LAVA_SOURCE_COLOR = new ConfigInteger(
+    public static final SimpleBooleanSetting LAVA_SOURCE = bool(
+            "localLavaHighlightSource", true,
+            "Source lava", "溶岩源",
+            "Apply the source-lava highlight color.", "溶岩源の強調色を適用します。");
+    public static final SimpleBooleanSetting LAVA_FLOWING = bool(
+            "localLavaHighlightFlowing", true,
+            "Flowing lava", "流れる溶岩",
+            "Apply the flowing-lava highlight color.", "流れる溶岩の強調色を適用します。");
+    public static final ChiseIntegerSetting LAVA_SOURCE_COLOR = integer(
             "localLavaSourceColorArgb", 0xFFFF3B30, Integer.MIN_VALUE, Integer.MAX_VALUE,
-            "Source-lava color as a signed ARGB integer.");
-    public static final ConfigInteger LAVA_FLOWING_COLOR = new ConfigInteger(
+            "Source lava ARGB", "溶岩源のARGB色");
+    public static final ChiseIntegerSetting LAVA_FLOWING_COLOR = integer(
             "localLavaFlowingColorArgb", 0xFFFF9500, Integer.MIN_VALUE, Integer.MAX_VALUE,
-            "Flowing-lava color as a signed ARGB integer.");
+            "Flowing lava ARGB", "流れる溶岩のARGB色");
 
-    public static final ConfigInteger WORKSITE_VISIBILITY_HORIZONTAL_RADIUS = new ConfigInteger(
+    public static final ChiseIntegerSetting WORKSITE_VISIBILITY_HORIZONTAL_RADIUS = integer(
             "localWorksiteVisibilityHorizontalRadius", 5, 1, 8,
-            "Horizontal radius for bounded local visibility scans. No chunks are loaded.");
-    public static final ConfigInteger WORKSITE_VISIBILITY_VERTICAL_RADIUS = new ConfigInteger(
+            "Horizontal scan radius", "視認スキャン範囲");
+    public static final ChiseIntegerSetting WORKSITE_VISIBILITY_VERTICAL_RADIUS = integer(
             "localWorksiteVisibilityVerticalRadius", 3, 1, 5,
-            "Vertical radius for bounded local visibility scans.");
-    public static final ConfigInteger WORKSITE_VISIBILITY_INTERVAL = new ConfigInteger(
+            "Vertical scan radius", "垂直スキャン範囲");
+    public static final ChiseIntegerSetting WORKSITE_VISIBILITY_INTERVAL = integer(
             "localWorksiteVisibilityIntervalTicks", 10, 5, 100,
-            "Ticks between local visibility scans.");
-    public static final ConfigInteger WORKSITE_VISIBILITY_MAX_OVERLAYS = new ConfigInteger(
+            "Scan interval", "スキャン間隔");
+    public static final ChiseIntegerSetting WORKSITE_VISIBILITY_MAX_OVERLAYS = integer(
             "localWorksiteVisibilityMaxOverlays", 12, 1, 24,
-            "Maximum visible blocks rendered by the bounded world overlay.");
-    public static final ConfigBoolean WORKSITE_VISIBILITY_WORLD_OVERLAY = new ConfigBoolean(
+            "Maximum overlays", "最大表示数");
+    public static final SimpleBooleanSetting WORKSITE_VISIBILITY_WORLD_OVERLAY = bool(
             "localWorksiteVisibilityWorldOverlay", true,
-            "Draw Chise-owned line markers for visible classified blocks.");
-    public static final ConfigBoolean WORKSITE_VISIBILITY_EXCLUSIVE_MODE = new ConfigBoolean(
+            "World overlay", "ワールド表示",
+            "Draw Chise-owned line markers for visible classified blocks.",
+            "見えている対象ブロックにChise独自の補助線を描画します。");
+    public static final SimpleBooleanSetting WORKSITE_VISIBILITY_EXCLUSIVE_MODE = bool(
             "localWorksiteVisibilityExclusiveMode", false,
-            "Keep at most one scan-based visibility mode active at a time.");
-
-    public static final List<IConfigBase> BUILDING_OPTIONS = List.of(
-            PUMPKIN_SCAFFOLD_PLACEMENT_RANGE);
-
-    public static final List<IConfigBase> RENDERING_OPTIONS = List.of(
-            LAVA_SOURCE,
-            LAVA_FLOWING,
-            LAVA_SOURCE_COLOR,
-            LAVA_FLOWING_COLOR,
-            WORKSITE_VISIBILITY_HORIZONTAL_RADIUS,
-            WORKSITE_VISIBILITY_VERTICAL_RADIUS,
-            WORKSITE_VISIBILITY_INTERVAL,
-            WORKSITE_VISIBILITY_MAX_OVERLAYS,
-            WORKSITE_VISIBILITY_WORLD_OVERLAY,
-            WORKSITE_VISIBILITY_EXCLUSIVE_MODE);
-
-    public static final List<IConfigBase> ALL_OPTIONS = allOptions();
+            "Exclusive visibility mode", "視認モード排他",
+            "Keep at most one scan-based visibility mode active at a time.",
+            "スキャン型の視認機能を同時に1つまでに制限します。");
 
     private static boolean initialized;
     private static boolean syncing;
@@ -74,59 +60,27 @@ public final class LocalFeatureSettings {
     private LocalFeatureSettings() {}
 
     public static synchronized void init() {
-        if (initialized) {
-            refreshTranslations();
-            return;
-        }
         syncFromStorage();
+        if (initialized) return;
         bindCallbacks();
         initialized = true;
-        refreshTranslations();
-    }
-
-    public static void refreshTranslations() {
-        for (IConfigBase option : ALL_OPTIONS) {
-            String base = "config.option." + option.getName().toLowerCase();
-            String displayName = StringUtils.getTranslatedOrFallback(
-                    base + ".name", StringUtils.splitCamelCase(option.getName()));
-            option.setPrettyName(displayName);
-            option.setTranslatedName(displayName);
-            option.setComment(StringUtils.getTranslatedOrFallback(
-                    base + ".comment", option.getComment()));
-        }
-    }
-
-    public static List<IConfigBase> optionsFor(FeatureArea area) {
-        if (area == null) return List.of();
-        return switch (area) {
-            case BUILDING -> BUILDING_OPTIONS;
-            case RENDERING -> RENDERING_OPTIONS;
-        };
-    }
-
-    private static List<IConfigBase> allOptions() {
-        ArrayList<IConfigBase> result = new ArrayList<>(
-                BUILDING_OPTIONS.size() + RENDERING_OPTIONS.size());
-        result.addAll(BUILDING_OPTIONS);
-        result.addAll(RENDERING_OPTIONS);
-        return List.copyOf(result);
     }
 
     private static void syncFromStorage() {
         syncing = true;
         try {
             LocalFeatureConfig c = LocalFeatureConfig.getInstance();
-            PUMPKIN_SCAFFOLD_PLACEMENT_RANGE.setIntegerValue(c.pumpkinScaffoldPlacementRange);
-            LAVA_SOURCE.setBooleanValue(c.lavaHighlightSource);
-            LAVA_FLOWING.setBooleanValue(c.lavaHighlightFlowing);
-            LAVA_SOURCE_COLOR.setIntegerValue(c.lavaSourceColor);
-            LAVA_FLOWING_COLOR.setIntegerValue(c.lavaFlowingColor);
-            WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setIntegerValue(c.worksiteVisibilityHorizontalRadius);
-            WORKSITE_VISIBILITY_VERTICAL_RADIUS.setIntegerValue(c.worksiteVisibilityVerticalRadius);
-            WORKSITE_VISIBILITY_INTERVAL.setIntegerValue(c.worksiteVisibilityIntervalTicks);
-            WORKSITE_VISIBILITY_MAX_OVERLAYS.setIntegerValue(c.worksiteVisibilityMaxOverlayResults);
-            WORKSITE_VISIBILITY_WORLD_OVERLAY.setBooleanValue(c.worksiteVisibilityWorldOverlay);
-            WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setBooleanValue(c.worksiteVisibilityExclusiveMode);
+            PUMPKIN_SCAFFOLD_PLACEMENT_RANGE.setIntegerValueSilently(c.pumpkinScaffoldPlacementRange);
+            LAVA_SOURCE.setBooleanValueSilently(c.lavaHighlightSource);
+            LAVA_FLOWING.setBooleanValueSilently(c.lavaHighlightFlowing);
+            LAVA_SOURCE_COLOR.setIntegerValueSilently(c.lavaSourceColor);
+            LAVA_FLOWING_COLOR.setIntegerValueSilently(c.lavaFlowingColor);
+            WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setIntegerValueSilently(c.worksiteVisibilityHorizontalRadius);
+            WORKSITE_VISIBILITY_VERTICAL_RADIUS.setIntegerValueSilently(c.worksiteVisibilityVerticalRadius);
+            WORKSITE_VISIBILITY_INTERVAL.setIntegerValueSilently(c.worksiteVisibilityIntervalTicks);
+            WORKSITE_VISIBILITY_MAX_OVERLAYS.setIntegerValueSilently(c.worksiteVisibilityMaxOverlayResults);
+            WORKSITE_VISIBILITY_WORLD_OVERLAY.setBooleanValueSilently(c.worksiteVisibilityWorldOverlay);
+            WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setBooleanValueSilently(c.worksiteVisibilityExclusiveMode);
         } finally {
             syncing = false;
         }
@@ -135,14 +89,10 @@ public final class LocalFeatureSettings {
     private static void bindCallbacks() {
         PUMPKIN_SCAFFOLD_PLACEMENT_RANGE.setValueChangeCallback(ignored -> save(
                 c -> c.pumpkinScaffoldPlacementRange = PUMPKIN_SCAFFOLD_PLACEMENT_RANGE.getIntegerValue()));
-        LAVA_SOURCE.setValueChangeCallback(ignored -> save(
-                c -> c.lavaHighlightSource = LAVA_SOURCE.getBooleanValue()));
-        LAVA_FLOWING.setValueChangeCallback(ignored -> save(
-                c -> c.lavaHighlightFlowing = LAVA_FLOWING.getBooleanValue()));
-        LAVA_SOURCE_COLOR.setValueChangeCallback(ignored -> save(
-                c -> c.lavaSourceColor = LAVA_SOURCE_COLOR.getIntegerValue()));
-        LAVA_FLOWING_COLOR.setValueChangeCallback(ignored -> save(
-                c -> c.lavaFlowingColor = LAVA_FLOWING_COLOR.getIntegerValue()));
+        LAVA_SOURCE.setValueChangeCallback(ignored -> save(c -> c.lavaHighlightSource = LAVA_SOURCE.getBooleanValue()));
+        LAVA_FLOWING.setValueChangeCallback(ignored -> save(c -> c.lavaHighlightFlowing = LAVA_FLOWING.getBooleanValue()));
+        LAVA_SOURCE_COLOR.setValueChangeCallback(ignored -> save(c -> c.lavaSourceColor = LAVA_SOURCE_COLOR.getIntegerValue()));
+        LAVA_FLOWING_COLOR.setValueChangeCallback(ignored -> save(c -> c.lavaFlowingColor = LAVA_FLOWING_COLOR.getIntegerValue()));
         WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> save(
                 c -> c.worksiteVisibilityHorizontalRadius = WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.getIntegerValue()));
         WORKSITE_VISIBILITY_VERTICAL_RADIUS.setValueChangeCallback(ignored -> save(
@@ -155,8 +105,7 @@ public final class LocalFeatureSettings {
                 c -> c.worksiteVisibilityWorldOverlay = WORKSITE_VISIBILITY_WORLD_OVERLAY.getBooleanValue()));
         WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setValueChangeCallback(ignored -> {
             if (syncing) return;
-            save(c -> c.worksiteVisibilityExclusiveMode =
-                    WORKSITE_VISIBILITY_EXCLUSIVE_MODE.getBooleanValue());
+            save(c -> c.worksiteVisibilityExclusiveMode = WORKSITE_VISIBILITY_EXCLUSIVE_MODE.getBooleanValue());
             worksiteVisibilityModeChangedCallback.run();
         });
     }
@@ -170,5 +119,34 @@ public final class LocalFeatureSettings {
         LocalFeatureConfig c = LocalFeatureConfig.getInstance();
         update.accept(c);
         c.save();
+    }
+
+    private static SimpleBooleanSetting bool(
+            String name,
+            boolean defaultValue,
+            String englishName,
+            String japaneseName,
+            String englishComment,
+            String japaneseComment) {
+        return new SimpleBooleanSetting(
+                name, defaultValue, englishName, japaneseName, englishComment, japaneseComment);
+    }
+
+    private static ChiseIntegerSetting integer(
+            String name,
+            int defaultValue,
+            int minValue,
+            int maxValue,
+            String englishName,
+            String japaneseName) {
+        return new ChiseIntegerSetting(
+                name,
+                defaultValue,
+                minValue,
+                maxValue,
+                englishName,
+                japaneseName,
+                englishName,
+                japaneseName);
     }
 }

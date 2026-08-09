@@ -1,31 +1,25 @@
 package dev.chise.chisetweaks.gui;
 
-import dev.chise.chisetweaks.config.ConfigUiLocalization;
+import dev.chise.chisetweaks.config.ChiseBooleanSetting;
+import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 import dev.chise.chisetweaks.config.FeatureConfig;
-import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
-import fi.dy.masa.malilib.config.IConfigBase;
-import fi.dy.masa.malilib.util.StringUtils;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Owns config/domain mapping for the Chise settings UI.
- *
- * <p>The Minecraft Screen is responsible only for widgets, layout and rendering. This controller
- * keeps feature/target grouping, bulk operations, resets and persistence out of the view layer.</p>
- */
+/** Owns config/domain mapping for the standalone Chise settings UI. */
 final class ChiseTweaksSettingsController {
     private final boolean japanese;
-    private final List<IConfigBase> placementTargets;
-    private final List<IConfigBase> resourceTargets;
-    private final List<IConfigBase> visibilityTargets;
+    private final List<ChiseBooleanSetting> placementTargets;
+    private final List<ChiseBooleanSetting> resourceTargets;
+    private final List<ChiseBooleanSetting> visibilityTargets;
 
     ChiseTweaksSettingsController(boolean japanese) {
         this.japanese = japanese;
@@ -35,15 +29,13 @@ final class ChiseTweaksSettingsController {
     }
 
     static ChiseTweaksSettingsController forCurrentLanguage() {
-        return new ChiseTweaksSettingsController("ja".equals(
-                StringUtils.getTranslatedOrFallback(
-                        "screen.chisetweaks.help.language.probe", "en")));
+        String probe = Component.translatable("screen.chisetweaks.help.language.probe").getString();
+        return new ChiseTweaksSettingsController("ja".equalsIgnoreCase(probe));
     }
 
     void initialize() {
         LocalFeatureSettings.init();
         VisualTargetSettings.init();
-        ConfigUiLocalization.refresh();
     }
 
     boolean japanese() {
@@ -57,7 +49,6 @@ final class ChiseTweaksSettingsController {
             case PLACEMENT -> addPlacementRows(rows);
             case RESOURCES -> addResourceRows(rows);
             case VISIBILITY -> addVisibilityRows(rows);
-            case HOTKEYS -> addHotkeyRows(rows);
             case HELP -> { }
         }
         return List.copyOf(rows);
@@ -108,9 +99,7 @@ final class ChiseTweaksSettingsController {
                 LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL.resetToDefault();
                 resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
             }
-            case HOTKEYS, HELP -> {
-                return false;
-            }
+            case HELP -> { return false; }
         }
         return true;
     }
@@ -128,7 +117,7 @@ final class ChiseTweaksSettingsController {
         bool(rows, "placementGuide", FeatureSwitches.PLACEMENT_GUIDE,
                 "設置方向ガイド", "ブロックの向きや設置状態を見やすくする");
         header(rows, "header.placementTargets", "設置方向ガイドの対象", "Placement Guide targets");
-        for (IConfigBase option : placementTargets) {
+        for (ChiseBooleanSetting option : placementTargets) {
             boolTarget(rows, option, "向きや設置状態を確認しやすくする");
         }
     }
@@ -136,12 +125,12 @@ final class ChiseTweaksSettingsController {
     private void addResourceRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         header(rows, "header.resources", "資源", "Resources");
         bool(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
-                "鉱石ハイライト", "鉱石や資源を見つけやすくする");
+                "鉱石ハイライト", "鉱石や資源の視認性をON/OFFする");
         bool(rows, "nether", FeatureSwitches.NETHER_PALETTE,
                 "ネザー配色ガイド", "ネザーの資源を見分けやすくする");
         header(rows, "header.resourceTargets", "ハイライト対象", "Highlight targets");
-        for (IConfigBase option : resourceTargets) {
-            boolTarget(rows, option, "対象資源を個別にON/OFFする");
+        for (ChiseBooleanSetting option : resourceTargets) {
+            boolTarget(rows, option, "対象資源をON/OFFする");
         }
     }
 
@@ -155,7 +144,7 @@ final class ChiseTweaksSettingsController {
                 "ガラス検査", "ガラスや板ガラスの境界を確認しやすくする");
 
         header(rows, "header.hiddenTargets", "見えにくいブロックの対象", "Hidden-surface targets");
-        for (IConfigBase option : visibilityTargets) {
+        for (ChiseBooleanSetting option : visibilityTargets) {
             boolTarget(rows, option, targetDescription(option));
         }
 
@@ -174,62 +163,49 @@ final class ChiseTweaksSettingsController {
                 "スキャン間隔", "周辺確認を行うtick間隔", 5);
     }
 
-    private void addHotkeyRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        header(rows, "header.hotkeys", "キー設定", "Keybinds");
-        for (FeatureSwitch feature : FeatureSwitches.VALUES) {
-            rows.add(ChiseTweaksSettingRowDefinition.action(
-                    feature.getName(),
-                    display(feature),
-                    japanese ? "キー割り当てを編集する" : "Edit the key binding"));
-        }
-    }
-
     private void header(
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             String id,
             String japaneseName,
             String englishName) {
-        rows.add(ChiseTweaksSettingRowDefinition.header(
-                id,
-                japanese ? japaneseName : englishName));
+        rows.add(ChiseTweaksSettingRowDefinition.header(id, japanese ? japaneseName : englishName));
     }
 
     private void bool(
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             String id,
-            fi.dy.masa.malilib.config.IConfigBoolean config,
+            ChiseBooleanSetting config,
             String japaneseName,
             String japaneseDescription) {
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 id,
-                japanese ? japaneseName : display(config),
-                japanese ? japaneseDescription : comment(config),
+                japanese ? japaneseName : config.getDisplayName(false),
+                japanese ? japaneseDescription : config.getComment(false),
                 config));
     }
 
     private void boolTarget(
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            IConfigBase base,
+            ChiseBooleanSetting config,
             String japaneseDescription) {
-        if (!(base instanceof fi.dy.masa.malilib.config.IConfigBoolean config)) return;
         rows.add(ChiseTweaksSettingRowDefinition.bool(
-                base.getName(),
-                compactTargetName(display(base)),
-                japanese ? japaneseDescription : comment(base),
+                config.getName(),
+                compactTargetName(config.getDisplayName(japanese)),
+                japanese ? japaneseDescription : config.getComment(false),
                 config));
     }
 
     private void integer(
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             String id,
-            fi.dy.masa.malilib.config.options.ConfigInteger config,
+            ChiseIntegerSetting config,
             String japaneseName,
             String japaneseDescription,
             int step) {
         rows.add(ChiseTweaksSettingRowDefinition.integer(
                 id,
-                japanese ? japaneseName : display(config),
-                japanese ? japaneseDescription : comment(config),
+                japanese ? japaneseName : config.getDisplayName(false),
+                japanese ? japaneseDescription : config.getComment(false),
                 config,
                 step));
     }
@@ -250,26 +226,16 @@ final class ChiseTweaksSettingsController {
             case PLACEMENT -> VisualTargetGroupPolicy.Group.PLACEMENT;
             case RESOURCES -> VisualTargetGroupPolicy.Group.MATERIAL;
             case VISIBILITY -> VisualTargetGroupPolicy.Group.HIDDEN;
-            case HOTKEYS, HELP -> null;
+            case HELP -> null;
         };
     }
 
-    private static List<IConfigBase> targets(String prefix) {
-        ArrayList<IConfigBase> result = new ArrayList<>();
-        for (IConfigBase option : VisualTargetSettings.ALL_OPTIONS) {
-            if (option.getName() != null && option.getName().startsWith(prefix)) result.add(option);
+    private static List<ChiseBooleanSetting> targets(String prefix) {
+        ArrayList<ChiseBooleanSetting> result = new ArrayList<>();
+        for (ChiseBooleanSetting option : VisualTargetSettings.ALL_OPTIONS) {
+            if (option.getName().startsWith(prefix)) result.add(option);
         }
         return List.copyOf(result);
-    }
-
-    private String display(IConfigBase config) {
-        String value = config.getConfigGuiDisplayName();
-        return value == null || value.isBlank() ? config.getName() : value;
-    }
-
-    private static String comment(IConfigBase config) {
-        String value = config.getComment();
-        return value == null ? "" : value;
     }
 
     private String compactTargetName(String value) {
@@ -278,9 +244,8 @@ final class ChiseTweaksSettingsController {
         return colon >= 0 && colon + 1 < value.length() ? value.substring(colon + 1) : value;
     }
 
-    private static String targetDescription(IConfigBase option) {
+    private static String targetDescription(ChiseBooleanSetting option) {
         String name = option.getName();
-        if (name == null) return "見つけやすくする";
         if (name.endsWith("BlueIce")) return "見えにくい青氷を確認";
         if (name.endsWith("DeadCoral")) return "サンゴ系ブロックを確認";
         if (name.endsWith("PowderSnow")) return "粉雪を視認しやすくする";

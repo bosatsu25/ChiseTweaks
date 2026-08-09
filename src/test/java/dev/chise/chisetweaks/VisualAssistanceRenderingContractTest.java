@@ -71,7 +71,7 @@ final class VisualAssistanceRenderingContractTest {
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java");
         String properties = read("gradle.properties");
 
-        assertTrue(properties.contains("mod_version=0.6.10+mc26.1.2"));
+        assertTrue(properties.contains("mod_version=0.7.0+mc26.1.2"));
         assertTrue(renderer.contains("RENDERER_REVISION = \"surface-line-v4-budgeted\""));
         assertTrue(renderer.contains("Visual renderer {} active in ChiseTweaks {}"));
         assertTrue(renderer.contains("rendererIdentityLogged"));
