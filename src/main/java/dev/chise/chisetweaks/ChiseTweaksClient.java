@@ -5,7 +5,6 @@ import dev.chise.chisetweaks.feature.rendering.model.ChiseVisualModelPlugin;
 import dev.chise.chisetweaks.runtime.ClientSessionState;
 import dev.chise.chisetweaks.runtime.FeatureManager;
 import dev.chise.chisetweaks.runtime.SafeStartup;
-import fi.dy.masa.malilib.event.InitializationHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -23,8 +22,6 @@ public final class ChiseTweaksClient implements ClientModInitializer {
     public void onInitializeClient() {
         SafeStartup.run("local-config", () -> LocalFeatureConfig.getInstance().load());
         SafeStartup.run("visual-model-plugin", ChiseVisualModelPlugin::register);
-        SafeStartup.run("malilib-bootstrap", () ->
-                InitializationHandler.getInstance().registerInitializationHandler(new ClientFeatureBootstrap()));
         SafeStartup.run("feature-manager", () -> FeatureManager.getInstance().init());
         SafeStartup.run("connection-lifecycle", () -> {
             ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
