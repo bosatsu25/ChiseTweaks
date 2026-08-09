@@ -40,7 +40,8 @@ final class PerformancePolicyTest {
 
     @Test
     void loadedChunkProbeBudgetIsConstantBoundedForTheSupportedRadius() {
-        assertEquals(1, WorksiteVisibilityBudgetPolicy.maximumLoadedChunkProbesFor(1));
+        // Even a 3x3 scan square can straddle a chunk corner, so the worst case is four chunks.
+        assertEquals(4, WorksiteVisibilityBudgetPolicy.maximumLoadedChunkProbesFor(1));
         assertEquals(4, WorksiteVisibilityBudgetPolicy.maximumLoadedChunkProbesFor(8));
         assertEquals(4, WorksiteVisibilityBudgetPolicy.maximumLoadedChunkProbesFor(Integer.MAX_VALUE));
         assertEquals(4, WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES);
