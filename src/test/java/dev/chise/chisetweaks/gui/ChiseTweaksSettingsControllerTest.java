@@ -79,11 +79,18 @@ final class ChiseTweaksSettingsControllerTest {
                 "\"header.resources\"",
                 "\"materials\"",
                 "\"nether\"",
-                "\"header.resourceTargets\"",
+                "\"header.vanillaOreTargets\"",
+                "resourceTargets",
+                "\"header.specialMaterialTargets\"",
                 "resourceTargets");
         assertTrue(resources.contains("\"資源\""));
-        assertTrue(resources.contains("\"ハイライト対象\""));
-        assertTrue(resources.contains("\"鉱石や資源の視認性をON/OFFする\""));
+        assertTrue(resources.contains("\"鉱石・資源ハイライト\""));
+        assertTrue(resources.contains("\"バニラ鉱石の対象\""));
+        assertTrue(resources.contains("\"特殊資材\""));
+        assertTrue(resources.contains("VanillaOreVisualCatalog.blockVariantCount()"));
+        assertTrue(resources.contains("\"対象鉱石を発光枠で強調する\""));
+        assertTrue(resources.contains("\"対象資材を発光枠で強調する\""));
+        assertTrue(resources.contains("isSpecialMaterialTarget(option)"));
     }
 
     @Test
