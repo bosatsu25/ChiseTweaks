@@ -8,6 +8,7 @@
   },
   "client": [
     "building.PumpkinScaffoldInputMixin",
+    "gui.OptionsScreenMixin",
     "rendering.BuilderFocusBlockMixin",
     "rendering.BuilderFocusEntityMixin"
   ]
