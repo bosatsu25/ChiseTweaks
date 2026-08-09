@@ -55,13 +55,16 @@ def materialSpecs = [
         [key: 'diamond', frame: [34, 225, 255], ore: [38, 190, 225], accent: [220, 254, 255], motif: 'crystal'],
         [key: 'gold', frame: [255, 190, 18], ore: [232, 160, 8], accent: [255, 248, 180], motif: 'dotted'],
         [key: 'emerald', frame: [20, 238, 92], ore: [10, 188, 68], accent: [202, 255, 219], motif: 'runes'],
-        [key: 'coal', frame: [228, 236, 246], ore: [26, 28, 32], accent: [255, 255, 255], motif: 'brackets'],
+        [key: 'coal', frame: [64, 72, 82], ore: [8, 10, 14], accent: [232, 240, 248], motif: 'brackets'],
         [key: 'iron', frame: [255, 190, 145], ore: [202, 145, 105], accent: [255, 241, 220], motif: 'double'],
         [key: 'copper', frame: [255, 105, 38], ore: [215, 76, 25], accent: [55, 210, 185], motif: 'wave'],
         [key: 'lapis', frame: [55, 112, 255], ore: [34, 68, 205], accent: [198, 218, 255], motif: 'nodes'],
         [key: 'redstone', frame: [255, 42, 42], ore: [220, 18, 18], accent: [255, 205, 205], motif: 'sparks'],
-        [key: 'ancient_debris', frame: [218, 128, 48], ore: [154, 82, 39], accent: [255, 225, 170], motif: 'ancient'],
-        [key: 'obsidian', frame: [174, 70, 255], ore: [101, 38, 164], accent: [235, 208, 255], motif: 'jagged']
+        [key: 'ancient_debris', frame: [122, 74, 45], ore: [78, 43, 28], accent: [205, 168, 112], motif: 'ancient'],
+        [key: 'obsidian', frame: [174, 70, 255], ore: [101, 38, 164], accent: [235, 208, 255], motif: 'jagged'],
+        [key: 'crying_obsidian', frame: [196, 45, 255], ore: [92, 22, 165], accent: [95, 180, 255], motif: 'tears'],
+        [key: 'nether_gold', frame: [255, 210, 32], ore: [235, 160, 12], accent: [255, 247, 170], motif: 'nether_gold'],
+        [key: 'nether_quartz', frame: [246, 238, 226], ore: [218, 203, 188], accent: [255, 255, 255], motif: 'quartz']
 ]
 
 def drawOuterFrame = { image, top, frameColor, brightColor, frame ->
@@ -159,6 +162,25 @@ def drawOreAccents = { image, spec, frame, top, oreColor, bright, accent ->
             line(image, 7, top + 7, 5, top + 10, accent)
             line(image, 9, top + 5, 12, top + 8, oreColor)
             line(image, 12, top + 8, 10, top + 12, bright)
+            break
+        case 'tears':
+            [4, 8, 12].eachWithIndex { x, index ->
+                int start = 3 + Math.floorMod(frame + index * 2, 4)
+                line(image, x, top + start, x, top + Math.min(13, start + 4), oreColor)
+                putPixel(image, x, top + Math.min(14, start + 5), accent)
+            }
+            break
+        case 'nether_gold':
+            [[3, 3], [8, 4], [12, 6], [5, 9], [10, 12], [3, 12]].each { p ->
+                putPixel(image, p[0], top + p[1], oreColor)
+                if (((p[0] + frame) & 1) == 0) putPixel(image, p[0] + 1, top + p[1], bright)
+            }
+            break
+        case 'quartz':
+            line(image, 4, top + 11, 7, top + 4, oreColor)
+            line(image, 7, top + 4, 10, top + 10, bright)
+            line(image, 9, top + 12, 12, top + 6, accent)
+            putPixel(image, sweep, top + 8, bright)
             break
     }
 }
@@ -262,7 +284,10 @@ def modelSpecs = [
         [id: 'deepslate_lapis_ore', base: 'minecraft:block/deepslate_lapis_ore', highlight: 'lapis'],
         [id: 'redstone_ore', base: 'minecraft:block/redstone_ore', highlight: 'redstone'],
         [id: 'deepslate_redstone_ore', base: 'minecraft:block/deepslate_redstone_ore', highlight: 'redstone'],
-        [id: 'obsidian', base: 'minecraft:block/obsidian', highlight: 'obsidian']
+        [id: 'obsidian', base: 'minecraft:block/obsidian', highlight: 'obsidian'],
+        [id: 'crying_obsidian', base: 'minecraft:block/crying_obsidian', highlight: 'crying_obsidian'],
+        [id: 'nether_gold_ore', base: 'minecraft:block/nether_gold_ore', highlight: 'nether_gold'],
+        [id: 'nether_quartz_ore', base: 'minecraft:block/nether_quartz_ore', highlight: 'nether_quartz']
 ]
 
 def generateChiseVisualAssets = tasks.register('generateChiseVisualAssets') {
