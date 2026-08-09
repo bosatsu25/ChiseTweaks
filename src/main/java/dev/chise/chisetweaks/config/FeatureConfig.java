@@ -56,7 +56,10 @@ public final class FeatureConfig {
                 JsonElement element = JsonParser.parseString(raw);
                 if (element.isJsonObject()) readFromJson(element.getAsJsonObject());
             }
-        } catch (IOException | JsonParseException exception) {
+        } catch (IOException | RuntimeException exception) {
+            // Config parsing, platform path resolution and storage adapters are all local input
+            // boundaries. A malformed document or unexpected platform runtime failure must never
+            // abort client startup; resetForLoad() already established safe defaults.
             ChiseTweaksClient.LOGGER.warn(
                     "ChiseTweaks feature config was not loaded because it was invalid or unsafe");
         }
@@ -114,7 +117,9 @@ public final class FeatureConfig {
         try {
             SecureConfigStorage.writeUtf8Atomic(
                     FabricLoader.getInstance().getConfigDir(), CONFIG_FILE_NAME, root.toString());
-        } catch (IOException exception) {
+        } catch (IOException | RuntimeException exception) {
+            // Keep a platform/config storage edge case local to persistence rather than taking the
+            // running client down after the user changes a setting.
             ChiseTweaksClient.LOGGER.warn(
                     "ChiseTweaks feature config was not saved because the target was invalid or unsafe");
         }
