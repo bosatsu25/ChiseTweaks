@@ -49,7 +49,11 @@ public final class ChiseTweaksConfigScreen extends Screen {
     protected void init() {
         super.init();
         controller.initialize();
-        geometry = ChiseTweaksSettingsLayout.calculate(width, height, true);
+        geometry = ChiseTweaksSettingsLayout.calculate(
+                width,
+                height,
+                selectedSection.isCategoryPage(),
+                ChiseTweaksUiSection.values().length);
         createNavigation();
         createSearch();
         createFooter();
@@ -79,7 +83,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 geometry.search().y(),
                 geometry.search().width(),
                 geometry.search().height(),
-                Component.literal("検索")));
+                Component.literal(controller.japanese() ? "検索" : "Search")));
         searchBox.setHint(Component.literal(controller.japanese() ? "検索..." : "Search..."));
         searchBox.setValue(searchQuery);
         searchBox.setResponder(value -> {
@@ -99,24 +103,24 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void createFooter() {
-        int y = geometry.footer().y();
-        int left = geometry.footer().x();
-        int right = geometry.footer().right();
+        var reset = geometry.resetButton();
+        var apply = geometry.applyButton();
+        var done = geometry.doneButton();
         addRenderableWidget(Button.builder(
                 Component.literal(controller.japanese() ? "設定をリセット" : "Reset section"),
                 ignored -> resetCurrentSection())
-                .bounds(left, y, 112, 20)
+                .bounds(reset.x(), reset.y(), reset.width(), reset.height())
                 .build());
         applyButton = addRenderableWidget(Button.builder(
                 Component.literal(controller.japanese() ? "適用" : "Apply"),
                 ignored -> applyChanges())
-                .bounds(left + 122, y, 92, 20)
+                .bounds(apply.x(), apply.y(), apply.width(), apply.height())
                 .build());
         applyButton.active = dirty;
         addRenderableWidget(Button.builder(
                 Component.literal(controller.japanese() ? "完了" : "Done"),
                 ignored -> onClose())
-                .bounds(right - 132, y, 132, 20)
+                .bounds(done.x(), done.y(), done.width(), done.height())
                 .build());
     }
 
@@ -435,13 +439,13 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private int contentHeight() {
-        int height = 0;
+        int contentHeight = 0;
         for (ChiseTweaksSettingRowView row : filteredRows) {
-            height += row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER
+            contentHeight += row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER
                     ? geometry.headerHeight()
                     : geometry.rowHeight();
         }
-        return height;
+        return contentHeight;
     }
 
     private void positionWidgets(ChiseTweaksSettingRowView row, int y) {
