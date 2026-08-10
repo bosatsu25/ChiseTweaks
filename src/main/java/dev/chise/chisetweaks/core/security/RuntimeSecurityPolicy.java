@@ -21,16 +21,18 @@ public final class RuntimeSecurityPolicy {
     public static String sanitizeDiagnosticValue(String raw) {
         String value = Objects.requireNonNullElse(raw, "");
         StringBuilder result = new StringBuilder(Math.min(value.length(), MAX_DIAGNOSTIC_VALUE_CHARS));
-        for (int index = 0; index < value.length() && result.length() < MAX_DIAGNOSTIC_VALUE_CHARS; index++) {
-            char character = value.charAt(index);
-            if (character == '$' && index + 1 < value.length() && value.charAt(index + 1) == '{') {
-                appendBounded(result, '$');
-                appendBounded(result, ' ');
-            } else if (isUnsafeFormattingCharacter(character)) {
-                appendBounded(result, ' ');
-            } else {
-                appendBounded(result, character);
+        for (int index = 0; index < value.length() && result.length() < MAX_DIAGNOSTIC_VALUE_CHARS; ) {
+            int codePoint = value.codePointAt(index);
+            int charCount = Character.charCount(codePoint);
+            if (codePoint == '$' && index + 1 < value.length() && value.charAt(index + 1) == '{') {
+                if (!appendCodePointBounded(result, '$')) break;
+                if (!appendCodePointBounded(result, ' ')) break;
+            } else if (isUnsafeFormattingCodePoint(codePoint) || isUnicodeNonCharacter(codePoint)) {
+                if (!appendCodePointBounded(result, ' ')) break;
+            } else if (!appendCodePointBounded(result, codePoint)) {
+                break;
             }
+            index += charCount;
         }
         return result.toString().trim();
     }
@@ -62,9 +64,9 @@ public final class RuntimeSecurityPolicy {
         return !WINDOWS_RESERVED_LEAVES.contains(baseName.toUpperCase(Locale.ROOT));
     }
 
-
     public static boolean isSafeJsonObjectKey(String key) {
         if (key == null || key.isBlank() || key.length() > 128
+                || !key.equals(key.strip())
                 || !Normalizer.isNormalized(key, Normalizer.Form.NFC)) {
             return false;
         }
@@ -79,34 +81,35 @@ public final class RuntimeSecurityPolicy {
                         || codePoint == 0xFEFF);
     }
 
-
-    private static void appendBounded(StringBuilder result, char character) {
-        if (result.length() < MAX_DIAGNOSTIC_VALUE_CHARS) {
-            result.append(character);
-        }
+    private static boolean appendCodePointBounded(StringBuilder result, int codePoint) {
+        int required = Character.charCount(codePoint);
+        if (result.length() + required > MAX_DIAGNOSTIC_VALUE_CHARS) return false;
+        result.appendCodePoint(codePoint);
+        return true;
     }
 
     private static boolean isUnsafeFormattingCharacter(char character) {
-        return Character.isISOControl(character)
-                || character == '\r'
-                || character == '\n'
-                || character == '\u2028'
-                || character == '\u2029'
-                || isBidirectionalOverride(character)
-                || character == '\u200B'
-                || character == '\u200C'
-                || character == '\u200D'
-                || character == '\uFEFF';
+        return isUnsafeFormattingCodePoint(character);
+    }
+
+    private static boolean isUnsafeFormattingCodePoint(int codePoint) {
+        return Character.isISOControl(codePoint)
+                || codePoint == '\r'
+                || codePoint == '\n'
+                || codePoint == 0x2028
+                || codePoint == 0x2029
+                || isBidirectionalOverride(codePoint)
+                || codePoint == 0x200B
+                || codePoint == 0x200C
+                || codePoint == 0x200D
+                || codePoint == 0x2060
+                || codePoint == 0xFEFF;
     }
 
     private static boolean isUnicodeNonCharacter(int codePoint) {
         return (codePoint >= 0xFDD0 && codePoint <= 0xFDEF)
                 || (codePoint & 0xFFFF) == 0xFFFE
                 || (codePoint & 0xFFFF) == 0xFFFF;
-    }
-
-    private static boolean isBidirectionalOverride(char character) {
-        return isBidirectionalOverride((int) character);
     }
 
     private static boolean isBidirectionalOverride(int codePoint) {
