@@ -23,11 +23,15 @@ import java.util.Map;
  *
  * <p>The vanilla/resource-pack block remains the normally lit base layer. Chise replaces only the
  * selected ore model with a generated base-plus-overlay model, then wraps that baked model so the
- * slightly expanded overlay quads render at full brightness. No world light, block emission,
- * server state, or packets are modified.</p>
+ * slightly expanded overlay quads render at full brightness. The wrapper is intentionally
+ * shader-agnostic: shader-pack activation does not select a different Chise style, disable the
+ * overlay, or alter the target mask. The same animated color/pattern overlay is submitted whenever
+ * Ore Highlights is enabled.</p>
+ *
+ * <p>No world light, block emission, shader-pack files, server state, or packets are modified.</p>
  */
 public final class ChiseVisualModelPlugin {
-    public static final String REVISION = "ore-highlight-emissive-overlay-3";
+    public static final String REVISION = "ore-highlight-emissive-overlay-4-shader-invariant";
 
     private static final Map<Block, ModelSpec> MODEL_REPLACEMENTS = Map.ofEntries(
             replacement(Blocks.OBSIDIAN, Target.MATERIAL_OBSIDIAN, "obsidian"),
@@ -76,7 +80,7 @@ public final class ChiseVisualModelPlugin {
                             : new FullbrightOreHighlightModel(model));
 
             ChiseTweaksClient.LOGGER.info(
-                    "Visual model {} active in ChiseTweaks {}; {} ore target family/families use full-bright Chise overlays",
+                    "Visual model {} active in ChiseTweaks {}; {} ore target family/families use shader-invariant full-bright Chise overlays",
                     REVISION,
                     ChiseTweaksMetadata.MOD_VERSION,
                     Integer.bitCount(activeMaterialMask));
