@@ -7,8 +7,10 @@ import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
+import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
+import dev.chise.chisetweaks.feature.rendering.model.OreHighlightRenderInvalidation;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -28,6 +30,16 @@ public final class FeatureControlBindings {
         bindWorksiteVisibilityCallbacks();
         bindBuilderFocusLists();
         bindSceneFilterRefresh();
+        bindOreHighlightRefresh();
+    }
+
+    private static void bindOreHighlightRefresh() {
+        FeatureSwitches.MATERIAL_HIGHLIGHTS.setValueChangeCallback(
+                ignored -> OreHighlightRenderInvalidation.request());
+        LocalFeatureSettings.setOreHighlightChangedCallback(
+                OreHighlightRenderInvalidation::request);
+        VisualTargetSettings.setMaterialTargetsChangedCallback(
+                OreHighlightRenderInvalidation::request);
     }
 
     private static void bindSceneFilterRefresh() {
