@@ -11,10 +11,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** Shared runtime registry behind config-driven compatibility and the public Ore Highlight API. */
+/** Shared runtime registry behind resource-pack/config compatibility and the public Ore Highlight API. */
 public final class OreHighlightExternalRegistry {
     private static final ConcurrentHashMap<String, OreHighlightStyle> API_BLOCKS = new ConcurrentHashMap<>();
     private static final CopyOnWriteArrayList<TagRegistration> API_TAGS = new CopyOnWriteArrayList<>();
+    private static volatile Map<String, OreHighlightStyle> resourceBlocks = Map.of();
     private static volatile Map<String, OreHighlightStyle> configBlocks = Map.of();
 
     private OreHighlightExternalRegistry() {}
@@ -35,6 +36,11 @@ public final class OreHighlightExternalRegistry {
         OreHighlightResolver.invalidateCache();
     }
 
+    public static void replaceResourceBlocks(Map<String, OreHighlightStyle> entries) {
+        resourceBlocks = entries == null ? Map.of() : Map.copyOf(entries);
+        OreHighlightResolver.invalidateCache();
+    }
+
     public static void replaceConfigBlocks(Map<String, OreHighlightStyle> entries) {
         configBlocks = entries == null ? Map.of() : Map.copyOf(entries);
         OreHighlightResolver.invalidateCache();
@@ -42,8 +48,10 @@ public final class OreHighlightExternalRegistry {
 
     public static @Nullable OreHighlightStyle styleForBlockId(String blockId) {
         String normalized = ModdedOreIdPolicy.normalize(blockId);
-        OreHighlightStyle configured = configBlocks.get(normalized);
-        return configured != null ? configured : API_BLOCKS.get(normalized);
+        OreHighlightStyle local = configBlocks.get(normalized);
+        if (local != null) return local;
+        OreHighlightStyle resource = resourceBlocks.get(normalized);
+        return resource != null ? resource : API_BLOCKS.get(normalized);
     }
 
     public static @Nullable OreHighlightStyle styleForApiTag(BlockState state) {
@@ -56,7 +64,9 @@ public final class OreHighlightExternalRegistry {
 
     public static boolean hasExplicitBlock(String blockId) {
         String normalized = ModdedOreIdPolicy.normalize(blockId);
-        return configBlocks.containsKey(normalized) || API_BLOCKS.containsKey(normalized);
+        return configBlocks.containsKey(normalized)
+                || resourceBlocks.containsKey(normalized)
+                || API_BLOCKS.containsKey(normalized);
     }
 
     public static List<TagRegistration> apiTagRegistrations() {

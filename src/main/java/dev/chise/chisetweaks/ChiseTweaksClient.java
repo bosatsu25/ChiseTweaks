@@ -3,8 +3,11 @@ package dev.chise.chisetweaks;
 import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
+import dev.chise.chisetweaks.config.OreHighlightCompatibilityConfig;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
+import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
 import dev.chise.chisetweaks.feature.rendering.model.ChiseVisualModelPlugin;
+import dev.chise.chisetweaks.feature.rendering.model.OreHighlightRenderInvalidation;
 import dev.chise.chisetweaks.runtime.ClientSessionState;
 import dev.chise.chisetweaks.runtime.FeatureControlBindings;
 import dev.chise.chisetweaks.runtime.FeatureManager;
@@ -16,7 +19,6 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Client entry point for standalone building-assistance and visual ChiseTweaks features. */
 @Environment(EnvType.CLIENT)
 public final class ChiseTweaksClient implements ClientModInitializer {
     public static final String MOD_ID = "chisetweaks";
@@ -25,6 +27,7 @@ public final class ChiseTweaksClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         SafeStartup.run("local-config", () -> LocalFeatureConfig.getInstance().load());
+        SafeStartup.run("ore-compat-config", OreHighlightCompatibilityConfig::load);
         SafeStartup.run("feature-config", FeatureConfig::loadFromFile);
         SafeStartup.run("local-settings", LocalFeatureSettings::init);
         SafeStartup.run("visual-target-settings", VisualTargetSettings::init);
@@ -32,8 +35,11 @@ public final class ChiseTweaksClient implements ClientModInitializer {
         SafeStartup.run("visual-model-plugin", ChiseVisualModelPlugin::register);
         SafeStartup.run("feature-manager", () -> FeatureManager.getInstance().init());
         SafeStartup.run("connection-lifecycle", () -> {
-            ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
-                    ClientSessionState.onJoin(client));
+            ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+                OreHighlightResolver.invalidateCache();
+                OreHighlightRenderInvalidation.request();
+                ClientSessionState.onJoin(client);
+            });
             ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
                     ClientSessionState.onDisconnect(client));
         });

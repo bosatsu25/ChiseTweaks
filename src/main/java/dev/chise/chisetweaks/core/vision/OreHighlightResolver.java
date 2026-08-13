@@ -11,10 +11,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** Resolves a block state to one Chise-owned highlight style without scanning the world. */
 public final class OreHighlightResolver {
     private static final ConcurrentHashMap<Block, Resolved> CACHE = new ConcurrentHashMap<>();
+    private static final AtomicLong REVISION = new AtomicLong();
     private static final Resolved NONE = new Resolved(null, null);
 
     private OreHighlightResolver() {}
@@ -29,8 +31,13 @@ public final class OreHighlightResolver {
         return resolve(state) != null;
     }
 
+    public static long revision() {
+        return REVISION.get();
+    }
+
     public static void invalidateCache() {
         CACHE.clear();
+        REVISION.incrementAndGet();
     }
 
     private static Resolved resolveUncached(BlockState state) {
