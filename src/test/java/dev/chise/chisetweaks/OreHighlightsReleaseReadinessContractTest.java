@@ -21,7 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>These tests intentionally stop short of claiming final-pixel equivalence under shader packs.
  * They prove the deterministic preconditions that runtime visual QA depends on: complete vanilla
  * coverage, model-backed rendering rather than a world scanner, shader-invariant emissive material
- * semantics, independently identifiable highlight motifs, and CI status-name enforcement.</p>
+ * semantics, independently identifiable highlight motifs, safe defaults, fail-soft reload handling,
+ * and CI status-name enforcement.</p>
  */
 final class OreHighlightsReleaseReadinessContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
@@ -140,6 +141,44 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertTrue(motifs.containsAll(Set.of(
                 "crystal", "dotted", "runes", "brackets", "double", "wave", "nodes",
                 "sparks", "whorl", "jagged", "tears", "nether_gold", "quartz")));
+    }
+
+    @Test
+    void firstLaunchDefaultsAreNonIntrusiveButReadyWhenEnabled() throws IOException {
+        String featureSwitch = source(
+                "src/main/java/dev/chise/chisetweaks/config/FeatureSwitch.java");
+        String localConfig = source(
+                "src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
+
+        // No visual feature changes the player's view merely by installing the JAR.
+        assertTrue(featureSwitch.contains("private static final boolean DEFAULT_ENABLED = false"));
+
+        // Once the user enables Ore Highlights, every retained ore/material target is preselected.
+        assertTrue(localConfig.contains(
+                "public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK"));
+        assertTrue(localConfig.contains(
+                "visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK"));
+    }
+
+    @Test
+    void modelReloadCoordinatorCommitsOnlySuccessfulReloadStateAndBacksOffFailures() throws IOException {
+        String coordinator = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/VisualModelReloadCoordinator.java");
+
+        assertTrue(coordinator.contains("client.reloadResourcePacks().whenComplete"));
+        assertTrue(coordinator.contains("if (failure == null)"));
+        assertTrue(coordinator.contains("commitStagedState();"));
+        assertTrue(coordinator.contains("RELOAD_THROTTLE.onReloadSucceeded();"));
+        assertTrue(coordinator.contains("discardStagedState();"));
+        assertTrue(coordinator.contains("RELOAD_THROTTLE.onReloadFailed();"));
+        assertTrue(coordinator.contains("catch (RuntimeException failure)"));
+        assertTrue(coordinator.contains("RELOAD_IN_FLIGHT.set(false);"));
+
+        // The last successfully applied mask is not overwritten inside the async failure branch.
+        String failureBranch = coordinator.substring(
+                coordinator.indexOf("} else {", coordinator.indexOf("if (failure == null)")),
+                coordinator.indexOf("RELOAD_IN_FLIGHT.set(false);", coordinator.indexOf("if (failure == null)")));
+        assertFalse(failureBranch.contains("appliedMaterialModelMask ="));
     }
 
     @Test
