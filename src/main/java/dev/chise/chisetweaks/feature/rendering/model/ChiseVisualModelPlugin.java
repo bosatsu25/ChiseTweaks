@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.feature.rendering.model;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
+import dev.chise.chisetweaks.config.OreHighlightCompatibilityConfig;
 import dev.chise.chisetweaks.core.vision.OreHighlightExternalRegistry;
 import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier;
@@ -19,6 +20,7 @@ public final class ChiseVisualModelPlugin {
     private ChiseVisualModelPlugin() {}
 
     public static void register() {
+        OreHighlightCompatibilityConfig.load();
         OreHighlightRenderInvalidation.register();
 
         PreparableModelLoadingPlugin.register(
@@ -53,20 +55,20 @@ public final class ChiseVisualModelPlugin {
             net.minecraft.client.renderer.block.dispatch.BlockStateModel model,
             BlockState state) {
         if (state == null) return model;
-        OreHighlightResolver.Resolved resolved = OreHighlightResolver.resolve(state);
-        if (resolved != null && resolved.target() != null && resolved.style() != null) {
-            OreHighlightOverlayCatalog.OverlayModels overlay =
-                    OreHighlightOverlayCatalog.forStyle(resolved.style());
-            if (overlay != null) {
-                return new FullbrightOreHighlightModel(
-                        model,
-                        resolved.target(),
-                        overlay.staticKey(),
-                        overlay.animatedKey());
-            }
+        String namespace = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace();
+        if (!"minecraft".equals(namespace)) {
+            return new FullbrightOreHighlightModel(model);
         }
 
-        String namespace = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace();
-        return "minecraft".equals(namespace) ? model : new FullbrightOreHighlightModel(model);
+        OreHighlightResolver.Resolved resolved = OreHighlightResolver.resolve(state);
+        if (resolved == null || resolved.target() == null || resolved.style() == null) return model;
+        OreHighlightOverlayCatalog.OverlayModels overlay =
+                OreHighlightOverlayCatalog.forStyle(resolved.style());
+        if (overlay == null) return model;
+        return new FullbrightOreHighlightModel(
+                model,
+                resolved.target(),
+                overlay.staticKey(),
+                overlay.animatedKey());
     }
 }
