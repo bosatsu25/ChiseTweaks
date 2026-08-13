@@ -84,7 +84,6 @@ def qualityGateClasses = [
         'dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy*.class',
         'dev/chise/chisetweaks/core/vision/OreHighlightRuntimePolicy*.class',
         'dev/chise/chisetweaks/core/vision/VanillaOreVisualCatalog*.class',
-        'dev/chise/chisetweaks/core/vision/VisualModelSelectionPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetGroupPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetSelectionPolicy*.class'
 ]
@@ -129,7 +128,6 @@ pitest {
         'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
         'dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy',
         'dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog',
-        'dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy'
     ]
