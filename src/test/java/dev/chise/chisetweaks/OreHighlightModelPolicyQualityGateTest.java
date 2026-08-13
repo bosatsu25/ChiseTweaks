@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks;
 
-import dev.chise.chisetweaks.core.performance.VisualModelReloadThrottlePolicy;
+import dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy;
 import dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
@@ -82,95 +82,35 @@ final class OreHighlightModelPolicyQualityGateTest {
     }
 
     @Test
-    void reloadPolicyDebouncesUntilTheConfiguredQuietBoundary() {
-        VisualModelReloadThrottlePolicy policy = new VisualModelReloadThrottlePolicy();
-        assertEquals(4, VisualModelReloadThrottlePolicy.QUIET_TICKS);
-        assertFalse(policy.shouldRequestReload(0, 1, false)); // first observation
-        assertFalse(policy.shouldRequestReload(0, 1, false)); // stable tick 1
-        assertFalse(policy.shouldRequestReload(0, 1, false)); // stable tick 2
-        assertFalse(policy.shouldRequestReload(0, 1, false)); // stable tick 3
-        assertTrue(policy.shouldRequestReload(0, 1, false));  // stable tick 4
+    void runtimePolicyRequiresMasterAndExactMaterialTarget() {
+        int diamond = Target.MATERIAL_DIAMOND_ORE.bitMask();
+        int redstone = Target.MATERIAL_REDSTONE_ORE.bitMask();
+
+        assertTrue(OreHighlightRuntimePolicy.shouldRender(true, diamond, Target.MATERIAL_DIAMOND_ORE));
+        assertFalse(OreHighlightRuntimePolicy.shouldRender(false, diamond, Target.MATERIAL_DIAMOND_ORE));
+        assertFalse(OreHighlightRuntimePolicy.shouldRender(true, redstone, Target.MATERIAL_DIAMOND_ORE));
+        assertFalse(OreHighlightRuntimePolicy.shouldRender(true, diamond, Target.MATERIAL_REDSTONE_ORE));
+        assertFalse(OreHighlightRuntimePolicy.shouldRender(true, diamond, Target.HIDDEN_BLUE_ICE));
+        assertFalse(OreHighlightRuntimePolicy.shouldRender(true, diamond, null));
     }
 
     @Test
-    void reloadInFlightSuppressesDuplicateRequestsWithoutLosingStableState() {
-        VisualModelReloadThrottlePolicy policy = stableMismatchPolicy();
-        assertFalse(policy.shouldRequestReload(0, 1, true));
-        assertFalse(policy.shouldRequestReload(0, 1, true));
-        assertTrue(policy.shouldRequestReload(0, 1, false));
+    void runtimePolicySanitizesUnknownMaskBitsThroughTargetSelection() {
+        assertTrue(OreHighlightRuntimePolicy.shouldRender(
+                true,
+                Integer.MAX_VALUE,
+                Target.MATERIAL_DIAMOND_ORE));
+        assertFalse(OreHighlightRuntimePolicy.shouldRender(
+                true,
+                Integer.MIN_VALUE,
+                Target.MATERIAL_DIAMOND_ORE));
     }
 
     @Test
-    void changingDesiredMaskRestartsTheDebounceWindow() {
-        VisualModelReloadThrottlePolicy policy = new VisualModelReloadThrottlePolicy();
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        assertFalse(policy.shouldRequestReload(0, 2, false));
-        assertFalse(policy.shouldRequestReload(0, 2, false));
-        assertFalse(policy.shouldRequestReload(0, 2, false));
-        assertFalse(policy.shouldRequestReload(0, 2, false));
-        assertTrue(policy.shouldRequestReload(0, 2, false));
-    }
-
-    @Test
-    void returningToAppliedMaskCancelsPendingReloadAndRequiresFreshDebounceLater() {
-        VisualModelReloadThrottlePolicy policy = new VisualModelReloadThrottlePolicy();
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        assertFalse(policy.shouldRequestReload(0, 0, false));
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        assertTrue(policy.shouldRequestReload(0, 1, false));
-    }
-
-    @Test
-    void failedReloadUsesExactBoundedBackoffBeforeRetry() {
-        VisualModelReloadThrottlePolicy policy = stableMismatchPolicy();
-        assertTrue(policy.shouldRequestReload(0, 1, false));
-        policy.onReloadFailed();
-        assertEquals(VisualModelReloadThrottlePolicy.FAILURE_BACKOFF_TICKS, policy.retryCooldownTicks());
-
-        for (int remaining = VisualModelReloadThrottlePolicy.FAILURE_BACKOFF_TICKS - 1;
-             remaining > 0;
-             remaining--) {
-            assertFalse(policy.shouldRequestReload(0, 1, false));
-            assertEquals(remaining, policy.retryCooldownTicks());
-        }
-
-        assertTrue(policy.shouldRequestReload(0, 1, false));
-        assertEquals(0, policy.retryCooldownTicks());
-    }
-
-    @Test
-    void successfulReloadClearsBackoffAndRequiresFreshDesiredObservation() {
-        VisualModelReloadThrottlePolicy policy = stableMismatchPolicy();
-        assertTrue(policy.shouldRequestReload(0, 1, false));
-        policy.onReloadFailed();
-        assertTrue(policy.retryCooldownTicks() > 0);
-        policy.onReloadSucceeded();
-        assertEquals(0, policy.retryCooldownTicks());
-        assertFalse(policy.shouldRequestReload(1, 2, false));
-    }
-
-    @Test
-    void resetReturnsReloadPolicyToCleanStartupState() {
-        VisualModelReloadThrottlePolicy policy = stableMismatchPolicy();
-        policy.onReloadFailed();
-        assertTrue(policy.retryCooldownTicks() > 0);
-        policy.reset();
-        assertEquals(0, policy.retryCooldownTicks());
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        assertFalse(policy.shouldRequestReload(0, 0, false));
-    }
-
-    private static VisualModelReloadThrottlePolicy stableMismatchPolicy() {
-        VisualModelReloadThrottlePolicy policy = new VisualModelReloadThrottlePolicy();
-        assertFalse(policy.shouldRequestReload(0, 1, false));
-        for (int tick = 1; tick < VisualModelReloadThrottlePolicy.QUIET_TICKS; tick++) {
-            assertFalse(policy.shouldRequestReload(0, 1, false));
-        }
-        return policy;
+    void reducedMotionIsTheDefaultRuntimeStyle() {
+        assertEquals(OreHighlightRuntimePolicy.Motion.STATIC,
+                OreHighlightRuntimePolicy.motion(false));
+        assertEquals(OreHighlightRuntimePolicy.Motion.ANIMATED,
+                OreHighlightRuntimePolicy.motion(true));
     }
 }
