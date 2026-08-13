@@ -86,14 +86,15 @@ final class RepositoryScopeContractTest {
     }
 
     @Test
-    void rebuiltVerificationFilesArePresent() throws IOException {
+    void requiredVerificationFilesArePresent() throws IOException {
         assertTrue(Files.exists(ROOT.resolve(".github/workflows/ci.yml")));
         assertTrue(Files.exists(ROOT.resolve(".github/workflows/verify-build.yml")));
         assertTrue(Files.exists(ROOT.resolve(".github/workflows/release.yml")));
+        assertFalse(Files.exists(ROOT.resolve(".github/workflows/verified-release.yml")));
         assertTrue(Files.exists(ROOT.resolve("scripts/repository_audit.py")));
-        assertTrue(Files.exists(ROOT.resolve("scripts/local_ci.py")));
         assertTrue(Files.exists(ROOT.resolve("scripts/quality_summary.py")));
         assertTrue(Files.exists(ROOT.resolve("scripts/artifact_audit.py")));
+        assertFalse(Files.exists(ROOT.resolve("scripts/local_ci.py")));
 
         String build = Files.readString(ROOT.resolve("build.gradle"));
         assertTrue(build.contains("id 'jacoco'"));
