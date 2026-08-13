@@ -6,13 +6,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** Shared runtime registry behind pack/config-driven compatibility and the public Ore Highlight API. */
 public final class OreHighlightExternalRegistry {
     private static final ConcurrentHashMap<String, OreHighlightStyle> API_BLOCKS = new ConcurrentHashMap<>();
     private static final CopyOnWriteArrayList<TagRegistration> API_TAGS = new CopyOnWriteArrayList<>();
@@ -38,23 +36,17 @@ public final class OreHighlightExternalRegistry {
         changed();
     }
 
-    /** Replaces definitions supplied by active resource packs/modpack resources. */
     public static void replaceResourceBlocks(Map<String, OreHighlightStyle> entries) {
         resourceBlocks = sanitizedCopy(entries);
         changed();
     }
 
-    /** Replaces explicit per-user definitions from the local compatibility editor/config. */
     public static void replaceConfigBlocks(Map<String, OreHighlightStyle> entries) {
         configBlocks = sanitizedCopy(entries);
         changed();
     }
 
-    /**
-     * Explicit block precedence is local user override > resource/modpack definition > public API.
-     * Tag/convention/fallback resolution is handled later by {@link OreHighlightResolver}.
-     */
-    public static @Nullable OreHighlightStyle styleForBlockId(String blockId) {
+    static @Nullable OreHighlightStyle styleForBlockId(String blockId) {
         String normalized = ModdedOreIdPolicy.normalize(blockId);
         OreHighlightStyle configured = configBlocks.get(normalized);
         if (configured != null) return configured;
@@ -62,7 +54,7 @@ public final class OreHighlightExternalRegistry {
         return resource != null ? resource : API_BLOCKS.get(normalized);
     }
 
-    public static @Nullable OreHighlightStyle styleForApiTag(BlockState state) {
+    static @Nullable OreHighlightStyle styleForApiTag(BlockState state) {
         if (state == null) return null;
         for (TagRegistration registration : API_TAGS) {
             if (state.is(registration.tag())) return registration.style();
@@ -70,27 +62,8 @@ public final class OreHighlightExternalRegistry {
         return null;
     }
 
-    public static boolean hasExplicitBlock(String blockId) {
-        String normalized = ModdedOreIdPolicy.normalize(blockId);
-        return configBlocks.containsKey(normalized)
-                || resourceBlocks.containsKey(normalized)
-                || API_BLOCKS.containsKey(normalized);
-    }
-
     public static long revision() {
         return REVISION.get();
-    }
-
-    public static Map<String, OreHighlightStyle> resourceBlockEntries() {
-        return resourceBlocks;
-    }
-
-    public static Map<String, OreHighlightStyle> configBlockEntries() {
-        return configBlocks;
-    }
-
-    public static List<TagRegistration> apiTagRegistrations() {
-        return List.copyOf(API_TAGS);
     }
 
     private static Map<String, OreHighlightStyle> sanitizedCopy(Map<String, OreHighlightStyle> entries) {
@@ -110,5 +83,5 @@ public final class OreHighlightExternalRegistry {
         OreHighlightResolver.invalidateCache();
     }
 
-    public record TagRegistration(TagKey<Block> tag, OreHighlightStyle style) {}
+    private record TagRegistration(TagKey<Block> tag, OreHighlightStyle style) {}
 }
