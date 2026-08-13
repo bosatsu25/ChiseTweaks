@@ -67,6 +67,6 @@ public final class ChiseVisualModelPlugin {
         }
 
         String namespace = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace();
-        return "minecraft".equals(namespace) ? model : new ModdedOreHighlightModel(model);
+        return "minecraft".equals(namespace) ? model : new FullbrightOreHighlightModel(model);
     }
 }
