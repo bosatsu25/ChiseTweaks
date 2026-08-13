@@ -108,7 +108,7 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
                 fixedTarget);
     }
 
-    private static @Nullable OreHighlightResolver.Resolved activeModded(BlockState state) {
+    private static OreHighlightResolver.Resolved activeModded(BlockState state) {
         if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return null;
         OreHighlightResolver.Resolved resolved = OreHighlightResolver.resolve(state);
         return resolved != null && resolved.target() == null ? resolved : null;
