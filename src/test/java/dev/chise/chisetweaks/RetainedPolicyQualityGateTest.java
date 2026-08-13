@@ -5,6 +5,7 @@ import dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
+import dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,30 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(128, WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES);
         assertEquals(24, WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS);
         assertEquals(192, WorksiteVisibilityBudgetPolicy.MAX_LINE_OF_SIGHT_RAYS_PER_SCAN);
+    }
+
+    @Test
+    void oreHighlightOverlayBoundaryIsDeterministicAndMutationVerifiable() {
+        assertEquals(15, OreHighlightLightingPolicy.FULL_BRIGHT_LIGHT_LEVEL);
+        assertEquals(0.0f, OreHighlightLightingPolicy.BASE_MIN);
+        assertEquals(1.0f, OreHighlightLightingPolicy.BASE_MAX);
+        assertEquals(0.001f, OreHighlightLightingPolicy.OVERLAY_EPSILON);
+
+        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(0.0f, 0.0f, 0.0f));
+        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(1.0f, 1.0f, 1.0f));
+        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(-0.001f, 0.5f, 0.5f));
+        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(1.001f, 0.5f, 0.5f));
+
+        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(-0.0011f, 0.5f, 0.5f));
+        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(1.0011f, 0.5f, 0.5f));
+        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(0.5f, -0.0011f, 0.5f));
+        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(0.5f, 1.0011f, 0.5f));
+        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(0.5f, 0.5f, -0.0011f));
+        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(0.5f, 0.5f, 1.0011f));
+
+        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(Float.NaN, 0.5f, 0.5f));
+        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(Float.NEGATIVE_INFINITY, 0.5f, 0.5f));
+        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(Float.POSITIVE_INFINITY, 0.5f, 0.5f));
     }
 
     @Test
