@@ -1,5 +1,6 @@
 package dev.chise.chisetweaks.feature.rendering.model;
 
+import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy;
@@ -18,6 +19,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 /**
@@ -30,14 +32,20 @@ import java.util.function.Predicate;
  *
  * <p>Feature state, per-family targets and reduced-motion preference are evaluated at render time,
  * so settings never require a model/resource reload. Shader state is deliberately ignored: the same
- * Chise overlay material is submitted whether shaders are enabled or disabled.</p>
+ * Chise overlay material is submitted whether shaders are enabled or disabled. Overlay lookup and
+ * emission are fail-soft: the already-emitted base model remains valid if Chise's extra layer fails.</p>
  */
 final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
+    private static final AtomicBoolean LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
+    private static final AtomicBoolean EMIT_FAILURE_LOGGED = new AtomicBoolean();
+
     private final Target target;
     private final ExtraModelKey<BlockStateModel> staticOverlayKey;
     private final ExtraModelKey<BlockStateModel> animatedOverlayKey;
     private volatile @Nullable BlockStateModel staticOverlay;
     private volatile @Nullable BlockStateModel animatedOverlay;
+    private volatile boolean staticOverlayResolved;
+    private volatile boolean animatedOverlayResolved;
 
     FullbrightOreHighlightModel(
             BlockStateModel wrapped,
@@ -58,7 +66,8 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             BlockState state,
             RandomSource random,
             Predicate<@Nullable Direction> cullTest) {
-        // The active vanilla/resource-pack model is always emitted untouched.
+        // The active vanilla/resource-pack model is always emitted untouched and cannot be lost if
+        // Chise's optional overlay lookup or emission later fails.
         super.emitQuads(emitter, level, pos, state, random, cullTest);
 
         if (!highlightEnabled()) return;
@@ -72,6 +81,8 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         });
         try {
             overlay.emitQuads(emitter, level, pos, state, random, cullTest);
+        } catch (RuntimeException failure) {
+            warnOnce(EMIT_FAILURE_LOGGED, "Ore Highlight overlay emission", failure);
         } finally {
             emitter.popTransform();
         }
@@ -98,15 +109,34 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
     }
 
     private @Nullable BlockStateModel overlayModel(boolean animated) {
-        BlockStateModel cached = animated ? animatedOverlay : staticOverlay;
-        if (cached != null) return cached;
+        if (animated ? animatedOverlayResolved : staticOverlayResolved) {
+            return animated ? animatedOverlay : staticOverlay;
+        }
 
-        BlockStateModel loaded = Minecraft.getInstance().getModelManager().getModel(
-                animated ? animatedOverlayKey : staticOverlayKey);
-        if (loaded == null) return null;
-        if (animated) animatedOverlay = loaded;
-        else staticOverlay = loaded;
+        BlockStateModel loaded = null;
+        try {
+            loaded = Minecraft.getInstance().getModelManager().getModel(
+                    animated ? animatedOverlayKey : staticOverlayKey);
+        } catch (RuntimeException failure) {
+            warnOnce(LOOKUP_FAILURE_LOGGED, "Ore Highlight extra-model lookup", failure);
+        }
+
+        if (animated) {
+            animatedOverlay = loaded;
+            animatedOverlayResolved = true;
+        } else {
+            staticOverlay = loaded;
+            staticOverlayResolved = true;
+        }
         return loaded;
+    }
+
+    private static void warnOnce(AtomicBoolean gate, String operation, RuntimeException failure) {
+        if (!gate.compareAndSet(false, true)) return;
+        ChiseTweaksClient.LOGGER.warn(
+                "{} failed after {}; keeping the resource-pack base model without the Chise overlay",
+                operation,
+                failure.getClass().getSimpleName());
     }
 
     @Override
