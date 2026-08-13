@@ -124,6 +124,11 @@ final class ChiseTweaksSettingsController {
         bool(rows, "oreMotion", LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION,
                 "ハイライトを動かす",
                 "OFFでは発光する模様を静止表示し、動きを抑える。ONで控えめにアニメーションする");
+        action(rows,
+                "moddedOreTargets",
+                "MOD鉱石の対象",
+                "MOD鉱石のRegistry IDとChiseの発光スタイルを編集する",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT);
         bool(rows, "nether", FeatureSwitches.NETHER_PALETTE,
                 "ネザー配色ガイド", "ネザーの主要な建材・地形素材を色分けして見やすくする");
 
@@ -239,10 +244,12 @@ final class ChiseTweaksSettingsController {
                 japanese ? japaneseName : switch (action) {
                     case EDIT_BLOCK_FILTER -> "Block targets";
                     case EDIT_ENTITY_FILTER -> "Entity targets";
+                    case EDIT_ORE_COMPAT -> "Modded ore targets";
                 },
                 japanese ? japaneseDescription : switch (action) {
                     case EDIT_BLOCK_FILTER -> "Edit the block include/exclude mode and block IDs.";
                     case EDIT_ENTITY_FILTER -> "Edit the entity include/exclude mode and entity IDs.";
+                    case EDIT_ORE_COMPAT -> "Edit modded block IDs and their Chise highlight styles.";
                 },
                 action,
                 japanese ? "対象を編集" : "Edit targets"));
