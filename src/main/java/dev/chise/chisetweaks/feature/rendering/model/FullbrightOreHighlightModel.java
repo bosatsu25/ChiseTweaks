@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.feature.rendering.model;
 
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
-import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
+import dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import net.fabricmc.fabric.api.client.model.loading.v1.ExtraModelKey;
 import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel;
@@ -62,7 +62,7 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         super.emitQuads(emitter, level, pos, state, random, cullTest);
 
         if (!highlightEnabled()) return;
-        boolean animated = LocalFeatureConfig.getInstance().oreHighlightAnimationEnabled;
+        boolean animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
         BlockStateModel overlay = overlayModel(animated);
         if (overlay == null) return;
 
@@ -85,10 +85,16 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
     }
 
     private boolean highlightEnabled() {
-        if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return false;
-        return VisualTargetSelectionPolicy.isEnabled(
-                LocalFeatureConfig.getInstance().visualTargetMask,
+        LocalFeatureConfig config = LocalFeatureConfig.getInstance();
+        return OreHighlightRuntimePolicy.shouldRender(
+                FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue(),
+                config.visualTargetMask,
                 target);
+    }
+
+    private static OreHighlightRuntimePolicy.Motion motion() {
+        return OreHighlightRuntimePolicy.motion(
+                LocalFeatureConfig.getInstance().oreHighlightAnimationEnabled);
     }
 
     private @Nullable BlockStateModel overlayModel(boolean animated) {
@@ -113,8 +119,10 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         Object wrappedKey = wrapped.createGeometryKey(level, pos, state, random);
         if (wrappedKey == null) return null;
         boolean enabled = highlightEnabled();
-        boolean animated = enabled && LocalFeatureConfig.getInstance().oreHighlightAnimationEnabled;
-        return new FullbrightGeometryKey(wrappedKey, target, enabled, animated);
+        OreHighlightRuntimePolicy.Motion motion = enabled
+                ? motion()
+                : OreHighlightRuntimePolicy.Motion.STATIC;
+        return new FullbrightGeometryKey(wrappedKey, target, enabled, motion);
     }
 
     /** Prevents renderer cache reuse across runtime Ore Highlight state/style changes. */
@@ -122,5 +130,5 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             Object wrappedKey,
             Target target,
             boolean enabled,
-            boolean animated) {}
+            OreHighlightRuntimePolicy.Motion motion) {}
 }
