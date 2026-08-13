@@ -10,17 +10,9 @@ import net.fabricmc.fabric.api.client.model.loading.v1.SimpleUnbakedExtraModel;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Non-destructive Chise-owned Ore Highlights model composition.
- *
- * <p>The final vanilla/resource-pack block model is always preserved. Chise appends only its own
- * overlay model after bake. Vanilla ore targets retain their existing per-family switches; modded
- * blocks are wrapped cheaply so conventional {@code c:ores} tags, resource-pack compatibility JSON,
- * user overrides, and API registrations can become active without replacing base models.</p>
- */
+/** Non-destructive Ore Highlights composition for vanilla and modded blocks. */
 public final class ChiseVisualModelPlugin {
     public static final String REVISION = "ore-highlight-composed-overlay-6-modded-compatible";
 
@@ -47,24 +39,34 @@ public final class ChiseVisualModelPlugin {
 
                     pluginContext.modifyBlockModelAfterBake().register(
                             ModelModifier.WRAP_PHASE,
-                            (model, context) -> shouldWrap(context.state())
-                                    ? new FullbrightOreHighlightModel(model)
-                                    : model);
+                            (model, context) -> wrap(model, context.state()));
 
                     ChiseTweaksClient.LOGGER.info(
-                            "Visual model {} active in ChiseTweaks {}; {} resource-pack ore mapping(s) loaded",
+                            "Visual model {} active in ChiseTweaks {}; {} resource ore mapping(s) loaded",
                             REVISION,
                             ChiseTweaksMetadata.MOD_VERSION,
                             resourceEntries.size());
                 });
     }
 
-    private static boolean shouldWrap(BlockState state) {
-        if (state == null) return false;
+    private static net.minecraft.client.renderer.block.dispatch.BlockStateModel wrap(
+            net.minecraft.client.renderer.block.dispatch.BlockStateModel model,
+            BlockState state) {
+        if (state == null) return model;
+        OreHighlightResolver.Resolved resolved = OreHighlightResolver.resolve(state);
+        if (resolved != null && resolved.target() != null && resolved.style() != null) {
+            OreHighlightOverlayCatalog.OverlayModels overlay =
+                    OreHighlightOverlayCatalog.forStyle(resolved.style());
+            if (overlay != null) {
+                return new FullbrightOreHighlightModel(
+                        model,
+                        resolved.target(),
+                        overlay.staticKey(),
+                        overlay.animatedKey());
+            }
+        }
+
         String namespace = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace();
-        // Every non-vanilla block receives only the lightweight conditional wrapper. This is what
-        // allows a server-synchronized conventional ore tag or a later user override to work without
-        // a full resource-pack reload. Vanilla remains limited to Chise's explicit retained targets.
-        return !"minecraft".equals(namespace) || OreHighlightResolver.resolve(state) != null;
+        return "minecraft".equals(namespace) ? model : new ModdedOreHighlightModel(model);
     }
 }
