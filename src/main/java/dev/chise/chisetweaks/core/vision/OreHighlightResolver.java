@@ -44,23 +44,25 @@ public final class OreHighlightResolver {
                     VanillaOreVisualCatalog.highlightKeyForBlockId(blockId));
             return style == null ? NONE : new Resolved(vanillaTarget, style);
         }
-        if (block == Blocks.OBSIDIAN) return new Resolved(Target.MATERIAL_OBSIDIAN, OreHighlightStyle.OBSIDIAN);
+        if (block == Blocks.OBSIDIAN) {
+            return new Resolved(Target.MATERIAL_OBSIDIAN, OreHighlightStyle.OBSIDIAN);
+        }
         if (block == Blocks.CRYING_OBSIDIAN) {
             return new Resolved(Target.MATERIAL_CRYING_OBSIDIAN, OreHighlightStyle.CRYING_OBSIDIAN);
         }
         if ("minecraft".equals(id.getNamespace())) return NONE;
 
         OreHighlightStyle explicit = OreHighlightExternalRegistry.styleForBlockId(blockId);
-        if (explicit != null) return new Resolved(Target.MATERIAL_MODDED_ORE, explicit);
+        if (explicit != null) return new Resolved(null, explicit);
 
         OreHighlightStyle apiTag = OreHighlightExternalRegistry.styleForApiTag(state);
-        if (apiTag != null) return new Resolved(Target.MATERIAL_MODDED_ORE, apiTag);
+        if (apiTag != null) return new Resolved(null, apiTag);
 
         OreHighlightStyle conventional = conventionalStyle(state);
-        if (conventional != null) return new Resolved(Target.MATERIAL_MODDED_ORE, conventional);
+        if (conventional != null) return new Resolved(null, conventional);
 
         if (ModdedOreIdPolicy.looksLikeOre(blockId)) {
-            return new Resolved(Target.MATERIAL_MODDED_ORE, OreHighlightStyle.GENERIC);
+            return new Resolved(null, OreHighlightStyle.GENERIC);
         }
         return NONE;
     }
@@ -80,5 +82,6 @@ public final class OreHighlightResolver {
         return null;
     }
 
+    /** A null target means a modded ore that follows the master Ore Highlights switch. */
     public record Resolved(@Nullable Target target, @Nullable OreHighlightStyle style) {}
 }
