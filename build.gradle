@@ -74,17 +74,15 @@ jacoco {
     toolVersion = project.jacoco_version
 }
 
-// The rebuilt 96% gate measures only deterministic policy code owned by the retained eight-feature scope.
-// Minecraft renderer/mixin integration is covered by contract tests and manual Prism runtime QA instead of
-// pretending that headless unit coverage proves in-game rendering correctness.
+// The 96% gate measures deterministic policy code owned by the retained visual scope.
+// Minecraft renderer integration is protected by source/artifact contracts and Prism runtime QA.
 def qualityGateClasses = [
-        'dev/chise/chisetweaks/core/performance/VisualModelReloadThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
         'dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy*.class',
         'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
         'dev/chise/chisetweaks/core/policy/LavaVisionPalettePolicy*.class',
         'dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy*.class',
-        'dev/chise/chisetweaks/core/vision/OreHighlightLightingPolicy*.class',
+        'dev/chise/chisetweaks/core/vision/OreHighlightRuntimePolicy*.class',
         'dev/chise/chisetweaks/core/vision/VanillaOreVisualCatalog*.class',
         'dev/chise/chisetweaks/core/vision/VisualModelSelectionPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetGroupPolicy*.class',
@@ -124,13 +122,12 @@ jacocoTestCoverageVerification {
 
 pitest {
     targetClasses = [
-        'dev.chise.chisetweaks.core.performance.VisualModelReloadThrottlePolicy',
         'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
         'dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy',
         'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
         'dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy',
         'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
-        'dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy',
+        'dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy',
         'dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog',
         'dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
