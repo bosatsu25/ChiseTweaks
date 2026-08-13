@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.feature.rendering.model;
 
 import dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy;
 import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadView;
 import net.fabricmc.fabric.api.util.TriState;
@@ -60,7 +61,7 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
      * Fabric's emissive flag is preferred over a hard-coded lightmap because advanced renderers may
      * use non-standard lighting pipelines while still honoring emissive material semantics.
      */
-    private static void applyShaderInvariantHighlightLighting(QuadEmitter quad) {
+    private static void applyShaderInvariantHighlightLighting(MutableQuadView quad) {
         quad.emissive(true);
         quad.diffuseShade(false);
         quad.ambientOcclusion(TriState.FALSE);
