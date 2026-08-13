@@ -12,7 +12,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Resolves a block state to one Chise-owned highlight style without scanning the world. */
 public final class OreHighlightResolver {
     private static final ConcurrentHashMap<Block, Resolved> CACHE = new ConcurrentHashMap<>();
     private static final Resolved NONE = new Resolved(null, null);
@@ -23,10 +22,6 @@ public final class OreHighlightResolver {
         if (state == null) return null;
         Resolved resolved = CACHE.computeIfAbsent(state.getBlock(), ignored -> resolveUncached(state));
         return resolved == NONE ? null : resolved;
-    }
-
-    public static boolean isCandidate(BlockState state) {
-        return resolve(state) != null;
     }
 
     public static void invalidateCache() {
@@ -82,6 +77,5 @@ public final class OreHighlightResolver {
         return null;
     }
 
-    /** A null target means a modded ore that follows the master Ore Highlights switch. */
     public record Resolved(@Nullable Target target, @Nullable OreHighlightStyle style) {}
 }
