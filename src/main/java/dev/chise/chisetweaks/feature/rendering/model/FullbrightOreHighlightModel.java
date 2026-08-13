@@ -16,13 +16,18 @@ import org.jspecify.annotations.Nullable;
 import java.util.function.Predicate;
 
 /**
- * Applies full-bright lighting only to Chise's slightly expanded ore-highlight overlay quads.
+ * Applies shader-invariant full-bright lighting to Chise's slightly expanded ore-highlight overlay quads.
  *
  * <p>The wrapped model still owns the vanilla/resource-pack base geometry. Quads whose vertices
  * remain inside the normal block cube are left untouched and therefore keep ordinary world
- * lighting. Expanded Chise overlay quads are marked emissive and skip diffuse/AO darkening, so
- * they remain readable at Minecraft's maximum visual light level without changing world light,
- * block light emission, packets, or server state.</p>
+ * lighting. Expanded Chise overlay quads are always marked emissive and skip diffuse/AO darkening.
+ * Chise deliberately does not branch on Iris, Sodium, or shader-pack state here: when Ore Highlights
+ * is enabled, the exact same color/pattern/animation overlay is submitted to the active renderer
+ * whether shaders are disabled or enabled. Shader packs may still post-process the final pixels,
+ * but they do not change Chise's feature state or visual-language selection.</p>
+ *
+ * <p>No world light, block emission, packets, server state, shader-pack files, or resource-pack files
+ * are modified.</p>
  */
 final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
     FullbrightOreHighlightModel(BlockStateModel wrapped) {
@@ -39,9 +44,7 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             Predicate<@Nullable Direction> cullTest) {
         emitter.pushTransform(quad -> {
             if (isHighlightOverlay(quad)) {
-                quad.emissive(true);
-                quad.diffuseShade(false);
-                quad.ambientOcclusion(TriState.FALSE);
+                applyShaderInvariantHighlightLighting(quad);
             }
             return true;
         });
@@ -50,6 +53,17 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         } finally {
             emitter.popTransform();
         }
+    }
+
+    /**
+     * The highlight material is intentionally identical for standard and shader-backed renderers.
+     * Fabric's emissive flag is preferred over a hard-coded lightmap because advanced renderers may
+     * use non-standard lighting pipelines while still honoring emissive material semantics.
+     */
+    private static void applyShaderInvariantHighlightLighting(QuadEmitter quad) {
+        quad.emissive(true);
+        quad.diffuseShade(false);
+        quad.ambientOcclusion(TriState.FALSE);
     }
 
     private static boolean isHighlightOverlay(QuadView quad) {
