@@ -57,7 +57,7 @@ final class OreHighlightsReleaseReadinessContractTest {
 
         assertTrue(engine.contains(
                 "definition.inspectionCategory() != BlockInspectionCategory.MATERIAL_HIGHLIGHT"));
-        assertTrue(plugin.contains("ModelLoadingPlugin.register"));
+        assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
         assertTrue(plugin.contains("pluginContext.addModel("));
 
@@ -99,13 +99,17 @@ final class OreHighlightsReleaseReadinessContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightRenderInvalidation.java");
         String bindings = source(
                 "src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
+        String editor = source(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseOreCompatibilityScreen.java");
 
         assertFalse(plugin.contains("reloadResourcePacks"));
         assertFalse(invalidation.contains("reloadResourcePacks"));
         assertFalse(bindings.contains("reloadResourcePacks"));
+        assertFalse(editor.contains("reloadResourcePacks"));
         assertTrue(invalidation.contains("client.levelRenderer.allChanged()"));
         assertTrue(invalidation.contains("AtomicBoolean REQUESTED"));
         assertTrue(bindings.contains("OreHighlightRenderInvalidation.request"));
+        assertTrue(editor.contains("OreHighlightRenderInvalidation.request()"));
         assertFalse(Files.exists(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/VisualModelReloadCoordinator.java")));
         assertFalse(Files.exists(ROOT.resolve(
@@ -132,7 +136,7 @@ final class OreHighlightsReleaseReadinessContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
-        assertTrue(plugin.contains("ore-highlight-composed-overlay-5-nondestructive"));
+        assertTrue(plugin.contains("ore-highlight-composed-overlay-6-modded-compatible"));
         assertTrue(model.contains("quad.emissive(true)"));
         assertTrue(model.contains("quad.diffuseShade(false)"));
         assertTrue(model.contains("quad.ambientOcclusion(TriState.FALSE)"));
@@ -173,6 +177,31 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertTrue(localConfig.contains("public boolean oreHighlightAnimationEnabled = false"));
         assertTrue(localConfig.contains(
                 "public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK"));
+    }
+
+    @Test
+    void moddedOreCompatibilityRemainsLayeredClientOnlyAndBounded() throws IOException {
+        String resolver = source(
+                "src/main/java/dev/chise/chisetweaks/core/vision/OreHighlightResolver.java");
+        String loader = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightResourceCompatibilityLoader.java");
+        String api = source(
+                "src/main/java/dev/chise/chisetweaks/api/ore/OreHighlightApi.java");
+        String config = source(
+                "src/main/java/dev/chise/chisetweaks/config/OreHighlightCompatibilityConfig.java");
+
+        assertTrue(resolver.contains("ConventionalBlockTags.ORES"));
+        assertTrue(resolver.contains("ModdedOreIdPolicy.looksLikeOre"));
+        assertTrue(loader.contains("chisetweaks/ore_compat"));
+        assertTrue(loader.contains("MAX_RESOURCE_ENTRIES = 512"));
+        assertTrue(loader.contains("StrictJsonSecurityPolicy.validateObjectDocument"));
+        assertTrue(api.contains("registerBlock"));
+        assertTrue(api.contains("registerTag"));
+        assertTrue(config.contains("MAX_ENTRIES = 256"));
+        assertTrue(config.contains("SecureConfigStorage.writeUtf8Atomic"));
+        assertFalse(resolver.contains("ClientLevel"));
+        assertFalse(loader.contains("HttpClient"));
+        assertFalse(api.contains("network"));
     }
 
     @Test
