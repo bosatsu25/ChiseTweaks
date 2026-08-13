@@ -4,6 +4,11 @@ import java.util.function.Consumer;
 
 /** Chise-owned UI adapters for retained bounded client-side visibility settings. */
 public final class LocalFeatureSettings {
+    public static final SimpleBooleanSetting ORE_HIGHLIGHT_ANIMATION = bool(
+            "localOreHighlightAnimation", false,
+            "Ore highlight motion", "鉱石ハイライトの動き",
+            "Animate Ore Highlights. Off keeps the same pattern static for reduced motion.",
+            "鉱石ハイライトを動かします。OFFでは同じ模様を静止表示し、動きを抑えます。");
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_HORIZONTAL_RADIUS = integer(
             "localWorksiteVisibilityHorizontalRadius", 5, 1, 8,
             "Horizontal scan radius", "視認スキャン範囲");
@@ -30,6 +35,7 @@ public final class LocalFeatureSettings {
     private static boolean initialized;
     private static boolean syncing;
     private static Runnable worksiteVisibilityModeChangedCallback = () -> {};
+    private static Runnable oreHighlightChangedCallback = () -> {};
 
     private LocalFeatureSettings() {}
 
@@ -44,6 +50,7 @@ public final class LocalFeatureSettings {
         syncing = true;
         try {
             LocalFeatureConfig c = LocalFeatureConfig.getInstance();
+            ORE_HIGHLIGHT_ANIMATION.setBooleanValueSilently(c.oreHighlightAnimationEnabled);
             WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setIntegerValueSilently(c.worksiteVisibilityHorizontalRadius);
             WORKSITE_VISIBILITY_VERTICAL_RADIUS.setIntegerValueSilently(c.worksiteVisibilityVerticalRadius);
             WORKSITE_VISIBILITY_INTERVAL.setIntegerValueSilently(c.worksiteVisibilityIntervalTicks);
@@ -56,6 +63,10 @@ public final class LocalFeatureSettings {
     }
 
     private static void bindCallbacks() {
+        ORE_HIGHLIGHT_ANIMATION.setValueChangeCallback(ignored -> {
+            save(c -> c.oreHighlightAnimationEnabled = ORE_HIGHLIGHT_ANIMATION.getBooleanValue());
+            oreHighlightChangedCallback.run();
+        });
         WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> save(
                 c -> c.worksiteVisibilityHorizontalRadius = WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.getIntegerValue()));
         WORKSITE_VISIBILITY_VERTICAL_RADIUS.setValueChangeCallback(ignored -> save(
@@ -75,6 +86,10 @@ public final class LocalFeatureSettings {
 
     public static void setWorksiteVisibilityModeChangedCallback(Runnable callback) {
         worksiteVisibilityModeChangedCallback = callback == null ? () -> {} : callback;
+    }
+
+    public static void setOreHighlightChangedCallback(Runnable callback) {
+        oreHighlightChangedCallback = callback == null ? () -> {} : callback;
     }
 
     private static void save(Consumer<LocalFeatureConfig> update) {
