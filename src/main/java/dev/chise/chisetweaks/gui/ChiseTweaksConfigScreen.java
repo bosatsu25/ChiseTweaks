@@ -180,10 +180,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void runRowAction(ChiseTweaksSettingRowDefinition.Action action) {
         if (minecraft == null || action == null) return;
         applyChanges();
-        var target = action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
-                ? ChiseSceneFilterEditorScreen.Target.BLOCKS
-                : ChiseSceneFilterEditorScreen.Target.ENTITIES;
-        minecraft.setScreen(new ChiseSceneFilterEditorScreen(this, target, controller.japanese()));
+        switch (action) {
+            case EDIT_BLOCK_FILTER -> minecraft.setScreen(new ChiseSceneFilterEditorScreen(
+                    this, ChiseSceneFilterEditorScreen.Target.BLOCKS, controller.japanese()));
+            case EDIT_ENTITY_FILTER -> minecraft.setScreen(new ChiseSceneFilterEditorScreen(
+                    this, ChiseSceneFilterEditorScreen.Target.ENTITIES, controller.japanese()));
+            case EDIT_ORE_COMPAT -> minecraft.setScreen(new ChiseOreCompatibilityScreen(
+                    this, controller.japanese()));
+        }
     }
 
     private void navigate(ChiseTweaksUiSection section) {
