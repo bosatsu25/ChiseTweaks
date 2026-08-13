@@ -78,6 +78,7 @@ jacoco {
 // Minecraft renderer/mixin integration is covered by contract tests and manual Prism runtime QA instead of
 // pretending that headless unit coverage proves in-game rendering correctness.
 def qualityGateClasses = [
+        'dev/chise/chisetweaks/core/performance/VisualModelReloadThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
         'dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy*.class',
         'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
@@ -85,6 +86,7 @@ def qualityGateClasses = [
         'dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy*.class',
         'dev/chise/chisetweaks/core/vision/OreHighlightLightingPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VanillaOreVisualCatalog*.class',
+        'dev/chise/chisetweaks/core/vision/VisualModelSelectionPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetGroupPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetSelectionPolicy*.class'
 ]
@@ -122,6 +124,7 @@ jacocoTestCoverageVerification {
 
 pitest {
     targetClasses = [
+        'dev.chise.chisetweaks.core.performance.VisualModelReloadThrottlePolicy',
         'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
         'dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy',
         'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
@@ -129,6 +132,7 @@ pitest {
         'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
         'dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy',
         'dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog',
+        'dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy'
     ]
