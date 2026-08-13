@@ -16,9 +16,7 @@ final class ConfigDocumentPolicyTest {
     void featureToggleDocumentKeepsOnlyKnownBooleanSwitches() {
         JsonObject root = new JsonObject();
         JsonObject toggles = new JsonObject();
-        for (FeatureSwitch toggle : FeatureSwitches.VALUES) {
-            toggles.addProperty(toggle.getName(), true);
-        }
+        for (FeatureSwitch toggle : FeatureSwitches.VALUES) toggles.addProperty(toggle.getName(), true);
         toggles.addProperty("pumpkinScaffold", true);
         toggles.addProperty("placementGuide", true);
         toggles.addProperty("fineThreadTraceBadType", "true");
@@ -38,13 +36,11 @@ final class ConfigDocumentPolicyTest {
     @Test
     void featureToggleDocumentHandlesNullMissingAndWrongSectionTypes() {
         assertEquals(0, FeatureConfigDocumentPolicy.sanitizeForRead(null).size());
-
         JsonObject unrelated = new JsonObject();
         unrelated.addProperty("Generic", true);
         JsonObject copied = FeatureConfigDocumentPolicy.sanitizeForRead(unrelated);
         assertNotSame(unrelated, copied);
         assertTrue(copied.has("Generic"));
-
         JsonObject wrongType = new JsonObject();
         wrongType.addProperty("FeatureToggles", true);
         assertFalse(FeatureConfigDocumentPolicy.sanitizeForRead(wrongType).has("FeatureToggles"));
@@ -55,6 +51,7 @@ final class ConfigDocumentPolicyTest {
         JsonObject defaults = JsonParser.parseString("""
                 {
                   "lavaHighlightEnabled": false,
+                  "oreHighlightAnimationEnabled": false,
                   "worksiteVisibilityHorizontalRadius": 5,
                   "worksiteVisibilityVerticalRadius": 3,
                   "worksiteVisibilityIntervalTicks": 10,
@@ -69,6 +66,7 @@ final class ConfigDocumentPolicyTest {
         JsonObject source = JsonParser.parseString("""
                 {
                   "lavaHighlightEnabled": true,
+                  "oreHighlightAnimationEnabled": true,
                   "worksiteVisibilityHorizontalRadius": 8,
                   "worksiteVisibilityWorldOverlay": false,
                   "visualTargetMask": 123,
@@ -79,6 +77,7 @@ final class ConfigDocumentPolicyTest {
 
         JsonObject merged = LocalFeatureConfigDocumentPolicy.overlayKnownValues(defaults, source);
         assertTrue(merged.get("lavaHighlightEnabled").getAsBoolean());
+        assertTrue(merged.get("oreHighlightAnimationEnabled").getAsBoolean());
         assertEquals(8, merged.get("worksiteVisibilityHorizontalRadius").getAsInt());
         assertFalse(merged.get("worksiteVisibilityWorldOverlay").getAsBoolean());
         assertEquals(123, merged.get("visualTargetMask").getAsInt());
@@ -90,18 +89,18 @@ final class ConfigDocumentPolicyTest {
     @Test
     void localDocumentRejectsWrongPrimitiveTypesFractionsAndOverflow() {
         JsonObject defaults = JsonParser.parseString("""
-                {"lavaHighlightEnabled":false,"worksiteVisibilityHorizontalRadius":5}
+                {"lavaHighlightEnabled":false,"oreHighlightAnimationEnabled":false,"worksiteVisibilityHorizontalRadius":5}
                 """).getAsJsonObject();
-
         assertThrows(IllegalArgumentException.class, () -> LocalFeatureConfigDocumentPolicy.overlayKnownValues(
                 defaults, JsonParser.parseString("{\"lavaHighlightEnabled\":\"true\"}").getAsJsonObject()));
+        assertThrows(IllegalArgumentException.class, () -> LocalFeatureConfigDocumentPolicy.overlayKnownValues(
+                defaults, JsonParser.parseString("{\"oreHighlightAnimationEnabled\":1}").getAsJsonObject()));
         assertThrows(IllegalArgumentException.class, () -> LocalFeatureConfigDocumentPolicy.overlayKnownValues(
                 defaults, JsonParser.parseString("{\"worksiteVisibilityHorizontalRadius\":1.5}").getAsJsonObject()));
         assertThrows(IllegalArgumentException.class, () -> LocalFeatureConfigDocumentPolicy.overlayKnownValues(
                 defaults, JsonParser.parseString("{\"worksiteVisibilityHorizontalRadius\":\"8\"}").getAsJsonObject()));
         assertThrows(IllegalArgumentException.class, () -> LocalFeatureConfigDocumentPolicy.overlayKnownValues(
                 defaults, JsonParser.parseString("{\"worksiteVisibilityHorizontalRadius\":999999999999999999999}").getAsJsonObject()));
-
         JsonObject exactDecimal = LocalFeatureConfigDocumentPolicy.overlayKnownValues(
                 defaults, JsonParser.parseString("{\"worksiteVisibilityHorizontalRadius\":8.0}").getAsJsonObject());
         assertEquals(8, exactDecimal.get("worksiteVisibilityHorizontalRadius").getAsInt());
@@ -117,7 +116,7 @@ final class ConfigDocumentPolicyTest {
     }
 
     @Test
-    void localConfigMigrationIgnoresRemovedFieldsClampsBudgetsAndAddsLegacyNetherTargets() {
+    void localConfigMigrationDefaultsOldFilesToStaticOreHighlights() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         assertTrue(config.replaceFromJsonDocument("""
                 {
@@ -134,6 +133,7 @@ final class ConfigDocumentPolicyTest {
                 }
                 """));
         assertTrue(config.lavaHighlightEnabled);
+        assertFalse(config.oreHighlightAnimationEnabled);
         assertEquals(8, config.worksiteVisibilityHorizontalRadius);
         assertEquals(1, config.worksiteVisibilityVerticalRadius);
         assertEquals(100, config.worksiteVisibilityIntervalTicks);
@@ -144,15 +144,28 @@ final class ConfigDocumentPolicyTest {
     }
 
     @Test
+    void localConfigPersistsExplicitOreAnimationOptIn() {
+        LocalFeatureConfig config = new LocalFeatureConfig();
+        assertTrue(config.replaceFromJsonDocument("""
+                {
+                  "oreHighlightAnimationEnabled": true,
+                  "visualTargetMask": 0,
+                  "visualTargetSchemaVersion": 2
+                }
+                """));
+        assertTrue(config.oreHighlightAnimationEnabled);
+    }
+
+    @Test
     void localConfigRejectsUnsafeDocumentsAndRestoresDefaults() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         config.lavaHighlightEnabled = true;
+        config.oreHighlightAnimationEnabled = true;
         config.worksiteVisibilityHorizontalRadius = 8;
-
         assertFalse(config.replaceFromJsonDocument("{\"lavaHighlightEnabled\":true,\"lavaHighlightEnabled\":false}"));
         assertFalse(config.lavaHighlightEnabled);
+        assertFalse(config.oreHighlightAnimationEnabled);
         assertEquals(5, config.worksiteVisibilityHorizontalRadius);
-
         assertFalse(config.replaceFromJsonDocument("{\"lavaHighlightEnabled\":\"true\"}"));
         assertFalse(config.lavaHighlightEnabled);
         assertFalse(config.replaceFromJsonDocument(null));
