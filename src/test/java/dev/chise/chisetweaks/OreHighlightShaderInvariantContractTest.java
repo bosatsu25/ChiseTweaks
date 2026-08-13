@@ -37,7 +37,8 @@ final class OreHighlightShaderInvariantContractTest {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
 
-        assertTrue(plugin.contains("ore-highlight-composed-overlay-5-nondestructive"));
+        assertTrue(plugin.contains("ore-highlight-composed-overlay-6-modded-compatible"));
+        assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("pluginContext.addModel("));
         assertTrue(plugin.contains("SimpleUnbakedExtraModel.blockStateModel"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));

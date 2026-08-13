@@ -18,11 +18,11 @@ final class OreHighlightFailSoftContractTest {
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
         int baseEmit = model.indexOf("super.emitQuads(emitter, level, pos, state, random, cullTest);");
-        int overlayLookup = model.indexOf("BlockStateModel overlay = overlayModel(animated);");
+        int optionalBranch = model.indexOf("if (dynamicModded)", baseEmit);
         int overlayEmit = model.indexOf("overlay.emitQuads(emitter, level, pos, state, random, cullTest);");
         assertTrue(baseEmit >= 0);
-        assertTrue(baseEmit < overlayLookup);
-        assertTrue(overlayLookup < overlayEmit);
+        assertTrue(baseEmit < optionalBranch);
+        assertTrue(optionalBranch < overlayEmit);
     }
 
     @Test
