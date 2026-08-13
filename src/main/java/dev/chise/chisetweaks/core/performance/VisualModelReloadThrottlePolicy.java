@@ -33,7 +33,10 @@ public final class VisualModelReloadThrottlePolicy {
             return false;
         }
 
-        if (stableTicks < QUIET_TICKS) stableTicks++;
+        // stableTicks is deliberately saturated at the exact threshold. Using != instead of a
+        // non-observable < boundary keeps the debounce semantics identical while making future
+        // mutation testing capable of distinguishing a changed condition.
+        if (stableTicks != QUIET_TICKS) stableTicks++;
         return stableTicks >= QUIET_TICKS
                 && retryCooldownTicks == 0
                 && !reloadInFlight;

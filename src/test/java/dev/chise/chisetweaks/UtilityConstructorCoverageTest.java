@@ -7,6 +7,7 @@ import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy;
 import dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog;
+import dev.chise.chisetweaks.core.vision.VisualModelSelectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ final class UtilityConstructorCoverageTest {
                 WorksiteVisibilitySelectionPolicy.class,
                 OreHighlightLightingPolicy.class,
                 VanillaOreVisualCatalog.class,
+                VisualModelSelectionPolicy.class,
                 VisualTargetGroupPolicy.class,
                 VisualTargetSelectionPolicy.class)) {
             Constructor<?> constructor = type.getDeclaredConstructor();

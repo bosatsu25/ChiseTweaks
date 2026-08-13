@@ -28,7 +28,10 @@ permissions:
 
 jobs:
   verify:
-    name: Java 25 retained-scope quality gate
+    # Keep this name aligned with the repository's required status context:
+    # "verify / Java 25 quality gate". Renaming it can allow a stale protection
+    # rule to stop enforcing the real verification job.
+    name: Java 25 quality gate
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     outputs:
