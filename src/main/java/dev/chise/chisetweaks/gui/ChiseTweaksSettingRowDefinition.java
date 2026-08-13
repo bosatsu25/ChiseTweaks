@@ -66,6 +66,7 @@ record ChiseTweaksSettingRowDefinition(
 
     enum Action {
         EDIT_BLOCK_FILTER,
-        EDIT_ENTITY_FILTER
+        EDIT_ENTITY_FILTER,
+        EDIT_ORE_COMPAT
     }
 }
