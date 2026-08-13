@@ -1,5 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
+import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -10,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseTweaksSettingsControllerTest {
@@ -17,13 +19,11 @@ final class ChiseTweaksSettingsControllerTest {
     void japaneseAndEnglishUseTheSameStableRowStructure() {
         var japanese = new ChiseTweaksSettingsController(true);
         var english = new ChiseTweaksSettingsController(false);
-
         for (ChiseTweaksUiSection section : List.of(
                 ChiseTweaksUiSection.RESOURCES,
                 ChiseTweaksUiSection.VISIBILITY)) {
             List<ChiseTweaksSettingRowDefinition> japaneseRows = japanese.rowsFor(section);
             List<ChiseTweaksSettingRowDefinition> englishRows = english.rowsFor(section);
-
             assertEquals(ids(englishRows), ids(japaneseRows), section.name());
             assertEquals(kinds(englishRows), kinds(japaneseRows), section.name());
             assertFalse(japaneseRows.isEmpty(), section.name());
@@ -33,9 +33,23 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
+    void resourcesExposeExplicitReducedMotionOreControl() {
+        var controller = new ChiseTweaksSettingsController(true);
+        List<ChiseTweaksSettingRowDefinition> rows = controller.rowsFor(ChiseTweaksUiSection.RESOURCES);
+        List<ChiseTweaksSettingRowDefinition> motionRows = rows.stream()
+                .filter(row -> row.id().equals("oreMotion"))
+                .toList();
+        assertEquals(1, motionRows.size());
+        ChiseTweaksSettingRowDefinition motion = motionRows.getFirst();
+        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, motion.kind());
+        assertSame(LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION, motion.booleanConfig());
+        assertFalse(motion.booleanConfig().getDefaultBooleanValue());
+        assertTrue(motion.name().contains("動"));
+    }
+
+    @Test
     void helpIsNavigationOnlyAndDoesNotCreateSettingsRows() {
         var controller = new ChiseTweaksSettingsController(true);
-
         assertTrue(controller.rowsFor(ChiseTweaksUiSection.HELP).isEmpty());
         assertTrue(controller.rowsFor(null).isEmpty());
     }
@@ -43,12 +57,7 @@ final class ChiseTweaksSettingsControllerTest {
     @Test
     void rowIdsAreUniqueWithinEachSectionAndRemovedFeaturesDoNotReturn() {
         var controller = new ChiseTweaksSettingsController(false);
-        Set<String> removedTokens = Set.of(
-                "pumpkin",
-                "placement",
-                "lavaSourceColor",
-                "sodium");
-
+        Set<String> removedTokens = Set.of("pumpkin", "placement", "lavaSourceColor", "sodium");
         for (ChiseTweaksUiSection section : List.of(
                 ChiseTweaksUiSection.RESOURCES,
                 ChiseTweaksUiSection.VISIBILITY)) {
@@ -69,7 +78,6 @@ final class ChiseTweaksSettingsControllerTest {
     void actionRowsRemainPairedWithBothSceneFilterTargets() {
         var controller = new ChiseTweaksSettingsController(false);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rowsFor(ChiseTweaksUiSection.VISIBILITY);
-
         assertTrue(rows.stream().anyMatch(row ->
                 row.action() == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER));
         assertTrue(rows.stream().anyMatch(row ->

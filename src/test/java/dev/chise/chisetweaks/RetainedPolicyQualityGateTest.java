@@ -5,7 +5,6 @@ import dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
-import dev.chise.chisetweaks.core.vision.OreHighlightLightingPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import org.junit.jupiter.api.Test;
@@ -25,19 +24,15 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(1, WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(Integer.MIN_VALUE));
         assertEquals(4, WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(4));
         assertEquals(8, WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(Integer.MAX_VALUE));
-
         assertEquals(1, WorksiteVisibilityBudgetPolicy.clampVerticalRadius(Integer.MIN_VALUE));
         assertEquals(3, WorksiteVisibilityBudgetPolicy.clampVerticalRadius(3));
         assertEquals(5, WorksiteVisibilityBudgetPolicy.clampVerticalRadius(Integer.MAX_VALUE));
-
         assertEquals(5, WorksiteVisibilityBudgetPolicy.clampIntervalTicks(Integer.MIN_VALUE));
         assertEquals(10, WorksiteVisibilityBudgetPolicy.clampIntervalTicks(10));
         assertEquals(100, WorksiteVisibilityBudgetPolicy.clampIntervalTicks(Integer.MAX_VALUE));
-
         assertEquals(1, WorksiteVisibilityBudgetPolicy.clampOverlayResults(Integer.MIN_VALUE));
         assertEquals(12, WorksiteVisibilityBudgetPolicy.clampOverlayResults(12));
         assertEquals(24, WorksiteVisibilityBudgetPolicy.clampOverlayResults(Integer.MAX_VALUE));
-
         assertEquals(1, WorksiteVisibilityBudgetPolicy.clampLegacyResults(Integer.MIN_VALUE));
         assertEquals(6, WorksiteVisibilityBudgetPolicy.clampLegacyResults(6));
         assertEquals(8, WorksiteVisibilityBudgetPolicy.clampLegacyResults(Integer.MAX_VALUE));
@@ -58,35 +53,10 @@ final class RetainedPolicyQualityGateTest {
     }
 
     @Test
-    void oreHighlightOverlayBoundaryIsDeterministicAndMutationVerifiable() {
-        assertEquals(15, OreHighlightLightingPolicy.FULL_BRIGHT_LIGHT_LEVEL);
-        assertEquals(0.0f, OreHighlightLightingPolicy.BASE_MIN);
-        assertEquals(1.0f, OreHighlightLightingPolicy.BASE_MAX);
-        assertEquals(0.001f, OreHighlightLightingPolicy.OVERLAY_EPSILON);
-
-        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(0.0f, 0.0f, 0.0f));
-        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(1.0f, 1.0f, 1.0f));
-        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(-0.001f, 0.5f, 0.5f));
-        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(1.001f, 0.5f, 0.5f));
-
-        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(-0.0011f, 0.5f, 0.5f));
-        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(1.0011f, 0.5f, 0.5f));
-        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(0.5f, -0.0011f, 0.5f));
-        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(0.5f, 1.0011f, 0.5f));
-        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(0.5f, 0.5f, -0.0011f));
-        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(0.5f, 0.5f, 1.0011f));
-
-        assertFalse(OreHighlightLightingPolicy.isOverlayVertex(Float.NaN, 0.5f, 0.5f));
-        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(Float.NEGATIVE_INFINITY, 0.5f, 0.5f));
-        assertTrue(OreHighlightLightingPolicy.isOverlayVertex(Float.POSITIVE_INFINITY, 0.5f, 0.5f));
-    }
-
-    @Test
     void worksiteModeTogglePreservesOrExcludesOtherModesAsRequested() {
         var fine = WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD;
         var glass = WorksiteVisibilitySelectionPolicy.Mode.GLASS;
         var hidden = WorksiteVisibilitySelectionPolicy.Mode.HIDDEN_SURFACE;
-
         assertEquals(Set.of(fine), WorksiteVisibilitySelectionPolicy.afterToggle(null, fine, true, false));
         assertEquals(Set.of(), WorksiteVisibilitySelectionPolicy.afterToggle(null, fine, false, false));
         assertEquals(Set.of(fine, glass), WorksiteVisibilitySelectionPolicy.afterToggle(
@@ -101,7 +71,6 @@ final class RetainedPolicyQualityGateTest {
     void worksiteExclusiveNormalizationCollapsesOnlyWhenNecessary() {
         var fine = WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD;
         var glass = WorksiteVisibilitySelectionPolicy.Mode.GLASS;
-
         assertEquals(Set.of(), WorksiteVisibilitySelectionPolicy.normalize(null, true));
         assertEquals(Set.of(fine), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine), true));
         assertEquals(Set.of(fine, glass), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine, glass), false));
@@ -113,11 +82,9 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(List.of(), ConfigListPolicy.sanitize(null));
         assertEquals(List.of("minecraft:stone", "Minecraft:Stone"), ConfigListPolicy.sanitize(List.of(
                 "  minecraft:stone  ", "minecraft:stone", "Minecraft:Stone")));
-
         String tooLong = "a".repeat(ConfigListPolicy.MAX_ENTRY_CHARS + 1);
         assertEquals(List.of("ok"), ConfigListPolicy.sanitize(java.util.Arrays.asList(
                 null, "", "   ", tooLong, "bad\nvalue", "bad\u202Evalue", " ok ")));
-
         ArrayList<String> oversized = new ArrayList<>();
         for (int index = 0; index < ConfigListPolicy.MAX_ENTRIES + 20; index++) {
             oversized.add("minecraft:block_" + index);
@@ -133,7 +100,6 @@ final class RetainedPolicyQualityGateTest {
         var none = BuilderEntityVisibilityPolicy.Mode.NONE;
         var blacklist = BuilderEntityVisibilityPolicy.Mode.BLACKLIST;
         var whitelist = BuilderEntityVisibilityPolicy.Mode.WHITELIST;
-
         assertEquals(BuilderEntityVisibilityPolicy.Decision.SHOW_DISABLED,
                 BuilderEntityVisibilityPolicy.evaluate(input(false, false, "minecraft:zombie", blacklist,
                         Set.of("minecraft:zombie"), Set.of())));
@@ -157,7 +123,6 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(BuilderEntityVisibilityPolicy.Decision.HIDE,
                 BuilderEntityVisibilityPolicy.evaluate(input(true, false, "minecraft:zombie", whitelist,
                         Set.of(), Set.of("minecraft:cow"))));
-
         assertTrue(BuilderEntityVisibilityPolicy.filtersPlayers(blacklist,
                 Set.of("minecraft:player"), Set.of()));
         assertFalse(BuilderEntityVisibilityPolicy.filtersPlayers(blacklist, Set.of(), Set.of()));
@@ -193,7 +158,6 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(0xFF075B32, LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB);
         assertEquals(0xFF021A0E, LavaVisionPalettePolicy.FAR_OUTLINE_ARGB);
         assertEquals(0.026f, LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS);
-
         assertEquals(LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB,
                 LavaVisionPalettePolicy.colorForDistance(-100));
         assertEquals(LavaVisionPalettePolicy.SOURCE_OUTLINE_ARGB,
@@ -220,12 +184,10 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(0, material & hidden);
         assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK, material | hidden);
         assertEquals(0, VisualTargetGroupPolicy.maskFor(null));
-
         int all = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
         assertTrue(VisualTargetGroupPolicy.allEnabled(all, VisualTargetGroupPolicy.Group.MATERIAL));
         assertTrue(VisualTargetGroupPolicy.allEnabled(all, VisualTargetGroupPolicy.Group.HIDDEN));
         assertFalse(VisualTargetGroupPolicy.allEnabled(all, null));
-
         int noMaterial = VisualTargetGroupPolicy.withAll(all, VisualTargetGroupPolicy.Group.MATERIAL, false);
         assertFalse(VisualTargetGroupPolicy.allEnabled(noMaterial, VisualTargetGroupPolicy.Group.MATERIAL));
         assertTrue(VisualTargetGroupPolicy.allEnabled(noMaterial, VisualTargetGroupPolicy.Group.HIDDEN));

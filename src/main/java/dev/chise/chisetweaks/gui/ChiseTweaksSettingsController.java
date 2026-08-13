@@ -63,6 +63,10 @@ final class ChiseTweaksSettingsController {
         if (group == null) return;
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
         boolean enabled = !VisualTargetGroupPolicy.allEnabled(config.visualTargetMask, group);
+        if (group == VisualTargetGroupPolicy.Group.MATERIAL) {
+            VisualTargetSettings.setAllOreHighlightTargets(enabled);
+            return;
+        }
         config.visualTargetMask = VisualTargetGroupPolicy.withAll(
                 config.visualTargetMask,
                 group,
@@ -76,6 +80,7 @@ final class ChiseTweaksSettingsController {
         switch (section) {
             case RESOURCES -> {
                 FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
+                LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION.resetToDefault();
                 FeatureSwitches.NETHER_PALETTE.resetToDefault();
                 resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
             }
@@ -116,6 +121,9 @@ final class ChiseTweaksSettingsController {
                 "鉱石ハイライト",
                 "バニラ鉱石" + VanillaOreVisualCatalog.blockVariantCount()
                         + "ブロック種をリソースパックなしで発光枠表示する");
+        bool(rows, "oreMotion", LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION,
+                "ハイライトを動かす",
+                "OFFでは発光する模様を静止表示し、動きを抑える。ONで控えめにアニメーションする");
         bool(rows, "nether", FeatureSwitches.NETHER_PALETTE,
                 "ネザー配色ガイド", "ネザーの主要な建材・地形素材を色分けして見やすくする");
 
@@ -241,6 +249,10 @@ final class ChiseTweaksSettingsController {
     }
 
     private void resetTargetGroup(VisualTargetGroupPolicy.Group group) {
+        if (group == VisualTargetGroupPolicy.Group.MATERIAL) {
+            VisualTargetSettings.setAllOreHighlightTargets(true);
+            return;
+        }
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
         config.visualTargetMask = VisualTargetGroupPolicy.withAll(
                 config.visualTargetMask,

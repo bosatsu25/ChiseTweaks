@@ -3,32 +3,25 @@ import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
 def generatedVisualAssetsDir = layout.buildDirectory.dir('generated/chiseVisualAssets')
-
 def OVERLAY_OFFSET = 0.03d
 
 def argb = { a, r, g, b ->
     (((a as int) << 24) | ((r as int) << 16) | ((g as int) << 8) | (b as int)) as int
 }
-
 def clampChannel = { value -> Math.max(0, Math.min(255, Math.round(value as double) as int)) }
-
 def whiteMix = { rgb, mix, alpha ->
     double amount = mix as double
-    argb(
-            alpha,
+    argb(alpha,
             clampChannel(rgb[0] + (255 - rgb[0]) * amount),
             clampChannel(rgb[1] + (255 - rgb[1]) * amount),
             clampChannel(rgb[2] + (255 - rgb[2]) * amount))
 }
-
 def solidColor = { rgb, alpha -> argb(alpha, rgb[0], rgb[1], rgb[2]) }
-
 def putPixel = { image, x, y, color ->
     int px = x as int
     int py = y as int
     if (px >= 0 && px < image.width && py >= 0 && py < image.height) image.setRGB(px, py, color as int)
 }
-
 def line = { image, x0Raw, y0Raw, x1Raw, y1Raw, colorRaw ->
     int x0 = x0Raw as int
     int y0 = y0Raw as int
@@ -49,8 +42,8 @@ def line = { image, x0Raw, y0Raw, x1Raw, y1Raw, colorRaw ->
     }
 }
 
-// One semantic definition per material family. Normal/deepslate variants share the same
-// Chise overlay so the UI can select a resource family without duplicating texture assets.
+// One clean-room semantic definition per material family. Normal/deepslate variants deliberately
+// share one overlay identity. These motifs are Chise-authored and contain no sampled pack pixels.
 def materialSpecs = [
         [key: 'diamond', frame: [34, 225, 255], ore: [38, 190, 225], accent: [220, 254, 255], motif: 'crystal'],
         [key: 'gold', frame: [255, 190, 18], ore: [232, 160, 8], accent: [255, 248, 180], motif: 'dotted'],
@@ -72,7 +65,6 @@ def drawOuterFrame = { image, top, frameColor, brightColor, frame ->
     line(image, 0, top + 15, 15, top + 15, frameColor)
     line(image, 0, top, 0, top + 15, frameColor)
     line(image, 15, top, 15, top + 15, frameColor)
-
     int sweep = Math.floorMod(frame * 3, 12) + 2
     putPixel(image, sweep, top, brightColor)
     putPixel(image, 15, top + sweep, brightColor)
@@ -96,8 +88,6 @@ def drawSparkle = { image, frame, top, bright, accent ->
     }
 }
 
-// Sparse interior marks carry the resource-family colour even at light level 0 without hiding
-// the underlying vanilla/resource-pack texture. These are Chise-authored motifs, not copied masks.
 def drawOreAccents = { image, spec, frame, top, oreColor, bright, accent ->
     int sweep = Math.floorMod(frame * 2, 10) + 3
     switch (spec.motif) {
@@ -111,7 +101,9 @@ def drawOreAccents = { image, spec, frame, top, oreColor, bright, accent ->
             }
             break
         case 'dotted':
-            [[3, 4], [8, 3], [12, 7], [5, 10], [10, 12]].each { p -> putPixel(image, p[0], top + p[1], oreColor) }
+            [[3, 4], [8, 3], [12, 7], [5, 10], [10, 12]].each { p ->
+                putPixel(image, p[0], top + p[1], oreColor)
+            }
             putPixel(image, sweep, top + 8, bright)
             break
         case 'runes':
@@ -152,8 +144,6 @@ def drawOreAccents = { image, spec, frame, top, oreColor, bright, accent ->
             }
             break
         case 'whorl':
-            // A Chise-authored square spiral echoes Ancient Debris' layered/whorled identity
-            // without sampling or reproducing the vanilla texture pixels.
             line(image, 3, top + 3, 12, top + 3, oreColor)
             line(image, 12, top + 3, 12, top + 12, oreColor)
             line(image, 12, top + 12, 3, top + 12, accent)
@@ -193,32 +183,42 @@ def drawOreAccents = { image, spec, frame, top, oreColor, bright, accent ->
             line(image, 9, top + 12, 12, top + 6, accent)
             putPixel(image, sweep, top + 8, bright)
             break
+        default:
+            throw new GradleException("Unknown Chise overlay motif: ${spec.motif}")
     }
 }
 
-def writeHighlightTexture = { output, spec ->
-    def image = new BufferedImage(16, 128, BufferedImage.TYPE_INT_ARGB)
+def drawFrame = { image, spec, frame, top ->
     def brightnessMix = [0.00d, 0.05d, 0.12d, 0.20d, 0.40d, 0.20d, 0.12d, 0.05d]
+    int frameColor = whiteMix(spec.frame, brightnessMix[frame], 255)
+    int bright = whiteMix(spec.frame, frame == 4 ? 0.86d : 0.56d, 255)
+    int accent = whiteMix(spec.accent, frame == 4 ? 0.90d : 0.50d, 255)
+    int oreColor = solidColor(spec.ore, 235)
+    drawOuterFrame(image, top, frameColor, bright, frame)
+    drawOreAccents(image, spec, frame, top, oreColor, bright, accent)
+    drawSparkle(image, frame, top, bright, accent)
+}
 
-    (0..<8).each { frame ->
-        int top = frame * 16
-        int frameColor = whiteMix(spec.frame, brightnessMix[frame], 255)
-        int bright = whiteMix(spec.frame, frame == 4 ? 0.86d : 0.56d, 255)
-        int accent = whiteMix(spec.accent, frame == 4 ? 0.90d : 0.50d, 255)
-        int oreColor = solidColor(spec.ore, 235)
+def writeAnimatedHighlightTexture = { output, spec ->
+    def image = new BufferedImage(16, 128, BufferedImage.TYPE_INT_ARGB)
+    (0..<8).each { frame -> drawFrame(image, spec, frame, frame * 16) }
+    output.parentFile.mkdirs()
+    if (!ImageIO.write(image, 'png', output)) throw new GradleException("No PNG writer is available for ${output}")
+}
 
-        drawOuterFrame(image, top, frameColor, bright, frame)
-        drawOreAccents(image, spec, frame, top, oreColor, bright, accent)
-        drawSparkle(image, frame, top, bright, accent)
-    }
-
+def writeStaticHighlightTexture = { output, spec ->
+    def image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB)
+    // Static mode is exactly frame zero: same semantic motif, no motion.
+    drawFrame(image, spec, 0, 0)
     output.parentFile.mkdirs()
     if (!ImageIO.write(image, 'png', output)) throw new GradleException("No PNG writer is available for ${output}")
 }
 
 def writeAnimationMeta = { output ->
     output.parentFile.mkdirs()
-    output.setText(JsonOutput.prettyPrint(JsonOutput.toJson([animation: [frametime: 1, interpolate: true]])) + '\n', 'UTF-8')
+    output.setText(JsonOutput.prettyPrint(JsonOutput.toJson([
+            animation: [frametime: 1, interpolate: true]
+    ])) + '\n', 'UTF-8')
 }
 
 def cubeFaces = { texture ->
@@ -238,38 +238,11 @@ def overlayElement = { texture ->
     ]
 }
 
-def cubeModel = { baseTexture, highlightTexture ->
+def overlayOnlyModel = { highlightTexture ->
     [
-            ambientocclusion: true,
-            textures: [base: baseTexture, highlight: highlightTexture, particle: baseTexture],
-            elements: [
-                    [from: [0, 0, 0], to: [16, 16, 16], faces: cubeFaces('#base')],
-                    overlayElement('#highlight')
-            ]
-    ]
-}
-
-def ancientDebrisModel = { highlightTexture ->
-    def baseFaces = [
-            down: [texture: '#top', cullface: 'down', uv: [0, 0, 16, 16]],
-            up: [texture: '#top', cullface: 'up', uv: [0, 0, 16, 16]],
-            north: [texture: '#side', cullface: 'north', uv: [0, 0, 16, 16]],
-            south: [texture: '#side', cullface: 'south', uv: [0, 0, 16, 16]],
-            west: [texture: '#side', cullface: 'west', uv: [0, 0, 16, 16]],
-            east: [texture: '#side', cullface: 'east', uv: [0, 0, 16, 16]]
-    ]
-    [
-            ambientocclusion: true,
-            textures: [
-                    top: 'minecraft:block/ancient_debris_top',
-                    side: 'minecraft:block/ancient_debris_side',
-                    highlight: highlightTexture,
-                    particle: 'minecraft:block/ancient_debris_side'
-            ],
-            elements: [
-                    [from: [0, 0, 0], to: [16, 16, 16], faces: baseFaces],
-                    overlayElement('#highlight')
-            ]
+            ambientocclusion: false,
+            textures: [highlight: highlightTexture, particle: highlightTexture],
+            elements: [overlayElement('#highlight')]
     ]
 }
 
@@ -278,50 +251,30 @@ def writeModel = { output, model ->
     output.setText(JsonOutput.prettyPrint(JsonOutput.toJson(model)) + '\n', 'UTF-8')
 }
 
-def modelSpecs = [
-        [id: 'diamond_ore', base: 'minecraft:block/diamond_ore', highlight: 'diamond'],
-        [id: 'deepslate_diamond_ore', base: 'minecraft:block/deepslate_diamond_ore', highlight: 'diamond'],
-        [id: 'gold_ore', base: 'minecraft:block/gold_ore', highlight: 'gold'],
-        [id: 'deepslate_gold_ore', base: 'minecraft:block/deepslate_gold_ore', highlight: 'gold'],
-        [id: 'emerald_ore', base: 'minecraft:block/emerald_ore', highlight: 'emerald'],
-        [id: 'deepslate_emerald_ore', base: 'minecraft:block/deepslate_emerald_ore', highlight: 'emerald'],
-        [id: 'coal_ore', base: 'minecraft:block/coal_ore', highlight: 'coal'],
-        [id: 'deepslate_coal_ore', base: 'minecraft:block/deepslate_coal_ore', highlight: 'coal'],
-        [id: 'iron_ore', base: 'minecraft:block/iron_ore', highlight: 'iron'],
-        [id: 'deepslate_iron_ore', base: 'minecraft:block/deepslate_iron_ore', highlight: 'iron'],
-        [id: 'copper_ore', base: 'minecraft:block/copper_ore', highlight: 'copper'],
-        [id: 'deepslate_copper_ore', base: 'minecraft:block/deepslate_copper_ore', highlight: 'copper'],
-        [id: 'lapis_ore', base: 'minecraft:block/lapis_ore', highlight: 'lapis'],
-        [id: 'deepslate_lapis_ore', base: 'minecraft:block/deepslate_lapis_ore', highlight: 'lapis'],
-        [id: 'redstone_ore', base: 'minecraft:block/redstone_ore', highlight: 'redstone'],
-        [id: 'deepslate_redstone_ore', base: 'minecraft:block/deepslate_redstone_ore', highlight: 'redstone'],
-        [id: 'obsidian', base: 'minecraft:block/obsidian', highlight: 'obsidian'],
-        [id: 'crying_obsidian', base: 'minecraft:block/crying_obsidian', highlight: 'crying_obsidian'],
-        [id: 'nether_gold_ore', base: 'minecraft:block/nether_gold_ore', highlight: 'nether_gold'],
-        [id: 'nether_quartz_ore', base: 'minecraft:block/nether_quartz_ore', highlight: 'nether_quartz']
-]
-
 def generateChiseVisualAssets = tasks.register('generateChiseVisualAssets') {
     outputs.dir(generatedVisualAssetsDir)
     doLast {
         File root = generatedVisualAssetsDir.get().asFile
         project.delete(root)
         File textureDir = new File(root, 'assets/chisetweaks/textures/block/visual/material')
-        File modelDir = new File(root, 'assets/chisetweaks/models/block/visual/material')
+        File modelDir = new File(root, 'assets/chisetweaks/models/block/visual/overlay')
 
         materialSpecs.each { spec ->
-            writeHighlightTexture(new File(textureDir, "${spec.key}_highlight.png"), spec)
+            File animated = new File(textureDir, "${spec.key}_highlight.png")
+            File staticTexture = new File(textureDir, "${spec.key}_highlight_static.png")
+            writeAnimatedHighlightTexture(animated, spec)
             writeAnimationMeta(new File(textureDir, "${spec.key}_highlight.png.mcmeta"))
-        }
+            writeStaticHighlightTexture(staticTexture, spec)
 
-        modelSpecs.each { modelSpec ->
-            String texture = "chisetweaks:block/visual/material/${modelSpec.highlight}_highlight"
-            writeModel(new File(modelDir, "${modelSpec.id}.json"), cubeModel(modelSpec.base, texture))
+            String animatedTexture = "chisetweaks:block/visual/material/${spec.key}_highlight"
+            String staticTextureId = "chisetweaks:block/visual/material/${spec.key}_highlight_static"
+            writeModel(
+                    new File(modelDir, "${spec.key}_animated.json"),
+                    overlayOnlyModel(animatedTexture))
+            writeModel(
+                    new File(modelDir, "${spec.key}_static.json"),
+                    overlayOnlyModel(staticTextureId))
         }
-
-        writeModel(
-                new File(modelDir, 'ancient_debris.json'),
-                ancientDebrisModel('chisetweaks:block/visual/material/ancient_debris_highlight'))
     }
 }
 

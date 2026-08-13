@@ -15,59 +15,32 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Headless release contracts for Ore Highlights that can be proven without launching Minecraft.
- *
- * <p>These tests intentionally stop short of claiming final-pixel equivalence under shader packs.
- * They prove the deterministic preconditions that runtime visual QA depends on: complete vanilla
- * coverage, model-backed rendering rather than a world scanner, shader-invariant emissive material
- * semantics, independently identifiable highlight motifs, safe defaults, fail-soft reload handling,
- * and CI status-name enforcement.</p>
- */
+/** Headless release contracts for Ore Highlights that can be proven without launching Minecraft. */
 final class OreHighlightsReleaseReadinessContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     private static final Set<String> EXPECTED_ORE_IDS = Set.of(
-            "minecraft:coal_ore",
-            "minecraft:deepslate_coal_ore",
-            "minecraft:iron_ore",
-            "minecraft:deepslate_iron_ore",
-            "minecraft:copper_ore",
-            "minecraft:deepslate_copper_ore",
-            "minecraft:gold_ore",
-            "minecraft:deepslate_gold_ore",
-            "minecraft:lapis_ore",
-            "minecraft:deepslate_lapis_ore",
-            "minecraft:redstone_ore",
-            "minecraft:deepslate_redstone_ore",
-            "minecraft:diamond_ore",
-            "minecraft:deepslate_diamond_ore",
-            "minecraft:emerald_ore",
-            "minecraft:deepslate_emerald_ore",
-            "minecraft:nether_gold_ore",
-            "minecraft:nether_quartz_ore",
+            "minecraft:coal_ore", "minecraft:deepslate_coal_ore",
+            "minecraft:iron_ore", "minecraft:deepslate_iron_ore",
+            "minecraft:copper_ore", "minecraft:deepslate_copper_ore",
+            "minecraft:gold_ore", "minecraft:deepslate_gold_ore",
+            "minecraft:lapis_ore", "minecraft:deepslate_lapis_ore",
+            "minecraft:redstone_ore", "minecraft:deepslate_redstone_ore",
+            "minecraft:diamond_ore", "minecraft:deepslate_diamond_ore",
+            "minecraft:emerald_ore", "minecraft:deepslate_emerald_ore",
+            "minecraft:nether_gold_ore", "minecraft:nether_quartz_ore",
             "minecraft:ancient_debris");
 
     private static final Set<String> EXPECTED_HIGHLIGHT_KEYS = Set.of(
-            "coal",
-            "iron",
-            "copper",
-            "gold",
-            "lapis",
-            "redstone",
-            "diamond",
-            "emerald",
-            "nether_gold",
-            "nether_quartz",
-            "ancient_debris");
+            "coal", "iron", "copper", "gold", "lapis", "redstone", "diamond", "emerald",
+            "nether_gold", "nether_quartz", "ancient_debris");
 
     @Test
     void canonicalCatalogCoversExactlyAllVanillaOreVariants() {
         assertEquals(11, VanillaOreVisualCatalog.familyCount());
         assertEquals(19, VanillaOreVisualCatalog.blockVariantCount());
         assertEquals(EXPECTED_ORE_IDS, VanillaOreVisualCatalog.blockIds());
-        assertEquals(
-                EXPECTED_HIGHLIGHT_KEYS,
+        assertEquals(EXPECTED_HIGHLIGHT_KEYS,
                 VanillaOreVisualCatalog.families().stream()
                         .map(VanillaOreVisualCatalog.Family::highlightKey)
                         .collect(Collectors.toSet()));
@@ -82,24 +55,75 @@ final class OreHighlightsReleaseReadinessContractTest {
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
 
-        // MATERIAL_HIGHLIGHT is deliberately excluded from the bounded worksite scanner.
         assertTrue(engine.contains(
                 "definition.inspectionCategory() != BlockInspectionCategory.MATERIAL_HIGHLIGHT"));
         assertTrue(plugin.contains("ModelLoadingPlugin.register"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
-        assertTrue(plugin.contains("new FullbrightOreHighlightModel(model)"));
+        assertTrue(plugin.contains("pluginContext.addModel("));
 
-        // Ore visibility must not grow a second through-wall/world-overlay backend.
         for (String forbidden : Set.of(
-                "WorksiteScanner",
-                "LavaAnalyzerThroughWallRenderer",
-                "withDepthStencilState(Optional.empty())",
-                "RenderPipeline",
-                "ClientLevel",
-                "BlockPos.betweenClosed")) {
+                "WorksiteScanner", "LavaAnalyzerThroughWallRenderer",
+                "withDepthStencilState(Optional.empty())", "RenderPipeline",
+                "ClientLevel", "BlockPos.betweenClosed")) {
             assertFalse(plugin.contains(forbidden), forbidden);
             assertFalse(model.contains(forbidden), forbidden);
         }
+    }
+
+    @Test
+    void resourcePackFinalModelIsNeverReplacedByChise() throws IOException {
+        String plugin = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
+        String model = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+        String generator = source("gradle/chise-visual-assets.gradle");
+
+        assertTrue(plugin.contains("modifyBlockModelAfterBake"));
+        assertTrue(plugin.contains("SimpleUnbakedExtraModel.blockStateModel"));
+        assertFalse(plugin.contains("OVERRIDE_PHASE"));
+        assertFalse(plugin.contains("modifyBlockModelOnLoad"));
+        assertFalse(plugin.contains("SingleVariant"));
+        assertTrue(model.contains("super.emitQuads(emitter, level, pos, state, random, cullTest);"));
+        assertTrue(model.indexOf("super.emitQuads") < model.indexOf("emitter.pushTransform"));
+        assertFalse(generator.contains("minecraft:block/diamond_ore"));
+        assertFalse(generator.contains("cubeModel"));
+        assertFalse(generator.contains("ancientDebrisModel"));
+        assertTrue(generator.contains("overlayOnlyModel"));
+    }
+
+    @Test
+    void oreSettingsNeverTriggerFullResourcePackReload() throws IOException {
+        String plugin = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
+        String invalidation = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightRenderInvalidation.java");
+        String bindings = source(
+                "src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
+
+        assertFalse(plugin.contains("reloadResourcePacks"));
+        assertFalse(invalidation.contains("reloadResourcePacks"));
+        assertFalse(bindings.contains("reloadResourcePacks"));
+        assertTrue(invalidation.contains("client.levelRenderer.allChanged()"));
+        assertTrue(invalidation.contains("AtomicBoolean REQUESTED"));
+        assertTrue(bindings.contains("OreHighlightRenderInvalidation.request"));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/VisualModelReloadCoordinator.java")));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/core/performance/VisualModelReloadThrottlePolicy.java")));
+    }
+
+    @Test
+    void overlayOwnershipIsExplicitRatherThanCoordinateInferred() throws IOException {
+        String model = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+        assertTrue(model.contains("overlay.emitQuads"));
+        assertTrue(model.contains("emitter.pushTransform"));
+        assertTrue(model.indexOf("emitter.pushTransform") < model.indexOf("overlay.emitQuads"));
+        assertTrue(model.indexOf("overlay.emitQuads") < model.indexOf("emitter.popTransform"));
+        assertFalse(model.contains("isOverlayVertex"));
+        assertFalse(model.contains("OreHighlightLightingPolicy"));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/core/vision/OreHighlightLightingPolicy.java")));
     }
 
     @Test
@@ -108,12 +132,10 @@ final class OreHighlightsReleaseReadinessContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
-
-        assertTrue(plugin.contains("ore-highlight-emissive-overlay-4-shader-invariant"));
+        assertTrue(plugin.contains("ore-highlight-composed-overlay-5-nondestructive"));
         assertTrue(model.contains("quad.emissive(true)"));
         assertTrue(model.contains("quad.diffuseShade(false)"));
         assertTrue(model.contains("quad.ambientOcclusion(TriState.FALSE)"));
-
         for (String forbidden : Set.of("IrisApi", "isShaderPackInUse", "shaderPackName", "ShaderRenderer")) {
             assertFalse(plugin.contains(forbidden), forbidden);
             assertFalse(model.contains(forbidden), forbidden);
@@ -121,22 +143,22 @@ final class OreHighlightsReleaseReadinessContractTest {
     }
 
     @Test
-    void generatedHighlightAssetsKeepEightFrameAnimationAndDistinctMotifs() throws IOException {
+    void generatedHighlightAssetsProvideStaticDefaultAndOptionalEightFrameMotion() throws IOException {
         String generator = source("gradle/chise-visual-assets.gradle");
-
+        assertTrue(generator.contains("new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB)"));
         assertTrue(generator.contains("new BufferedImage(16, 128, BufferedImage.TYPE_INT_ARGB)"));
-        assertTrue(generator.contains("(0..<8).each { frame ->"));
+        assertTrue(generator.contains("(0..<8).each"));
         assertTrue(generator.contains("frametime: 1"));
         assertTrue(generator.contains("interpolate: true"));
-        assertTrue(generator.contains("minecraft:block/"));
-        assertTrue(generator.contains("overlayElement('#highlight')"));
+        assertTrue(generator.contains("_highlight_static.png"));
+        assertTrue(generator.contains("_static.json"));
+        assertTrue(generator.contains("_animated.json"));
+        assertTrue(generator.contains("overlayOnlyModel"));
 
         Pattern motifPattern = Pattern.compile("motif: '([^']+)'");
         Matcher matcher = motifPattern.matcher(generator);
         Set<String> motifs = new java.util.LinkedHashSet<>();
         while (matcher.find()) motifs.add(matcher.group(1));
-
-        // 11 ore families + Obsidian + Crying Obsidian each retain an independent motif.
         assertEquals(13, motifs.size());
         assertTrue(motifs.containsAll(Set.of(
                 "crystal", "dotted", "runes", "brackets", "double", "wave", "nodes",
@@ -144,41 +166,13 @@ final class OreHighlightsReleaseReadinessContractTest {
     }
 
     @Test
-    void firstLaunchDefaultsAreNonIntrusiveButReadyWhenEnabled() throws IOException {
-        String featureSwitch = source(
-                "src/main/java/dev/chise/chisetweaks/config/FeatureSwitch.java");
-        String localConfig = source(
-                "src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
-
-        // No visual feature changes the player's view merely by installing the JAR.
+    void firstLaunchDefaultsAreNonIntrusiveReducedMotionAndReadyWhenEnabled() throws IOException {
+        String featureSwitch = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitch.java");
+        String localConfig = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
         assertTrue(featureSwitch.contains("private static final boolean DEFAULT_ENABLED = false"));
-
-        // Once the user enables Ore Highlights, every retained ore/material target is preselected.
+        assertTrue(localConfig.contains("public boolean oreHighlightAnimationEnabled = false"));
         assertTrue(localConfig.contains(
                 "public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK"));
-        assertTrue(localConfig.contains(
-                "visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK"));
-    }
-
-    @Test
-    void modelReloadCoordinatorCommitsOnlySuccessfulReloadStateAndBacksOffFailures() throws IOException {
-        String coordinator = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/VisualModelReloadCoordinator.java");
-
-        assertTrue(coordinator.contains("client.reloadResourcePacks().whenComplete"));
-        assertTrue(coordinator.contains("if (failure == null)"));
-        assertTrue(coordinator.contains("commitStagedState();"));
-        assertTrue(coordinator.contains("RELOAD_THROTTLE.onReloadSucceeded();"));
-        assertTrue(coordinator.contains("discardStagedState();"));
-        assertTrue(coordinator.contains("RELOAD_THROTTLE.onReloadFailed();"));
-        assertTrue(coordinator.contains("catch (RuntimeException failure)"));
-        assertTrue(coordinator.contains("RELOAD_IN_FLIGHT.set(false);"));
-
-        // The last successfully applied mask is not overwritten inside the async failure branch.
-        String failureBranch = coordinator.substring(
-                coordinator.indexOf("} else {", coordinator.indexOf("if (failure == null)")),
-                coordinator.indexOf("RELOAD_IN_FLIGHT.set(false);", coordinator.indexOf("if (failure == null)")));
-        assertFalse(failureBranch.contains("appliedMaterialModelMask ="));
     }
 
     @Test

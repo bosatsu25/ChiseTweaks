@@ -12,6 +12,7 @@ import java.util.Set;
 final class LocalFeatureConfigDocumentPolicy {
     private static final Set<String> BOOLEAN_KEYS = Set.of(
             "lavaHighlightEnabled",
+            "oreHighlightAnimationEnabled",
             "worksiteVisibilityWorldOverlay",
             "worksiteVisibilityExclusiveMode");
     private static final Set<String> INTEGER_KEYS = Set.of(
