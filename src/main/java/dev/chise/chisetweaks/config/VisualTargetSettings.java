@@ -66,6 +66,7 @@ public final class VisualTargetSettings {
 
     private static boolean initialized;
     private static boolean syncing;
+    private static Runnable materialTargetsChangedCallback = () -> {};
 
     private VisualTargetSettings() {}
 
@@ -80,11 +81,17 @@ public final class VisualTargetSettings {
 
     public static synchronized void setAllOreHighlightTargets(boolean enabled) {
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
+        int previous = config.visualTargetMask;
         config.visualTargetMask = VisualTargetSelectionPolicy.withAllOreHighlightTargets(
                 config.visualTargetMask,
                 enabled);
         config.save();
         syncFromStorage();
+        if (config.visualTargetMask != previous) materialTargetsChangedCallback.run();
+    }
+
+    public static void setMaterialTargetsChangedCallback(Runnable callback) {
+        materialTargetsChangedCallback = callback == null ? () -> {} : callback;
     }
 
     private static void syncFromStorage() {
@@ -114,6 +121,12 @@ public final class VisualTargetSettings {
                 entry.target(),
                 entry.option().getBooleanValue());
         config.save();
+        if (isMaterialTarget(entry.target())) materialTargetsChangedCallback.run();
+    }
+
+    private static boolean isMaterialTarget(Target target) {
+        return target != null
+                && (target.bitMask() & VisualTargetSelectionPolicy.ORE_HIGHLIGHT_TARGETS_MASK) != 0;
     }
 
     private static Entry entry(
