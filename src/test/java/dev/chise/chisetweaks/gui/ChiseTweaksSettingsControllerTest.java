@@ -48,6 +48,18 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
+    void resourcesExposeTheModdedOreCompatibilityEditor() {
+        var controller = new ChiseTweaksSettingsController(false);
+        List<ChiseTweaksSettingRowDefinition> rows = controller.rowsFor(ChiseTweaksUiSection.RESOURCES);
+        List<ChiseTweaksSettingRowDefinition> matches = rows.stream()
+                .filter(row -> row.action() == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT)
+                .toList();
+        assertEquals(1, matches.size());
+        assertEquals("moddedOreTargets", matches.getFirst().id());
+        assertEquals(ChiseTweaksSettingRowDefinition.Kind.ACTION, matches.getFirst().kind());
+    }
+
+    @Test
     void helpIsNavigationOnlyAndDoesNotCreateSettingsRows() {
         var controller = new ChiseTweaksSettingsController(true);
         assertTrue(controller.rowsFor(ChiseTweaksUiSection.HELP).isEmpty());
@@ -75,13 +87,16 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void actionRowsRemainPairedWithBothSceneFilterTargets() {
+    void actionRowsRemainPairedWithTheirEditors() {
         var controller = new ChiseTweaksSettingsController(false);
-        List<ChiseTweaksSettingRowDefinition> rows = controller.rowsFor(ChiseTweaksUiSection.VISIBILITY);
-        assertTrue(rows.stream().anyMatch(row ->
+        List<ChiseTweaksSettingRowDefinition> visibility = controller.rowsFor(ChiseTweaksUiSection.VISIBILITY);
+        List<ChiseTweaksSettingRowDefinition> resources = controller.rowsFor(ChiseTweaksUiSection.RESOURCES);
+        assertTrue(visibility.stream().anyMatch(row ->
                 row.action() == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER));
-        assertTrue(rows.stream().anyMatch(row ->
+        assertTrue(visibility.stream().anyMatch(row ->
                 row.action() == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER));
+        assertTrue(resources.stream().anyMatch(row ->
+                row.action() == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT));
     }
 
     private static void assertRowContracts(List<ChiseTweaksSettingRowDefinition> rows) {
