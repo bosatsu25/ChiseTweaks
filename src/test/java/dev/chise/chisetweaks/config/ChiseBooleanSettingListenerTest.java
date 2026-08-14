@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class ChiseBooleanSettingListenerTest {
     @Test
@@ -32,6 +33,34 @@ final class ChiseBooleanSettingListenerTest {
         setting.setBooleanValue(true);
 
         assertEquals(List.of("replacement", "listener"), calls);
+    }
+
+    @Test
+    void primaryFailureDoesNotPreventIndependentListenerNotification() {
+        TestSetting setting = new TestSetting();
+        ArrayList<String> calls = new ArrayList<>();
+        setting.setValueChangeCallback(ignored -> {
+            calls.add("primary");
+            throw new IllegalStateException("primary failure");
+        });
+        setting.addValueChangeListener(ignored -> calls.add("listener"));
+
+        assertThrows(IllegalStateException.class, () -> setting.setBooleanValue(true));
+        assertEquals(List.of("primary", "listener"), calls);
+    }
+
+    @Test
+    void failingIndependentListenerDoesNotBlockLaterListeners() {
+        TestSetting setting = new TestSetting();
+        ArrayList<String> calls = new ArrayList<>();
+        setting.addValueChangeListener(ignored -> {
+            calls.add("first");
+            throw new IllegalStateException("listener failure");
+        });
+        setting.addValueChangeListener(ignored -> calls.add("second"));
+
+        assertThrows(IllegalStateException.class, () -> setting.setBooleanValue(true));
+        assertEquals(List.of("first", "second"), calls);
     }
 
     private static final class TestSetting extends ChiseBooleanSetting {

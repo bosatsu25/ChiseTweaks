@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -65,8 +66,9 @@ REQUIRED_PATHS = (
     "scripts/release_residue_audit.py",
 )
 
-SKIPPED_DIRECTORY_NAMES = {".git", ".gradle", "build", "out", "run", "runs"}
-FORBIDDEN_RESIDUE_DIRECTORY_NAMES = {".fabric", ".mixin.out", "__pycache__"}
+FORBIDDEN_TRACKED_DIRECTORY_NAMES = {
+    ".gradle", "build", "out", "run", "runs", ".fabric", ".mixin.out", "__pycache__",
+}
 FORBIDDEN_RESIDUE_SUFFIXES = {".log", ".tmp", ".temp", ".bak", ".class", ".swp"}
 AUDITED_TEXT_SUFFIXES = {
     ".java", ".json", ".md", ".txt", ".gradle", ".properties", ".py", ".yml", ".yaml", ".toml", ".xml",
@@ -93,8 +95,17 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def skipped(relative: Path) -> bool:
-    return any(part in SKIPPED_DIRECTORY_NAMES for part in relative.parts)
+def tracked_paths() -> list[Path]:
+    try:
+        completed = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+        )
+        return [Path(value.decode("utf-8")) for value in completed.stdout.split(b"\0") if value]
+    except (OSError, subprocess.CalledProcessError, UnicodeDecodeError):
+        return [path.relative_to(ROOT) for path in ROOT.rglob("*") if path.is_file() and ".git" not in path.parts]
 
 
 def contains_sensitive_ipv4(text: str) -> bool:
@@ -109,19 +120,16 @@ def contains_sensitive_ipv4(text: str) -> bool:
 
 
 def audit_repository_hygiene(failures: list[str]) -> None:
-    for path in ROOT.rglob("*"):
+    for relative in tracked_paths():
+        path = ROOT / relative
         if not path.is_file():
             continue
-        relative = path.relative_to(ROOT)
-        if skipped(relative):
-            continue
 
-        if any(part in FORBIDDEN_RESIDUE_DIRECTORY_NAMES for part in relative.parts):
-            fail(f"{relative}: generated/runtime residue directory is not allowed", failures)
+        if any(part in FORBIDDEN_TRACKED_DIRECTORY_NAMES for part in relative.parts):
+            fail(f"{relative}: generated/runtime directory must not be tracked", failures)
         if path.suffix.lower() in FORBIDDEN_RESIDUE_SUFFIXES:
-            fail(f"{relative}: generated/log/temp artifact is not allowed", failures)
+            fail(f"{relative}: generated/log/temp artifact must not be tracked", failures)
 
-        # The audit script contains the detection regexes and forbidden-path literals themselves.
         if relative == SELF_PATH:
             continue
         if path.suffix.lower() not in AUDITED_TEXT_SUFFIXES and path.name not in AUDITED_TEXT_NAMES:
@@ -230,6 +238,7 @@ def main() -> int:
     print("removed_feature_residue=false")
     print("local_machine_paths=false")
     print("non_loopback_ipv4_literals=false")
+    print("tracked_runtime_residue=false")
     return 0
 
 

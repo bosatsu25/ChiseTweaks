@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.runtime;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseStringListSetting;
+import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
@@ -128,7 +129,7 @@ public final class FeatureControlBindings {
 
     private static void bindSanitized(ChiseStringListSetting config, Runnable rebuild) {
         config.setValueChangeCallback(ignored -> {
-            dev.chise.chisetweaks.config.FeatureConfig.sanitizeStringLists();
+            FeatureConfig.sanitizeStringLists();
             rebuild.run();
         });
     }

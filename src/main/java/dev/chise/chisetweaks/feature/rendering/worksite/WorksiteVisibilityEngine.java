@@ -13,14 +13,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import java.util.EnumSet;
 import java.util.List;
 
-/**
- * Coordinates bounded worksite world overlays without owning user feature state.
- *
- * <p>Material Highlights are model-backed and deliberately excluded from this bounded scan path.
- * Active state is cached once per client tick so the render callback never walks every feature
- * switch. Stationary players use a slower periodic refresh while movement keeps the configured
- * scan cadence.</p>
- */
+/** Coordinates bounded worksite world overlays without owning user feature state. */
 public final class WorksiteVisibilityEngine
         implements TickingRuntimeComponent, SessionAwareRuntimeComponent {
     public static final String RUNTIME_ID = "worksite_visibility_engine";
@@ -100,6 +93,11 @@ public final class WorksiteVisibilityEngine
 
     @Override
     public void resetSession(Minecraft client) {
+        deactivateAndReset();
+    }
+
+    @Override
+    public void onQuarantined(Minecraft client) {
         deactivateAndReset();
     }
 

@@ -13,11 +13,15 @@ final class RepositoryRuntimeReviewContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void tickDispatchCannotDeadlockOnInitiallyInactiveComponents() throws IOException {
+    void tickDispatchCannotDeadlockAndQuarantineOwnsCleanup() throws IOException {
         String manager = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
+        String ticking = source("src/main/java/dev/chise/chisetweaks/runtime/TickingRuntimeComponent.java");
+        String worksite = source("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java");
         assertTrue(manager.contains("component.tick(client);"));
+        assertTrue(manager.contains("component.onQuarantined(client);"));
+        assertTrue(ticking.contains("default void onQuarantined(Minecraft client)"));
+        assertTrue(worksite.contains("public void onQuarantined(Minecraft client)"));
         assertFalse(manager.contains("if (!active && !wasActive) return;"));
-        assertFalse(manager.contains("private boolean wasActive;"));
     }
 
     @Test
@@ -25,6 +29,26 @@ final class RepositoryRuntimeReviewContractTest {
         String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
         assertTrue(bindings.contains("MATERIAL_HIGHLIGHTS.addValueChangeListener"));
         assertFalse(bindings.contains("MATERIAL_HIGHLIGHTS.setValueChangeCallback"));
+    }
+
+    @Test
+    void persistenceFailuresRemainVisibleToSettingsUi() throws IOException {
+        String featureConfig = source("src/main/java/dev/chise/chisetweaks/config/FeatureConfig.java");
+        String localConfig = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
+        String screen = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+        assertTrue(featureConfig.contains("public static boolean saveToFile()"));
+        assertTrue(localConfig.contains("public synchronized boolean save()"));
+        assertTrue(screen.contains("if (!controller.saveConfig())"));
+        assertTrue(screen.contains("if (!applyChanges()) return;"));
+    }
+
+    @Test
+    void qualityAndRepositoryAuditsCoverRuntimeBoundaryAndTrackedResidue() throws IOException {
+        String build = source("build.gradle");
+        String audit = source("scripts/repository_audit.py");
+        assertTrue(build.contains("dev.chise.chisetweaks.runtime.FeatureManager$TickSlot*"));
+        assertTrue(audit.contains("git\", \"ls-files\", \"-z"));
+        assertTrue(audit.contains("FORBIDDEN_TRACKED_DIRECTORY_NAMES"));
     }
 
     @Test

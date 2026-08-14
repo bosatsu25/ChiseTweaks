@@ -25,6 +25,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private Button bulkButton;
     private Button applyButton;
     private String searchQuery = "";
+    private String persistenceFeedback = "";
     private int scrollOffset;
     private int maxScroll;
     private boolean dirty;
@@ -178,8 +179,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void runRowAction(ChiseTweaksSettingRowDefinition.Action action) {
-        if (minecraft == null || action == null) return;
-        applyChanges();
+        if (minecraft == null || action == null || !applyChanges()) return;
         switch (action) {
             case EDIT_BLOCK_FILTER -> minecraft.setScreen(new ChiseSceneFilterEditorScreen(
                     this, ChiseSceneFilterEditorScreen.Target.BLOCKS, controller.japanese()));
@@ -193,12 +193,11 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void navigate(ChiseTweaksUiSection section) {
         if (minecraft == null || section == null) return;
         if (section == ChiseTweaksUiSection.HELP) {
-            applyChanges();
+            if (!applyChanges()) return;
             minecraft.setScreen(new ChiseTweaksHelpScreen(this));
             return;
         }
-        if (section == selectedSection) return;
-        applyChanges();
+        if (section == selectedSection || !applyChanges()) return;
         selectedSection = section;
         ChiseTweaksConfigScreen next = new ChiseTweaksConfigScreen(section);
         next.setParent(parent);
@@ -217,19 +216,28 @@ public final class ChiseTweaksConfigScreen extends Screen {
 
     private void markDirty() {
         dirty = true;
+        persistenceFeedback = "";
         refreshRowButtons();
     }
 
-    private void applyChanges() {
-        if (!dirty) return;
-        controller.saveFeatureConfig();
+    private boolean applyChanges() {
+        if (!dirty) return true;
+        if (!controller.saveConfig()) {
+            persistenceFeedback = controller.japanese()
+                    ? "設定を保存できませんでした。保存先を確認して再試行してください。"
+                    : "Could not save settings. Check config storage and try again.";
+            if (applyButton != null) applyButton.active = true;
+            return false;
+        }
+        persistenceFeedback = "";
         dirty = false;
         if (applyButton != null) applyButton.active = false;
+        return true;
     }
 
     @Override
     public void onClose() {
-        applyChanges();
+        if (!applyChanges()) return;
         if (minecraft != null) minecraft.setScreen(parent);
     }
 
@@ -299,6 +307,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 continue;
             }
             renderRowText(extractor, row);
+        }
+        if (!persistenceFeedback.isEmpty()) {
+            extractor.centeredText(
+                    font,
+                    Component.literal(persistenceFeedback),
+                    width / 2,
+                    Math.max(24, height - 48),
+                    0xFFFFD166);
         }
         renderScrollbar(extractor);
     }

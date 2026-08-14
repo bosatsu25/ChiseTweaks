@@ -4,13 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-/**
- * Chise-owned boolean setting contract with no external config-library dependency.
- *
- * <p>Subclasses decide where the authoritative value lives. This class owns default handling,
- * callback delivery and bilingual UI metadata so config/runtime code can stay independent from
- * any other Minecraft mod.</p>
- */
+/** Chise-owned boolean setting contract with independent change listeners. */
 public abstract class ChiseBooleanSetting {
     private final String name;
     private final boolean defaultValue;
@@ -63,10 +57,7 @@ public abstract class ChiseBooleanSetting {
     public final void setBooleanValue(boolean value) {
         if (readValue() == value) return;
         writeValue(value);
-        callback.accept(this);
-        for (Consumer<ChiseBooleanSetting> listener : additionalListeners) {
-            listener.accept(this);
-        }
+        notifyChangeListeners();
     }
 
     public final void setBooleanValueSilently(boolean value) {
@@ -85,14 +76,31 @@ public abstract class ChiseBooleanSetting {
         setBooleanValueSilently(defaultValue);
     }
 
-    /** Replaces the setting's primary owner callback without removing independent listeners. */
     public final void setValueChangeCallback(Consumer<ChiseBooleanSetting> value) {
         callback = value == null ? ignored -> {} : value;
     }
 
-    /** Adds an independent observer so one concern cannot overwrite another callback. */
     public final void addValueChangeListener(Consumer<ChiseBooleanSetting> value) {
         if (value != null) additionalListeners.addIfAbsent(value);
+    }
+
+    private void notifyChangeListeners() {
+        Throwable firstFailure = null;
+        try {
+            callback.accept(this);
+        } catch (RuntimeException | LinkageError failure) {
+            firstFailure = failure;
+        }
+        for (Consumer<ChiseBooleanSetting> listener : additionalListeners) {
+            try {
+                listener.accept(this);
+            } catch (RuntimeException | LinkageError failure) {
+                if (firstFailure == null) firstFailure = failure;
+                else firstFailure.addSuppressed(failure);
+            }
+        }
+        if (firstFailure instanceof RuntimeException runtimeFailure) throw runtimeFailure;
+        if (firstFailure instanceof LinkageError linkageFailure) throw linkageFailure;
     }
 
     private static String requireText(String value, String field) {

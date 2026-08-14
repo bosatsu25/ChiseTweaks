@@ -23,10 +23,8 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-    // Optional integration only. Mod Menu is not packaged or required at runtime.
     compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 
-    // Development/runtime compatibility target only. Production code has no Sodium API dependency.
     if (chiseSodiumRuntime) runtimeOnly "maven.modrinth:sodium:${project.sodium_version}"
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
@@ -74,8 +72,7 @@ jacoco {
     toolVersion = project.jacoco_version
 }
 
-// The 96% gate measures deterministic policy code plus the critical tick-dispatch boundary.
-// Renderer integration is additionally protected by source/artifact contracts and Prism runtime QA.
+// The 96% gate covers deterministic policy code and the critical tick-dispatch boundary.
 def qualityGateClasses = [
         'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
@@ -130,7 +127,8 @@ pitest {
         'dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy',
         'dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog',
         'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
-        'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy'
+        'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy',
+        'dev.chise.chisetweaks.runtime.FeatureManager$TickSlot*'
     ]
     targetTests = [
         'dev.chise.chisetweaks.*Test',
