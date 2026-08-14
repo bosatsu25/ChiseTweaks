@@ -33,7 +33,7 @@ final class FeatureManagerTickSlotTest {
 
         assertTrue(slot.isQuarantined());
         assertEquals(1, component.ticks);
-        assertEquals(1, component.cleanupCalls);
+        assertEquals(1, component.cleanupCalls());
     }
 
     @Test
@@ -43,7 +43,7 @@ final class FeatureManagerTickSlotTest {
 
         assertDoesNotThrow(() -> slot.runForTick(null));
         assertTrue(slot.isQuarantined());
-        assertEquals(1, component.cleanupCalls);
+        assertEquals(1, component.cleanupCalls());
     }
 
     @Test
@@ -76,6 +76,8 @@ final class FeatureManagerTickSlotTest {
         @Override public boolean isActive() { return false; }
         @Override public void tick(Minecraft client) { ticks++; throw new IllegalStateException("boom"); }
         @Override public void onQuarantined(Minecraft client) { cleanupCalls++; }
+
+        int cleanupCalls() { return cleanupCalls; }
     }
 
     private static final class FailingCleanupRuntimeComponent extends FailingRuntimeComponent {
