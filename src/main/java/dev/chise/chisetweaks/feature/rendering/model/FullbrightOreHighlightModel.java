@@ -75,14 +75,17 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             Predicate<@Nullable Direction> cullTest) {
         super.emitQuads(emitter, level, pos, state, random, cullTest);
 
-        boolean animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
         BlockStateModel overlay;
+        boolean animated;
         if (dynamicModded) {
-            OreHighlightStyle style = activeModdedStyle(state);
+            if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return;
+            OreHighlightStyle style = resolveDynamicStyle(state);
             if (style == null) return;
+            animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
             overlay = dynamicOverlayModel(style, animated);
         } else {
             if (!fixedHighlightEnabled()) return;
+            animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
             overlay = fixedOverlayModel(animated);
         }
         if (overlay == null) return;
@@ -112,11 +115,6 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
                 FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue(),
                 LocalFeatureConfig.getInstance().visualTargetMask,
                 fixedTarget);
-    }
-
-    private @Nullable OreHighlightStyle activeModdedStyle(BlockState state) {
-        if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return null;
-        return resolveDynamicStyle(state);
     }
 
     private static OreHighlightRuntimePolicy.Motion motion() {
@@ -205,9 +203,6 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             return new FixedGeometryKey(wrappedKey, fixedTarget, motion());
         }
 
-        // Every non-Minecraft model stays wrap-capable so a user/API mapping can be added without
-        // a resource reload, but the common OFF/non-ore paths return the base key with no Chise key
-        // allocation and no extra-model lookup.
         if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return wrappedKey;
         OreHighlightStyle style = resolveDynamicStyle(state);
         if (style == null) return wrappedKey;
@@ -215,7 +210,7 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
                 wrappedKey,
                 style,
                 motion(),
-                OreHighlightResolver.revision());
+                dynamicResolverRevision);
     }
 
     private record FixedGeometryKey(

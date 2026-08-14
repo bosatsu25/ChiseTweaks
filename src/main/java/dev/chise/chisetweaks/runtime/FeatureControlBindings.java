@@ -53,20 +53,12 @@ public final class FeatureControlBindings {
         bindSanitized(BuilderFocusConfig.BLOCK_BLACKLIST, BuilderFocusVisibility::buildLists);
         bindSanitized(BuilderFocusConfig.BLOCK_WHITELIST, BuilderFocusVisibility::buildLists);
         BuilderFocusConfig.BLOCK_RULE_MODE.setValueChangeCallback(
-                config -> {
-                    BuilderFocusVisibility.buildLists();
-                    FeatureConfig.saveToFile();
-                });
+                config -> BuilderFocusVisibility.buildLists());
 
         bindSanitized(BuilderFocusConfig.ENTITY_BLACKLIST, BuilderFocusVisibility::buildEntityLists);
         bindSanitized(BuilderFocusConfig.ENTITY_WHITELIST, BuilderFocusVisibility::buildEntityLists);
         BuilderFocusConfig.ENTITY_RULE_MODE.setValueChangeCallback(
-                config -> {
-                    BuilderFocusVisibility.buildEntityLists();
-                    FeatureConfig.saveToFile();
-                });
-        BuilderFocusConfig.REFRESH_RENDERER.setValueChangeCallback(
-                config -> FeatureConfig.saveToFile());
+                config -> BuilderFocusVisibility.buildEntityLists());
     }
 
     private static void bindWorksiteVisibilityCallbacks() {
@@ -139,7 +131,6 @@ public final class FeatureControlBindings {
         config.setValueChangeCallback(ignored -> {
             FeatureConfig.sanitizeStringLists();
             rebuild.run();
-            FeatureConfig.saveToFile();
         });
     }
 }

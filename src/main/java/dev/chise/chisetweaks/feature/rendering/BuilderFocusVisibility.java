@@ -59,7 +59,6 @@ public final class BuilderFocusVisibility {
 
     public static boolean shouldHide(EntityType<?> type) {
         if (type == null || !FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue()) return false;
-        // Unknown/unregistered types fail open instead of disappearing under a whitelist.
         if (BuiltInRegistries.ENTITY_TYPE.getKey(type) == null) return false;
         return entityRules.hides(type);
     }
@@ -69,14 +68,16 @@ public final class BuilderFocusVisibility {
         Minecraft client = Minecraft.getInstance();
         if (client.player != null && entity == client.player) return false;
         EntityType<?> type = entity.getType();
-        // Resolve registration only as a safety check. The hot render path then evaluates the
-        // cached EntityType sets directly, avoiding temporary String/Set allocations per entity.
         if (BuiltInRegistries.ENTITY_TYPE.getKey(type) == null) return false;
         return entityRules.hides(type);
     }
 
     public static boolean applyPreset(String presetId) {
         String preset = presetId == null ? "" : presetId.trim().toLowerCase(Locale.ROOT);
+        ChiseRuleMode previousMode = BuilderFocusConfig.ENTITY_RULE_MODE.getValue();
+        List<String> previousBlacklist = BuilderFocusConfig.ENTITY_BLACKLIST.getStrings();
+        List<String> previousWhitelist = BuilderFocusConfig.ENTITY_WHITELIST.getStrings();
+
         switch (preset) {
             case "build_review" -> {
                 BuilderFocusConfig.ENTITY_RULE_MODE.setValue(ChiseRuleMode.BLACKLIST);
@@ -106,8 +107,13 @@ public final class BuilderFocusVisibility {
             default -> { return false; }
         }
         buildEntityLists();
-        FeatureConfig.saveToFile();
-        return true;
+        if (FeatureConfig.saveToFile()) return true;
+
+        BuilderFocusConfig.ENTITY_RULE_MODE.setValue(previousMode);
+        BuilderFocusConfig.ENTITY_BLACKLIST.setStrings(previousBlacklist);
+        BuilderFocusConfig.ENTITY_WHITELIST.setStrings(previousWhitelist);
+        buildEntityLists();
+        return false;
     }
 
     private static BlockConfigFingerprint currentBlockFingerprint() {

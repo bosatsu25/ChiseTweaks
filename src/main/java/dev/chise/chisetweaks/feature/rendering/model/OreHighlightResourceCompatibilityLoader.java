@@ -18,14 +18,7 @@ import java.io.BufferedReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Loads optional modpack/resource-pack ore mappings from
- * {@code assets/<namespace>/chisetweaks/ore_compat/*.json}.
- *
- * <p>The format intentionally mirrors the local editor document:
- * {@code {"schemaVersion":1,"entries":[{"block":"mod:ore","style":"copper"}]}}.
- * Definitions can only target non-Minecraft namespaces and only select Chise-owned styles.</p>
- */
+/** Loads optional modpack/resource-pack ore mappings without partially applying invalid documents. */
 final class OreHighlightResourceCompatibilityLoader {
     static final int MAX_RESOURCE_ENTRIES = 512;
     private static final FileToIdConverter FINDER = FileToIdConverter.json("chisetweaks/ore_compat");
@@ -56,7 +49,11 @@ final class OreHighlightResourceCompatibilityLoader {
                     throw new IllegalArgumentException("compat resource exceeds size budget");
                 }
             }
-            parseInto(json.toString(), output);
+            Map<String, OreHighlightStyle> parsed = parseDocument(json.toString());
+            for (Map.Entry<String, OreHighlightStyle> entry : parsed.entrySet()) {
+                if (output.size() >= MAX_RESOURCE_ENTRIES) break;
+                output.put(entry.getKey(), entry.getValue());
+            }
         } catch (Exception failure) {
             ChiseTweaksClient.LOGGER.warn(
                     "Ignoring invalid Ore Highlight compatibility resource {} after {}",
@@ -65,7 +62,7 @@ final class OreHighlightResourceCompatibilityLoader {
         }
     }
 
-    static void parseInto(String json, LinkedHashMap<String, OreHighlightStyle> output) {
+    static Map<String, OreHighlightStyle> parseDocument(String json) {
         StrictJsonSecurityPolicy.Validation validation = StrictJsonSecurityPolicy.validateObjectDocument(json);
         if (!validation.valid()) throw new IllegalArgumentException("unsafe compatibility JSON");
 
@@ -75,15 +72,15 @@ final class OreHighlightResourceCompatibilityLoader {
             throw new IllegalArgumentException("unsupported compatibility schema");
         }
         JsonElement rawEntries = root.get("entries");
-        if (rawEntries == null) return;
+        if (rawEntries == null) return Map.of();
         if (!rawEntries.isJsonArray()) throw new IllegalArgumentException("entries must be an array");
         JsonArray entries = rawEntries.getAsJsonArray();
         if (entries.size() > OreHighlightCompatibilityConfig.MAX_ENTRIES) {
             throw new IllegalArgumentException("too many entries in one compatibility resource");
         }
 
+        LinkedHashMap<String, OreHighlightStyle> parsed = new LinkedHashMap<>();
         for (JsonElement element : entries) {
-            if (output.size() >= MAX_RESOURCE_ENTRIES) return;
             if (!element.isJsonObject()) throw new IllegalArgumentException("entry must be an object");
             JsonObject object = element.getAsJsonObject();
             if (!object.has("block") || !object.has("style")) {
@@ -94,7 +91,8 @@ final class OreHighlightResourceCompatibilityLoader {
             if (blockId == null || style == null || "minecraft".equals(blockId.getNamespace())) {
                 throw new IllegalArgumentException("invalid compatibility entry");
             }
-            output.put(blockId.toString(), style);
+            parsed.put(blockId.toString(), style);
         }
+        return Map.copyOf(parsed);
     }
 }

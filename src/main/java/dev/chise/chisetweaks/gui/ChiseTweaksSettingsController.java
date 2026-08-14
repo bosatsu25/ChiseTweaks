@@ -71,7 +71,6 @@ final class ChiseTweaksSettingsController {
                 config.visualTargetMask,
                 group,
                 enabled);
-        config.save();
         VisualTargetSettings.init();
     }
 
@@ -113,7 +112,11 @@ final class ChiseTweaksSettingsController {
         return true;
     }
 
-    void saveFeatureConfig() { FeatureConfig.saveToFile(); }
+    boolean saveConfig() {
+        boolean featureSaved = FeatureConfig.saveToFile();
+        boolean localSaved = LocalFeatureConfig.getInstance().save();
+        return featureSaved && localSaved;
+    }
 
     private void addResourceRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         header(rows, "header.resources", "資源", "Resources");
@@ -265,7 +268,6 @@ final class ChiseTweaksSettingsController {
                 config.visualTargetMask,
                 group,
                 true);
-        config.save();
         VisualTargetSettings.init();
     }
 

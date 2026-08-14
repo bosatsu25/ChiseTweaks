@@ -178,18 +178,28 @@ public final class FeatureManager {
         void runForTick(Minecraft client) {
             if (quarantined) return;
             try {
-                // A component may derive its active state inside tick(). Gating here on isActive()
-                // creates an activation deadlock for components that start inactive.
                 component.tick(client);
             } catch (RuntimeException | LinkageError failure) {
                 recoverableFailures++;
                 if (!FailureIsolationPolicy.shouldQuarantine(recoverableFailures)) return;
                 quarantined = true;
+                quarantineComponent(client);
                 if (component instanceof Feature feature) safeDisable(feature);
                 ChiseTweaksClient.LOGGER.error(
                         "Runtime component '{}' was quarantined after {}",
                         component.getId(),
                         failure.getClass().getSimpleName());
+            }
+        }
+
+        private void quarantineComponent(Minecraft client) {
+            try {
+                component.onQuarantined(client);
+            } catch (RuntimeException | LinkageError cleanupFailure) {
+                ChiseTweaksClient.LOGGER.warn(
+                        "Runtime component '{}' cleanup failed after {}",
+                        component.getId(),
+                        cleanupFailure.getClass().getSimpleName());
             }
         }
 

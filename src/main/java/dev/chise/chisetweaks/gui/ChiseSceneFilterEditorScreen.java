@@ -4,6 +4,7 @@ import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseRuleMode;
 import dev.chise.chisetweaks.config.ChiseRuleModeSetting;
 import dev.chise.chisetweaks.config.ChiseStringListSetting;
+import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -106,36 +107,37 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         int footerY = height - 28;
         previousButton = addRenderableWidget(Button.builder(
                 Component.literal(japanese ? "前へ" : "Previous"), ignored -> movePage(-1))
-                .bounds(panelX + 8, footerY, 58, 20)
-                .build());
+                .bounds(panelX + 8, footerY, 58, 20).build());
         nextButton = addRenderableWidget(Button.builder(
                 Component.literal(japanese ? "次へ" : "Next"), ignored -> movePage(1))
-                .bounds(panelX + 70, footerY, 58, 20)
-                .build());
+                .bounds(panelX + 70, footerY, 58, 20).build());
         clearButton = addRenderableWidget(Button.builder(
                 Component.literal(japanese ? "リストを空にする" : "Clear list"),
                 ignored -> clearEntries())
-                .bounds(panelX + 132, footerY, 104, 20)
-                .build());
+                .bounds(panelX + 132, footerY, 104, 20).build());
         addRenderableWidget(Button.builder(
                 Component.literal(japanese ? "戻る" : "Back"), ignored -> onClose())
-                .bounds(panelX + panelWidth - 88, footerY, 80, 20)
-                .build());
+                .bounds(panelX + panelWidth - 88, footerY, 80, 20).build());
 
         refreshControls();
     }
 
     private void cycleMode() {
-        // The first active mode is the fail-open hide list. An empty allow list could otherwise
-        // make the scene appear blank immediately when a user enables filtering for the first time.
-        ChiseRuleMode next = switch (modeSetting().getValue()) {
+        ChiseRuleModeSetting setting = modeSetting();
+        ChiseRuleMode previous = setting.getValue();
+        ChiseRuleMode next = switch (previous) {
             case NONE -> ChiseRuleMode.BLACKLIST;
             case BLACKLIST -> ChiseRuleMode.WHITELIST;
             case WHITELIST -> ChiseRuleMode.NONE;
         };
-        modeSetting().setValue(next);
-        page = 0;
-        feedback = "";
+        setting.setValue(next);
+        if (!FeatureConfig.saveToFile()) {
+            setting.setValue(previous);
+            feedback = saveFailureMessage();
+        } else {
+            page = 0;
+            feedback = "";
+        }
         refreshControls();
     }
 
@@ -165,7 +167,8 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
             return;
         }
 
-        ArrayList<String> updated = new ArrayList<>(setting.getStrings());
+        List<String> previous = setting.getStrings();
+        ArrayList<String> updated = new ArrayList<>(previous);
         updated.add(normalized);
         List<String> sanitized = ConfigListPolicy.sanitize(updated);
         if (!sanitized.contains(normalized)) {
@@ -175,6 +178,12 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         }
 
         setting.setStrings(sanitized);
+        if (!FeatureConfig.saveToFile()) {
+            setting.setStrings(previous);
+            feedback = saveFailureMessage();
+            refreshControls();
+            return;
+        }
         idBox.setValue("");
         page = Math.max(0, (sanitized.size() - 1) / pageSize);
         feedback = japanese ? "追加しました。" : "Added.";
@@ -200,10 +209,16 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         int index = page * pageSize + visibleSlot;
         if (index < 0 || index >= setting.getStrings().size()) return;
 
-        ArrayList<String> updated = new ArrayList<>(setting.getStrings());
+        List<String> previous = setting.getStrings();
+        ArrayList<String> updated = new ArrayList<>(previous);
         updated.remove(index);
         setting.setStrings(updated);
-        feedback = japanese ? "削除しました。" : "Removed.";
+        if (!FeatureConfig.saveToFile()) {
+            setting.setStrings(previous);
+            feedback = saveFailureMessage();
+        } else {
+            feedback = japanese ? "削除しました。" : "Removed.";
+        }
         clampPage();
         refreshControls();
     }
@@ -211,10 +226,22 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
     private void clearEntries() {
         ChiseStringListSetting setting = activeListSetting();
         if (setting == null || setting.getStrings().isEmpty()) return;
+        List<String> previous = setting.getStrings();
         setting.setStrings(List.of());
-        page = 0;
-        feedback = japanese ? "現在のリストを空にしました。" : "Current list cleared.";
+        if (!FeatureConfig.saveToFile()) {
+            setting.setStrings(previous);
+            feedback = saveFailureMessage();
+        } else {
+            page = 0;
+            feedback = japanese ? "現在のリストを空にしました。" : "Current list cleared.";
+        }
         refreshControls();
+    }
+
+    private String saveFailureMessage() {
+        return japanese
+                ? "設定を保存できませんでした。変更は元に戻しました。"
+                : "Could not save the config. The change was reverted.";
     }
 
     private void movePage(int delta) {
