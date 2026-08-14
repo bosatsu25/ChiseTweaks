@@ -9,12 +9,10 @@ import org.jspecify.annotations.Nullable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 
 public final class OreHighlightExternalRegistry {
     private static final ConcurrentHashMap<String, OreHighlightStyle> API_BLOCKS = new ConcurrentHashMap<>();
     private static final CopyOnWriteArrayList<TagRegistration> API_TAGS = new CopyOnWriteArrayList<>();
-    private static final AtomicLong REVISION = new AtomicLong();
     private static volatile Map<String, OreHighlightStyle> resourceBlocks = Map.of();
     private static volatile Map<String, OreHighlightStyle> configBlocks = Map.of();
 
@@ -62,10 +60,6 @@ public final class OreHighlightExternalRegistry {
         return null;
     }
 
-    public static long revision() {
-        return REVISION.get();
-    }
-
     private static Map<String, OreHighlightStyle> sanitizedCopy(Map<String, OreHighlightStyle> entries) {
         if (entries == null || entries.isEmpty()) return Map.of();
         ConcurrentHashMap<String, OreHighlightStyle> sanitized = new ConcurrentHashMap<>();
@@ -79,7 +73,6 @@ public final class OreHighlightExternalRegistry {
     }
 
     private static void changed() {
-        REVISION.incrementAndGet();
         OreHighlightResolver.invalidateCache();
     }
 

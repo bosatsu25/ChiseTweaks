@@ -36,7 +36,7 @@ public final class OreHighlightCompatibilityConfig {
             Optional<String> stored = SecureConfigStorage.readUtf8(
                     FabricLoader.getInstance().getConfigDir(), FILE_NAME);
             if (stored.isEmpty() || stored.get().isBlank()) {
-                replaceEntries(List.of(), true);
+                replaceEntries(List.of(), false);
                 return;
             }
             replaceEntries(parse(stored.get()), false);
@@ -60,23 +60,30 @@ public final class OreHighlightCompatibilityConfig {
         updated.removeIf(entry -> entry.blockId().equals(candidate.blockId()));
         if (updated.size() >= MAX_ENTRIES) return false;
         updated.add(candidate);
-        replaceEntries(updated, true);
-        return true;
+        return replaceEntries(updated, true);
     }
 
     public static synchronized boolean remove(String rawBlockId) {
         String normalized = ModdedOreIdPolicy.normalize(rawBlockId);
         ArrayList<Entry> updated = new ArrayList<>(entries);
         boolean changed = updated.removeIf(entry -> entry.blockId().equals(normalized));
-        if (changed) replaceEntries(updated, true);
-        return changed;
+        return changed && replaceEntries(updated, true);
     }
 
-    public static synchronized void clear() {
-        replaceEntries(List.of(), true);
+    public static synchronized boolean clear() {
+        if (entries.isEmpty()) return true;
+        return replaceEntries(List.of(), true);
     }
 
-    static synchronized void replaceEntries(List<Entry> input, boolean save) {
+    static synchronized boolean replaceEntries(List<Entry> input, boolean save) {
+        List<Entry> nextEntries = sanitizedEntries(input);
+        if (save && !saveEntries(nextEntries)) return false;
+        entries = nextEntries;
+        publish();
+        return true;
+    }
+
+    private static List<Entry> sanitizedEntries(List<Entry> input) {
         LinkedHashMap<String, Entry> unique = new LinkedHashMap<>();
         if (input != null) {
             for (Entry entry : input) {
@@ -85,9 +92,7 @@ public final class OreHighlightCompatibilityConfig {
                 if (checked != null) unique.put(checked.blockId(), checked);
             }
         }
-        entries = List.copyOf(unique.values());
-        publish();
-        if (save) save();
+        return List.copyOf(unique.values());
     }
 
     private static void publish() {
@@ -133,11 +138,11 @@ public final class OreHighlightCompatibilityConfig {
         return new Entry(id.toString(), style);
     }
 
-    private static void save() {
+    private static boolean saveEntries(List<Entry> values) {
         JsonObject root = new JsonObject();
         root.addProperty("schemaVersion", SCHEMA_VERSION);
         JsonArray array = new JsonArray();
-        for (Entry entry : entries) {
+        for (Entry entry : values) {
             JsonObject object = new JsonObject();
             object.addProperty("block", entry.blockId());
             object.addProperty("style", entry.style().key());
@@ -147,10 +152,12 @@ public final class OreHighlightCompatibilityConfig {
         try {
             SecureConfigStorage.writeUtf8Atomic(
                     FabricLoader.getInstance().getConfigDir(), FILE_NAME, GSON.toJson(root));
+            return true;
         } catch (java.io.IOException | RuntimeException failure) {
             ChiseTweaksClient.LOGGER.error(
                     "Unable to save Ore Highlight compatibility config after {}",
                     failure.getClass().getSimpleName());
+            return false;
         }
     }
 

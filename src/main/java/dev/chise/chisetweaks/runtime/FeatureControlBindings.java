@@ -34,7 +34,7 @@ public final class FeatureControlBindings {
     }
 
     private static void bindOreHighlightRefresh() {
-        FeatureSwitches.MATERIAL_HIGHLIGHTS.setValueChangeCallback(
+        FeatureSwitches.MATERIAL_HIGHLIGHTS.addValueChangeListener(
                 ignored -> OreHighlightRenderInvalidation.request());
         LocalFeatureSettings.setOreHighlightChangedCallback(
                 OreHighlightRenderInvalidation::request);

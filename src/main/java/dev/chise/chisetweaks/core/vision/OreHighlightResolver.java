@@ -11,9 +11,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class OreHighlightResolver {
     private static final ConcurrentHashMap<Block, Resolved> CACHE = new ConcurrentHashMap<>();
+    private static final AtomicLong REVISION = new AtomicLong();
     private static final Resolved NONE = new Resolved(null, null);
 
     private OreHighlightResolver() {}
@@ -26,6 +28,11 @@ public final class OreHighlightResolver {
 
     public static void invalidateCache() {
         CACHE.clear();
+        REVISION.incrementAndGet();
+    }
+
+    public static long revision() {
+        return REVISION.get();
     }
 
     private static Resolved resolveUncached(BlockState state) {

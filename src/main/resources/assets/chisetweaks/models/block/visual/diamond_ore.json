@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:block/cube_all",
-  "textures": {
-    "all": "chisetweaks:block/visual/diamond_ore_chise"
-  }
-}

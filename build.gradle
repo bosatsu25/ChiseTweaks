@@ -74,18 +74,19 @@ jacoco {
     toolVersion = project.jacoco_version
 }
 
-// The 96% gate measures deterministic policy code owned by the retained visual scope.
-// Minecraft renderer integration is protected by source/artifact contracts and Prism runtime QA.
+// The 96% gate measures deterministic policy code plus the critical tick-dispatch boundary.
+// Renderer integration is additionally protected by source/artifact contracts and Prism runtime QA.
 def qualityGateClasses = [
+        'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
-        'dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy*.class',
         'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
         'dev/chise/chisetweaks/core/policy/LavaVisionPalettePolicy*.class',
         'dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy*.class',
         'dev/chise/chisetweaks/core/vision/OreHighlightRuntimePolicy*.class',
         'dev/chise/chisetweaks/core/vision/VanillaOreVisualCatalog*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetGroupPolicy*.class',
-        'dev/chise/chisetweaks/core/vision/VisualTargetSelectionPolicy*.class'
+        'dev/chise/chisetweaks/core/vision/VisualTargetSelectionPolicy*.class',
+        'dev/chise/chisetweaks/runtime/FeatureManager$TickSlot*.class'
 ]
 
 def qualityGateClassDirectories = providers.provider {
@@ -121,8 +122,8 @@ jacocoTestCoverageVerification {
 
 pitest {
     targetClasses = [
+        'dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy',
         'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
-        'dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy',
         'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
         'dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy',
         'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
@@ -135,9 +136,11 @@ pitest {
         'dev.chise.chisetweaks.*Test',
         'dev.chise.chisetweaks.config.*Test',
         'dev.chise.chisetweaks.core.*Test',
+        'dev.chise.chisetweaks.core.performance.*Test',
         'dev.chise.chisetweaks.core.policy.*Test',
         'dev.chise.chisetweaks.core.security.*Test',
-        'dev.chise.chisetweaks.core.vision.*Test'
+        'dev.chise.chisetweaks.core.vision.*Test',
+        'dev.chise.chisetweaks.runtime.*Test'
     ]
     junit5PluginVersion = '1.2.3'
     threads = 2

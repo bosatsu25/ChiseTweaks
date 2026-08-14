@@ -89,6 +89,9 @@ jobs:
         id: artifact-audit
         run: python scripts/artifact_audit.py
 
+      - name: Audit release residue
+        run: python scripts/release_residue_audit.py
+
       - name: Append verification summary
         run: |
           cat build/ci/quality-summary.md >> "$GITHUB_STEP_SUMMARY"

@@ -1,7 +1,7 @@
 package dev.chise.chisetweaks;
 
+import dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
-import dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
@@ -22,8 +22,8 @@ final class UtilityConstructorCoverageTest {
     @Test
     void retainedPurePolicyUtilitiesRemainNonPublicAndConstructibleOnlyByReflection() throws Exception {
         for (Class<?> type : List.of(
+                WorksiteScanThrottlePolicy.class,
                 WorksiteVisibilityBudgetPolicy.class,
-                BuilderEntityVisibilityPolicy.class,
                 ConfigListPolicy.class,
                 LavaVisionPalettePolicy.class,
                 WorksiteVisibilitySelectionPolicy.class,
