@@ -4,7 +4,6 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.api.ore.OreHighlightStyle;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
-import dev.chise.chisetweaks.core.vision.OreHighlightExternalRegistry;
 import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
 import dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
@@ -39,6 +38,13 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
     private volatile boolean staticOverlayResolved;
     private volatile boolean animatedOverlayResolved;
 
+    private volatile long dynamicResolverRevision = Long.MIN_VALUE;
+    private volatile @Nullable OreHighlightStyle dynamicStyle;
+    private volatile @Nullable BlockStateModel dynamicStaticOverlay;
+    private volatile @Nullable BlockStateModel dynamicAnimatedOverlay;
+    private volatile boolean dynamicStaticOverlayResolved;
+    private volatile boolean dynamicAnimatedOverlayResolved;
+
     FullbrightOreHighlightModel(
             BlockStateModel wrapped,
             Target target,
@@ -72,9 +78,9 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         boolean animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
         BlockStateModel overlay;
         if (dynamicModded) {
-            OreHighlightResolver.Resolved resolved = activeModded(state);
-            if (resolved == null || resolved.style() == null) return;
-            overlay = dynamicOverlayModel(resolved.style(), animated);
+            OreHighlightStyle style = activeModdedStyle(state);
+            if (style == null) return;
+            overlay = dynamicOverlayModel(style, animated);
         } else {
             if (!fixedHighlightEnabled()) return;
             overlay = fixedOverlayModel(animated);
@@ -108,10 +114,9 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
                 fixedTarget);
     }
 
-    private static OreHighlightResolver.Resolved activeModded(BlockState state) {
+    private @Nullable OreHighlightStyle activeModdedStyle(BlockState state) {
         if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return null;
-        OreHighlightResolver.Resolved resolved = OreHighlightResolver.resolve(state);
-        return resolved != null && resolved.target() == null ? resolved : null;
+        return resolveDynamicStyle(state);
     }
 
     private static OreHighlightRuntimePolicy.Motion motion() {
@@ -135,10 +140,37 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         return loaded;
     }
 
-    private static @Nullable BlockStateModel dynamicOverlayModel(OreHighlightStyle style, boolean animated) {
+    private @Nullable OreHighlightStyle resolveDynamicStyle(BlockState state) {
+        long revision = OreHighlightResolver.revision();
+        if (dynamicResolverRevision == revision) return dynamicStyle;
+        synchronized (this) {
+            if (dynamicResolverRevision == revision) return dynamicStyle;
+            OreHighlightResolver.Resolved resolved = OreHighlightResolver.resolve(state);
+            dynamicStyle = resolved != null && resolved.target() == null ? resolved.style() : null;
+            dynamicResolverRevision = revision;
+            dynamicStaticOverlay = null;
+            dynamicAnimatedOverlay = null;
+            dynamicStaticOverlayResolved = false;
+            dynamicAnimatedOverlayResolved = false;
+            return dynamicStyle;
+        }
+    }
+
+    private @Nullable BlockStateModel dynamicOverlayModel(OreHighlightStyle style, boolean animated) {
+        if (animated ? dynamicAnimatedOverlayResolved : dynamicStaticOverlayResolved) {
+            return animated ? dynamicAnimatedOverlay : dynamicStaticOverlay;
+        }
         OreHighlightOverlayCatalog.OverlayModels models = OreHighlightOverlayCatalog.forStyle(style);
         if (models == null) return null;
-        return lookup(animated ? models.animatedKey() : models.staticKey());
+        BlockStateModel loaded = lookup(animated ? models.animatedKey() : models.staticKey());
+        if (animated) {
+            dynamicAnimatedOverlay = loaded;
+            dynamicAnimatedOverlayResolved = true;
+        } else {
+            dynamicStaticOverlay = loaded;
+            dynamicStaticOverlayResolved = true;
+        }
+        return loaded;
     }
 
     private static @Nullable BlockStateModel lookup(@Nullable ExtraModelKey<BlockStateModel> key) {
@@ -169,34 +201,31 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         Object wrappedKey = wrapped.createGeometryKey(level, pos, state, random);
         if (wrappedKey == null) return null;
         if (!dynamicModded) {
-            boolean enabled = fixedHighlightEnabled();
-            return new FixedGeometryKey(
-                    wrappedKey,
-                    fixedTarget,
-                    enabled,
-                    enabled ? motion() : OreHighlightRuntimePolicy.Motion.STATIC);
+            if (!fixedHighlightEnabled()) return wrappedKey;
+            return new FixedGeometryKey(wrappedKey, fixedTarget, motion());
         }
 
-        OreHighlightResolver.Resolved resolved = activeModded(state);
-        boolean enabled = resolved != null && resolved.style() != null;
+        // Every non-Minecraft model stays wrap-capable so a user/API mapping can be added without
+        // a resource reload, but the common OFF/non-ore paths return the base key with no Chise key
+        // allocation and no extra-model lookup.
+        if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return wrappedKey;
+        OreHighlightStyle style = resolveDynamicStyle(state);
+        if (style == null) return wrappedKey;
         return new DynamicGeometryKey(
                 wrappedKey,
-                enabled ? resolved.style() : null,
-                enabled,
-                enabled ? motion() : OreHighlightRuntimePolicy.Motion.STATIC,
-                OreHighlightExternalRegistry.revision());
+                style,
+                motion(),
+                OreHighlightResolver.revision());
     }
 
     private record FixedGeometryKey(
             Object wrappedKey,
             @Nullable Target target,
-            boolean enabled,
             OreHighlightRuntimePolicy.Motion motion) {}
 
     private record DynamicGeometryKey(
             Object wrappedKey,
-            @Nullable OreHighlightStyle style,
-            boolean enabled,
+            OreHighlightStyle style,
             OreHighlightRuntimePolicy.Motion motion,
-            long registryRevision) {}
+            long resolverRevision) {}
 }

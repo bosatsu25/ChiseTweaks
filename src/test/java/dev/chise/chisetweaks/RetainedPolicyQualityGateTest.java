@@ -1,7 +1,7 @@
 package dev.chise.chisetweaks;
 
+import dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
-import dev.chise.chisetweaks.core.policy.BuilderEntityVisibilityPolicy;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
@@ -15,7 +15,6 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class RetainedPolicyQualityGateTest {
@@ -50,6 +49,23 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(128, WorksiteVisibilityBudgetPolicy.MAX_SCAN_CANDIDATES);
         assertEquals(24, WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS);
         assertEquals(192, WorksiteVisibilityBudgetPolicy.MAX_LINE_OF_SIGHT_RAYS_PER_SCAN);
+    }
+
+    @Test
+    void scanThrottleCoversUrgentMovingAndIdleStateTransitions() {
+        assertEquals(5, WorksiteScanThrottlePolicy.activeIntervalTicks(Integer.MIN_VALUE));
+        assertEquals(10, WorksiteScanThrottlePolicy.activeIntervalTicks(10));
+        assertEquals(100, WorksiteScanThrottlePolicy.activeIntervalTicks(Integer.MAX_VALUE));
+        assertEquals(20, WorksiteScanThrottlePolicy.idleIntervalTicks(5));
+        assertEquals(40, WorksiteScanThrottlePolicy.idleIntervalTicks(10));
+        assertEquals(100, WorksiteScanThrottlePolicy.idleIntervalTicks(100));
+
+        assertTrue(WorksiteScanThrottlePolicy.shouldScan(0, 10, true, false));
+        assertFalse(WorksiteScanThrottlePolicy.shouldScan(-1, 10, false, false));
+        assertFalse(WorksiteScanThrottlePolicy.shouldScan(9, 10, false, true));
+        assertTrue(WorksiteScanThrottlePolicy.shouldScan(10, 10, false, true));
+        assertFalse(WorksiteScanThrottlePolicy.shouldScan(39, 10, false, false));
+        assertTrue(WorksiteScanThrottlePolicy.shouldScan(40, 10, false, false));
     }
 
     @Test
@@ -93,55 +109,6 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(ConfigListPolicy.MAX_ENTRIES, capped.size());
         assertEquals("minecraft:block_0", capped.getFirst());
         assertEquals("minecraft:block_511", capped.getLast());
-    }
-
-    @Test
-    void entityVisibilityPolicyKeepsLocalPlayerSafeAndImplementsExplicitLists() {
-        var none = BuilderEntityVisibilityPolicy.Mode.NONE;
-        var blacklist = BuilderEntityVisibilityPolicy.Mode.BLACKLIST;
-        var whitelist = BuilderEntityVisibilityPolicy.Mode.WHITELIST;
-        assertEquals(BuilderEntityVisibilityPolicy.Decision.SHOW_DISABLED,
-                BuilderEntityVisibilityPolicy.evaluate(input(false, false, "minecraft:zombie", blacklist,
-                        Set.of("minecraft:zombie"), Set.of())));
-        assertEquals(BuilderEntityVisibilityPolicy.Decision.SHOW_LOCAL_PLAYER,
-                BuilderEntityVisibilityPolicy.evaluate(input(true, true, "minecraft:player", blacklist,
-                        Set.of("minecraft:player"), Set.of())));
-        assertEquals(BuilderEntityVisibilityPolicy.Decision.SHOW,
-                BuilderEntityVisibilityPolicy.evaluate(input(true, false, "", blacklist, Set.of(), Set.of())));
-        assertEquals(BuilderEntityVisibilityPolicy.Decision.SHOW,
-                BuilderEntityVisibilityPolicy.evaluate(input(true, false, "minecraft:zombie", none,
-                        Set.of("minecraft:zombie"), Set.of())));
-        assertEquals(BuilderEntityVisibilityPolicy.Decision.HIDE,
-                BuilderEntityVisibilityPolicy.evaluate(input(true, false, "minecraft:zombie", blacklist,
-                        Set.of("minecraft:zombie"), Set.of())));
-        assertEquals(BuilderEntityVisibilityPolicy.Decision.SHOW,
-                BuilderEntityVisibilityPolicy.evaluate(input(true, false, "minecraft:cow", blacklist,
-                        Set.of("minecraft:zombie"), Set.of())));
-        assertEquals(BuilderEntityVisibilityPolicy.Decision.SHOW,
-                BuilderEntityVisibilityPolicy.evaluate(input(true, false, "minecraft:cow", whitelist,
-                        Set.of(), Set.of("minecraft:cow"))));
-        assertEquals(BuilderEntityVisibilityPolicy.Decision.HIDE,
-                BuilderEntityVisibilityPolicy.evaluate(input(true, false, "minecraft:zombie", whitelist,
-                        Set.of(), Set.of("minecraft:cow"))));
-        assertTrue(BuilderEntityVisibilityPolicy.filtersPlayers(blacklist,
-                Set.of("minecraft:player"), Set.of()));
-        assertFalse(BuilderEntityVisibilityPolicy.filtersPlayers(blacklist, Set.of(), Set.of()));
-        assertFalse(BuilderEntityVisibilityPolicy.filtersPlayers(whitelist,
-                Set.of(), Set.of("minecraft:player")));
-        assertTrue(BuilderEntityVisibilityPolicy.filtersPlayers(whitelist, Set.of(), Set.of()));
-    }
-
-    @Test
-    void entityVisibilityInputRejectsInvalidContainersAndNormalizesNullId() {
-        assertThrows(NullPointerException.class, () -> BuilderEntityVisibilityPolicy.evaluate(null));
-        assertThrows(NullPointerException.class, () -> new BuilderEntityVisibilityPolicy.Input(
-                true, false, "minecraft:cow", null, Set.of(), Set.of()));
-        assertThrows(NullPointerException.class, () -> new BuilderEntityVisibilityPolicy.Input(
-                true, false, "minecraft:cow", BuilderEntityVisibilityPolicy.Mode.NONE, null, Set.of()));
-        assertThrows(NullPointerException.class, () -> new BuilderEntityVisibilityPolicy.Input(
-                true, false, "minecraft:cow", BuilderEntityVisibilityPolicy.Mode.NONE, Set.of(), null));
-        assertEquals("", new BuilderEntityVisibilityPolicy.Input(
-                true, false, null, BuilderEntityVisibilityPolicy.Mode.NONE, Set.of(), Set.of()).entityId());
     }
 
     @Test
@@ -194,16 +161,5 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(all, VisualTargetGroupPolicy.withAll(
                 noMaterial, VisualTargetGroupPolicy.Group.MATERIAL, true));
         assertEquals(all, VisualTargetGroupPolicy.withAll(all, null, false));
-    }
-
-    private static BuilderEntityVisibilityPolicy.Input input(
-            boolean enabled,
-            boolean localPlayer,
-            String entityId,
-            BuilderEntityVisibilityPolicy.Mode mode,
-            Set<String> blacklist,
-            Set<String> whitelist) {
-        return new BuilderEntityVisibilityPolicy.Input(
-                enabled, localPlayer, entityId, mode, blacklist, whitelist);
     }
 }

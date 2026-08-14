@@ -113,7 +113,9 @@ public final class ChiseOreCompatibilityScreen extends Screen {
             return;
         }
         if (!OreHighlightCompatibilityConfig.put(id.toString(), selectedStyle)) {
-            feedback = japanese ? "設定上限または入力検証により登録できません。" : "The override was rejected by validation or the entry limit.";
+            feedback = japanese
+                    ? "登録できません。入力・件数上限・設定ファイルの保存先を確認してください。"
+                    : "Could not save the override. Check the ID, entry limit, and config storage.";
             refreshControls();
             return;
         }
@@ -138,6 +140,8 @@ public final class ChiseOreCompatibilityScreen extends Screen {
         if (OreHighlightCompatibilityConfig.remove(entries.get(index).blockId())) {
             OreHighlightRenderInvalidation.request();
             feedback = japanese ? "削除しました。" : "Removed.";
+        } else {
+            feedback = japanese ? "削除内容を保存できませんでした。" : "Could not persist the removal.";
         }
         clampPage();
         refreshControls();
@@ -145,7 +149,11 @@ public final class ChiseOreCompatibilityScreen extends Screen {
 
     private void clearEntries() {
         if (entries().isEmpty()) return;
-        OreHighlightCompatibilityConfig.clear();
+        if (!OreHighlightCompatibilityConfig.clear()) {
+            feedback = japanese ? "設定を空にした内容を保存できませんでした。" : "Could not persist the cleared overrides.";
+            refreshControls();
+            return;
+        }
         OreHighlightRenderInvalidation.request();
         page = 0;
         feedback = japanese ? "個別設定を空にしました。" : "Overrides cleared.";

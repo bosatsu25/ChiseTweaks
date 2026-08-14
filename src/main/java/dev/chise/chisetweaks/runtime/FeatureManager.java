@@ -170,7 +170,6 @@ public final class FeatureManager {
         private final TickingRuntimeComponent component;
         private int recoverableFailures;
         private boolean quarantined;
-        private boolean wasActive;
 
         TickSlot(TickingRuntimeComponent component) {
             this.component = component;
@@ -179,15 +178,10 @@ public final class FeatureManager {
         void runForTick(Minecraft client) {
             if (quarantined) return;
             try {
-                boolean active = component.isActive();
-                if (!active && !wasActive) return;
+                // A component may derive its active state inside tick(). Gating here on isActive()
+                // creates an activation deadlock for components that start inactive.
                 component.tick(client);
-                wasActive = active;
             } catch (RuntimeException | LinkageError failure) {
-                if (!FailureIsolationPolicy.isRecoverable(failure)) {
-                    if (failure instanceof Error error) throw error;
-                    throw (RuntimeException) failure;
-                }
                 recoverableFailures++;
                 if (!FailureIsolationPolicy.shouldQuarantine(recoverableFailures)) return;
                 quarantined = true;

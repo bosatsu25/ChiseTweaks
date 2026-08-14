@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-fast repository audit for the rebuilt eight-feature ChiseTweaks scope."""
+"""Fail-fast repository audit for the retained eight-feature ChiseTweaks scope."""
 from __future__ import annotations
 
 import json
@@ -29,6 +29,8 @@ FORBIDDEN_JAVA_TOKENS = (
     "LavaHighlightRendererMixin",
     "LavaFluidRenderHandler",
     "ExternalHookCircuitBreaker",
+    "BuilderEntityVisibilityPolicy",
+    "ModVersionPolicy",
 )
 
 FORBIDDEN_PATHS = (
@@ -39,6 +41,12 @@ FORBIDDEN_PATHS = (
     "src/main/java/dev/chise/chisetweaks/feature/rendering/PlacementGuideLineGeometry.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaFluidRenderHandler.java",
     "src/main/java/dev/chise/chisetweaks/runtime/ExternalHookCircuitBreaker.java",
+    "src/main/java/dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy.java",
+    "src/main/java/dev/chise/chisetweaks/core/policy/ModVersionPolicy.java",
+    "src/main/resources/assets/chisetweaks/models/block/visual/diamond_ore.json",
+    "src/main/resources/assets/chisetweaks/models/block/visual/deepslate_diamond_ore.json",
+    "src/main/resources/assets/chisetweaks/textures/block/visual/diamond_ore_chise.png.mcmeta",
+    "src/main/resources/assets/chisetweaks/textures/block/visual/deepslate_diamond_ore_chise.png.mcmeta",
 )
 
 REQUIRED_PATHS = (
@@ -54,13 +62,27 @@ REQUIRED_PATHS = (
     ".github/workflows/release.yml",
     "scripts/quality_summary.py",
     "scripts/artifact_audit.py",
+    "scripts/release_residue_audit.py",
 )
 
+SKIPPED_DIRECTORY_NAMES = {".git", ".gradle", "build", "out", "run", "runs"}
+FORBIDDEN_RESIDUE_DIRECTORY_NAMES = {".fabric", ".mixin.out", "__pycache__"}
+FORBIDDEN_RESIDUE_SUFFIXES = {".log", ".tmp", ".temp", ".bak", ".class", ".swp"}
+AUDITED_TEXT_SUFFIXES = {
+    ".java", ".json", ".md", ".txt", ".gradle", ".properties", ".py", ".yml", ".yaml", ".toml", ".xml",
+}
+AUDITED_TEXT_NAMES = {".gitignore", ".gitattributes", ".editorconfig", "gradlew", "gradlew.bat", "LICENSE", "NOTICE"}
+
 LOCAL_PATH_PATTERNS = (
-    re.compile(r"[A-Za-z]:\\\\Users\\\\", re.IGNORECASE),
+    re.compile(r"[A-Za-z]:[\\/]+Users[\\/]+", re.IGNORECASE),
     re.compile(r"/home/[^/\\s]+/"),
-    re.compile(r"AppData[/\\\\]", re.IGNORECASE),
+    re.compile(r"AppData[\\/]", re.IGNORECASE),
+    re.compile(r"(?:^|[\\/])PrismLauncher(?:[\\/]|$)", re.IGNORECASE),
+    re.compile(r"(?:^|[\\/])\.minecraft(?:[\\/]|$)", re.IGNORECASE),
 )
+IPV4_PATTERN = re.compile(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?(?![\d.])")
+ALLOWED_IP_LITERALS = {"127.0.0.1", "0.0.0.0"}
+SELF_PATH = Path("scripts/repository_audit.py")
 
 
 def fail(message: str, failures: list[str]) -> None:
@@ -69,6 +91,50 @@ def fail(message: str, failures: list[str]) -> None:
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def skipped(relative: Path) -> bool:
+    return any(part in SKIPPED_DIRECTORY_NAMES for part in relative.parts)
+
+
+def contains_sensitive_ipv4(text: str) -> bool:
+    for match in IPV4_PATTERN.finditer(text):
+        host = match.group(0).split(":", 1)[0]
+        octets = host.split(".")
+        if len(octets) != 4 or any(int(value) > 255 for value in octets):
+            continue
+        if host not in ALLOWED_IP_LITERALS:
+            return True
+    return False
+
+
+def audit_repository_hygiene(failures: list[str]) -> None:
+    for path in ROOT.rglob("*"):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(ROOT)
+        if skipped(relative):
+            continue
+
+        if any(part in FORBIDDEN_RESIDUE_DIRECTORY_NAMES for part in relative.parts):
+            fail(f"{relative}: generated/runtime residue directory is not allowed", failures)
+        if path.suffix.lower() in FORBIDDEN_RESIDUE_SUFFIXES:
+            fail(f"{relative}: generated/log/temp artifact is not allowed", failures)
+
+        # The audit script contains the detection regexes and forbidden-path literals themselves.
+        if relative == SELF_PATH:
+            continue
+        if path.suffix.lower() not in AUDITED_TEXT_SUFFIXES and path.name not in AUDITED_TEXT_NAMES:
+            continue
+        try:
+            text = read_text(path)
+        except UnicodeDecodeError:
+            continue
+        for pattern in LOCAL_PATH_PATTERNS:
+            if pattern.search(text):
+                fail(f"{relative}: local machine path detected", failures)
+        if contains_sensitive_ipv4(text):
+            fail(f"{relative}: non-loopback IPv4/server address detected", failures)
 
 
 def audit() -> list[str]:
@@ -90,9 +156,6 @@ def audit() -> list[str]:
             for token in FORBIDDEN_JAVA_TOKENS:
                 if token in text:
                     fail(f"{relative}: removed token still present: {token}", failures)
-            for pattern in LOCAL_PATH_PATTERNS:
-                if pattern.search(text):
-                    fail(f"{relative}: local machine path detected", failures)
 
     feature_path = ROOT / "src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java"
     if feature_path.is_file():
@@ -144,24 +207,13 @@ def audit() -> list[str]:
             "tasks.register('qualityGate')",
             "mutationThreshold",
             "testStrengthThreshold",
+            "WorksiteScanThrottlePolicy",
+            "FeatureManager$TickSlot",
         ):
             if marker not in build:
-                fail(f"rebuilt verification marker missing from build.gradle: {marker}", failures)
+                fail(f"verification marker missing from build.gradle: {marker}", failures)
 
-    resources_root = ROOT / "src/main/resources"
-    if resources_root.is_dir():
-        for path in resources_root.rglob("*"):
-            if not path.is_file() or path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}:
-                continue
-            try:
-                text = read_text(path)
-            except UnicodeDecodeError:
-                continue
-            relative = path.relative_to(ROOT)
-            for pattern in LOCAL_PATH_PATTERNS:
-                if pattern.search(text):
-                    fail(f"{relative}: local machine path detected", failures)
-
+    audit_repository_hygiene(failures)
     return failures
 
 
@@ -177,6 +229,7 @@ def main() -> int:
     print("client_only=true")
     print("removed_feature_residue=false")
     print("local_machine_paths=false")
+    print("non_loopback_ipv4_literals=false")
     return 0
 
 

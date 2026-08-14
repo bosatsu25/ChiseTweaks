@@ -27,11 +27,12 @@ final class OreHighlightCompatibilityArchitectureContractTest {
         assertTrue(conventional < fallback);
         assertTrue(resolver.contains("ConventionalBlockTags.ORES"));
         assertTrue(resolver.contains("ConventionalBlockTags.NETHERITE_SCRAP_ORES"));
+        assertTrue(resolver.contains("public static long revision()"));
         assertFalse(resolver.contains("BlockPos.betweenClosed"));
     }
 
     @Test
-    void resourceAndLocalCompatibilityAreStrictBoundedAndOffline() throws IOException {
+    void resourceAndLocalCompatibilityAreStrictBoundedOfflineAndTransactional() throws IOException {
         String loader = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightResourceCompatibilityLoader.java");
         String config = source(
@@ -44,6 +45,7 @@ final class OreHighlightCompatibilityArchitectureContractTest {
         assertTrue(loader.contains("StrictJsonSecurityPolicy.validateObjectDocument"));
         assertTrue(config.contains("MAX_ENTRIES = 256"));
         assertTrue(config.contains("SecureConfigStorage.writeUtf8Atomic"));
+        assertTrue(config.contains("if (save && !saveEntries(nextEntries)) return false;"));
         assertTrue(registry.indexOf("configBlocks.get") < registry.indexOf("resourceBlocks.get"));
         assertFalse(loader.contains("HttpClient"));
         assertFalse(loader.contains("URL("));
@@ -51,7 +53,7 @@ final class OreHighlightCompatibilityArchitectureContractTest {
     }
 
     @Test
-    void moddedBlocksKeepTheirBaseModelAndUseTheSameChiseOverlayPath() throws IOException {
+    void moddedBlocksKeepTheirBaseModelWithDormantFastPathsAndCachedOverlays() throws IOException {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
@@ -62,13 +64,15 @@ final class OreHighlightCompatibilityArchitectureContractTest {
         assertTrue(plugin.contains("new FullbrightOreHighlightModel(model)"));
         assertFalse(plugin.contains("OVERRIDE_PHASE"));
         assertTrue(model.contains("super.emitQuads(emitter, level, pos, state, random, cullTest);"));
-        assertTrue(model.contains("dynamicModded"));
-        assertTrue(model.contains("OreHighlightExternalRegistry.revision()"));
+        assertTrue(model.contains("if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return wrappedKey;"));
+        assertTrue(model.contains("dynamicStaticOverlayResolved"));
+        assertTrue(model.contains("OreHighlightResolver.revision()"));
+        assertFalse(model.contains("OreHighlightExternalRegistry.revision()"));
         assertFalse(model.contains("IrisApi"));
     }
 
     @Test
-    void editorAndPublicApiUseOnlyLocalClientState() throws IOException {
+    void editorAndPublicApiUseOnlyLocalClientStateAndInvalidateLateRegistration() throws IOException {
         String screen = source(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseOreCompatibilityScreen.java");
         String configScreen = source(
@@ -77,12 +81,14 @@ final class OreHighlightCompatibilityArchitectureContractTest {
                 "src/main/java/dev/chise/chisetweaks/api/ore/OreHighlightApi.java");
 
         assertTrue(screen.contains("OreHighlightCompatibilityConfig.put"));
+        assertTrue(screen.contains("OreHighlightCompatibilityConfig.clear()"));
         assertTrue(screen.contains("OreHighlightRenderInvalidation.request()"));
         assertTrue(screen.contains("BuiltInRegistries.BLOCK"));
         assertTrue(configScreen.contains("case EDIT_ORE_COMPAT"));
         assertTrue(configScreen.contains("new ChiseOreCompatibilityScreen"));
         assertTrue(api.contains("registerBlock"));
         assertTrue(api.contains("registerTag"));
+        assertTrue(api.contains("OreHighlightRenderInvalidation.request()"));
         assertFalse(screen.contains("reloadResourcePacks"));
         assertFalse(api.contains("ClientPlayNetworking"));
     }
