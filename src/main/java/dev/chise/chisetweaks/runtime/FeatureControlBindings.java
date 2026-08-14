@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.runtime;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseStringListSetting;
-import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
@@ -53,20 +52,12 @@ public final class FeatureControlBindings {
         bindSanitized(BuilderFocusConfig.BLOCK_BLACKLIST, BuilderFocusVisibility::buildLists);
         bindSanitized(BuilderFocusConfig.BLOCK_WHITELIST, BuilderFocusVisibility::buildLists);
         BuilderFocusConfig.BLOCK_RULE_MODE.setValueChangeCallback(
-                config -> {
-                    BuilderFocusVisibility.buildLists();
-                    FeatureConfig.saveToFile();
-                });
+                config -> BuilderFocusVisibility.buildLists());
 
         bindSanitized(BuilderFocusConfig.ENTITY_BLACKLIST, BuilderFocusVisibility::buildEntityLists);
         bindSanitized(BuilderFocusConfig.ENTITY_WHITELIST, BuilderFocusVisibility::buildEntityLists);
         BuilderFocusConfig.ENTITY_RULE_MODE.setValueChangeCallback(
-                config -> {
-                    BuilderFocusVisibility.buildEntityLists();
-                    FeatureConfig.saveToFile();
-                });
-        BuilderFocusConfig.REFRESH_RENDERER.setValueChangeCallback(
-                config -> FeatureConfig.saveToFile());
+                config -> BuilderFocusVisibility.buildEntityLists());
     }
 
     private static void bindWorksiteVisibilityCallbacks() {
@@ -137,9 +128,8 @@ public final class FeatureControlBindings {
 
     private static void bindSanitized(ChiseStringListSetting config, Runnable rebuild) {
         config.setValueChangeCallback(ignored -> {
-            FeatureConfig.sanitizeStringLists();
+            dev.chise.chisetweaks.config.FeatureConfig.sanitizeStringLists();
             rebuild.run();
-            FeatureConfig.saveToFile();
         });
     }
 }
