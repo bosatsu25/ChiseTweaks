@@ -20,19 +20,16 @@ public final class LocalFeatureConfig {
     private static final String CONFIG_FILE_NAME = "chisetweaks-visual.json";
 
     public boolean lavaHighlightEnabled = false;
-    /** Reduced-motion default: Ore Highlights are static unless the user explicitly enables motion. */
     public boolean oreHighlightAnimationEnabled = false;
 
     public int worksiteVisibilityHorizontalRadius = 5;
     public int worksiteVisibilityVerticalRadius = 3;
     public int worksiteVisibilityIntervalTicks = 10;
-    /** Legacy persisted field kept for compatible reads; no HUD consumes it. */
     public int worksiteVisibilityMaxResults = 6;
     public int worksiteVisibilityMaxOverlayResults = 12;
     public boolean worksiteVisibilityWorldOverlay = true;
     public boolean worksiteVisibilityExclusiveMode = false;
 
-    /** Fine-grained target mask for retained Ore Highlights and Hidden Surface Trace targets. */
     public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
     public int visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
 
@@ -60,7 +57,6 @@ public final class LocalFeatureConfig {
         }
     }
 
-    /** Replaces current values only when the complete document passes security validation. */
     boolean replaceFromJsonDocument(String json) {
         resetToDefaults();
         if (json == null || json.isBlank()) return false;
@@ -93,15 +89,17 @@ public final class LocalFeatureConfig {
         }
     }
 
-    public synchronized void save() {
+    public synchronized boolean save() {
         sanitize();
         try {
             SecureConfigStorage.writeUtf8Atomic(
                     FabricLoader.getInstance().getConfigDir(), CONFIG_FILE_NAME, GSON.toJson(this));
+            return true;
         } catch (java.io.IOException | RuntimeException error) {
             ChiseTweaksClient.LOGGER.error(
                     "Unable to save local config after {}",
                     error.getClass().getSimpleName());
+            return false;
         }
     }
 
