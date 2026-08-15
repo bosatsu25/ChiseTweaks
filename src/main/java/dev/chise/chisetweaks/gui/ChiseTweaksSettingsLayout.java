@@ -85,7 +85,7 @@ public final class ChiseTweaksSettingsLayout {
 
         FooterButtons footerButtons = footerButtons(footer);
 
-        int controlWidth = clamp(contentWidth / 7, 72, 132);
+        int controlWidth = clamp(contentWidth / 8, 72, 116);
         int controlSlotWidth = Math.max(controlWidth, INTEGER_CONTROL_WIDTH);
         int panelPadding = clamp(contentWidth / 24, 6, 16);
         int nameX = panel.x() + panelPadding;
@@ -102,12 +102,12 @@ public final class ChiseTweaksSettingsLayout {
             nameWidth = availableTextWidth;
             descriptionX = nameX;
             descriptionWidth = availableTextWidth;
-            rowHeight = 46;
+            rowHeight = 42;
         } else {
-            nameWidth = clamp(availableTextWidth * 34 / 100, 160, 260);
+            nameWidth = clamp(availableTextWidth * 32 / 100, 150, 230);
             descriptionX = nameX + nameWidth + TEXT_COLUMN_GAP;
             descriptionWidth = Math.max(1, textRight - descriptionX);
-            rowHeight = 38;
+            rowHeight = 34;
         }
 
         return new Geometry(
@@ -132,7 +132,7 @@ public final class ChiseTweaksSettingsLayout {
                 descriptionWidth,
                 controlX,
                 rowHeight,
-                24,
+                22,
                 stackedText,
                 toolbarStacked);
     }
