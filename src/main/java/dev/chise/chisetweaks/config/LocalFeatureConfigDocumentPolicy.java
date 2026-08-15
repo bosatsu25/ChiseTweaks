@@ -22,6 +22,10 @@ final class LocalFeatureConfigDocumentPolicy {
             "worksiteVisibilityIntervalTicks",
             "worksiteVisibilityMaxResults",
             "worksiteVisibilityMaxOverlayResults",
+            "lavaAnalyzerHorizontalRadius",
+            "lavaAnalyzerVerticalRadius",
+            "lavaAnalyzerIntervalTicks",
+            "lavaAnalyzerMaxOverlayResults",
             "visualTargetMask",
             "visualTargetSchemaVersion");
 
