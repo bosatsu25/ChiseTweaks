@@ -1,6 +1,7 @@
 package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
+import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -57,6 +58,33 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals(1, matches.size());
         assertEquals("moddedOreTargets", matches.getFirst().id());
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.ACTION, matches.getFirst().kind());
+    }
+
+    @Test
+    void visibilityStartsWithPlayerViewAndFireVisibilityIsOptIn() {
+        var controller = new ChiseTweaksSettingsController(true);
+        List<ChiseTweaksSettingRowDefinition> rows = controller.rowsFor(ChiseTweaksUiSection.VISIBILITY);
+        assertEquals("header.playerView", rows.get(0).id());
+        assertEquals("fireVisibility", rows.get(1).id());
+        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, rows.get(1).kind());
+        assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, rows.get(1).booleanConfig());
+        assertFalse(rows.get(1).booleanConfig().getDefaultBooleanValue());
+        assertTrue(rows.get(1).name().contains("火炎"));
+        assertTrue(rows.get(1).description().contains("ワールド上の炎は変更しない"));
+    }
+
+    @Test
+    void visibilityUsesFourTaskOrientedGroups() {
+        var controller = new ChiseTweaksSettingsController(true);
+        List<String> headers = controller.rowsFor(ChiseTweaksUiSection.VISIBILITY).stream()
+                .filter(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER)
+                .map(ChiseTweaksSettingRowDefinition::id)
+                .toList();
+        assertEquals(List.of(
+                "header.playerView",
+                "header.inspectionAids",
+                "header.sceneFilter",
+                "header.analysis"), headers);
     }
 
     @Test

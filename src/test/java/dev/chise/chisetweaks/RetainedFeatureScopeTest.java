@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class RetainedFeatureScopeTest {
     @Test
-    void canonicalScopeContainsExactlyTheEightRetainedFeatures() {
+    void canonicalScopeContainsExactlyTheNineRetainedFeatures() {
         assertEquals(List.of(
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
@@ -26,8 +26,9 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.GLASS_INSPECTION,
                 FeatureDefinition.MATERIAL_HIGHLIGHTS,
                 FeatureDefinition.NETHER_PALETTE,
+                FeatureDefinition.FIRE_VISIBILITY,
                 FeatureDefinition.LAVA_HIGHLIGHT), FeatureDefinition.VALUES);
-        assertEquals(8, FeatureDefinition.VALUES.size());
+        assertEquals(9, FeatureDefinition.VALUES.size());
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.area() == FeatureArea.RENDERING));
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.dependency().isEmpty()));
     }
@@ -58,17 +59,19 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void sceneFiltersAndLavaAnalyzerStayOutsideWorksiteModeCoupling() {
+    void sceneFiltersFireVisibilityAndLavaAnalyzerStayOutsideWorksiteModeCoupling() {
         assertFalse(FeatureDefinition.BUILDER_FOCUS_BLOCKS.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.BUILDER_FOCUS_ENTITIES.isWorksiteVisibilityMode());
+        assertFalse(FeatureDefinition.FIRE_VISIBILITY.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.LAVA_HIGHLIGHT.isWorksiteVisibilityMode());
         assertEquals(null, FeatureDefinition.BUILDER_FOCUS_BLOCKS.inspectionCategory());
         assertEquals(null, FeatureDefinition.BUILDER_FOCUS_ENTITIES.inspectionCategory());
+        assertEquals(null, FeatureDefinition.FIRE_VISIBILITY.inspectionCategory());
         assertEquals(null, FeatureDefinition.LAVA_HIGHLIGHT.inspectionCategory());
     }
 
     @Test
-    void persistentGlobalSwitchRegistryContainsSevenNonLavaFeatureSwitches() {
+    void persistentGlobalSwitchRegistryContainsSevenConfigBackedFeatureSwitches() {
         assertEquals(List.of(
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
@@ -99,6 +102,7 @@ final class RetainedFeatureScopeTest {
         assertEquals("Glass Inspection", FeatureDefinition.GLASS_INSPECTION.englishName());
         assertEquals("Ore Highlights", FeatureDefinition.MATERIAL_HIGHLIGHTS.englishName());
         assertEquals("Nether Palette", FeatureDefinition.NETHER_PALETTE.englishName());
+        assertEquals("Fire Visibility", FeatureDefinition.FIRE_VISIBILITY.englishName());
         assertEquals("Lava Analyzer", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
     }
 }
