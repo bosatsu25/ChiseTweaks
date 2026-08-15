@@ -9,7 +9,6 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
-import dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 import net.minecraft.network.chat.Component;
 
@@ -18,6 +17,12 @@ import java.util.List;
 
 /** Owns config/domain mapping for the focused standalone Chise settings UI. */
 final class ChiseTweaksSettingsController {
+    enum Surface {
+        MAIN,
+        HIGHLIGHT_DETAILS,
+        LAVA_DETAILS
+    }
+
     private static final List<ChiseBooleanSetting> HIGHLIGHT_FEATURES = List.of(
             FeatureSwitches.MATERIAL_HIGHLIGHTS,
             FeatureSwitches.NETHER_PALETTE,
@@ -48,11 +53,25 @@ final class ChiseTweaksSettingsController {
     boolean japanese() { return japanese; }
 
     List<ChiseTweaksSettingRowDefinition> rows() {
+        return rows(Surface.MAIN);
+    }
+
+    List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
         ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
-        addHighlightRows(rows);
-        addVisualFilterRows(rows);
-        addVisibilityImprovementRows(rows);
+        switch (surface == null ? Surface.MAIN : surface) {
+            case MAIN -> addMainRows(rows);
+            case HIGHLIGHT_DETAILS -> addHighlightDetailRows(rows);
+            case LAVA_DETAILS -> addLavaDetailRows(rows);
+        }
         return List.copyOf(rows);
+    }
+
+    String surfaceTitle(Surface surface) {
+        return switch (surface == null ? Surface.MAIN : surface) {
+            case MAIN -> "";
+            case HIGHLIGHT_DETAILS -> japanese ? "ハイライト設定" : "Highlight Settings";
+            case LAVA_DETAILS -> japanese ? "溶岩解析設定" : "Lava Analysis Settings";
+        };
     }
 
     boolean shouldTurnHighlightBulkOn() {
@@ -69,6 +88,15 @@ final class ChiseTweaksSettingsController {
         }
     }
 
+    boolean reset(Surface surface) {
+        switch (surface == null ? Surface.MAIN : surface) {
+            case MAIN -> resetAll();
+            case HIGHLIGHT_DETAILS -> resetHighlightDetails();
+            case LAVA_DETAILS -> resetLavaDetails();
+        }
+        return true;
+    }
+
     boolean resetAll() {
         FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
         FeatureSwitches.NETHER_PALETTE.resetToDefault();
@@ -80,13 +108,8 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
         LocalFeatureSwitches.FIRE_VISIBILITY.resetToDefault();
 
-        LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION.resetToDefault();
-        LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.resetToDefault();
-        LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS.resetToDefault();
-        LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL.resetToDefault();
-        LocalFeatureSettings.WORKSITE_VISIBILITY_MAX_OVERLAYS.resetToDefault();
-        LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY.resetToDefault();
-        LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE.resetToDefault();
+        resetHighlightDetails();
+        resetLavaDetails();
 
         BuilderFocusConfig.REFRESH_RENDERER.resetToDefault();
         BuilderFocusConfig.BLOCK_RULE_MODE.resetToDefault();
@@ -95,9 +118,6 @@ final class ChiseTweaksSettingsController {
         BuilderFocusConfig.ENTITY_RULE_MODE.resetToDefault();
         BuilderFocusConfig.ENTITY_WHITELIST.resetToDefault();
         BuilderFocusConfig.ENTITY_BLACKLIST.resetToDefault();
-
-        resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
-        resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
         return true;
     }
 
@@ -107,89 +127,117 @@ final class ChiseTweaksSettingsController {
         return featureSaved && localSaved;
     }
 
-    private void addHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        header(rows, "header.highlight", "ハイライト", "Highlight");
-        bool(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
-                "鉱石ハイライト", "Ore Highlight",
-                "鉱石や古代の残骸を発光枠で見つけやすくする",
-                "Highlight ores and ancient debris with visible frames.");
-        bool(rows, "nether", FeatureSwitches.NETHER_PALETTE,
-                "ネザーハイライト", "Nether Highlight",
-                "ネザーの主要な建材・地形素材を色分けして見やすくする",
-                "Highlight visible Nether building materials with color-coded outlines.");
-        bool(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE,
-                "細線ハイライト", "Fine Line Highlight",
-                "糸などの細く見えにくい対象を強調する",
-                "Highlight thin visible targets such as tripwire and hooks.");
-        bool(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
-                "隠れブロックハイライト", "Hidden Block Highlight",
-                "粉雪など見分けにくいブロックを強調する",
-                "Highlight blocks that are difficult to distinguish at a glance.");
-        bool(rows, "glass", FeatureSwitches.GLASS_INSPECTION,
-                "ガラスハイライト", "Glass Highlight",
-                "ガラスや板ガラスの境界を見やすくする",
-                "Highlight glass boundaries and pane connections.");
+    private void addMainRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        rows.add(ChiseTweaksSettingRowDefinition.headerAction(
+                "header.highlight",
+                japanese ? "ハイライト" : "Highlight",
+                ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS,
+                japanese ? "設定" : "Settings"));
+        compactBool(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
+                "鉱石ハイライト", "Ore Highlight");
+        compactBool(rows, "nether", FeatureSwitches.NETHER_PALETTE,
+                "ネザーハイライト", "Nether Highlight");
+        compactBool(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE,
+                "細線ハイライト", "Fine Line Highlight");
+        compactBool(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
+                "隠れブロックハイライト", "Hidden Block Highlight");
+        compactBool(rows, "glass", FeatureSwitches.GLASS_INSPECTION,
+                "ガラスハイライト", "Glass Highlight");
 
+        header(rows, "header.visualFilter", "Visual Filter", "Visual Filter");
+        compactBoolAction(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
+                "ブロックフィルター", "Block Filter",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER);
+        compactBoolAction(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
+                "エンティティフィルター", "Entity Filter",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
+
+        header(rows, "header.visibilityImprovement", "視認改善", "Visibility Improvements");
+        compactBoolAction(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
+                "溶岩解析", "Lava Analysis",
+                ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS);
+        compactBool(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
+                "火炎表示を低くする", "Lower Fire Overlay");
+    }
+
+    private void addHighlightDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        header(rows, "detail.highlight.general", "共通設定", "Shared Settings");
         bool(rows, "oreMotion", LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION,
                 "ハイライトを動かす", "Animate Ore Highlight",
-                "OFFでは発光する模様を静止表示し、ONで控えめにアニメーションする",
-                "Keep the highlight static when OFF or use subtle animation when ON.");
+                "OFFでは静止表示、ONで控えめにアニメーションする",
+                "Keep highlights static when OFF or use subtle motion when ON.");
         action(rows,
                 "moddedOreTargets",
                 "MOD鉱石の対象",
                 "MOD鉱石のRegistry IDとChiseの発光スタイルを編集する",
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT);
+        integer(rows, "highlightRange", LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS,
+                "ハイライト範囲", "Highlight Range",
+                "周辺ハイライトの水平範囲", "Horizontal radius for scan-based highlights.", 1);
+        integer(rows, "highlightVerticalRange", LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS,
+                "ハイライト垂直範囲", "Highlight Vertical Range",
+                "周辺ハイライトの垂直範囲", "Vertical radius for scan-based highlights.", 1);
+        integer(rows, "highlightInterval", LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL,
+                "ハイライト更新間隔", "Highlight Update Interval",
+                "周辺確認を行うtick間隔", "Ticks between scan-based highlight updates.", 5);
+        integer(rows, "highlightMaxOverlays", LocalFeatureSettings.WORKSITE_VISIBILITY_MAX_OVERLAYS,
+                "ハイライト最大表示数", "Maximum Highlights",
+                "同時に保持する補助表示数", "Maximum scan-based highlight overlays.", 1);
+        bool(rows, "highlightWorldOverlay", LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY,
+                "ワールド表示", "World Overlay",
+                "スキャン型ハイライトの補助線を表示する",
+                "Draw scan-based highlight overlays in the world.");
+        bool(rows, "highlightExclusiveMode", LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE,
+                "ハイライト排他モード", "Exclusive Highlight Mode",
+                "スキャン型ハイライトを同時に1つまでに制限する",
+                "Keep at most one scan-based highlight mode active.");
+
+        header(rows, "detail.highlight.materialTargets", "鉱石・資材の対象", "Ore and Material Targets");
         for (ChiseBooleanSetting option : resourceTargets) {
             boolTarget(rows, option, isSpecialMaterialTarget(option)
                     ? "対象資材を発光枠で強調する"
                     : "対象鉱石を発光枠で強調する");
         }
+
+        header(rows, "detail.highlight.hiddenTargets", "隠れブロックの対象", "Hidden Block Targets");
         for (ChiseBooleanSetting option : visibilityTargets) {
             boolTarget(rows, option, targetDescription(option));
         }
     }
 
-    private void addVisualFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        header(rows, "header.visualFilter", "Visual Filter", "Visual Filter");
-        bool(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
-                "ブロックフィルター", "Block Filter",
-                "登録したルールでブロック表示を絞る",
-                "Filter block rendering with the configured visibility rules.");
-        action(rows,
-                "focusBlocksEdit",
-                "ブロックの対象",
-                "表示を残す／隠すブロックIDと方式を編集する",
-                ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER);
-        bool(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
-                "エンティティフィルター", "Entity Filter",
-                "登録したルールでエンティティ表示を絞る",
-                "Filter entity rendering with the configured visibility rules.");
-        action(rows,
-                "focusEntitiesEdit",
-                "エンティティの対象",
-                "表示を残す／隠すエンティティIDと方式を編集する",
-                ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
+    private void addLavaDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        header(rows, "detail.lava.scan", "解析設定", "Analysis Settings");
+        integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
+                "解析範囲", "Analysis Range",
+                "周辺の溶岩源を確認する水平範囲", "Horizontal radius used for lava analysis.", 1);
+        integer(rows, "lavaVerticalRange", LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
+                "垂直範囲", "Vertical Range",
+                "周辺の溶岩源を確認する垂直範囲", "Vertical radius used for lava analysis.", 1);
+        integer(rows, "lavaInterval", LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
+                "解析間隔", "Analysis Interval",
+                "溶岩源の確認を行うtick間隔", "Ticks between lava analysis updates.", 5);
+        integer(rows, "lavaMaxOverlays", LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
+                "最大表示数", "Maximum Markers",
+                "同時に保持する溶岩マーカー数", "Maximum retained lava markers.", 1);
     }
 
-    private void addVisibilityImprovementRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        header(rows, "header.visibilityImprovement", "視認改善", "Visibility Improvements");
-        bool(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
-                "溶岩解析", "Lava Analysis",
-                "近くの溶岩源を解析し、壁越しでも距離に応じた深緑の発光枠で表示する",
-                "Analyze nearby lava sources and show distance-aware deep-green frames through terrain.");
-        rows.add(ChiseTweaksSettingRowDefinition.bool(
-                "fireVisibility",
-                japanese ? "火炎表示を低くする" : "Lower Fire Overlay",
-                japanese
-                        ? "燃焼中の炎を画面下部へ寄せ、前方を見やすくする。ワールド上の炎は変更しない"
-                        : "Lower only the first-person fire overlay. World fire remains unchanged.",
-                LocalFeatureSwitches.FIRE_VISIBILITY));
-        integer(rows, "scanRange", LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS,
-                "溶岩解析範囲", "Lava Analysis Range",
-                "周辺の溶岩源を確認する水平範囲", "Horizontal radius used for nearby lava analysis.", 1);
-        integer(rows, "scanInterval", LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL,
-                "溶岩解析間隔", "Lava Analysis Interval",
-                "周辺確認を行うtick間隔", "Ticks between nearby lava analysis updates.", 5);
+    private void resetHighlightDetails() {
+        LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION.resetToDefault();
+        LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.resetToDefault();
+        LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS.resetToDefault();
+        LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL.resetToDefault();
+        LocalFeatureSettings.WORKSITE_VISIBILITY_MAX_OVERLAYS.resetToDefault();
+        LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY.resetToDefault();
+        LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE.resetToDefault();
+        resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
+        resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
+    }
+
+    private void resetLavaDetails() {
+        LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS.resetToDefault();
+        LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS.resetToDefault();
+        LocalFeatureSettings.LAVA_ANALYZER_INTERVAL.resetToDefault();
+        LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS.resetToDefault();
     }
 
     private void header(
@@ -198,6 +246,32 @@ final class ChiseTweaksSettingsController {
             String japaneseName,
             String englishName) {
         rows.add(ChiseTweaksSettingRowDefinition.header(id, japanese ? japaneseName : englishName));
+    }
+
+    private void compactBool(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String id,
+            ChiseBooleanSetting config,
+            String japaneseName,
+            String englishName) {
+        rows.add(ChiseTweaksSettingRowDefinition.bool(
+                id, japanese ? japaneseName : englishName, "", config));
+    }
+
+    private void compactBoolAction(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String id,
+            ChiseBooleanSetting config,
+            String japaneseName,
+            String englishName,
+            ChiseTweaksSettingRowDefinition.Action action) {
+        rows.add(ChiseTweaksSettingRowDefinition.boolAction(
+                id,
+                japanese ? japaneseName : englishName,
+                "",
+                config,
+                action,
+                japanese ? "設定" : "Settings"));
     }
 
     private void bool(
@@ -251,18 +325,30 @@ final class ChiseTweaksSettingsController {
             ChiseTweaksSettingRowDefinition.Action action) {
         rows.add(ChiseTweaksSettingRowDefinition.action(
                 id,
-                japanese ? japaneseName : switch (action) {
-                    case EDIT_BLOCK_FILTER -> "Block targets";
-                    case EDIT_ENTITY_FILTER -> "Entity targets";
-                    case EDIT_ORE_COMPAT -> "Modded ore targets";
-                },
-                japanese ? japaneseDescription : switch (action) {
-                    case EDIT_BLOCK_FILTER -> "Edit the block include/exclude mode and block IDs.";
-                    case EDIT_ENTITY_FILTER -> "Edit the entity include/exclude mode and entity IDs.";
-                    case EDIT_ORE_COMPAT -> "Edit modded block IDs and their Chise highlight styles.";
-                },
+                japanese ? japaneseName : englishActionName(action),
+                japanese ? japaneseDescription : englishActionDescription(action),
                 action,
-                japanese ? "対象を編集" : "Edit targets"));
+                japanese ? "設定" : "Settings"));
+    }
+
+    private static String englishActionName(ChiseTweaksSettingRowDefinition.Action action) {
+        return switch (action) {
+            case OPEN_HIGHLIGHT_DETAILS -> "Highlight settings";
+            case OPEN_LAVA_DETAILS -> "Lava analysis settings";
+            case EDIT_BLOCK_FILTER -> "Block targets";
+            case EDIT_ENTITY_FILTER -> "Entity targets";
+            case EDIT_ORE_COMPAT -> "Modded ore targets";
+        };
+    }
+
+    private static String englishActionDescription(ChiseTweaksSettingRowDefinition.Action action) {
+        return switch (action) {
+            case OPEN_HIGHLIGHT_DETAILS -> "Open highlight target and scan settings.";
+            case OPEN_LAVA_DETAILS -> "Open Lava Analyzer scan settings.";
+            case EDIT_BLOCK_FILTER -> "Edit the block include/exclude mode and block IDs.";
+            case EDIT_ENTITY_FILTER -> "Edit the entity include/exclude mode and entity IDs.";
+            case EDIT_ORE_COMPAT -> "Edit modded block IDs and their Chise highlight styles.";
+        };
     }
 
     private void resetTargetGroup(VisualTargetGroupPolicy.Group group) {
