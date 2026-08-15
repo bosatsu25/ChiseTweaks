@@ -71,6 +71,15 @@ public enum FeatureDefinition {
             FeatureHelpLevel.DIAGNOSTIC,
             WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE,
             BlockInspectionCategory.NETHER_PALETTE),
+    FIRE_VISIBILITY(
+            "fire_visibility",
+            FeatureArea.RENDERING,
+            "config.name.localfirevisibility",
+            "Fire Visibility",
+            "",
+            FeatureHelpLevel.DIAGNOSTIC,
+            null,
+            null),
     LAVA_HIGHLIGHT(
             "lava_highlight",
             FeatureArea.RENDERING,
