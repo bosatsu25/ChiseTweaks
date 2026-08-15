@@ -20,13 +20,36 @@ record ChiseTweaksSettingRowDefinition(
                 Kind.HEADER, id, name, "", null, null, 0, null, "");
     }
 
+    static ChiseTweaksSettingRowDefinition headerAction(
+            String id,
+            String name,
+            Action action,
+            String actionLabel) {
+        return new ChiseTweaksSettingRowDefinition(
+                Kind.HEADER, id, name, "", null, null, 0, action,
+                actionLabel == null ? "" : actionLabel);
+    }
+
     static ChiseTweaksSettingRowDefinition bool(
             String id,
             String name,
             String description,
             ChiseBooleanSetting config) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.BOOLEAN, id, name, description, config, null, 0, null, "");
+                Kind.BOOLEAN, id, name, description == null ? "" : description,
+                config, null, 0, null, "");
+    }
+
+    static ChiseTweaksSettingRowDefinition boolAction(
+            String id,
+            String name,
+            String description,
+            ChiseBooleanSetting config,
+            Action action,
+            String actionLabel) {
+        return new ChiseTweaksSettingRowDefinition(
+                Kind.BOOLEAN_ACTION, id, name, description == null ? "" : description,
+                config, null, 0, action, actionLabel == null ? "" : actionLabel);
     }
 
     static ChiseTweaksSettingRowDefinition integer(
@@ -36,7 +59,8 @@ record ChiseTweaksSettingRowDefinition(
             ChiseIntegerSetting config,
             int step) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.INTEGER, id, name, description, null, config, Math.max(1, step), null, "");
+                Kind.INTEGER, id, name, description == null ? "" : description,
+                null, config, Math.max(1, step), null, "");
     }
 
     static ChiseTweaksSettingRowDefinition action(
@@ -49,7 +73,7 @@ record ChiseTweaksSettingRowDefinition(
                 Kind.ACTION,
                 id,
                 name,
-                description,
+                description == null ? "" : description,
                 null,
                 null,
                 0,
@@ -60,11 +84,14 @@ record ChiseTweaksSettingRowDefinition(
     enum Kind {
         HEADER,
         BOOLEAN,
+        BOOLEAN_ACTION,
         INTEGER,
         ACTION
     }
 
     enum Action {
+        OPEN_HIGHLIGHT_DETAILS,
+        OPEN_LAVA_DETAILS,
         EDIT_BLOCK_FILTER,
         EDIT_ENTITY_FILTER,
         EDIT_ORE_COMPAT

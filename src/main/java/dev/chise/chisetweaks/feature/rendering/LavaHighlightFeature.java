@@ -86,17 +86,17 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
 
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         ticksUntilScan = WorksiteVisibilityBudgetPolicy.clampIntervalTicks(
-                local.worksiteVisibilityIntervalTicks) - 1;
+                local.lavaAnalyzerIntervalTicks) - 1;
         scanLoadedSources(client, local);
     }
 
     private void scanLoadedSources(Minecraft client, LocalFeatureConfig local) {
         int horizontalRadius = WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(
-                local.worksiteVisibilityHorizontalRadius);
+                local.lavaAnalyzerHorizontalRadius);
         int verticalRadius = WorksiteVisibilityBudgetPolicy.clampVerticalRadius(
-                local.worksiteVisibilityVerticalRadius);
+                local.lavaAnalyzerVerticalRadius);
         int limit = WorksiteVisibilityBudgetPolicy.clampOverlayResults(
-                local.worksiteVisibilityMaxOverlayResults);
+                local.lavaAnalyzerMaxOverlayResults);
         BlockPos origin = client.player.blockPosition();
         Vec3 eye = client.player.getEyePosition();
 

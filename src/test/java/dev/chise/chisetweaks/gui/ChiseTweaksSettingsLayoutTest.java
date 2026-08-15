@@ -13,59 +13,48 @@ final class ChiseTweaksSettingsLayoutTest {
 
         assertTrue(geometry.content().x() >= 0);
         assertTrue(geometry.content().right() <= 320);
-        assertTrue(geometry.search().right() <= geometry.content().right());
         assertTrue(geometry.panel().right() <= geometry.content().right());
         assertTrue(geometry.footer().right() <= geometry.content().right());
         assertTrue(geometry.footer().bottom() <= 240);
         assertTrue(geometry.panel().contains(geometry.bulk()));
+        assertTrue(geometry.panel().contains(geometry.headerAction()));
+        assertFalse(geometry.headerAction().overlaps(geometry.bulk()));
         assertTrue(geometry.panel().bottom() <= geometry.footer().y());
         assertFooterIsNonOverlappingAndContained(geometry);
     }
 
     @Test
-    void searchAlwaysUsesFullContentWidthWithoutAFormerTopBulkSlot() {
+    void compactRowsReserveOneNameColumnAndTwoNonOverlappingControls() {
         var compact = ChiseTweaksSettingsLayout.calculate(320, 240);
         var desktop = ChiseTweaksSettingsLayout.calculate(854, 480);
 
-        assertEquals(compact.content().x(), compact.search().x());
-        assertEquals(compact.content().width(), compact.search().width());
-        assertEquals(desktop.content().x(), desktop.search().x());
-        assertEquals(desktop.content().width(), desktop.search().width());
-        assertTrue(compact.search().bottom() <= compact.panel().y());
-        assertTrue(desktop.search().bottom() <= desktop.panel().y());
+        assertTrue(compact.nameWidth() > 0);
+        assertTrue(desktop.nameWidth() > compact.nameWidth());
+        assertTrue(compact.actionX() + compact.actionWidth() <= compact.toggleX());
+        assertTrue(desktop.actionX() + desktop.actionWidth() <= desktop.toggleX());
+        assertTrue(compact.toggleX() + compact.toggleWidth() <= compact.panel().right());
+        assertTrue(desktop.toggleX() + desktop.toggleWidth() <= desktop.panel().right());
     }
 
     @Test
-    void highlightBulkButtonLivesInsideThePanelHeaderArea() {
+    void highlightHeaderSettingsAndBulkButtonsShareOneHeaderWithoutOverlap() {
         var geometry = ChiseTweaksSettingsLayout.calculate(854, 480);
 
-        assertTrue(geometry.panel().contains(geometry.bulk()));
         assertEquals(18, geometry.bulk().height());
-        assertTrue(geometry.bulk().y() >= geometry.panelContentTop());
+        assertEquals(18, geometry.headerAction().height());
+        assertFalse(geometry.headerAction().overlaps(geometry.bulk()));
         assertTrue(geometry.bulk().bottom() <= geometry.panelContentTop() + geometry.headerHeight());
-    }
-
-    @Test
-    void textLayoutSwitchesExactlyAtTheResponsiveBreakpoint() {
-        var below = ChiseTweaksSettingsLayout.calculate(743, 480);
-        var at = ChiseTweaksSettingsLayout.calculate(744, 480);
-
-        assertEquals(719, below.content().width());
-        assertEquals(720, at.content().width());
-        assertTrue(below.stackedText());
-        assertFalse(at.stackedText());
-        assertTrue(below.descriptionWidth() > 0);
-        assertTrue(at.descriptionWidth() > 0);
+        assertTrue(geometry.headerAction().bottom() <= geometry.panelContentTop() + geometry.headerHeight());
     }
 
     @Test
     void wideViewportCentersAndCapsContentWithoutStretchingControlsIndefinitely() {
         var geometry = ChiseTweaksSettingsLayout.calculate(1920, 1080);
 
-        assertEquals(1180, geometry.content().width());
-        assertEquals((1920 - 1180) / 2, geometry.content().x());
-        assertTrue(geometry.controlWidth() <= 116);
-        assertEquals(geometry.content().width(), geometry.search().width());
+        assertEquals(960, geometry.content().width());
+        assertEquals((1920 - 960) / 2, geometry.content().x());
+        assertTrue(geometry.toggleWidth() <= 84);
+        assertTrue(geometry.actionWidth() <= 96);
         assertFooterIsNonOverlappingAndContained(geometry);
     }
 
@@ -73,10 +62,6 @@ final class ChiseTweaksSettingsLayoutTest {
     void footerCompressionKeepsGuideResetApplyAndDoneSeparateAtMinimumSupportedScale() {
         var geometry = ChiseTweaksSettingsLayout.calculate(320, 240);
 
-        assertFalse(geometry.helpButton().overlaps(geometry.resetButton()));
-        assertFalse(geometry.resetButton().overlaps(geometry.applyButton()));
-        assertFalse(geometry.applyButton().overlaps(geometry.doneButton()));
-        assertFalse(geometry.helpButton().overlaps(geometry.doneButton()));
         assertFooterIsNonOverlappingAndContained(geometry);
     }
 

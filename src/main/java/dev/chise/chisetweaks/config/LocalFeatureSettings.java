@@ -9,18 +9,19 @@ public final class LocalFeatureSettings {
             "Ore highlight motion", "鉱石ハイライトの動き",
             "Animate Ore Highlights. Off keeps the same pattern static for reduced motion.",
             "鉱石ハイライトを動かします。OFFでは同じ模様を静止表示し、動きを抑えます。");
+
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_HORIZONTAL_RADIUS = integer(
             "localWorksiteVisibilityHorizontalRadius", 5, 1, 8,
-            "Horizontal scan radius", "視認スキャン範囲");
+            "Highlight scan radius", "ハイライト範囲");
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_VERTICAL_RADIUS = integer(
             "localWorksiteVisibilityVerticalRadius", 3, 1, 5,
-            "Vertical scan radius", "垂直スキャン範囲");
+            "Highlight vertical radius", "ハイライト垂直範囲");
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_INTERVAL = integer(
             "localWorksiteVisibilityIntervalTicks", 10, 5, 100,
-            "Scan interval", "スキャン間隔");
+            "Highlight scan interval", "ハイライト更新間隔");
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_MAX_OVERLAYS = integer(
             "localWorksiteVisibilityMaxOverlays", 12, 1, 24,
-            "Maximum overlays", "最大表示数");
+            "Maximum highlight overlays", "ハイライト最大表示数");
     public static final SimpleBooleanSetting WORKSITE_VISIBILITY_WORLD_OVERLAY = bool(
             "localWorksiteVisibilityWorldOverlay", true,
             "World overlay", "ワールド表示",
@@ -28,9 +29,22 @@ public final class LocalFeatureSettings {
             "見えている対象ブロックにChise独自の補助線を描画します。");
     public static final SimpleBooleanSetting WORKSITE_VISIBILITY_EXCLUSIVE_MODE = bool(
             "localWorksiteVisibilityExclusiveMode", false,
-            "Exclusive visibility mode", "視認モード排他",
-            "Keep at most one scan-based visibility mode active at a time.",
-            "スキャン型の視認機能を同時に1つまでに制限します。");
+            "Exclusive highlight mode", "ハイライト排他モード",
+            "Keep at most one scan-based highlight mode active at a time.",
+            "スキャン型ハイライトを同時に1つまでに制限します。");
+
+    public static final ChiseIntegerSetting LAVA_ANALYZER_HORIZONTAL_RADIUS = integer(
+            "localLavaAnalyzerHorizontalRadius", 5, 1, 8,
+            "Lava analysis range", "溶岩解析範囲");
+    public static final ChiseIntegerSetting LAVA_ANALYZER_VERTICAL_RADIUS = integer(
+            "localLavaAnalyzerVerticalRadius", 3, 1, 5,
+            "Lava vertical range", "溶岩垂直範囲");
+    public static final ChiseIntegerSetting LAVA_ANALYZER_INTERVAL = integer(
+            "localLavaAnalyzerIntervalTicks", 10, 5, 100,
+            "Lava analysis interval", "溶岩解析間隔");
+    public static final ChiseIntegerSetting LAVA_ANALYZER_MAX_OVERLAYS = integer(
+            "localLavaAnalyzerMaxOverlays", 12, 1, 24,
+            "Maximum lava markers", "溶岩最大表示数");
 
     private static boolean initialized;
     private static boolean syncing;
@@ -57,6 +71,10 @@ public final class LocalFeatureSettings {
             WORKSITE_VISIBILITY_MAX_OVERLAYS.setIntegerValueSilently(c.worksiteVisibilityMaxOverlayResults);
             WORKSITE_VISIBILITY_WORLD_OVERLAY.setBooleanValueSilently(c.worksiteVisibilityWorldOverlay);
             WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setBooleanValueSilently(c.worksiteVisibilityExclusiveMode);
+            LAVA_ANALYZER_HORIZONTAL_RADIUS.setIntegerValueSilently(c.lavaAnalyzerHorizontalRadius);
+            LAVA_ANALYZER_VERTICAL_RADIUS.setIntegerValueSilently(c.lavaAnalyzerVerticalRadius);
+            LAVA_ANALYZER_INTERVAL.setIntegerValueSilently(c.lavaAnalyzerIntervalTicks);
+            LAVA_ANALYZER_MAX_OVERLAYS.setIntegerValueSilently(c.lavaAnalyzerMaxOverlayResults);
         } finally {
             syncing = false;
         }
@@ -82,6 +100,14 @@ public final class LocalFeatureSettings {
             save(c -> c.worksiteVisibilityExclusiveMode = WORKSITE_VISIBILITY_EXCLUSIVE_MODE.getBooleanValue());
             worksiteVisibilityModeChangedCallback.run();
         });
+        LAVA_ANALYZER_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> save(
+                c -> c.lavaAnalyzerHorizontalRadius = LAVA_ANALYZER_HORIZONTAL_RADIUS.getIntegerValue()));
+        LAVA_ANALYZER_VERTICAL_RADIUS.setValueChangeCallback(ignored -> save(
+                c -> c.lavaAnalyzerVerticalRadius = LAVA_ANALYZER_VERTICAL_RADIUS.getIntegerValue()));
+        LAVA_ANALYZER_INTERVAL.setValueChangeCallback(ignored -> save(
+                c -> c.lavaAnalyzerIntervalTicks = LAVA_ANALYZER_INTERVAL.getIntegerValue()));
+        LAVA_ANALYZER_MAX_OVERLAYS.setValueChangeCallback(ignored -> save(
+                c -> c.lavaAnalyzerMaxOverlayResults = LAVA_ANALYZER_MAX_OVERLAYS.getIntegerValue()));
     }
 
     public static void setWorksiteVisibilityModeChangedCallback(Runnable callback) {

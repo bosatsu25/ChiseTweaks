@@ -23,6 +23,7 @@ public final class LocalFeatureConfig {
     public boolean fireVisibilityEnabled = false;
     public boolean oreHighlightAnimationEnabled = false;
 
+    /** Shared bounded scan budget for the highlight-family worksite overlays. */
     public int worksiteVisibilityHorizontalRadius = 5;
     public int worksiteVisibilityVerticalRadius = 3;
     public int worksiteVisibilityIntervalTicks = 10;
@@ -30,6 +31,12 @@ public final class LocalFeatureConfig {
     public int worksiteVisibilityMaxOverlayResults = 12;
     public boolean worksiteVisibilityWorldOverlay = true;
     public boolean worksiteVisibilityExclusiveMode = false;
+
+    /** Lava Analyzer owns an independent scan budget so tuning it cannot change highlight behavior. */
+    public int lavaAnalyzerHorizontalRadius = 5;
+    public int lavaAnalyzerVerticalRadius = 3;
+    public int lavaAnalyzerIntervalTicks = 10;
+    public int lavaAnalyzerMaxOverlayResults = 12;
 
     public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
     public int visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
@@ -73,6 +80,21 @@ public final class LocalFeatureConfig {
             LocalFeatureConfig loaded = GSON.fromJson(merged, LocalFeatureConfig.class);
             if (loaded == null) return false;
 
+            // Before the dedicated lava fields existed, Lava Analyzer reused the worksite scan budget.
+            // Seed the new fields from those stored values once so existing user tuning is preserved.
+            if (!source.has("lavaAnalyzerHorizontalRadius")) {
+                loaded.lavaAnalyzerHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
+            }
+            if (!source.has("lavaAnalyzerVerticalRadius")) {
+                loaded.lavaAnalyzerVerticalRadius = loaded.worksiteVisibilityVerticalRadius;
+            }
+            if (!source.has("lavaAnalyzerIntervalTicks")) {
+                loaded.lavaAnalyzerIntervalTicks = loaded.worksiteVisibilityIntervalTicks;
+            }
+            if (!source.has("lavaAnalyzerMaxOverlayResults")) {
+                loaded.lavaAnalyzerMaxOverlayResults = loaded.worksiteVisibilityMaxOverlayResults;
+            }
+
             int sourceSchemaVersion = source.has("visualTargetSchemaVersion")
                     ? source.get("visualTargetSchemaVersion").getAsInt()
                     : VisualTargetSelectionPolicy.LEGACY_SCHEMA_VERSION;
@@ -115,6 +137,10 @@ public final class LocalFeatureConfig {
         worksiteVisibilityMaxOverlayResults = 12;
         worksiteVisibilityWorldOverlay = true;
         worksiteVisibilityExclusiveMode = false;
+        lavaAnalyzerHorizontalRadius = 5;
+        lavaAnalyzerVerticalRadius = 3;
+        lavaAnalyzerIntervalTicks = 10;
+        lavaAnalyzerMaxOverlayResults = 12;
         visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
     }
@@ -130,6 +156,14 @@ public final class LocalFeatureConfig {
                 WorksiteVisibilityBudgetPolicy.clampLegacyResults(worksiteVisibilityMaxResults);
         worksiteVisibilityMaxOverlayResults =
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(worksiteVisibilityMaxOverlayResults);
+        lavaAnalyzerHorizontalRadius =
+                WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(lavaAnalyzerHorizontalRadius);
+        lavaAnalyzerVerticalRadius =
+                WorksiteVisibilityBudgetPolicy.clampVerticalRadius(lavaAnalyzerVerticalRadius);
+        lavaAnalyzerIntervalTicks =
+                WorksiteVisibilityBudgetPolicy.clampIntervalTicks(lavaAnalyzerIntervalTicks);
+        lavaAnalyzerMaxOverlayResults =
+                WorksiteVisibilityBudgetPolicy.clampOverlayResults(lavaAnalyzerMaxOverlayResults);
         visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
     }
@@ -145,6 +179,10 @@ public final class LocalFeatureConfig {
         worksiteVisibilityMaxOverlayResults = loaded.worksiteVisibilityMaxOverlayResults;
         worksiteVisibilityWorldOverlay = loaded.worksiteVisibilityWorldOverlay;
         worksiteVisibilityExclusiveMode = loaded.worksiteVisibilityExclusiveMode;
+        lavaAnalyzerHorizontalRadius = loaded.lavaAnalyzerHorizontalRadius;
+        lavaAnalyzerVerticalRadius = loaded.lavaAnalyzerVerticalRadius;
+        lavaAnalyzerIntervalTicks = loaded.lavaAnalyzerIntervalTicks;
+        lavaAnalyzerMaxOverlayResults = loaded.lavaAnalyzerMaxOverlayResults;
         visualTargetMask = loaded.visualTargetMask;
         visualTargetSchemaVersion = loaded.visualTargetSchemaVersion;
     }
