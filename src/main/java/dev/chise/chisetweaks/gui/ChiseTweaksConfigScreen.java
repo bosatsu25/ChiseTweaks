@@ -15,7 +15,6 @@ import java.util.Locale;
 
 /** Standalone ChiseTweaks settings UI. It does not depend on another mod's config surface. */
 public final class ChiseTweaksConfigScreen extends Screen {
-    private static ChiseTweaksUiSection selectedSection = ChiseTweaksUiSection.RESOURCES;
     private final ChiseTweaksSettingsController controller;
     private final ArrayList<ChiseTweaksSettingRowView> rows = new ArrayList<>();
     private final ArrayList<ChiseTweaksSettingRowView> filteredRows = new ArrayList<>();
@@ -31,15 +30,8 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private boolean dirty;
 
     public ChiseTweaksConfigScreen() {
-        this(selectedSection);
-    }
-
-    public ChiseTweaksConfigScreen(ChiseTweaksUiSection initialSection) {
         super(Component.literal(ChiseTweaksMetadata.MOD_NAME));
         this.controller = ChiseTweaksSettingsController.forCurrentLanguage();
-        if (initialSection != null && initialSection != ChiseTweaksUiSection.HELP) {
-            selectedSection = initialSection;
-        }
     }
 
     public void setParent(Screen parent) {
@@ -50,31 +42,15 @@ public final class ChiseTweaksConfigScreen extends Screen {
     protected void init() {
         super.init();
         controller.initialize();
-        geometry = ChiseTweaksSettingsLayout.calculate(
-                width,
-                height,
-                selectedSection.isCategoryPage(),
-                ChiseTweaksUiSection.values().length);
-        createNavigation();
+        geometry = ChiseTweaksSettingsLayout.calculate(width, height);
         createSearch();
         createFooter();
         createRows();
+        createHighlightBulkButton();
         rebuildFilteredRows();
         refreshDescriptionCache();
         updateRowPositions();
         refreshRowButtons();
-    }
-
-    private void createNavigation() {
-        int x = geometry.navigation().x();
-        for (ChiseTweaksUiSection section : ChiseTweaksUiSection.values()) {
-            Button button = addRenderableWidget(Button.builder(
-                    Component.literal(section.getDisplayName()), ignored -> navigate(section))
-                    .bounds(x, geometry.navigation().y(), geometry.navButtonWidth(), 20)
-                    .build());
-            button.active = section == ChiseTweaksUiSection.HELP || section != selectedSection;
-            x += geometry.navButtonWidth() + geometry.navGap();
-        }
     }
 
     private void createSearch() {
@@ -93,23 +69,33 @@ public final class ChiseTweaksConfigScreen extends Screen {
             rebuildFilteredRows();
             updateRowPositions();
         });
+    }
+
+    private void createHighlightBulkButton() {
         bulkButton = addRenderableWidget(Button.builder(
-                bulkMessage(), ignored -> toggleBulk())
+                bulkMessage(), ignored -> toggleHighlightBulk())
                 .bounds(
                         geometry.bulk().x(),
                         geometry.bulk().y(),
                         geometry.bulk().width(),
                         geometry.bulk().height())
                 .build());
+        bulkButton.visible = false;
     }
 
     private void createFooter() {
+        var help = geometry.helpButton();
         var reset = geometry.resetButton();
         var apply = geometry.applyButton();
         var done = geometry.doneButton();
         addRenderableWidget(Button.builder(
-                Component.literal(controller.japanese() ? "設定をリセット" : "Reset section"),
-                ignored -> resetCurrentSection())
+                Component.literal(controller.japanese() ? "使い方" : "Guide"),
+                ignored -> openHelp())
+                .bounds(help.x(), help.y(), help.width(), help.height())
+                .build());
+        addRenderableWidget(Button.builder(
+                Component.literal(controller.japanese() ? "設定をリセット" : "Reset settings"),
+                ignored -> resetAll())
                 .bounds(reset.x(), reset.y(), reset.width(), reset.height())
                 .build());
         applyButton = addRenderableWidget(Button.builder(
@@ -127,7 +113,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
 
     private void createRows() {
         rows.clear();
-        for (ChiseTweaksSettingRowDefinition definition : controller.rowsFor(selectedSection)) {
+        for (ChiseTweaksSettingRowDefinition definition : controller.rows()) {
             rows.add(createRow(definition));
         }
     }
@@ -190,27 +176,18 @@ public final class ChiseTweaksConfigScreen extends Screen {
         }
     }
 
-    private void navigate(ChiseTweaksUiSection section) {
-        if (minecraft == null || section == null) return;
-        if (section == ChiseTweaksUiSection.HELP) {
-            if (!applyChanges()) return;
-            minecraft.setScreen(new ChiseTweaksHelpScreen(this));
-            return;
-        }
-        if (section == selectedSection || !applyChanges()) return;
-        selectedSection = section;
-        ChiseTweaksConfigScreen next = new ChiseTweaksConfigScreen(section);
-        next.setParent(parent);
-        minecraft.setScreen(next);
+    private void openHelp() {
+        if (minecraft == null || !applyChanges()) return;
+        minecraft.setScreen(new ChiseTweaksHelpScreen(this));
     }
 
-    private void toggleBulk() {
-        controller.toggleBulk(selectedSection);
+    private void toggleHighlightBulk() {
+        controller.toggleHighlightBulk();
         markDirty();
     }
 
-    private void resetCurrentSection() {
-        if (!controller.resetSection(selectedSection)) return;
+    private void resetAll() {
+        if (!controller.resetAll()) return;
         markDirty();
     }
 
@@ -456,6 +433,19 @@ public final class ChiseTweaksConfigScreen extends Screen {
             }
             offset += rowHeight;
         }
+        positionHighlightBulkButton();
+    }
+
+    private void positionHighlightBulkButton() {
+        if (bulkButton == null) return;
+        bulkButton.visible = false;
+        for (ChiseTweaksSettingRowView row : filteredRows) {
+            if (!"header.highlight".equals(row.definition.id())) continue;
+            if (!row.renderVisible) return;
+            bulkButton.setPosition(geometry.bulk().x(), row.screenY + 2);
+            bulkButton.visible = true;
+            return;
+        }
     }
 
     private int contentHeight() {
@@ -506,9 +496,10 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private Component bulkMessage() {
-        boolean turnOn = controller.shouldTurnBulkOn(selectedSection);
-        return Component.literal(
-                (controller.japanese() ? "一括選択：" : "Select all: ") + (turnOn ? "ON" : "OFF"));
+        boolean turnOn = controller.shouldTurnHighlightBulkOn();
+        return Component.literal(controller.japanese()
+                ? (turnOn ? "一括ON" : "一括OFF")
+                : (turnOn ? "All ON" : "All OFF"));
     }
 
     private static int saturatedStep(int current, int step) {
