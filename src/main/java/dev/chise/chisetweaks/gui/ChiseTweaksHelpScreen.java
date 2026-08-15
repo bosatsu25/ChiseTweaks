@@ -16,11 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Japanese-first searchable guide sharing the standalone Chise navigation. */
+/** Japanese-first searchable guide opened from the standalone Chise settings footer. */
 public final class ChiseTweaksHelpScreen extends Screen {
-    private static final int NAV_Y = 26;
-    private static final int SEARCH_Y = 52;
-    private static final int TOP = 82;
+    private static final int SEARCH_Y = 28;
+    private static final int TOP = 58;
     private static final int BOTTOM = 34;
     private static final int CARD_GAP = 8;
     private static final int CARD_PADDING = 8;
@@ -44,7 +43,6 @@ public final class ChiseTweaksHelpScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        createNavigation();
 
         int searchWidth = Math.max(120, Math.min(420, width - 210));
         int searchX = 10;
@@ -82,32 +80,6 @@ public final class ChiseTweaksHelpScreen extends Screen {
                 .bounds(width / 2 - 50, height - 27, 100, 20)
                 .build());
         refreshLanguageControls();
-    }
-
-    private void createNavigation() {
-        ChiseTweaksUiSection[] sections = ChiseTweaksUiSection.values();
-        int count = sections.length;
-        int gap = 4;
-        int gapTotal = gap * Math.max(0, count - 1);
-        int available = Math.max(240, width - 20 - gapTotal);
-        int buttonWidth = Math.max(56, Math.min(110, available / Math.max(1, count)));
-        int totalWidth = buttonWidth * count + gapTotal;
-        int x = Math.max(10, (width - totalWidth) / 2);
-
-        for (ChiseTweaksUiSection section : sections) {
-            Button button = addRenderableWidget(Button.builder(
-                    Component.literal(section.getDisplayName()),
-                    ignored -> navigate(section))
-                    .bounds(x, NAV_Y, buttonWidth, 20)
-                    .build());
-            button.active = section != ChiseTweaksUiSection.HELP;
-            x += buttonWidth + gap;
-        }
-    }
-
-    private void navigate(ChiseTweaksUiSection section) {
-        if (minecraft == null || section == null || section == ChiseTweaksUiSection.HELP) return;
-        minecraft.setScreen(new ChiseTweaksConfigScreen(section));
     }
 
     private void selectLanguage(FeatureHelpDisplayLanguage language) {
