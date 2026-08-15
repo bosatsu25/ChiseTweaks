@@ -4,18 +4,15 @@ package dev.chise.chisetweaks.gui;
  * Pure geometry policy for the standalone Chise settings screen.
  *
  * <p>This class deliberately has no Minecraft dependencies so responsive layout contracts can be
- * tested headlessly in CI. The rendered screen consumes the exact same geometry that the tests
- * validate.</p>
+ * tested headlessly in CI. The main surface is intentionally compact: one name column and a small
+ * action/toggle area, with advanced controls moved to dedicated settings surfaces.</p>
  */
 public final class ChiseTweaksSettingsLayout {
     private static final int OUTER_MARGIN = 12;
-    private static final int MAX_CONTENT_WIDTH = 1180;
-    private static final int SEARCH_Y = 40;
-    private static final int PANEL_Y = 68;
-    private static final int HIGHLIGHT_BULK_WIDTH = 90;
+    private static final int MAX_CONTENT_WIDTH = 960;
+    private static final int PANEL_Y = 38;
+    private static final int CONTROL_GAP = 6;
     private static final int TEXT_CONTROL_GAP = 12;
-    private static final int TEXT_COLUMN_GAP = 14;
-    private static final int STACKED_TEXT_BREAKPOINT = 720;
     private static final int INTEGER_CONTROL_WIDTH = 110;
     private static final int FOOTER_GAP = 6;
     private static final int HELP_WIDTH = 92;
@@ -33,7 +30,6 @@ public final class ChiseTweaksSettingsLayout {
         int contentWidth = Math.min(MAX_CONTENT_WIDTH, Math.max(1, safeWidth - margin * 2));
         int contentX = Math.max(0, (safeWidth - contentWidth) / 2);
         Rect content = new Rect(contentX, 0, contentWidth, safeHeight);
-        Rect search = new Rect(contentX, SEARCH_Y, contentWidth, 20);
 
         int footerY = Math.max(0, safeHeight - 26);
         int panelHeight = Math.max(1, footerY - PANEL_Y - 6);
@@ -41,59 +37,44 @@ public final class ChiseTweaksSettingsLayout {
         Rect footer = new Rect(contentX, footerY, contentWidth, Math.min(20, safeHeight - footerY));
         FooterButtons footerButtons = footerButtons(footer);
 
-        int controlWidth = clamp(contentWidth / 8, 72, 116);
-        int controlSlotWidth = Math.max(controlWidth, INTEGER_CONTROL_WIDTH);
         int panelPadding = clamp(contentWidth / 24, 6, 16);
+        int toggleWidth = clamp(contentWidth / 7, 64, 84);
+        int actionWidth = clamp(contentWidth / 6, 72, 96);
+        int toggleX = Math.max(panel.x() + panelPadding,
+                panel.right() - panelPadding - toggleWidth);
+        int actionX = Math.max(panel.x() + panelPadding,
+                toggleX - CONTROL_GAP - actionWidth);
+        int integerX = Math.max(panel.x() + panelPadding,
+                panel.right() - panelPadding - INTEGER_CONTROL_WIDTH);
+
         int nameX = panel.x() + panelPadding;
-        int controlX = Math.max(nameX, panel.right() - controlSlotWidth - panelPadding);
-        int textRight = Math.max(nameX + 1, controlX - TEXT_CONTROL_GAP);
-        int availableTextWidth = Math.max(1, textRight - nameX);
-        boolean stackedText = contentWidth < STACKED_TEXT_BREAKPOINT;
+        int nameWidth = Math.max(1, actionX - TEXT_CONTROL_GAP - nameX);
+        int rowHeight = contentWidth < 480 ? 34 : 30;
+        int headerHeight = 24;
 
-        int nameWidth;
-        int descriptionX;
-        int descriptionWidth;
-        int rowHeight;
-        if (stackedText) {
-            nameWidth = availableTextWidth;
-            descriptionX = nameX;
-            descriptionWidth = availableTextWidth;
-            rowHeight = 42;
-        } else {
-            nameWidth = clamp(availableTextWidth * 32 / 100, 150, 230);
-            descriptionX = nameX + nameWidth + TEXT_COLUMN_GAP;
-            descriptionWidth = Math.max(1, textRight - descriptionX);
-            rowHeight = 34;
-        }
-
-        int panelInset = Math.min(8, Math.max(0, panel.height() / 4));
-        int bulkWidth = Math.min(HIGHLIGHT_BULK_WIDTH, Math.max(1, contentWidth - panelPadding * 2));
-        Rect bulk = new Rect(
-                Math.max(panel.x(), panel.right() - panelPadding - bulkWidth),
-                panel.y() + panelInset + 2,
-                bulkWidth,
-                18);
+        int headerInset = Math.min(8, Math.max(0, panel.height() / 4));
+        Rect bulk = new Rect(toggleX, panel.y() + headerInset + 3, toggleWidth, 18);
+        Rect headerAction = new Rect(actionX, panel.y() + headerInset + 3, actionWidth, 18);
 
         return new Geometry(
                 content,
-                search,
                 bulk,
+                headerAction,
                 panel,
                 footer,
                 footerButtons.help(),
                 footerButtons.reset(),
                 footerButtons.apply(),
                 footerButtons.done(),
-                controlWidth,
-                controlSlotWidth,
+                toggleWidth,
+                actionWidth,
                 nameX,
                 nameWidth,
-                descriptionX,
-                descriptionWidth,
-                controlX,
+                actionX,
+                toggleX,
+                integerX,
                 rowHeight,
-                22,
-                stackedText);
+                headerHeight);
     }
 
     private static FooterButtons footerButtons(Rect footer) {
@@ -126,29 +107,27 @@ public final class ChiseTweaksSettingsLayout {
 
     public record Geometry(
             Rect content,
-            Rect search,
             Rect bulk,
+            Rect headerAction,
             Rect panel,
             Rect footer,
             Rect helpButton,
             Rect resetButton,
             Rect applyButton,
             Rect doneButton,
-            int controlWidth,
-            int controlSlotWidth,
+            int toggleWidth,
+            int actionWidth,
             int nameX,
             int nameWidth,
-            int descriptionX,
-            int descriptionWidth,
-            int controlX,
+            int actionX,
+            int toggleX,
+            int integerX,
             int rowHeight,
-            int headerHeight,
-            boolean stackedText) {
+            int headerHeight) {
 
         public int panelContentTop() { return panel.y() + Math.min(8, Math.max(0, panel.height() / 4)); }
         public int panelContentBottom() { return panel.bottom() - Math.min(8, Math.max(0, panel.height() / 4)); }
-        public int textRight() { return controlX - TEXT_CONTROL_GAP; }
-        public int booleanControlX() { return controlX + controlSlotWidth - controlWidth; }
+        public int integerControlWidth() { return INTEGER_CONTROL_WIDTH; }
     }
 
     public record Rect(int x, int y, int width, int height) {
