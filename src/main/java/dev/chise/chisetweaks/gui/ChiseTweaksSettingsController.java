@@ -84,6 +84,7 @@ final class ChiseTweaksSettingsController {
                 resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
             }
             case VISIBILITY -> {
+                LocalFeatureSwitches.FIRE_VISIBILITY.resetToDefault();
                 FeatureSwitches.FINE_THREAD_TRACE.resetToDefault();
                 FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
                 FeatureSwitches.GLASS_INSPECTION.resetToDefault();
@@ -151,20 +152,27 @@ final class ChiseTweaksSettingsController {
     }
 
     private void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        header(rows, "header.visibility", "見やすさ", "Visibility");
+        header(rows, "header.playerView", "プレイヤー視界", "Player view");
+        rows.add(ChiseTweaksSettingRowDefinition.bool(
+                "fireVisibility",
+                japanese ? "火炎表示を低くする" : "Fire Visibility",
+                japanese
+                        ? "燃焼中の炎を画面下部へ寄せ、前方を見やすくする。ワールド上の炎は変更しない"
+                        : "Lower only the first-person fire overlay to keep the center view clear. World fire is unchanged.",
+                LocalFeatureSwitches.FIRE_VISIBILITY));
+
+        header(rows, "header.inspectionAids", "建築の視認補助", "Inspection aids");
         bool(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE,
                 "細線トレース", "細い補助線で輪郭を見やすくする");
         bool(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
                 "隠面トレース", "見えにくいブロックを視認しやすくする");
         bool(rows, "glass", FeatureSwitches.GLASS_INSPECTION,
                 "ガラス検査", "ガラスや板ガラスの境界を確認しやすくする");
-
-        header(rows, "header.hiddenTargets", "見えにくいブロックの対象", "Hidden-surface targets");
         for (ChiseBooleanSetting option : visibilityTargets) {
             boolTarget(rows, option, targetDescription(option));
         }
 
-        header(rows, "header.sceneFilter", "表示を絞る対象", "Scene Filter");
+        header(rows, "header.sceneFilter", "表示フィルター", "Scene Filter");
         bool(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
                 "ブロック", "登録したルールでブロック表示を絞る");
         action(rows,
@@ -180,7 +188,7 @@ final class ChiseTweaksSettingsController {
                 "表示を残す／隠すエンティティIDと方式を編集する",
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
 
-        header(rows, "header.visibilityDetails", "Lava Analyzer・視認の詳細設定", "Lava Analyzer & visibility details");
+        header(rows, "header.analysis", "解析・スキャン", "Analysis & scan");
         bool(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
                 "Lava Analyzer", "近くの溶岩源を解析し、壁越しでも距離に応じた深緑の発光枠で表示する");
         integer(rows, "scanRange", LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS,
