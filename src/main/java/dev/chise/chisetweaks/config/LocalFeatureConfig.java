@@ -20,6 +20,7 @@ public final class LocalFeatureConfig {
     private static final String CONFIG_FILE_NAME = "chisetweaks-visual.json";
 
     public boolean lavaHighlightEnabled = false;
+    public boolean fireVisibilityEnabled = false;
     public boolean oreHighlightAnimationEnabled = false;
 
     public int worksiteVisibilityHorizontalRadius = 5;
@@ -105,6 +106,7 @@ public final class LocalFeatureConfig {
 
     void resetToDefaults() {
         lavaHighlightEnabled = false;
+        fireVisibilityEnabled = false;
         oreHighlightAnimationEnabled = false;
         worksiteVisibilityHorizontalRadius = 5;
         worksiteVisibilityVerticalRadius = 3;
@@ -134,6 +136,7 @@ public final class LocalFeatureConfig {
 
     private void copyFrom(LocalFeatureConfig loaded) {
         lavaHighlightEnabled = loaded.lavaHighlightEnabled;
+        fireVisibilityEnabled = loaded.fireVisibilityEnabled;
         oreHighlightAnimationEnabled = loaded.oreHighlightAnimationEnabled;
         worksiteVisibilityHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
         worksiteVisibilityVerticalRadius = loaded.worksiteVisibilityVerticalRadius;
