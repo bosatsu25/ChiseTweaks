@@ -7,6 +7,9 @@ import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,6 +34,13 @@ final class RetainedFeatureScopeTest {
         assertEquals(9, FeatureDefinition.VALUES.size());
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.area() == FeatureArea.RENDERING));
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.dependency().isEmpty()));
+    }
+
+    @Test
+    void qualitySummaryAlsoReportsNineRetainedFeatures() throws IOException {
+        String summaryScript = Files.readString(Path.of("scripts/quality_summary.py"));
+        assertTrue(summaryScript.contains("nine retained features"));
+        assertFalse(summaryScript.contains("eight retained features"));
     }
 
     @Test
