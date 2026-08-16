@@ -20,7 +20,7 @@ final class FireVisibilityConfigTest {
     }
 
     @Test
-    void explicitFireVisibilityOptInPersistsThroughStrictOverlay() {
+    void explicitFireVisibilityOptInIsNormalizedOffDuringOreOnlyPrerelease() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         assertTrue(config.replaceFromJsonDocument("""
                 {
@@ -29,7 +29,7 @@ final class FireVisibilityConfigTest {
                   "visualTargetSchemaVersion": 2
                 }
                 """));
-        assertTrue(config.fireVisibilityEnabled);
+        assertFalse(config.fireVisibilityEnabled);
     }
 
     @Test

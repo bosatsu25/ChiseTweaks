@@ -60,6 +60,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                         geometry.bulk().width(),
                         geometry.bulk().height())
                 .build());
+        bulkButton.active = PreReleaseUiPolicy.isHighlightBulkInteractive();
         bulkButton.visible = false;
     }
 
@@ -109,13 +110,24 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private ChiseTweaksSettingRowView createRow(ChiseTweaksSettingRowDefinition definition) {
-        return switch (definition.kind()) {
+        ChiseTweaksSettingRowView row = switch (definition.kind()) {
             case HEADER -> createHeaderRow(definition);
             case BOOLEAN -> createBooleanRow(definition);
             case BOOLEAN_ACTION -> createBooleanActionRow(definition);
             case INTEGER -> createIntegerRow(definition);
             case ACTION -> createActionRow(definition);
         };
+        applyPrereleaseInteractivity(row);
+        return row;
+    }
+
+    private void applyPrereleaseInteractivity(ChiseTweaksSettingRowView row) {
+        boolean interactive = PreReleaseUiPolicy.isRowInteractive(surface, row.definition);
+        if (row.primary != null) row.primary.active = interactive;
+        if (row.secondary != null) row.secondary.active = interactive;
+        if (row.minus != null) row.minus.active = interactive;
+        if (row.plus != null) row.plus.active = interactive;
+        if (row.value != null) row.value.active = false;
     }
 
     private ChiseTweaksSettingRowView createHeaderRow(ChiseTweaksSettingRowDefinition definition) {
@@ -178,6 +190,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void runRowAction(ChiseTweaksSettingRowDefinition.Action action) {
+        if (!PreReleaseUiPolicy.isActionInteractive(surface, action)) return;
         if (minecraft == null || action == null || !applyChanges()) return;
         switch (action) {
             case OPEN_HIGHLIGHT_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
@@ -204,6 +217,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void toggleHighlightBulk() {
+        if (!PreReleaseUiPolicy.isHighlightBulkInteractive()) return;
         controller.toggleHighlightBulk();
         markDirty();
     }
@@ -304,7 +318,10 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 continue;
             }
             int y = row.screenY + Math.max(0, (geometry.rowHeight() - font.lineHeight) / 2);
-            extractor.text(font, row.definition.name(), geometry.nameX(), y, 0xFFFFFFFF);
+            int color = PreReleaseUiPolicy.isRowInteractive(surface, row.definition)
+                    ? 0xFFFFFFFF
+                    : 0xFF7A7A7A;
+            extractor.text(font, row.definition.name(), geometry.nameX(), y, color);
         }
         if (!persistenceFeedback.isEmpty()) {
             extractor.centeredText(
@@ -429,7 +446,10 @@ public final class ChiseTweaksConfigScreen extends Screen {
                         row.definition.integerConfig().getIntegerValue())));
             }
         }
-        if (bulkButton != null) bulkButton.setMessage(bulkMessage());
+        if (bulkButton != null) {
+            bulkButton.setMessage(bulkMessage());
+            bulkButton.active = PreReleaseUiPolicy.isHighlightBulkInteractive();
+        }
         if (applyButton != null) applyButton.active = dirty;
     }
 
