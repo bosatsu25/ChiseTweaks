@@ -116,7 +116,7 @@ final class ConfigDocumentPolicyTest {
     }
 
     @Test
-    void localConfigMigrationDefaultsOldFilesToStaticOreHighlights() {
+    void localConfigMigrationKeepsSafeBoundsAndLocksUnreleasedLava() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         assertTrue(config.replaceFromJsonDocument("""
                 {
@@ -132,7 +132,7 @@ final class ConfigDocumentPolicyTest {
                   "lavaHighlightFlowing": true
                 }
                 """));
-        assertTrue(config.lavaHighlightEnabled);
+        assertFalse(config.lavaHighlightEnabled);
         assertFalse(config.oreHighlightAnimationEnabled);
         assertEquals(8, config.worksiteVisibilityHorizontalRadius);
         assertEquals(1, config.worksiteVisibilityVerticalRadius);
