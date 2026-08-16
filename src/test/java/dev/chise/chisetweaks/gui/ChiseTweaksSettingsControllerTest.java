@@ -150,50 +150,22 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void highlightBulkStartsAsAllOnActionAndOnlyTouchesFiveHighlightFeatures() {
+    void prereleaseBulkCannotMakeUnreleasedHighlightsEffective() {
         List<ChiseBooleanSetting> highlights = highlightFeatures();
-        boolean[] oldHighlightValues = new boolean[highlights.size()];
-        for (int index = 0; index < highlights.size(); index++) {
-            oldHighlightValues[index] = highlights.get(index).getBooleanValue();
-        }
-        boolean oldBlocks = FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue();
-        boolean oldEntities = FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue();
-        boolean oldLava = LocalFeatureSwitches.LAVA_HIGHLIGHT.getBooleanValue();
-        boolean oldFire = LocalFeatureSwitches.FIRE_VISIBILITY.getBooleanValue();
-
         try {
             for (ChiseBooleanSetting highlight : highlights) highlight.setBooleanValueSilently(false);
-            FeatureSwitches.BUILDER_FOCUS_BLOCKS.setBooleanValueSilently(true);
-            FeatureSwitches.BUILDER_FOCUS_ENTITIES.setBooleanValueSilently(false);
-            LocalFeatureSwitches.LAVA_HIGHLIGHT.setBooleanValueSilently(true);
-            LocalFeatureSwitches.FIRE_VISIBILITY.setBooleanValueSilently(false);
-
             var controller = new ChiseTweaksSettingsController(true);
+
+            controller.toggleHighlightBulk();
+
+            assertTrue(FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue());
+            assertFalse(FeatureSwitches.NETHER_PALETTE.getBooleanValue());
+            assertFalse(FeatureSwitches.FINE_THREAD_TRACE.getBooleanValue());
+            assertFalse(FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue());
+            assertFalse(FeatureSwitches.GLASS_INSPECTION.getBooleanValue());
             assertTrue(controller.shouldTurnHighlightBulkOn());
-
-            controller.toggleHighlightBulk();
-            assertTrue(highlights.stream().allMatch(ChiseBooleanSetting::getBooleanValue));
-            assertFalse(controller.shouldTurnHighlightBulkOn());
-            assertTrue(FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue());
-            assertFalse(FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue());
-            assertTrue(LocalFeatureSwitches.LAVA_HIGHLIGHT.getBooleanValue());
-            assertFalse(LocalFeatureSwitches.FIRE_VISIBILITY.getBooleanValue());
-
-            highlights.getFirst().setBooleanValueSilently(false);
-            assertTrue(controller.shouldTurnHighlightBulkOn());
-            controller.toggleHighlightBulk();
-            assertTrue(highlights.stream().allMatch(ChiseBooleanSetting::getBooleanValue));
-
-            controller.toggleHighlightBulk();
-            assertTrue(highlights.stream().noneMatch(ChiseBooleanSetting::getBooleanValue));
         } finally {
-            for (int index = 0; index < highlights.size(); index++) {
-                highlights.get(index).setBooleanValueSilently(oldHighlightValues[index]);
-            }
-            FeatureSwitches.BUILDER_FOCUS_BLOCKS.setBooleanValueSilently(oldBlocks);
-            FeatureSwitches.BUILDER_FOCUS_ENTITIES.setBooleanValueSilently(oldEntities);
-            LocalFeatureSwitches.LAVA_HIGHLIGHT.setBooleanValueSilently(oldLava);
-            LocalFeatureSwitches.FIRE_VISIBILITY.setBooleanValueSilently(oldFire);
+            for (ChiseBooleanSetting highlight : highlights) highlight.setBooleanValueSilently(false);
         }
     }
 
@@ -205,6 +177,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, fire.kind());
         assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, fire.booleanConfig());
         assertFalse(fire.booleanConfig().getDefaultBooleanValue());
+        assertFalse(fire.booleanConfig().getBooleanValue());
     }
 
     @Test
