@@ -1,6 +1,7 @@
 package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
+import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.feature.Feature;
 import dev.chise.chisetweaks.runtime.FeatureManager;
 
@@ -39,18 +40,20 @@ public final class LocalFeatureSwitch extends ChiseBooleanSetting {
 
     @Override
     protected boolean readValue() {
-        return getter.test(LocalFeatureConfig.getInstance());
+        return PreReleaseFeaturePolicy.isAvailable(definition)
+                && getter.test(LocalFeatureConfig.getInstance());
     }
 
     @Override
     protected void writeValue(boolean value) {
+        boolean effectiveValue = PreReleaseFeaturePolicy.isAvailable(definition) && value;
         Feature runtimeFeature = FeatureManager.getInstance().getFeature(definition.id());
         if (runtimeFeature != null) {
-            runtimeFeature.setEnabled(value);
+            runtimeFeature.setEnabled(effectiveValue);
             return;
         }
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
-        setter.accept(config, value);
+        setter.accept(config, effectiveValue);
         config.save();
     }
 }
