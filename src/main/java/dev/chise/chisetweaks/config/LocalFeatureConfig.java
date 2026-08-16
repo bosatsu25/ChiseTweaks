@@ -5,7 +5,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.chise.chisetweaks.ChiseTweaksClient;
+import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
+import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
@@ -146,6 +148,12 @@ public final class LocalFeatureConfig {
     }
 
     void sanitize() {
+        if (!PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
+            lavaHighlightEnabled = false;
+        }
+        if (!PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.FIRE_VISIBILITY)) {
+            fireVisibilityEnabled = false;
+        }
         worksiteVisibilityHorizontalRadius =
                 WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(worksiteVisibilityHorizontalRadius);
         worksiteVisibilityVerticalRadius =
