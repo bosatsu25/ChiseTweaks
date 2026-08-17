@@ -53,18 +53,6 @@ public final class SurfaceLineVisualGeometry {
         }
     }
 
-    public static void drawGlassSkin(
-            VertexConsumer vertices,
-            PoseStack.Pose pose,
-            BlockPos position,
-            int primaryArgb,
-            int accentArgb,
-            float lineWidth) {
-        SurfaceLinePrimitives.drawFaceFrame(vertices, pose, position, primaryArgb, lineWidth);
-        SurfaceLinePrimitives.drawFaceLattice(
-                vertices, pose, position, accentArgb, Math.max(1.1f, lineWidth * 0.55f));
-    }
-
     public static void drawHiddenSurfaceSkin(
             VertexConsumer vertices,
             PoseStack.Pose pose,

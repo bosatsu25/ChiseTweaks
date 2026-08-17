@@ -45,7 +45,7 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void scanBackedFeaturesUseOnlyTheFiveRetainedWorksiteModes() {
+    void scanBackedFeaturesUseOnlyTheFourRetainedWorksiteModes() {
         Set<WorksiteVisibilitySelectionPolicy.Mode> modes = FeatureDefinition.VALUES.stream()
                 .filter(FeatureDefinition::isWorksiteVisibilityMode)
                 .map(FeatureDefinition::worksiteMode)
@@ -53,7 +53,6 @@ final class RetainedFeatureScopeTest {
         assertEquals(Set.of(
                 WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD,
                 WorksiteVisibilitySelectionPolicy.Mode.HIDDEN_SURFACE,
-                WorksiteVisibilitySelectionPolicy.Mode.GLASS,
                 WorksiteVisibilitySelectionPolicy.Mode.MATERIAL_HIGHLIGHT,
                 WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE), modes);
 
@@ -61,8 +60,6 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.FINE_THREAD_TRACE.inspectionCategory());
         assertEquals(BlockInspectionCategory.HIDDEN_SURFACE,
                 FeatureDefinition.HIDDEN_SURFACE_TRACE.inspectionCategory());
-        assertEquals(BlockInspectionCategory.GLASS_INSPECTION,
-                FeatureDefinition.GLASS_INSPECTION.inspectionCategory());
         assertEquals(BlockInspectionCategory.MATERIAL_HIGHLIGHT,
                 FeatureDefinition.MATERIAL_HIGHLIGHTS.inspectionCategory());
         assertEquals(BlockInspectionCategory.NETHER_PALETTE,
@@ -70,14 +67,16 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void sceneFiltersKelpFireVisibilityAndLavaAnalyzerStayOutsideWorksiteModeCoupling() {
+    void modelHighlightsSceneFiltersFireAndLavaStayOutsideWorksiteModeCoupling() {
         assertFalse(FeatureDefinition.BUILDER_FOCUS_BLOCKS.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.BUILDER_FOCUS_ENTITIES.isWorksiteVisibilityMode());
+        assertFalse(FeatureDefinition.GLASS_INSPECTION.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.KELP_HIGHLIGHT.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.FIRE_VISIBILITY.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.LAVA_HIGHLIGHT.isWorksiteVisibilityMode());
         assertEquals(null, FeatureDefinition.BUILDER_FOCUS_BLOCKS.inspectionCategory());
         assertEquals(null, FeatureDefinition.BUILDER_FOCUS_ENTITIES.inspectionCategory());
+        assertEquals(null, FeatureDefinition.GLASS_INSPECTION.inspectionCategory());
         assertEquals(null, FeatureDefinition.KELP_HIGHLIGHT.inspectionCategory());
         assertEquals(null, FeatureDefinition.FIRE_VISIBILITY.inspectionCategory());
         assertEquals(null, FeatureDefinition.LAVA_HIGHLIGHT.inspectionCategory());
@@ -114,7 +113,7 @@ final class RetainedFeatureScopeTest {
         assertEquals("Scene Filter: Entities", FeatureDefinition.BUILDER_FOCUS_ENTITIES.englishName());
         assertEquals("Fine Thread Trace", FeatureDefinition.FINE_THREAD_TRACE.englishName());
         assertEquals("Hidden Surface Trace", FeatureDefinition.HIDDEN_SURFACE_TRACE.englishName());
-        assertEquals("Glass Inspection", FeatureDefinition.GLASS_INSPECTION.englishName());
+        assertEquals("Glass Highlight", FeatureDefinition.GLASS_INSPECTION.englishName());
         assertEquals("Ore Highlights", FeatureDefinition.MATERIAL_HIGHLIGHTS.englishName());
         assertEquals("Nether Palette", FeatureDefinition.NETHER_PALETTE.englishName());
         assertEquals("Kelp Highlight", FeatureDefinition.KELP_HIGHLIGHT.englishName());

@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
-/** Keeps unreleased controls visible but non-interactive during the ore-and-kelp pre-release. */
+/** Keeps unreleased controls visible but non-interactive during the ore-kelp-glass pre-release. */
 final class PreReleaseUiPolicy {
     private PreReleaseUiPolicy() {}
 
@@ -22,7 +22,9 @@ final class PreReleaseUiPolicy {
         }
 
         return switch (resolved) {
-            case MAIN -> "materials".equals(row.id()) || "kelp".equals(row.id());
+            case MAIN -> "materials".equals(row.id())
+                    || "kelp".equals(row.id())
+                    || "glass".equals(row.id());
             case HIGHLIGHT_DETAILS -> isOreHighlightDetail(row.id());
             case LAVA_DETAILS -> false;
         };
