@@ -41,12 +41,13 @@ final class OreHighlightShaderInvariantContractTest {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
 
-        assertTrue(plugin.contains("visual-model-overlay-7-ore-kelp-party"));
+        assertTrue(plugin.contains("visual-model-overlay-8-zero-scan"));
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("pluginContext.addModel("));
         assertTrue(plugin.contains("SimpleUnbakedExtraModel.blockStateModel"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
         assertTrue(plugin.contains("new FullbrightOreHighlightModel("));
+        assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return model;"));
         assertFalse(plugin.contains("ModelModifier.OVERRIDE_PHASE"));
         assertFalse(plugin.contains("modifyBlockModelOnLoad"));
         assertFalse(plugin.contains("SingleVariant.Unbaked"));
