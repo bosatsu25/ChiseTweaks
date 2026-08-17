@@ -34,16 +34,9 @@ public final class GlassHighlightTargetPolicy {
 
     public static Shape classifyBlockId(String rawBlockId) {
         if (rawBlockId == null) return Shape.NONE;
-        String normalized = rawBlockId.trim().toLowerCase(Locale.ROOT);
-        int separator = normalized.indexOf(':');
-        if (separator <= 0
-                || separator == normalized.length() - 1
-                || normalized.indexOf(':', separator + 1) >= 0) {
-            return Shape.NONE;
-        }
-        return classify(
-                normalized.substring(0, separator),
-                normalized.substring(separator + 1));
+        String[] parts = rawBlockId.trim().toLowerCase(Locale.ROOT).split(":", -1);
+        if (parts.length != 2) return Shape.NONE;
+        return classify(parts[0], parts[1]);
     }
 
     public static Set<String> blockPaths() {
