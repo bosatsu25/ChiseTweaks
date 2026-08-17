@@ -127,13 +127,13 @@ def generateChiseKelpVisualAssets = tasks.register('generateChiseKelpVisualAsset
         File root = generatedKelpVisualAssetsDir.get().asFile
         project.delete(root)
         File textureDir = new File(root, 'assets/chisetweaks/textures/block/visual/kelp')
-        File modelDir = new File(root, 'assets/chisetweaks/models/block/visual/overlay')
+        File modelDir = new File(root, 'assets/chisetweaks/models/block/visual/kelp')
 
         File texture = new File(textureDir, 'kelp_party.png')
         writePartyTexture(texture)
         writeAnimationMeta(new File(textureDir, 'kelp_party.png.mcmeta'))
         writeModel(
-                new File(modelDir, 'kelp_party.json'),
+                new File(modelDir, 'party_overlay.json'),
                 partyOverlayModel('chisetweaks:block/visual/kelp/kelp_party'))
     }
 }
