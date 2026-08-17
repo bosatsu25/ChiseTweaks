@@ -30,11 +30,13 @@ public final class FeatureControlBindings {
         bindWorksiteVisibilityCallbacks();
         bindBuilderFocusLists();
         bindSceneFilterRefresh();
-        bindOreHighlightRefresh();
+        bindModelHighlightRefresh();
     }
 
-    private static void bindOreHighlightRefresh() {
+    private static void bindModelHighlightRefresh() {
         FeatureSwitches.MATERIAL_HIGHLIGHTS.addValueChangeListener(
+                ignored -> OreHighlightRenderInvalidation.request());
+        FeatureSwitches.KELP_HIGHLIGHT.addValueChangeListener(
                 ignored -> OreHighlightRenderInvalidation.request());
         LocalFeatureSettings.setOreHighlightChangedCallback(
                 OreHighlightRenderInvalidation::request);

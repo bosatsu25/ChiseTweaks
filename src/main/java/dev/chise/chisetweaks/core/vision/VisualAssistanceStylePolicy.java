@@ -2,11 +2,8 @@ package dev.chise.chisetweaks.core.vision;
 
 import java.util.Locale;
 
-/** Pure style selection for the retained visual-assistance overlays. */
+/** Pure style selection for the retained scan-based visual-assistance overlays. */
 public final class VisualAssistanceStylePolicy {
-    public static final int KELP_MAGENTA = 0xFFFF4FD8;
-    public static final int KELP_ORANGE = 0xFFFF8A00;
-
     private VisualAssistanceStylePolicy() {}
 
     public static OverlayStyle styleFor(String blockId, BlockInspectionCategory category) {
@@ -18,7 +15,6 @@ public final class VisualAssistanceStylePolicy {
             case GLASS_INSPECTION -> new OverlayStyle(0xD6A68BFF, 60, Marker.BOX);
             case MATERIAL_HIGHLIGHT -> new OverlayStyle(materialColor(id), 80, Marker.DIAGONAL);
             case NETHER_PALETTE -> new OverlayStyle(netherColor(id), 20, Marker.BOX);
-            case KELP_HIGHLIGHT -> new OverlayStyle(KELP_MAGENTA, 85, Marker.CROSS);
             case NONE -> OverlayStyle.NONE;
         };
     }

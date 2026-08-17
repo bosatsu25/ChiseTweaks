@@ -9,9 +9,7 @@ import dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import net.fabricmc.fabric.api.client.model.loading.v1.ExtraModelKey;
 import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel;
-import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
-import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
@@ -91,7 +89,7 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         if (overlay == null) return;
 
         emitter.pushTransform(quad -> {
-            applyShaderInvariantHighlightLighting(quad);
+            FullbrightOverlayLighting.apply(quad);
             return true;
         });
         try {
@@ -101,12 +99,6 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         } finally {
             emitter.popTransform();
         }
-    }
-
-    private static void applyShaderInvariantHighlightLighting(MutableQuadView quad) {
-        quad.emissive(true);
-        quad.diffuseShade(false);
-        quad.ambientOcclusion(TriState.FALSE);
     }
 
     private boolean fixedHighlightEnabled() {

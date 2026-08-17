@@ -136,13 +136,17 @@ final class OreHighlightsReleaseReadinessContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
-        assertTrue(plugin.contains("ore-highlight-composed-overlay-6-modded-compatible"));
-        assertTrue(model.contains("quad.emissive(true)"));
-        assertTrue(model.contains("quad.diffuseShade(false)"));
-        assertTrue(model.contains("quad.ambientOcclusion(TriState.FALSE)"));
+        String lighting = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayLighting.java");
+        assertTrue(plugin.contains("visual-model-overlay-7-ore-kelp-party"));
+        assertTrue(model.contains("FullbrightOverlayLighting.apply(quad)"));
+        assertTrue(lighting.contains("quad.emissive(true)"));
+        assertTrue(lighting.contains("quad.diffuseShade(false)"));
+        assertTrue(lighting.contains("quad.ambientOcclusion(TriState.FALSE)"));
         for (String forbidden : Set.of("IrisApi", "isShaderPackInUse", "shaderPackName", "ShaderRenderer")) {
             assertFalse(plugin.contains(forbidden), forbidden);
             assertFalse(model.contains(forbidden), forbidden);
+            assertFalse(lighting.contains(forbidden), forbidden);
         }
     }
 

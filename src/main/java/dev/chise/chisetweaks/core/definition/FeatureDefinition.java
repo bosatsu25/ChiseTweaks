@@ -78,8 +78,8 @@ public enum FeatureDefinition {
             "Kelp Highlight",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            WorksiteVisibilitySelectionPolicy.Mode.KELP_HIGHLIGHT,
-            BlockInspectionCategory.KELP_HIGHLIGHT),
+            null,
+            null),
     FIRE_VISIBILITY(
             "fire_visibility",
             FeatureArea.RENDERING,
