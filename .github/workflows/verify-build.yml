@@ -79,10 +79,7 @@ jobs:
       - name: Audit retained repository scope
         run: python scripts/repository_audit.py
 
-      - name: Verify performance comparison tooling
-        run: python scripts/performance_compare.py docs/performance-capture.example.json docs/performance-capture.example.json
-
-      - name: Unit, contract, coverage, mutation and build gates
+      - name: Unit, performance contracts, coverage, mutation and build gates
         run: ./gradlew --no-daemon --stacktrace clean qualityGate build
 
       - name: Generate quality summary

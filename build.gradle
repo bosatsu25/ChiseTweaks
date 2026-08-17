@@ -68,6 +68,19 @@ tasks.withType(Test).configureEach {
     systemProperty 'file.encoding', 'UTF-8'
 }
 
+tasks.named('test') {
+    useJUnitPlatform { excludeTags 'performance' }
+}
+
+tasks.register('performanceGate', Test) {
+    group = 'verification'
+    description = 'Runs executable performance architecture, capture-comparison and JFR-reader contracts.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'performance' }
+    shouldRunAfter tasks.named('test')
+}
+
 jacoco {
     toolVersion = project.jacoco_version
 }
@@ -190,8 +203,9 @@ publishing {
 
 tasks.register('qualityGate') {
     group = 'verification'
-    description = 'Runs retained-scope unit/contract tests plus 96% JaCoCo and PIT gates.'
+    description = 'Runs retained-scope unit/contract tests, executable performance contracts, plus 96% JaCoCo and PIT gates.'
     dependsOn tasks.named('test')
+    dependsOn tasks.named('performanceGate')
     dependsOn tasks.named('jacocoTestReport')
     dependsOn tasks.named('jacocoTestCoverageVerification')
     dependsOn tasks.named('pitest')
