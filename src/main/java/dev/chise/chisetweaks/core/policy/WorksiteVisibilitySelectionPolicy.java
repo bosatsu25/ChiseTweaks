@@ -10,7 +10,6 @@ public final class WorksiteVisibilitySelectionPolicy {
     public enum Mode {
         FINE_THREAD,
         HIDDEN_SURFACE,
-        GLASS,
         MATERIAL_HIGHLIGHT,
         NETHER_PALETTE
     }
