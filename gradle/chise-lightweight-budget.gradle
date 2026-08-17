@@ -1,0 +1,38 @@
+// ChiseTweaks distribution-size budget.
+//
+// Runtime performance remains the primary goal. This gate exists to prevent accidental bundling of
+// large libraries/assets while preserving enough headroom for pre-baked visual data that saves CPU.
+def CHISE_RUNTIME_JAR_TARGET_BYTES = 1_000_000L
+def CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES = 1_500_000L
+
+tasks.register('verifyRuntimeJarBudget') {
+    group = 'verification'
+    description = 'Fails when the remapped runtime JAR reaches the 1,500 KB hard limit.'
+    dependsOn 'remapJar'
+
+    doLast {
+        def remapTask = tasks.named('remapJar').get()
+        File runtimeJar = remapTask.archiveFile.get().asFile
+        long size = runtimeJar.length()
+
+        logger.lifecycle(
+                'Chise lightweight budget: {} bytes (target < {} bytes, hard limit < {} bytes)',
+                size,
+                CHISE_RUNTIME_JAR_TARGET_BYTES,
+                CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES)
+
+        if (size >= CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES) {
+            throw new GradleException(
+                    "Runtime JAR is ${size} bytes; ChiseTweaks must remain below " +
+                    "${CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES} bytes (1500 KB).")
+        }
+        if (size >= CHISE_RUNTIME_JAR_TARGET_BYTES) {
+            logger.warn(
+                    'Runtime JAR is above the preferred 1,000 KB target but remains inside the hard budget.')
+        }
+    }
+}
+
+tasks.matching { it.name == 'check' || it.name == 'qualityGate' }.configureEach {
+    dependsOn tasks.named('verifyRuntimeJarBudget')
+}
