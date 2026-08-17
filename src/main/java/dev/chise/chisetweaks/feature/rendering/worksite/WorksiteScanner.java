@@ -251,7 +251,7 @@ final class WorksiteScanner {
         return switch (category) {
             case TECHNICAL_TRACE -> THIN_TECHNICAL_SAMPLES;
             case GLASS_INSPECTION -> GLASS_SAMPLES;
-            case HIDDEN_SURFACE, KELP_HIGHLIGHT -> SHAPED_BLOCK_SAMPLES;
+            case HIDDEN_SURFACE -> SHAPED_BLOCK_SAMPLES;
             case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> SOLID_SAMPLES;
         };
     }
