@@ -71,26 +71,26 @@ final class RetainedPolicyQualityGateTest {
     @Test
     void worksiteModeTogglePreservesOrExcludesOtherModesAsRequested() {
         var fine = WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD;
-        var glass = WorksiteVisibilitySelectionPolicy.Mode.GLASS;
+        var nether = WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE;
         var hidden = WorksiteVisibilitySelectionPolicy.Mode.HIDDEN_SURFACE;
         assertEquals(Set.of(fine), WorksiteVisibilitySelectionPolicy.afterToggle(null, fine, true, false));
         assertEquals(Set.of(), WorksiteVisibilitySelectionPolicy.afterToggle(null, fine, false, false));
-        assertEquals(Set.of(fine, glass), WorksiteVisibilitySelectionPolicy.afterToggle(
-                Set.of(fine), glass, true, false));
-        assertEquals(Set.of(glass), WorksiteVisibilitySelectionPolicy.afterToggle(
-                Set.of(fine, glass), fine, false, false));
+        assertEquals(Set.of(fine, nether), WorksiteVisibilitySelectionPolicy.afterToggle(
+                Set.of(fine), nether, true, false));
+        assertEquals(Set.of(nether), WorksiteVisibilitySelectionPolicy.afterToggle(
+                Set.of(fine, nether), fine, false, false));
         assertEquals(Set.of(hidden), WorksiteVisibilitySelectionPolicy.afterToggle(
-                Set.of(fine, glass), hidden, true, true));
+                Set.of(fine, nether), hidden, true, true));
     }
 
     @Test
     void worksiteExclusiveNormalizationCollapsesOnlyWhenNecessary() {
         var fine = WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD;
-        var glass = WorksiteVisibilitySelectionPolicy.Mode.GLASS;
+        var nether = WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE;
         assertEquals(Set.of(), WorksiteVisibilitySelectionPolicy.normalize(null, true));
         assertEquals(Set.of(fine), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine), true));
-        assertEquals(Set.of(fine, glass), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine, glass), false));
-        assertEquals(Set.of(fine), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine, glass), true));
+        assertEquals(Set.of(fine, nether), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine, nether), false));
+        assertEquals(Set.of(fine), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine, nether), true));
     }
 
     @Test
