@@ -115,7 +115,7 @@ public final class VisualTargetSelectionPolicy {
         if (id.isEmpty()) return false;
 
         return switch (category) {
-            case TECHNICAL_TRACE, GLASS_INSPECTION, NETHER_PALETTE -> true;
+            case TECHNICAL_TRACE, NETHER_PALETTE -> true;
             case MATERIAL_HIGHLIGHT -> materialEnabled(mask, id);
             case HIDDEN_SURFACE -> hiddenEnabled(mask, id);
             case NONE -> false;
