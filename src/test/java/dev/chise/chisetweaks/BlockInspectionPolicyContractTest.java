@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class BlockInspectionPolicyContractTest {
     @Test
-    void classificationCoversTheFiveRetainedScanCategories() {
+    void classificationCoversTheSixRetainedScanCategories() {
         assertEquals(BlockInspectionCategory.TECHNICAL_TRACE,
                 BlockInspectionPolicy.classify("minecraft:tripwire"));
         assertEquals(BlockInspectionCategory.HIDDEN_SURFACE,
@@ -27,6 +27,10 @@ final class BlockInspectionPolicyContractTest {
                 BlockInspectionPolicy.classify("minecraft:diamond_ore"));
         assertEquals(BlockInspectionCategory.NETHER_PALETTE,
                 BlockInspectionPolicy.classify("minecraft:netherrack"));
+        assertEquals(BlockInspectionCategory.KELP_HIGHLIGHT,
+                BlockInspectionPolicy.classify("minecraft:kelp"));
+        assertEquals(BlockInspectionCategory.KELP_HIGHLIGHT,
+                BlockInspectionPolicy.classify("minecraft:kelp_plant"));
         assertEquals(BlockInspectionCategory.NONE,
                 BlockInspectionPolicy.classify("minecraft:stone"));
     }
@@ -46,7 +50,7 @@ final class BlockInspectionPolicyContractTest {
     }
 
     @Test
-    void retainedMatchRulesCoverTechnicalHiddenGlassMaterialAndNetherFamilies() {
+    void retainedMatchRulesCoverTechnicalHiddenGlassMaterialNetherAndKelpFamilies() {
         assertTrue(BlockInspectionPolicy.matches("minecraft:tripwire_hook", BlockInspectionCategory.TECHNICAL_TRACE));
         assertTrue(BlockInspectionPolicy.matches("minecraft:blue_ice", BlockInspectionCategory.HIDDEN_SURFACE));
         assertTrue(BlockInspectionPolicy.matches("minecraft:dead_fire_coral_wall_fan", BlockInspectionCategory.HIDDEN_SURFACE));
@@ -55,6 +59,9 @@ final class BlockInspectionPolicyContractTest {
         assertTrue(BlockInspectionPolicy.matches("minecraft:red_stained_glass_pane", BlockInspectionCategory.GLASS_INSPECTION));
         assertTrue(BlockInspectionPolicy.matches("minecraft:deepslate_emerald_ore", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
         assertTrue(BlockInspectionPolicy.matches("minecraft:polished_blackstone_bricks", BlockInspectionCategory.NETHER_PALETTE));
+        assertTrue(BlockInspectionPolicy.matches("minecraft:kelp", BlockInspectionCategory.KELP_HIGHLIGHT));
+        assertTrue(BlockInspectionPolicy.matches("minecraft:kelp_plant", BlockInspectionCategory.KELP_HIGHLIGHT));
+        assertFalse(BlockInspectionPolicy.matches("minecraft:seagrass", BlockInspectionCategory.KELP_HIGHLIGHT));
         assertFalse(BlockInspectionPolicy.matches("minecraft:stone", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
         assertFalse(BlockInspectionPolicy.matches("minecraft:tripwire", BlockInspectionCategory.NONE));
         assertFalse(BlockInspectionPolicy.matches("minecraft:tripwire", null));
@@ -73,6 +80,23 @@ final class BlockInspectionPolicyContractTest {
         assertEquals(List.of("attached=false", "facing=north", "powered=true"), presentation.details());
         assertEquals("attached=false, facing=north, powered=true", presentation.compactDetails());
         assertEquals(BlockInspectionCategory.TECHNICAL_TRACE.argb(), presentation.argb());
+    }
+
+    @Test
+    void kelpInspectionDoesNotRetainUnneededBlockState() {
+        var head = BlockInspectionPolicy.inspect(
+                "minecraft:kelp",
+                Map.of("age", "24", "waterlogged", "true"),
+                BlockInspectionCategory.KELP_HIGHLIGHT);
+        assertEquals(BlockInspectionCategory.KELP_HIGHLIGHT, head.category());
+        assertTrue(head.details().isEmpty());
+
+        var plant = BlockInspectionPolicy.inspect(
+                "minecraft:kelp_plant",
+                Map.of("age", "24"),
+                BlockInspectionCategory.KELP_HIGHLIGHT);
+        assertEquals(BlockInspectionCategory.KELP_HIGHLIGHT, plant.category());
+        assertTrue(plant.details().isEmpty());
     }
 
     @Test
@@ -115,6 +139,7 @@ final class BlockInspectionPolicyContractTest {
         assertFalse(BlockInspectionPolicy.isScanCategory(BlockInspectionCategory.NONE));
         assertTrue(BlockInspectionPolicy.isScanCategory(BlockInspectionCategory.TECHNICAL_TRACE));
         assertTrue(BlockInspectionPolicy.isScanCategory(BlockInspectionCategory.MATERIAL_HIGHLIGHT));
+        assertTrue(BlockInspectionPolicy.isScanCategory(BlockInspectionCategory.KELP_HIGHLIGHT));
     }
 
     @Test

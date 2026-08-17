@@ -71,6 +71,15 @@ public enum FeatureDefinition {
             FeatureHelpLevel.DIAGNOSTIC,
             WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE,
             BlockInspectionCategory.NETHER_PALETTE),
+    KELP_HIGHLIGHT(
+            "kelp_highlight",
+            FeatureArea.RENDERING,
+            "config.name.kelphighlight",
+            "Kelp Highlight",
+            "",
+            FeatureHelpLevel.DIAGNOSTIC,
+            WorksiteVisibilitySelectionPolicy.Mode.KELP_HIGHLIGHT,
+            BlockInspectionCategory.KELP_HIGHLIGHT),
     FIRE_VISIBILITY(
             "fire_visibility",
             FeatureArea.RENDERING,

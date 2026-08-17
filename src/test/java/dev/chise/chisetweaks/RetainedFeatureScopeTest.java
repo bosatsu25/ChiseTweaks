@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class RetainedFeatureScopeTest {
     @Test
-    void canonicalScopeContainsExactlyTheNineRetainedFeatures() {
+    void canonicalScopeContainsExactlyTheTenRetainedFeatures() {
         assertEquals(List.of(
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
@@ -29,22 +29,23 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.GLASS_INSPECTION,
                 FeatureDefinition.MATERIAL_HIGHLIGHTS,
                 FeatureDefinition.NETHER_PALETTE,
+                FeatureDefinition.KELP_HIGHLIGHT,
                 FeatureDefinition.FIRE_VISIBILITY,
                 FeatureDefinition.LAVA_HIGHLIGHT), FeatureDefinition.VALUES);
-        assertEquals(9, FeatureDefinition.VALUES.size());
+        assertEquals(10, FeatureDefinition.VALUES.size());
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.area() == FeatureArea.RENDERING));
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.dependency().isEmpty()));
     }
 
     @Test
-    void qualitySummaryAlsoReportsNineRetainedFeatures() throws IOException {
+    void qualitySummaryAlsoReportsTenRetainedFeatures() throws IOException {
         String summaryScript = Files.readString(Path.of("scripts/quality_summary.py"));
-        assertTrue(summaryScript.contains("nine retained features"));
-        assertFalse(summaryScript.contains("eight retained features"));
+        assertTrue(summaryScript.contains("ten retained features"));
+        assertFalse(summaryScript.contains("nine retained features"));
     }
 
     @Test
-    void scanBackedFeaturesUseOnlyTheFiveRetainedWorksiteModes() {
+    void scanBackedFeaturesUseOnlyTheSixRetainedWorksiteModes() {
         Set<WorksiteVisibilitySelectionPolicy.Mode> modes = FeatureDefinition.VALUES.stream()
                 .filter(FeatureDefinition::isWorksiteVisibilityMode)
                 .map(FeatureDefinition::worksiteMode)
@@ -54,7 +55,8 @@ final class RetainedFeatureScopeTest {
                 WorksiteVisibilitySelectionPolicy.Mode.HIDDEN_SURFACE,
                 WorksiteVisibilitySelectionPolicy.Mode.GLASS,
                 WorksiteVisibilitySelectionPolicy.Mode.MATERIAL_HIGHLIGHT,
-                WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE), modes);
+                WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE,
+                WorksiteVisibilitySelectionPolicy.Mode.KELP_HIGHLIGHT), modes);
 
         assertEquals(BlockInspectionCategory.TECHNICAL_TRACE,
                 FeatureDefinition.FINE_THREAD_TRACE.inspectionCategory());
@@ -66,6 +68,8 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.MATERIAL_HIGHLIGHTS.inspectionCategory());
         assertEquals(BlockInspectionCategory.NETHER_PALETTE,
                 FeatureDefinition.NETHER_PALETTE.inspectionCategory());
+        assertEquals(BlockInspectionCategory.KELP_HIGHLIGHT,
+                FeatureDefinition.KELP_HIGHLIGHT.inspectionCategory());
     }
 
     @Test
@@ -81,7 +85,7 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void persistentGlobalSwitchRegistryContainsSevenConfigBackedFeatureSwitches() {
+    void persistentGlobalSwitchRegistryContainsEightConfigBackedFeatureSwitches() {
         assertEquals(List.of(
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
@@ -89,7 +93,8 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.HIDDEN_SURFACE_TRACE,
                 FeatureDefinition.GLASS_INSPECTION,
                 FeatureDefinition.MATERIAL_HIGHLIGHTS,
-                FeatureDefinition.NETHER_PALETTE),
+                FeatureDefinition.NETHER_PALETTE,
+                FeatureDefinition.KELP_HIGHLIGHT),
                 FeatureSwitches.VALUES.stream().map(switchValue -> switchValue.definition()).toList());
 
         assertEquals(List.of(
@@ -99,7 +104,8 @@ final class RetainedFeatureScopeTest {
                 "hiddenSurfaceTrace",
                 "glassInspection",
                 "materialHighlights",
-                "netherPalette"),
+                "netherPalette",
+                "kelpHighlight"),
                 FeatureSwitches.VALUES.stream().map(switchValue -> switchValue.getName()).toList());
     }
 
@@ -112,6 +118,7 @@ final class RetainedFeatureScopeTest {
         assertEquals("Glass Inspection", FeatureDefinition.GLASS_INSPECTION.englishName());
         assertEquals("Ore Highlights", FeatureDefinition.MATERIAL_HIGHLIGHTS.englishName());
         assertEquals("Nether Palette", FeatureDefinition.NETHER_PALETTE.englishName());
+        assertEquals("Kelp Highlight", FeatureDefinition.KELP_HIGHLIGHT.englishName());
         assertEquals("Fire Visibility", FeatureDefinition.FIRE_VISIBILITY.englishName());
         assertEquals("Lava Analyzer", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
     }

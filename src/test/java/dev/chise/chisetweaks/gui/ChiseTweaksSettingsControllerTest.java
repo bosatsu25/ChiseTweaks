@@ -32,7 +32,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void mainSurfaceContainsOnlyThreeGroupsAndNinePrimaryFeatures() {
+    void mainSurfaceContainsOnlyThreeGroupsAndTenPrimaryFeatures() {
         var controller = new ChiseTweaksSettingsController(true);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
@@ -43,6 +43,7 @@ final class ChiseTweaksSettingsControllerTest {
                 "thread",
                 "hidden",
                 "glass",
+                "kelp",
                 "header.visualFilter",
                 "focusBlocks",
                 "focusEntities",
@@ -56,7 +57,7 @@ final class ChiseTweaksSettingsControllerTest {
                         .map(ChiseTweaksSettingRowDefinition::name)
                         .toList());
 
-        assertEquals(9, rows.stream()
+        assertEquals(10, rows.stream()
                 .filter(row -> row.kind() != ChiseTweaksSettingRowDefinition.Kind.HEADER)
                 .count());
         assertTrue(rows.stream()
@@ -74,6 +75,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals("細線ハイライト", row(rows, "thread").name());
         assertEquals("隠れブロックハイライト", row(rows, "hidden").name());
         assertEquals("ガラスハイライト", row(rows, "glass").name());
+        assertEquals("昆布ハイライト", row(rows, "kelp").name());
         assertEquals("ブロックフィルター", row(rows, "focusBlocks").name());
         assertEquals("エンティティフィルター", row(rows, "focusEntities").name());
         assertEquals("溶岩解析", row(rows, "lava").name());
@@ -150,7 +152,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void prereleaseBulkCannotMakeUnreleasedHighlightsEffective() {
+    void prereleaseBulkEnablesOnlyReleasedHighlights() {
         List<ChiseBooleanSetting> highlights = highlightFeatures();
         try {
             for (ChiseBooleanSetting highlight : highlights) highlight.setBooleanValueSilently(false);
@@ -159,6 +161,7 @@ final class ChiseTweaksSettingsControllerTest {
             controller.toggleHighlightBulk();
 
             assertTrue(FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue());
+            assertTrue(FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue());
             assertFalse(FeatureSwitches.NETHER_PALETTE.getBooleanValue());
             assertFalse(FeatureSwitches.FINE_THREAD_TRACE.getBooleanValue());
             assertFalse(FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue());
@@ -178,6 +181,17 @@ final class ChiseTweaksSettingsControllerTest {
         assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, fire.booleanConfig());
         assertFalse(fire.booleanConfig().getDefaultBooleanValue());
         assertFalse(fire.booleanConfig().getBooleanValue());
+    }
+
+    @Test
+    void kelpHighlightIsOptInAndUsesTheSharedHighlightSurface() {
+        var controller = new ChiseTweaksSettingsController(true);
+        ChiseTweaksSettingRowDefinition kelp = row(controller.rows(), "kelp");
+
+        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, kelp.kind());
+        assertSame(FeatureSwitches.KELP_HIGHLIGHT, kelp.booleanConfig());
+        assertFalse(kelp.booleanConfig().getDefaultBooleanValue());
+        assertFalse(kelp.booleanConfig().getBooleanValue());
     }
 
     @Test
@@ -203,7 +217,8 @@ final class ChiseTweaksSettingsControllerTest {
                 FeatureSwitches.NETHER_PALETTE,
                 FeatureSwitches.FINE_THREAD_TRACE,
                 FeatureSwitches.HIDDEN_SURFACE_TRACE,
-                FeatureSwitches.GLASS_INSPECTION);
+                FeatureSwitches.GLASS_INSPECTION,
+                FeatureSwitches.KELP_HIGHLIGHT);
     }
 
     private static ChiseTweaksSettingRowDefinition row(

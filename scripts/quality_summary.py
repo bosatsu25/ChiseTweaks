@@ -97,7 +97,7 @@ def main() -> int:
         f"- PIT test strength: **{killed}/{test_strength_denominator} = {test_strength:.2f}%** (gate {strength_threshold:.2f}%)",
         f"- PIT survived: **{survived}**; no coverage: **{no_coverage}**",
         "",
-        "The percentage gate intentionally measures the deterministic policy kernel of the nine retained features.",
+        "The percentage gate intentionally measures the deterministic policy kernel of the ten retained features.",
         "Renderer/mixin behavior is covered by repository contracts plus manual Prism gameplay smoke tests.",
         "",
     ]

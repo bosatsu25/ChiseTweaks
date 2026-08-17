@@ -27,6 +27,9 @@ public final class FeatureSwitches {
     public static final FeatureSwitch NETHER_PALETTE = create(
             FeatureDefinition.NETHER_PALETTE,
             "Apply bounded color-coded outlines to visible Nether construction materials.");
+    public static final FeatureSwitch KELP_HIGHLIGHT = create(
+            FeatureDefinition.KELP_HIGHLIGHT,
+            "Highlight visible kelp and kelp plants with a magenta and orange neon overlay.");
 
     public static final List<FeatureSwitch> VALUES = List.of(
             BUILDER_FOCUS_BLOCKS,
@@ -35,7 +38,8 @@ public final class FeatureSwitches {
             HIDDEN_SURFACE_TRACE,
             GLASS_INSPECTION,
             MATERIAL_HIGHLIGHTS,
-            NETHER_PALETTE);
+            NETHER_PALETTE,
+            KELP_HIGHLIGHT);
 
     private FeatureSwitches() {}
 
