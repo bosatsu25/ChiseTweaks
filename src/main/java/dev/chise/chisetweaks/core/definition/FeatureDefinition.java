@@ -60,8 +60,8 @@ public enum FeatureDefinition {
             "Ore Highlights",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            WorksiteVisibilitySelectionPolicy.Mode.MATERIAL_HIGHLIGHT,
-            BlockInspectionCategory.MATERIAL_HIGHLIGHT),
+            null,
+            null),
     NETHER_PALETTE(
             "nether_palette",
             FeatureArea.RENDERING,
