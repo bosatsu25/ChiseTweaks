@@ -32,13 +32,6 @@ final class WorksiteScanner {
             {0.50, 0.08, 0.75},
             {0.50, 0.32, 0.50}
     };
-    private static final double[][] GLASS_SAMPLES = {
-            {0.50, 0.50, 0.50},
-            {0.16, 0.50, 0.50},
-            {0.84, 0.50, 0.50},
-            {0.50, 0.50, 0.16},
-            {0.50, 0.50, 0.84}
-    };
     private static final double[][] SHAPED_BLOCK_SAMPLES = {
             {0.50, 0.50, 0.50},
             {0.50, 0.18, 0.50},
@@ -250,7 +243,6 @@ final class WorksiteScanner {
     private static double[][] samplesFor(BlockInspectionCategory category) {
         return switch (category) {
             case TECHNICAL_TRACE -> THIN_TECHNICAL_SAMPLES;
-            case GLASS_INSPECTION -> GLASS_SAMPLES;
             case HIDDEN_SURFACE -> SHAPED_BLOCK_SAMPLES;
             case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> SOLID_SAMPLES;
         };
