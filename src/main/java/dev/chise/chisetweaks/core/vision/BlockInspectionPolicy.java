@@ -81,7 +81,7 @@ public final class BlockInspectionPolicy {
             case TECHNICAL_TRACE -> TECHNICAL_PROPERTIES;
             case HIDDEN_SURFACE -> HIDDEN_PROPERTIES;
             case GLASS_INSPECTION -> GLASS_PROPERTIES;
-            case KELP_HIGHLIGHT -> KELP_PROPERTIES;
+            case KELP_HIGHLIGHT -> blockId.equals("minecraft:kelp") ? KELP_PROPERTIES : Set.of();
             case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> Set.of();
         };
 
