@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 
 /** Owns high-visibility world-space rendering for retained bounded worksite targets. */
 final class WorksiteOverlayRenderer {
-    private static final String RENDERER_REVISION = "surface-line-v7-worksite-only";
+    private static final String RENDERER_REVISION = "surface-line-v8-worksite-no-glass";
     private static final int ACCENT_DARK = 0xFF4E3A8C;
     private static final int ACCENT_LIGHT = 0xFFB29CFF;
     private static final int THREAD_IDLE = 0xFF5E4FA2;
@@ -149,15 +149,6 @@ final class WorksiteOverlayRenderer {
                 } else {
                     SurfaceLineVisualGeometry.drawHiddenSurfaceSkin(
                             vertices, pose, target.position(), primary, ACCENT_DARK, 3.0f);
-                }
-            }
-            case GLASS_INSPECTION -> {
-                if (compact) {
-                    SurfaceLineVisualGeometry.drawCompactFrame(
-                            vertices, pose, target.position(), primary, 2.0f);
-                } else {
-                    SurfaceLineVisualGeometry.drawGlassSkin(
-                            vertices, pose, target.position(), primary, ACCENT_DARK, 2.8f);
                 }
             }
             case MATERIAL_HIGHLIGHT -> { }
