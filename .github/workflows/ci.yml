@@ -19,3 +19,171 @@ concurrency:
 jobs:
   verify:
     uses: ./.github/workflows/verify-build.yml
+
+  publish-verified-release:
+    name: Publish verified JAR to Releases
+    needs: verify
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - name: Checkout verified main commit
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Download verified artifact from this CI run
+        id: artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          artifact_name="$(gh api "repos/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verified-JAR"))) | .name' \
+            | head -n 1)"
+
+          if [[ -z "$artifact_name" ]]; then
+            echo "Verified JAR artifact was not produced by CI run ${GITHUB_RUN_ID}." >&2
+            exit 1
+          fi
+
+          mkdir -p release
+          gh run download "$GITHUB_RUN_ID" \
+            --repo "$GH_REPO" \
+            --name "$artifact_name" \
+            --dir release
+
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+
+      - name: Verify exact release candidate
+        id: metadata
+        run: |
+          cd release
+          sha256sum --check SHA256SUMS.txt
+
+          version="$(jq -r '.version // empty' artifact-audit.json)"
+          mc_version="$(jq -r '.minecraft_version // empty' artifact-audit.json)"
+          runtime_jar="$(jq -r '.runtime_jar // empty' artifact-audit.json)"
+          sources_jar="$(jq -r '.sources_jar // empty' artifact-audit.json)"
+          runtime_sha256="$(jq -r '.runtime_sha256 // empty' artifact-audit.json)"
+
+          for value in "$version" "$mc_version" "$runtime_jar" "$sources_jar" "$runtime_sha256"; do
+            if [[ -z "$value" ]]; then
+              echo 'Verified artifact metadata is incomplete.' >&2
+              exit 1
+            fi
+          done
+
+          if [[ ! -f "$runtime_jar" || ! -f "$sources_jar" ]]; then
+            echo 'Verified runtime or sources JAR is missing.' >&2
+            exit 1
+          fi
+
+          actual_runtime_sha256="$(sha256sum "$runtime_jar" | cut -d' ' -f1)"
+          if [[ "$actual_runtime_sha256" != "$runtime_sha256" ]]; then
+            echo 'Runtime JAR SHA-256 does not match artifact-audit.json.' >&2
+            exit 1
+          fi
+
+          expected_suffix="+mc${mc_version}"
+          if [[ "$version" != *"$expected_suffix" ]]; then
+            echo "Version '$version' must end with '$expected_suffix'." >&2
+            exit 1
+          fi
+
+          display_version="${version%%+mc*}"
+          tag="verified-v${version}-java25"
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "minecraft_version=$mc_version" >> "$GITHUB_OUTPUT"
+          echo "runtime_jar=$runtime_jar" >> "$GITHUB_OUTPUT"
+          echo "sources_jar=$sources_jar" >> "$GITHUB_OUTPUT"
+          echo "runtime_sha256=$runtime_sha256" >> "$GITHUB_OUTPUT"
+          echo "display_version=$display_version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare rolling verified pre-release notes
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+          MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
+          RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
+        run: |
+          cat > release-notes.md <<EOF
+          ## Verified ChiseTweaks build
+
+          This **pre-release** is updated automatically only after the full `main` CI quality gate succeeds.
+          The attached runtime JAR is the exact verified artifact produced by CI run **${GITHUB_RUN_ID}** for commit \`${GITHUB_SHA}\`.
+
+          - Mod version: \`${VERSION}\`
+          - Minecraft: \`${MC_VERSION}\`
+          - Java: \`25\`
+          - Fabric Loader: \`0.19.3\`
+          - Runtime JAR: \`${RUNTIME_JAR}\`
+          - Runtime SHA-256: \`${RUNTIME_SHA256}\`
+          - Server installation required: \`false\`
+
+          This rolling verified build is **not the manually approved stable release**. Stable releases still require Prism gameplay smoke testing through the separate Official Release workflow.
+          EOF
+
+      - name: Publish or update rolling verified pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.metadata.outputs.tag }}
+          DISPLAY_VERSION: ${{ steps.metadata.outputs.display_version }}
+          MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
+          RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
+          SOURCES_JAR: ${{ steps.metadata.outputs.sources_jar }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          # This tag intentionally identifies the newest CI-verified build for the
+          # current mod/Minecraft version. It is a rolling pre-release, not an
+          # immutable stable-release tag.
+          git tag -f "$TAG" "$GITHUB_SHA"
+          git push --force origin "refs/tags/$TAG"
+
+          title="Verified ChiseTweaks ${DISPLAY_VERSION} — Minecraft ${MC_VERSION} — Java 25"
+
+          if gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --repo "$GH_REPO" \
+              --title "$title" \
+              --notes-file release-notes.md \
+              --prerelease
+          else
+            gh release create "$TAG" \
+              --repo "$GH_REPO" \
+              --verify-tag \
+              --title "$title" \
+              --notes-file release-notes.md \
+              --prerelease
+          fi
+
+          gh release upload "$TAG" \
+            "release/$RUNTIME_JAR" \
+            "release/$SOURCES_JAR" \
+            "release/SHA256SUMS.txt" \
+            "release/artifact-audit.json" \
+            "release/quality-summary.md" \
+            --repo "$GH_REPO" \
+            --clobber
+
+          # Remove residue from older versions of the rolling release so the
+          # Releases page exposes only the current verified evidence set.
+          gh release view "$TAG" --repo "$GH_REPO" --json assets --jq '.assets[].name' \
+            | while IFS= read -r asset; do
+                case "$asset" in
+                  "$RUNTIME_JAR"|"$SOURCES_JAR"|SHA256SUMS.txt|artifact-audit.json|quality-summary.md)
+                    ;;
+                  *)
+                    gh release delete-asset "$TAG" "$asset" --repo "$GH_REPO" --yes
+                    ;;
+                esac
+              done
