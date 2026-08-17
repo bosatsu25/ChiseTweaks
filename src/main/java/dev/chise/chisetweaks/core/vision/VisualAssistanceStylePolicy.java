@@ -12,7 +12,6 @@ public final class VisualAssistanceStylePolicy {
         return switch (category) {
             case TECHNICAL_TRACE -> new OverlayStyle(0xFFB29CFF, 100, Marker.CROSS);
             case HIDDEN_SURFACE -> new OverlayStyle(hiddenColor(id), 90, Marker.CROSS);
-            case GLASS_INSPECTION -> new OverlayStyle(0xD6A68BFF, 60, Marker.BOX);
             case MATERIAL_HIGHLIGHT -> new OverlayStyle(materialColor(id), 80, Marker.DIAGONAL);
             case NETHER_PALETTE -> new OverlayStyle(netherColor(id), 20, Marker.BOX);
             case NONE -> OverlayStyle.NONE;
