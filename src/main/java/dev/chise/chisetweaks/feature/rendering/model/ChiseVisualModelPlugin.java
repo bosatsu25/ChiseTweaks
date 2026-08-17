@@ -15,7 +15,9 @@ import java.util.concurrent.CompletableFuture;
 
 /** Non-destructive Chise model composition for Ore Highlights and Kelp Highlight. */
 public final class ChiseVisualModelPlugin {
-    public static final String REVISION = "visual-model-overlay-7-ore-kelp-party";
+    public static final String REVISION = "visual-model-overlay-8-zero-scan";
+
+    private static volatile boolean modelPipelineReady;
 
     private ChiseVisualModelPlugin() {}
 
@@ -46,12 +48,17 @@ public final class ChiseVisualModelPlugin {
                             ModelModifier.WRAP_PHASE,
                             (model, context) -> wrap(model, context.state()));
 
+                    modelPipelineReady = true;
                     ChiseTweaksClient.LOGGER.info(
-                            "Visual model {} active in ChiseTweaks {}; {} resource ore mapping(s) loaded; kelp party overlay ready",
+                            "Visual model {} active in ChiseTweaks {}; {} resource ore mapping(s) loaded; zero-scan target wrapping ready",
                             REVISION,
                             ChiseTweaksMetadata.MOD_VERSION,
                             resourceEntries.size());
                 });
+    }
+
+    static boolean isModelPipelineReady() {
+        return modelPipelineReady;
     }
 
     private static net.minecraft.client.renderer.block.dispatch.BlockStateModel wrap(
@@ -67,12 +74,11 @@ public final class ChiseVisualModelPlugin {
             return new FullbrightKelpHighlightModel(model);
         }
 
-        if (!"minecraft".equals(namespace)) {
-            return new FullbrightOreHighlightModel(model);
-        }
-
+        // Resolve once while models are being baked. Non-target blocks keep the original model and
+        // never enter Chise's runtime emitQuads/createGeometryKey path.
         OreHighlightResolver.Resolved resolved = OreHighlightResolver.resolve(state);
-        if (resolved == null || resolved.target() == null || resolved.style() == null) return model;
+        if (resolved == null || resolved.style() == null) return model;
+
         OreHighlightOverlayCatalog.OverlayModels overlay =
                 OreHighlightOverlayCatalog.forStyle(resolved.style());
         if (overlay == null) return model;
