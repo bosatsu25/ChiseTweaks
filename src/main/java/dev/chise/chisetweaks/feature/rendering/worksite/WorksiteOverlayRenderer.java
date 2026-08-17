@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 
 /** Owns high-visibility world-space rendering for retained bounded worksite targets. */
 final class WorksiteOverlayRenderer {
-    private static final String RENDERER_REVISION = "surface-line-v5-focused";
+    private static final String RENDERER_REVISION = "surface-line-v6-kelp-party";
     private static final int ACCENT_DARK = 0xFF4E3A8C;
     private static final int ACCENT_LIGHT = 0xFFB29CFF;
     private static final int THREAD_IDLE = 0xFF5E4FA2;
@@ -168,6 +168,24 @@ final class WorksiteOverlayRenderer {
                 } else {
                     SurfaceLineVisualGeometry.drawNetherSkin(
                             vertices, pose, target.position(), primary, ACCENT_DARK, phase, 2.3f);
+                }
+            }
+            case KELP_HIGHLIGHT -> {
+                int compactColor = phase >= 4
+                        ? VisualAssistanceStylePolicy.KELP_ORANGE
+                        : VisualAssistanceStylePolicy.KELP_MAGENTA;
+                if (compact) {
+                    SurfaceLineVisualGeometry.drawCompactFrame(
+                            vertices, pose, target.position(), compactColor, 1.8f);
+                } else {
+                    SurfaceLineVisualGeometry.drawKelpPartySkin(
+                            vertices,
+                            pose,
+                            target.position(),
+                            VisualAssistanceStylePolicy.KELP_MAGENTA,
+                            VisualAssistanceStylePolicy.KELP_ORANGE,
+                            phase,
+                            3.2f);
                 }
             }
             case NONE -> { }
