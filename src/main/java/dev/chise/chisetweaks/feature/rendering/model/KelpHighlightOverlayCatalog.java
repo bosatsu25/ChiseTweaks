@@ -12,7 +12,7 @@ final class KelpHighlightOverlayCatalog {
 
     static final Identifier MODEL = Identifier.fromNamespaceAndPath(
             ChiseTweaksMetadata.MOD_ID,
-            "block/visual/overlay/kelp_party");
+            "block/visual/kelp/party_overlay");
     static final ExtraModelKey<BlockStateModel> KEY = ExtraModelKey.create(MODEL::toString);
 
     private KelpHighlightOverlayCatalog() {}
