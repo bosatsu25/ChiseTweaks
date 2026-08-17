@@ -42,20 +42,51 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          artifact_name="$(gh api "repos/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}/artifacts" \
-            --jq '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verified-JAR"))) | .name' \
-            | head -n 1)"
+          retry() {
+            local attempt=1
+            local delay=2
+            local max_attempts=5
+            until "$@"; do
+              if (( attempt >= max_attempts )); then
+                echo "Command failed after ${max_attempts} attempts: $*" >&2
+                return 1
+              fi
+              echo "Transient GitHub API failure; retrying in ${delay}s (attempt $((attempt + 1))/${max_attempts})..." >&2
+              sleep "$delay"
+              attempt=$((attempt + 1))
+              delay=$((delay * 2))
+            done
+          }
+
+          retry gh api "repos/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}/artifacts" > /tmp/artifacts.json
+          artifact_name="$(jq -r '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verified-JAR"))) | .name' /tmp/artifacts.json | head -n 1)"
 
           if [[ -z "$artifact_name" ]]; then
             echo "Verified JAR artifact was not produced by CI run ${GITHUB_RUN_ID}." >&2
             exit 1
           fi
 
-          mkdir -p release
-          gh run download "$GITHUB_RUN_ID" \
-            --repo "$GH_REPO" \
-            --name "$artifact_name" \
-            --dir release
+          attempt=1
+          delay=2
+          max_attempts=5
+          while true; do
+            rm -rf release
+            mkdir -p release
+            if gh run download "$GITHUB_RUN_ID" \
+              --repo "$GH_REPO" \
+              --name "$artifact_name" \
+              --dir release; then
+              break
+            fi
+            if (( attempt >= max_attempts )); then
+              echo "Verified artifact download failed after ${max_attempts} attempts." >&2
+              exit 1
+            fi
+            echo "Artifact download was not confirmed; retrying in ${delay}s (attempt $((attempt + 1))/${max_attempts})..." >&2
+            sleep "$delay"
+            attempt=$((attempt + 1))
+            delay=$((delay * 2))
+          done
 
           echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
 
@@ -96,7 +127,8 @@ jobs:
           fi
 
           display_version="${version%%+mc*}"
-          tag="verified-v${version}-java25"
+          short_sha="${GITHUB_SHA:0:12}"
+          tag="verified-v${version}-java25-${short_sha}"
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "minecraft_version=$mc_version" >> "$GITHUB_OUTPUT"
@@ -104,86 +136,175 @@ jobs:
           echo "sources_jar=$sources_jar" >> "$GITHUB_OUTPUT"
           echo "runtime_sha256=$runtime_sha256" >> "$GITHUB_OUTPUT"
           echo "display_version=$display_version" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare rolling verified pre-release notes
+      - name: Prepare immutable verified pre-release notes
         env:
           VERSION: ${{ steps.metadata.outputs.version }}
           MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
           RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
           RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
         run: |
-          cat > release-notes.md <<EOF
-          ## Verified ChiseTweaks build
+          {
+            printf '%s\n' '## Verified ChiseTweaks build'
+            printf '\n'
+            printf '%s\n' 'This **pre-release** is created automatically only after the full `main` CI quality gate succeeds.'
+            printf 'The attached runtime JAR is the exact verified artifact produced by CI run **%s** for commit `%s`.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA"
+            printf '\n'
+            printf -- '- Mod version: `%s`\n' "$VERSION"
+            printf -- '- Minecraft: `%s`\n' "$MC_VERSION"
+            printf -- '- Java: `25`\n'
+            printf -- '- Fabric Loader: `0.19.3`\n'
+            printf -- '- Runtime JAR: `%s`\n' "$RUNTIME_JAR"
+            printf -- '- Runtime SHA-256: `%s`\n' "$RUNTIME_SHA256"
+            printf -- '- Server installation required: `false`\n'
+            printf '\n'
+            printf '%s\n' 'This verified build is immutable and is **not the manually approved stable release**. Stable releases still require Prism gameplay smoke testing through the separate Official Release workflow.'
+          } > release-notes.md
 
-          This **pre-release** is updated automatically only after the full `main` CI quality gate succeeds.
-          The attached runtime JAR is the exact verified artifact produced by CI run **${GITHUB_RUN_ID}** for commit \`${GITHUB_SHA}\`.
-
-          - Mod version: \`${VERSION}\`
-          - Minecraft: \`${MC_VERSION}\`
-          - Java: \`25\`
-          - Fabric Loader: \`0.19.3\`
-          - Runtime JAR: \`${RUNTIME_JAR}\`
-          - Runtime SHA-256: \`${RUNTIME_SHA256}\`
-          - Server installation required: \`false\`
-
-          This rolling verified build is **not the manually approved stable release**. Stable releases still require Prism gameplay smoke testing through the separate Official Release workflow.
-          EOF
-
-      - name: Publish or update rolling verified pre-release
+      - name: Publish immutable verified pre-release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.metadata.outputs.tag }}
           DISPLAY_VERSION: ${{ steps.metadata.outputs.display_version }}
           MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
+          SHORT_SHA: ${{ steps.metadata.outputs.short_sha }}
           RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
           SOURCES_JAR: ${{ steps.metadata.outputs.sources_jar }}
+          RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
         run: |
+          retry() {
+            local attempt=1
+            local delay=2
+            local max_attempts=5
+            until "$@"; do
+              if (( attempt >= max_attempts )); then
+                echo "Command failed after ${max_attempts} attempts: $*" >&2
+                return 1
+              fi
+              echo "Transient publish failure; retrying in ${delay}s (attempt $((attempt + 1))/${max_attempts})..." >&2
+              sleep "$delay"
+              attempt=$((attempt + 1))
+              delay=$((delay * 2))
+            done
+          }
+
+          ensure_release() {
+            local title="$1"
+            local attempt=1
+            local delay=2
+            local max_attempts=5
+
+            while (( attempt <= max_attempts )); do
+              if gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+                retry gh release edit "$TAG" \
+                  --repo "$GH_REPO" \
+                  --title "$title" \
+                  --notes-file release-notes.md \
+                  --prerelease
+                return 0
+              fi
+
+              if gh release create "$TAG" \
+                --repo "$GH_REPO" \
+                --verify-tag \
+                --title "$title" \
+                --notes-file release-notes.md \
+                --prerelease; then
+                return 0
+              fi
+
+              if (( attempt >= max_attempts )); then
+                break
+              fi
+              echo "Release creation was not confirmed; retrying in ${delay}s..." >&2
+              sleep "$delay"
+              attempt=$((attempt + 1))
+              delay=$((delay * 2))
+            done
+
+            if gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+              return 0
+            fi
+            echo "Unable to create or confirm verified release '$TAG'." >&2
+            return 1
+          }
+
+          ensure_asset() {
+            local file="$1"
+            local name
+            name="$(basename "$file")"
+            local attempt=1
+            local delay=2
+            local max_attempts=5
+
+            while (( attempt <= max_attempts )); do
+              if gh release view "$TAG" --repo "$GH_REPO" --json assets --jq '.assets[].name' 2>/dev/null \
+                  | grep -Fxq "$name"; then
+                echo "Release asset already present: $name"
+                return 0
+              fi
+
+              if gh release upload "$TAG" "$file" --repo "$GH_REPO"; then
+                return 0
+              fi
+
+              if (( attempt >= max_attempts )); then
+                break
+              fi
+              echo "Asset upload was not confirmed for '$name'; retrying in ${delay}s..." >&2
+              sleep "$delay"
+              attempt=$((attempt + 1))
+              delay=$((delay * 2))
+            done
+
+            if gh release view "$TAG" --repo "$GH_REPO" --json assets --jq '.assets[].name' 2>/dev/null \
+                | grep -Fxq "$name"; then
+              return 0
+            fi
+            echo "Unable to upload or confirm release asset '$name'." >&2
+            return 1
+          }
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          # This tag intentionally identifies the newest CI-verified build for the
-          # current mod/Minecraft version. It is a rolling pre-release, not an
-          # immutable stable-release tag.
-          git tag -f "$TAG" "$GITHUB_SHA"
-          git push --force origin "refs/tags/$TAG"
-
-          title="Verified ChiseTweaks ${DISPLAY_VERSION} — Minecraft ${MC_VERSION} — Java 25"
-
-          if gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
-            gh release edit "$TAG" \
-              --repo "$GH_REPO" \
-              --title "$title" \
-              --notes-file release-notes.md \
-              --prerelease
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            existing_sha="$(git rev-list -n 1 "$TAG")"
+            if [[ "$existing_sha" != "$GITHUB_SHA" ]]; then
+              echo "Immutable verified tag '$TAG' points to unexpected commit '$existing_sha'." >&2
+              exit 1
+            fi
           else
-            gh release create "$TAG" \
-              --repo "$GH_REPO" \
-              --verify-tag \
-              --title "$title" \
-              --notes-file release-notes.md \
-              --prerelease
+            git tag "$TAG" "$GITHUB_SHA"
+            retry git push origin "refs/tags/$TAG"
           fi
 
-          gh release upload "$TAG" \
-            "release/$RUNTIME_JAR" \
-            "release/$SOURCES_JAR" \
-            "release/SHA256SUMS.txt" \
-            "release/artifact-audit.json" \
-            "release/quality-summary.md" \
-            --repo "$GH_REPO" \
-            --clobber
+          title="Verified ChiseTweaks ${DISPLAY_VERSION} — Minecraft ${MC_VERSION} — ${SHORT_SHA}"
+          ensure_release "$title"
 
-          # Remove residue from older versions of the rolling release so the
-          # Releases page exposes only the current verified evidence set.
-          gh release view "$TAG" --repo "$GH_REPO" --json assets --jq '.assets[].name' \
-            | while IFS= read -r asset; do
-                case "$asset" in
-                  "$RUNTIME_JAR"|"$SOURCES_JAR"|SHA256SUMS.txt|artifact-audit.json|quality-summary.md)
-                    ;;
-                  *)
-                    gh release delete-asset "$TAG" "$asset" --repo "$GH_REPO" --yes
-                    ;;
-                esac
-              done
+          ensure_asset "release/$RUNTIME_JAR"
+          ensure_asset "release/$SOURCES_JAR"
+          ensure_asset 'release/SHA256SUMS.txt'
+          ensure_asset 'release/artifact-audit.json'
+          ensure_asset 'release/quality-summary.md'
+
+          retry gh api "repos/${GH_REPO}/releases/tags/${TAG}" > /tmp/verified-release.json
+
+          for expected in "$RUNTIME_JAR" "$SOURCES_JAR" SHA256SUMS.txt artifact-audit.json quality-summary.md; do
+            if ! jq -e --arg name "$expected" '.assets[]? | select(.name == $name)' /tmp/verified-release.json >/dev/null; then
+              echo "Verified release is missing expected asset '$expected'." >&2
+              exit 1
+            fi
+          done
+
+          remote_runtime_digest="$(jq -r --arg name "$RUNTIME_JAR" '.assets[]? | select(.name == $name) | .digest // empty' /tmp/verified-release.json)"
+          if [[ "$remote_runtime_digest" != "sha256:${RUNTIME_SHA256}" ]]; then
+            echo "Published runtime JAR digest mismatch: '$remote_runtime_digest'." >&2
+            exit 1
+          fi
+
+          printf '\n### Verified Release\n- Tag: `%s`\n- Runtime JAR: `%s`\n- SHA-256: `%s`\n' \
+            "$TAG" "$RUNTIME_JAR" "$RUNTIME_SHA256" >> "$GITHUB_STEP_SUMMARY"
