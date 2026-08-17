@@ -7,12 +7,12 @@ def CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES = 1_500_000L
 
 tasks.register('verifyRuntimeJarBudget') {
     group = 'verification'
-    description = 'Fails when the remapped runtime JAR reaches the 1,500 KB hard limit.'
-    dependsOn 'remapJar'
+    description = 'Fails when the runtime JAR reaches the 1,500 KB hard limit.'
+    dependsOn 'jar'
 
     doLast {
-        def remapTask = tasks.named('remapJar').get()
-        File runtimeJar = remapTask.archiveFile.get().asFile
+        def runtimeJarTask = tasks.named('jar').get()
+        File runtimeJar = runtimeJarTask.archiveFile.get().asFile
         long size = runtimeJar.length()
 
         logger.lifecycle(
