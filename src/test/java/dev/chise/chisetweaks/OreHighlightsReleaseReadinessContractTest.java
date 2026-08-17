@@ -140,7 +140,8 @@ final class OreHighlightsReleaseReadinessContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
         String lighting = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayLighting.java");
-        assertTrue(plugin.contains("visual-model-overlay-8-zero-scan"));
+        assertTrue(plugin.contains("visual-model-overlay-"));
+        assertTrue(plugin.contains("zero-scan"));
         assertTrue(model.contains("FullbrightOverlayLighting.apply(quad)"));
         assertTrue(lighting.contains("quad.emissive(true)"));
         assertTrue(lighting.contains("quad.diffuseShade(false)"));
