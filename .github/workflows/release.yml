@@ -1,4 +1,4 @@
-name: Release
+name: Official Release
 
 on:
   workflow_dispatch:
@@ -55,10 +55,10 @@ jobs:
           fi
 
           artifact_name="$(gh api "repos/${GH_REPO}/actions/runs/${run_id}/artifacts" \
-            --jq '.artifacts[] | select(.expired == false and (.name | startswith("chisetweaks-verified-"))) | .name' \
+            --jq '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verified-JAR"))) | .name' \
             | head -n 1)"
           if [[ -z "$artifact_name" ]]; then
-            echo "Release blocked: successful CI run $run_id has no unexpired verified artifact." >&2
+            echo "Release blocked: successful CI run $run_id has no unexpired verified JAR artifact." >&2
             echo 'Re-run CI on this exact main commit to regenerate the release candidate.' >&2
             exit 1
           fi
