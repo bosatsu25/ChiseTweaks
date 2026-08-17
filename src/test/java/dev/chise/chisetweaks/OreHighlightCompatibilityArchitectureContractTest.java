@@ -49,11 +49,10 @@ final class OreHighlightCompatibilityArchitectureContractTest {
         assertTrue(registry.indexOf("configBlocks.get") < registry.indexOf("resourceBlocks.get"));
         assertFalse(loader.contains("HttpClient"));
         assertFalse(loader.contains("URL("));
-        assertFalse(config.contains("reloadResourcePacks"));
     }
 
     @Test
-    void moddedBlocksKeepTheirBaseModelWithDormantFastPathsAndCachedOverlays() throws IOException {
+    void onlyResolvedTargetsAreWrappedAndRuntimeEmissionDoesNotResolveOreIdentity() throws IOException {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
@@ -61,35 +60,44 @@ final class OreHighlightCompatibilityArchitectureContractTest {
 
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
-        assertTrue(plugin.contains("new FullbrightOreHighlightModel(model)"));
+        assertTrue(plugin.contains("OreHighlightResolver.resolve(state)"));
+        assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return model;"));
+        assertFalse(plugin.contains("if (!\"minecraft\".equals(namespace))"));
+        assertFalse(plugin.contains("new FullbrightOreHighlightModel(model)"));
         assertFalse(plugin.contains("OVERRIDE_PHASE"));
+
         assertTrue(model.contains("super.emitQuads(emitter, level, pos, state, random, cullTest);"));
-        assertTrue(model.contains("if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return wrappedKey;"));
-        assertTrue(model.contains("dynamicStaticOverlayResolved"));
-        assertTrue(model.contains("OreHighlightResolver.revision()"));
-        assertFalse(model.contains("OreHighlightExternalRegistry.revision()"));
+        assertTrue(model.contains("if (!highlightEnabled()) return;"));
+        assertFalse(model.contains("OreHighlightResolver.resolve"));
+        assertFalse(model.contains("OreHighlightResolver.revision()"));
+        assertFalse(model.contains("dynamicModded"));
+        assertFalse(model.contains("ConcurrentHashMap"));
         assertFalse(model.contains("IrisApi"));
     }
 
     @Test
-    void editorAndPublicApiUseOnlyLocalClientStateAndInvalidateLateRegistration() throws IOException {
+    void editorAndPublicApiMoveRareTargetChangesToColdModelReloadPath() throws IOException {
         String screen = source(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseOreCompatibilityScreen.java");
         String configScreen = source(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         String api = source(
                 "src/main/java/dev/chise/chisetweaks/api/ore/OreHighlightApi.java");
+        String reload = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java");
 
         assertTrue(screen.contains("OreHighlightCompatibilityConfig.put"));
         assertTrue(screen.contains("OreHighlightCompatibilityConfig.clear()"));
-        assertTrue(screen.contains("OreHighlightRenderInvalidation.request()"));
+        assertTrue(screen.contains("OreHighlightModelReload.request()"));
         assertTrue(screen.contains("BuiltInRegistries.BLOCK"));
         assertTrue(configScreen.contains("case EDIT_ORE_COMPAT"));
         assertTrue(configScreen.contains("new ChiseOreCompatibilityScreen"));
         assertTrue(api.contains("registerBlock"));
         assertTrue(api.contains("registerTag"));
-        assertTrue(api.contains("OreHighlightRenderInvalidation.request()"));
-        assertFalse(screen.contains("reloadResourcePacks"));
+        assertTrue(api.contains("OreHighlightModelReload.request()"));
+        assertTrue(reload.contains("ChiseVisualModelPlugin.isModelPipelineReady()"));
+        assertTrue(reload.contains("client.execute"));
+        assertTrue(reload.contains("client.reloadResourcePacks()"));
         assertFalse(api.contains("ClientPlayNetworking"));
     }
 
