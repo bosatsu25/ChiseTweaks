@@ -18,7 +18,7 @@ final class OreHighlightFailSoftContractTest {
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
         int baseEmit = model.indexOf("super.emitQuads(emitter, level, pos, state, random, cullTest);");
-        int optionalBranch = model.indexOf("if (dynamicModded)", baseEmit);
+        int optionalBranch = model.indexOf("if (!highlightEnabled()) return;", baseEmit);
         int overlayEmit = model.indexOf("overlay.emitQuads(emitter, level, pos, state, random, cullTest);");
         assertTrue(baseEmit >= 0);
         assertTrue(baseEmit < optionalBranch);
@@ -37,7 +37,7 @@ final class OreHighlightFailSoftContractTest {
     }
 
     @Test
-    void rendererInvalidationIsBoundedFailSoftAndNeverReloadsResources() throws IOException {
+    void ordinaryRendererInvalidationIsBoundedFailSoftAndNeverReloadsResources() throws IOException {
         String invalidation = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightRenderInvalidation.java");
         assertTrue(invalidation.contains("MAX_FAILURE_RETRIES = 3"));
@@ -46,6 +46,19 @@ final class OreHighlightFailSoftContractTest {
         assertTrue(invalidation.contains("REQUESTED.set(true)"));
         assertTrue(invalidation.contains("client.levelRenderer.allChanged()"));
         assertFalse(invalidation.contains("reloadResourcePacks"));
+    }
+
+    @Test
+    void rareModelMembershipReloadIsCoalescedAndFailSoft() throws IOException {
+        String reload = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java");
+        assertTrue(reload.contains("AtomicBoolean REQUESTED"));
+        assertTrue(reload.contains("compareAndSet(false, true)"));
+        assertTrue(reload.contains("ChiseVisualModelPlugin.isModelPipelineReady()"));
+        assertTrue(reload.contains("client.execute"));
+        assertTrue(reload.contains("client.reloadResourcePacks()"));
+        assertTrue(reload.contains("catch (RuntimeException failure)"));
+        assertTrue(reload.contains("REQUESTED.set(false)"));
     }
 
     private static String source(String relativePath) throws IOException {
