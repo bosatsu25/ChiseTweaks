@@ -1,0 +1,41 @@
+{
+  "scenario": "chise-main-all-off",
+  "environment": {
+    "minecraft": "26.1.2",
+    "java": "25",
+    "fabric_loader": "0.19.3",
+    "notes": "Use the same Prism instance clone, mod list, world, coordinates, render distance, graphics settings, shader state and JVM memory for every comparison."
+  },
+  "runs": [
+    {
+      "startup_ms": 0,
+      "p50_frametime_ms": 0,
+      "p95_frametime_ms": 0,
+      "p99_frametime_ms": 0,
+      "heap_mib": 0,
+      "allocation_mib_s": 0,
+      "render_thread_cpu_pct": 0,
+      "average_fps": 0
+    },
+    {
+      "startup_ms": 0,
+      "p50_frametime_ms": 0,
+      "p95_frametime_ms": 0,
+      "p99_frametime_ms": 0,
+      "heap_mib": 0,
+      "allocation_mib_s": 0,
+      "render_thread_cpu_pct": 0,
+      "average_fps": 0
+    },
+    {
+      "startup_ms": 0,
+      "p50_frametime_ms": 0,
+      "p95_frametime_ms": 0,
+      "p99_frametime_ms": 0,
+      "heap_mib": 0,
+      "allocation_mib_s": 0,
+      "render_thread_cpu_pct": 0,
+      "average_fps": 0
+    }
+  ]
+}
