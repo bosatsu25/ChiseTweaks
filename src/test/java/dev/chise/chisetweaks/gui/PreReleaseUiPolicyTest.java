@@ -9,13 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PreReleaseUiPolicyTest {
     @Test
-    void mainSurfaceOnlyAllowsOreHighlightAndItsSettingsEntry() {
+    void mainSurfaceAllowsOreAndKelpHighlightsAndKeepsOtherFeaturesLocked() {
         var controller = new ChiseTweaksSettingsController(true);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
         for (ChiseTweaksSettingRowDefinition row : rows) {
             boolean expected = switch (row.id()) {
-                case "header.highlight", "header.visualFilter", "header.visibilityImprovement", "materials" -> true;
+                case "header.highlight", "header.visualFilter", "header.visibilityImprovement", "materials", "kelp" -> true;
                 default -> false;
             };
             assertTrue(
