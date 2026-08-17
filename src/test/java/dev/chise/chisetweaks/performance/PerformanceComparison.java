@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 final class PerformanceComparison {
+    private static final int MIN_SAMPLES_PER_METRIC = 3;
     private static final double EQUIVALENT_DELTA_PERCENT = 0.01;
 
     enum Direction {
@@ -19,20 +20,35 @@ final class PerformanceComparison {
             double baselineMedian,
             double candidateMedian,
             Double deltaPercent,
-            Direction direction) {}
+            Direction direction,
+            int baselineSamples,
+            int candidateSamples) {}
 
     private PerformanceComparison() {}
 
     static Map<PerformanceMetric, Result> compare(
+            PerformanceCapture baseline,
+            PerformanceCapture candidate) {
+        baseline.requireComparableWith(candidate);
+        return compareRuns(baseline.runs(), candidate.runs());
+    }
+
+    static Map<PerformanceMetric, Result> compareRuns(
             List<PerformanceRun> baseline,
             List<PerformanceRun> candidate) {
-        requireRepeatedRuns("baseline", baseline);
-        requireRepeatedRuns("candidate", candidate);
+        requireCaptureRuns("baseline", baseline);
+        requireCaptureRuns("candidate", candidate);
 
         EnumMap<PerformanceMetric, Result> results = new EnumMap<>(PerformanceMetric.class);
         for (PerformanceMetric metric : PerformanceMetric.values()) {
-            double baselineMedian = median(baseline, metric);
-            double candidateMedian = median(candidate, metric);
+            List<Double> baselineValues = values(baseline, metric);
+            List<Double> candidateValues = values(candidate, metric);
+            if (baselineValues.size() < MIN_SAMPLES_PER_METRIC ||
+                    candidateValues.size() < MIN_SAMPLES_PER_METRIC) {
+                continue;
+            }
+            double baselineMedian = medianValues(baselineValues);
+            double candidateMedian = medianValues(candidateValues);
             Double delta = baselineMedian == 0.0
                     ? null
                     : ((candidateMedian - baselineMedian) / baselineMedian) * 100.0;
@@ -40,17 +56,39 @@ final class PerformanceComparison {
                     baselineMedian,
                     candidateMedian,
                     delta,
-                    direction(metric, delta)));
+                    direction(metric, delta),
+                    baselineValues.size(),
+                    candidateValues.size()));
+        }
+        if (results.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "performance captures share no metric with at least three samples on both sides");
         }
         return Map.copyOf(results);
     }
 
     static double median(List<PerformanceRun> runs, PerformanceMetric metric) {
-        requireRepeatedRuns("runs", runs);
+        requireCaptureRuns("runs", runs);
+        List<Double> values = values(runs, metric);
+        if (values.size() < MIN_SAMPLES_PER_METRIC) {
+            throw new IllegalArgumentException(
+                    metric + " must contain at least three available samples");
+        }
+        return medianValues(values);
+    }
+
+    private static List<Double> values(List<PerformanceRun> runs, PerformanceMetric metric) {
         List<Double> values = new ArrayList<>(runs.size());
         for (PerformanceRun run : runs) {
-            values.add(metric.valueOf(run));
+            Double value = metric.valueOf(run);
+            if (value != null) {
+                values.add(value);
+            }
         }
+        return values;
+    }
+
+    private static double medianValues(List<Double> values) {
         values.sort(Double::compareTo);
         int middle = values.size() / 2;
         if ((values.size() & 1) == 1) {
@@ -70,8 +108,8 @@ final class PerformanceComparison {
         return improved ? Direction.BETTER : Direction.WORSE;
     }
 
-    private static void requireRepeatedRuns(String label, List<PerformanceRun> runs) {
-        if (runs == null || runs.size() < 3) {
+    private static void requireCaptureRuns(String label, List<PerformanceRun> runs) {
+        if (runs == null || runs.size() < MIN_SAMPLES_PER_METRIC) {
             throw new IllegalArgumentException(label + " must contain at least three repeated runs");
         }
     }
