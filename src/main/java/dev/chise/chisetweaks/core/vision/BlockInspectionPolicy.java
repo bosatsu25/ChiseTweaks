@@ -24,8 +24,6 @@ public final class BlockInspectionPolicy {
             "attached", "disarmed", "powered", "facing", "north", "east", "south", "west");
     private static final Set<String> HIDDEN_PROPERTIES = Set.of(
             "bloom", "waterlogged", "facing");
-    private static final Set<String> GLASS_PROPERTIES = Set.of(
-            "north", "east", "south", "west", "waterlogged");
 
     private static final Set<String> MATERIAL_HIGHLIGHT_IDS = createMaterialHighlightIds();
 
@@ -79,7 +77,6 @@ public final class BlockInspectionPolicy {
         Set<String> allowed = switch (category) {
             case TECHNICAL_TRACE -> TECHNICAL_PROPERTIES;
             case HIDDEN_SURFACE -> HIDDEN_PROPERTIES;
-            case GLASS_INSPECTION -> GLASS_PROPERTIES;
             case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> Set.of();
         };
 
@@ -115,7 +112,6 @@ public final class BlockInspectionPolicy {
                 EnumSet.noneOf(BlockInspectionCategory.class);
         if (isTechnical(id)) result.add(BlockInspectionCategory.TECHNICAL_TRACE);
         if (isHiddenSurface(id)) result.add(BlockInspectionCategory.HIDDEN_SURFACE);
-        if (isGlass(id)) result.add(BlockInspectionCategory.GLASS_INSPECTION);
         if (MATERIAL_HIGHLIGHT_IDS.contains(id)) result.add(BlockInspectionCategory.MATERIAL_HIGHLIGHT);
         if (NETHER_PALETTE_IDS.contains(id)) result.add(BlockInspectionCategory.NETHER_PALETTE);
         return Set.copyOf(result);
@@ -131,7 +127,6 @@ public final class BlockInspectionPolicy {
         return switch (category) {
             case TECHNICAL_TRACE -> isTechnical(id);
             case HIDDEN_SURFACE -> isHiddenSurface(id);
-            case GLASS_INSPECTION -> isGlass(id);
             case MATERIAL_HIGHLIGHT -> MATERIAL_HIGHLIGHT_IDS.contains(id);
             case NETHER_PALETTE -> NETHER_PALETTE_IDS.contains(id);
             case NONE -> false;
@@ -163,14 +158,6 @@ public final class BlockInspectionPolicy {
                 || id.contains(":dead_") && (id.endsWith("_coral_block")
                 || id.endsWith("_coral") || id.endsWith("_coral_fan")
                 || id.endsWith("_coral_wall_fan"));
-    }
-
-    private static boolean isGlass(String id) {
-        return id.equals("minecraft:glass")
-                || id.equals("minecraft:glass_pane")
-                || id.equals("minecraft:tinted_glass")
-                || id.endsWith("_stained_glass")
-                || id.endsWith("_stained_glass_pane");
     }
 
     private static String normalizeBlockId(String raw) {
