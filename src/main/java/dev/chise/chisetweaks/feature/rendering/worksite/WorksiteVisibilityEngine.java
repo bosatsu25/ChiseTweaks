@@ -129,9 +129,7 @@ public final class WorksiteVisibilityEngine
     }
 
     private static boolean usesWorldOverlay(FeatureSwitch toggle) {
-        var definition = toggle.definition();
-        return definition.isWorksiteVisibilityMode()
-                && definition.inspectionCategory() != BlockInspectionCategory.MATERIAL_HIGHLIGHT;
+        return toggle.definition().isWorksiteVisibilityMode();
     }
 
     private void deactivateAndReset() {
