@@ -15,7 +15,7 @@ RETAINED_ENGLISH_NAMES = (
     "Scene Filter: Entities",
     "Fine Thread Trace",
     "Hidden Surface Trace",
-    "Glass Inspection",
+    "Glass Highlight",
     "Ore Highlights",
     "Nether Palette",
     "Kelp Highlight",
