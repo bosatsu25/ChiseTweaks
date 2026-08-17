@@ -13,6 +13,7 @@ gradle.beforeProject { project ->
     if (project.path == ':') {
         project.apply from: new File(settingsDir, 'gradle/chise-visual-assets.gradle')
         project.apply from: new File(settingsDir, 'gradle/chise-kelp-visual-assets.gradle')
+        project.apply from: new File(settingsDir, 'gradle/chise-lightweight-budget.gradle')
     }
 }
 
