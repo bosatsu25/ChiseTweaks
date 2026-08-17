@@ -21,7 +21,7 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(budget.contains("CHISE_RUNTIME_JAR_TARGET_BYTES = 1_000_000L"));
         assertTrue(budget.contains("CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES = 1_500_000L"));
         assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES)"));
-        assertTrue(budget.contains("dependsOn 'remapJar'"));
+        assertTrue(budget.contains("dependsOn 'jar'"));
         assertTrue(budget.contains("it.name == 'check' || it.name == 'qualityGate'"));
         assertTrue(settings.contains("gradle/chise-lightweight-budget.gradle"));
     }
