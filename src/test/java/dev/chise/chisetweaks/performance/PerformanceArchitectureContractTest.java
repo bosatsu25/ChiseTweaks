@@ -46,6 +46,27 @@ final class PerformanceArchitectureContractTest {
                 "src/test/java/dev/chise/chisetweaks/performance/PerformanceComparison.java")));
         assertTrue(Files.exists(ROOT.resolve(
                 "src/test/java/dev/chise/chisetweaks/performance/JfrPerformanceAnalyzer.java")));
+        assertTrue(Files.exists(ROOT.resolve(
+                "src/test/java/dev/chise/chisetweaks/performance/PerformanceEvidenceCli.java")));
+    }
+
+    @Test
+    void ciUsesOneGradleGateAndReleaseReusesExactCiEvidence() throws IOException {
+        String build = Files.readString(ROOT.resolve("build.gradle"));
+        String verify = Files.readString(ROOT.resolve(".github/workflows/verify-build.yml"));
+        String release = Files.readString(ROOT.resolve(".github/workflows/release.yml"));
+
+        assertTrue(build.contains("tasks.register('ciGate')"));
+        assertTrue(build.contains("tasks.register('comparePerformanceEvidence', JavaExec)"));
+        assertFalse(build.contains("tasks.register('performanceGate', Test)"));
+
+        assertTrue(verify.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
+        assertFalse(verify.contains("clean qualityGate build"));
+        assertFalse(verify.contains("Wait before retrying"));
+
+        assertFalse(release.contains("uses: ./.github/workflows/verify-build.yml"));
+        assertTrue(release.contains("--commit \"$GITHUB_SHA\""));
+        assertTrue(release.contains("gh run download \"$RUN_ID\""));
     }
 
     @Test
