@@ -16,17 +16,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class BlockInspectionPolicyContractTest {
     @Test
-    void classificationCoversTheFiveRetainedScanCategories() {
+    void classificationCoversTheFourRetainedScanCategories() {
         assertEquals(BlockInspectionCategory.TECHNICAL_TRACE,
                 BlockInspectionPolicy.classify("minecraft:tripwire"));
         assertEquals(BlockInspectionCategory.HIDDEN_SURFACE,
                 BlockInspectionPolicy.classify("minecraft:powder_snow"));
-        assertEquals(BlockInspectionCategory.GLASS_INSPECTION,
-                BlockInspectionPolicy.classify("minecraft:white_stained_glass_pane"));
         assertEquals(BlockInspectionCategory.MATERIAL_HIGHLIGHT,
                 BlockInspectionPolicy.classify("minecraft:diamond_ore"));
         assertEquals(BlockInspectionCategory.NETHER_PALETTE,
                 BlockInspectionPolicy.classify("minecraft:netherrack"));
+        assertEquals(BlockInspectionCategory.NONE,
+                BlockInspectionPolicy.classify("minecraft:white_stained_glass_pane"));
+        assertEquals(BlockInspectionCategory.NONE,
+                BlockInspectionPolicy.classify("minecraft:tinted_glass"));
         assertEquals(BlockInspectionCategory.NONE,
                 BlockInspectionPolicy.classify("minecraft:kelp"));
         assertEquals(BlockInspectionCategory.NONE,
@@ -50,15 +52,13 @@ final class BlockInspectionPolicyContractTest {
     }
 
     @Test
-    void retainedMatchRulesCoverTechnicalHiddenGlassMaterialAndNetherFamilies() {
+    void retainedMatchRulesCoverTechnicalHiddenMaterialAndNetherFamilies() {
         assertTrue(BlockInspectionPolicy.matches("minecraft:tripwire_hook", BlockInspectionCategory.TECHNICAL_TRACE));
         assertTrue(BlockInspectionPolicy.matches("minecraft:blue_ice", BlockInspectionCategory.HIDDEN_SURFACE));
         assertTrue(BlockInspectionPolicy.matches("minecraft:dead_fire_coral_wall_fan", BlockInspectionCategory.HIDDEN_SURFACE));
-        assertTrue(BlockInspectionPolicy.matches("minecraft:tinted_glass", BlockInspectionCategory.GLASS_INSPECTION));
-        assertTrue(BlockInspectionPolicy.matches("minecraft:red_stained_glass", BlockInspectionCategory.GLASS_INSPECTION));
-        assertTrue(BlockInspectionPolicy.matches("minecraft:red_stained_glass_pane", BlockInspectionCategory.GLASS_INSPECTION));
         assertTrue(BlockInspectionPolicy.matches("minecraft:deepslate_emerald_ore", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
         assertTrue(BlockInspectionPolicy.matches("minecraft:polished_blackstone_bricks", BlockInspectionCategory.NETHER_PALETTE));
+        assertFalse(BlockInspectionPolicy.matches("minecraft:glass", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
         assertFalse(BlockInspectionPolicy.matches("minecraft:stone", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
         assertFalse(BlockInspectionPolicy.matches("minecraft:tripwire", BlockInspectionCategory.NONE));
         assertFalse(BlockInspectionPolicy.matches("minecraft:tripwire", null));
@@ -88,16 +88,16 @@ final class BlockInspectionPolicyContractTest {
         assertEquals("", mismatch.compactDetails());
 
         var unsafeProperty = BlockInspectionPolicy.inspect(
-                "minecraft:glass_pane",
-                Map.of("north", "true\nfalse", "waterlogged", "false"),
-                BlockInspectionCategory.GLASS_INSPECTION);
-        assertEquals(List.of("waterlogged=false"), unsafeProperty.details());
+                "minecraft:tripwire_hook",
+                Map.of("powered", "true\nfalse", "facing", "north"),
+                BlockInspectionCategory.TECHNICAL_TRACE);
+        assertEquals(List.of("facing=north"), unsafeProperty.details());
 
         var invalidId = BlockInspectionPolicy.inspect("minecraft:bad id", Map.of());
         assertEquals("", invalidId.blockId());
         assertEquals(BlockInspectionCategory.NONE, invalidId.category());
         assertEquals(BlockInspectionCategory.NONE,
-                BlockInspectionPolicy.inspect("minecraft:glass", Map.of(), null).category());
+                BlockInspectionPolicy.inspect("minecraft:tripwire", Map.of(), null).category());
     }
 
     @Test
@@ -124,21 +124,21 @@ final class BlockInspectionPolicyContractTest {
     @Test
     void inspectionPresentationDefensivelyCopiesAndEnforcesDetailBudget() {
         var presentation = new BlockInspectionPolicy.InspectionPresentation(
-                "minecraft:glass",
-                BlockInspectionCategory.GLASS_INSPECTION,
+                "minecraft:tripwire",
+                BlockInspectionCategory.TECHNICAL_TRACE,
                 List.of("north=true"),
-                BlockInspectionCategory.GLASS_INSPECTION.argb());
+                BlockInspectionCategory.TECHNICAL_TRACE.argb());
         assertEquals(List.of("north=true"), presentation.details());
 
         assertThrows(NullPointerException.class, () -> new BlockInspectionPolicy.InspectionPresentation(
-                null, BlockInspectionCategory.GLASS_INSPECTION, List.of(), 0));
+                null, BlockInspectionCategory.TECHNICAL_TRACE, List.of(), 0));
         assertThrows(NullPointerException.class, () -> new BlockInspectionPolicy.InspectionPresentation(
-                "minecraft:glass", null, List.of(), 0));
+                "minecraft:tripwire", null, List.of(), 0));
         assertThrows(NullPointerException.class, () -> new BlockInspectionPolicy.InspectionPresentation(
-                "minecraft:glass", BlockInspectionCategory.GLASS_INSPECTION, null, 0));
+                "minecraft:tripwire", BlockInspectionCategory.TECHNICAL_TRACE, null, 0));
         assertThrows(IllegalArgumentException.class, () -> new BlockInspectionPolicy.InspectionPresentation(
-                "minecraft:glass",
-                BlockInspectionCategory.GLASS_INSPECTION,
+                "minecraft:tripwire",
+                BlockInspectionCategory.TECHNICAL_TRACE,
                 List.of("1", "2", "3", "4", "5", "6", "7", "8", "9"), 0));
     }
 }
