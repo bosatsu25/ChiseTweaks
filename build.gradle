@@ -68,6 +68,34 @@ tasks.withType(Test).configureEach {
     systemProperty 'file.encoding', 'UTF-8'
 }
 
+tasks.register('comparePerformanceEvidence', JavaExec) {
+    group = 'verification'
+    description = 'Compares real local Prism captures; optional matching JFR files are analyzed offline.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass.set('dev.chise.chisetweaks.performance.PerformanceEvidenceCli')
+    doFirst {
+        String baseline = providers.gradleProperty('performanceBaseline').orNull
+        String candidate = providers.gradleProperty('performanceCandidate').orNull
+        if (!baseline || !candidate) {
+            throw new GradleException(
+                    'Set -PperformanceBaseline=<baseline.csv> and -PperformanceCandidate=<candidate.csv>.')
+        }
+        List<String> evidenceArgs = [file(baseline).absolutePath, file(candidate).absolutePath]
+        String baselineJfr = providers.gradleProperty('performanceBaselineJfr').orNull
+        String candidateJfr = providers.gradleProperty('performanceCandidateJfr').orNull
+        if ((baselineJfr == null) != (candidateJfr == null)) {
+            throw new GradleException(
+                    'Provide both -PperformanceBaselineJfr and -PperformanceCandidateJfr, or neither.')
+        }
+        if (baselineJfr != null) {
+            evidenceArgs.add(file(baselineJfr).absolutePath)
+            evidenceArgs.add(file(candidateJfr).absolutePath)
+        }
+        setArgs(evidenceArgs)
+    }
+}
+
 jacoco {
     toolVersion = project.jacoco_version
 }
@@ -190,9 +218,16 @@ publishing {
 
 tasks.register('qualityGate') {
     group = 'verification'
-    description = 'Runs retained-scope unit/contract tests plus 96% JaCoCo and PIT gates.'
+    description = 'Runs all JUnit contracts once, plus JaCoCo and PIT quality gates.'
     dependsOn tasks.named('test')
     dependsOn tasks.named('jacocoTestReport')
     dependsOn tasks.named('jacocoTestCoverageVerification')
     dependsOn tasks.named('pitest')
+}
+
+tasks.register('ciGate') {
+    group = 'verification'
+    description = 'Single CI entry point: quality gates plus reproducible runtime and sources artifacts.'
+    dependsOn tasks.named('qualityGate')
+    dependsOn tasks.named('build')
 }

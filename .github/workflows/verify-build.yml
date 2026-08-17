@@ -2,45 +2,17 @@ name: Verify Build
 
 on:
   workflow_call:
-    outputs:
-      version:
-        description: Verified mod version
-        value: ${{ jobs.verify.outputs.version }}
-      minecraft_version:
-        description: Verified Minecraft target version
-        value: ${{ jobs.verify.outputs.minecraft_version }}
-      artifact_name:
-        description: GitHub Actions artifact containing the verified JARs
-        value: ${{ jobs.verify.outputs.artifact_name }}
-      runtime_jar:
-        description: Verified runtime JAR filename
-        value: ${{ jobs.verify.outputs.runtime_jar }}
-      sources_jar:
-        description: Verified sources JAR filename
-        value: ${{ jobs.verify.outputs.sources_jar }}
-      runtime_sha256:
-        description: SHA-256 of the verified runtime JAR
-        value: ${{ jobs.verify.outputs.runtime_sha256 }}
-  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   verify:
-    # Keep this name aligned with the repository's required status context:
-    # "verify / Java 25 quality gate". Renaming it can allow a stale protection
-    # rule to stop enforcing the real verification job.
+    # Keep this composed status context aligned with branch protection:
+    # "verify / Java 25 quality gate".
     name: Java 25 quality gate
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    outputs:
-      version: ${{ steps.artifact-audit.outputs.version }}
-      minecraft_version: ${{ steps.metadata.outputs.minecraft_version }}
-      artifact_name: ${{ steps.artifact-name.outputs.name }}
-      runtime_jar: ${{ steps.artifact-audit.outputs.runtime_jar }}
-      sources_jar: ${{ steps.artifact-audit.outputs.sources_jar }}
-      runtime_sha256: ${{ steps.artifact-audit.outputs.runtime_sha256 }}
 
     steps:
       - name: Checkout
@@ -60,40 +32,25 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6.3.0
         with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Read project metadata
-        id: metadata
-        shell: bash
-        run: |
-          mc_version="$(grep -E '^minecraft_version=' gradle.properties | cut -d= -f2-)"
-          if [[ -z "$mc_version" ]]; then
-            echo 'minecraft_version is missing from gradle.properties.' >&2
-            exit 1
-          fi
-          echo "minecraft_version=$mc_version" >> "$GITHUB_OUTPUT"
-
-      - name: Audit retained repository scope
+      - name: Audit repository inputs
         run: python scripts/repository_audit.py
 
-      - name: Verify performance comparison tooling
-        run: python scripts/performance_compare.py docs/performance-capture.example.json docs/performance-capture.example.json
+      - name: Run the single Gradle CI gate
+        run: ./gradlew --no-daemon --stacktrace clean ciGate
 
-      - name: Unit, contract, coverage, mutation and build gates
-        run: ./gradlew --no-daemon --stacktrace clean qualityGate build
-
-      - name: Generate quality summary
+      - name: Generate quality report
         run: python scripts/quality_summary.py
 
-      - name: Audit built artifacts
+      - name: Audit final artifacts
         id: artifact-audit
-        run: python scripts/artifact_audit.py
-
-      - name: Audit release residue
-        run: python scripts/release_residue_audit.py
+        run: |
+          python scripts/artifact_audit.py
+          python scripts/release_residue_audit.py
 
       - name: Append verification summary
         run: |
@@ -101,7 +58,7 @@ jobs:
           printf '\n' >> "$GITHUB_STEP_SUMMARY"
           cat build/ci/artifact-summary.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Stage verified artifacts
+      - name: Stage verified release candidate
         run: |
           mkdir -p build/verified
           cp "build/libs/${{ steps.artifact-audit.outputs.runtime_jar }}" build/verified/
@@ -110,41 +67,20 @@ jobs:
           cp build/ci/artifact-audit.json build/verified/
           cp build/ci/quality-summary.md build/verified/
 
-      - name: Set artifact name
-        id: artifact-name
-        run: echo "name=chisetweaks-verified-${{ steps.artifact-audit.outputs.version }}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload verified artifacts
-        id: upload-verified-artifacts
-        continue-on-error: true
+      - name: Upload verified release candidate
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: ${{ steps.artifact-name.outputs.name }}
+          name: chisetweaks-verified-${{ steps.artifact-audit.outputs.version }}
           path: build/verified/
           if-no-files-found: error
           retention-days: 14
 
-      - name: Wait before retrying verified artifact upload
-        if: steps.upload-verified-artifacts.outcome == 'failure'
-        run: sleep 10
-
-      - name: Retry verified artifact upload
-        if: steps.upload-verified-artifacts.outcome == 'failure'
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: ${{ steps.artifact-name.outputs.name }}
-          path: build/verified/
-          if-no-files-found: error
-          retention-days: 14
-          overwrite: true
-
-      - name: Upload verification reports
-        id: upload-verification-reports
-        if: always()
+      - name: Upload diagnostics on failure
+        if: failure()
         continue-on-error: true
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: chisetweaks-verification-reports-${{ github.run_id }}
+          name: chisetweaks-ci-failure-${{ github.run_id }}
           path: |
             build/reports/tests/
             build/reports/jacoco/
@@ -152,23 +88,4 @@ jobs:
             build/test-results/
             build/ci/
           if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Wait before retrying verification report upload
-        if: always() && steps.upload-verification-reports.outcome == 'failure'
-        run: sleep 10
-
-      - name: Retry verification report upload
-        if: always() && steps.upload-verification-reports.outcome == 'failure'
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: chisetweaks-verification-reports-${{ github.run_id }}
-          path: |
-            build/reports/tests/
-            build/reports/jacoco/
-            build/reports/pitest/
-            build/test-results/
-            build/ci/
-          if-no-files-found: ignore
-          retention-days: 14
-          overwrite: true
+          retention-days: 7
