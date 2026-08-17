@@ -20,7 +20,7 @@ public final class FeatureSwitches {
             "Identify nearby visible powder snow, blue ice, dead coral and sculk catalysts.");
     public static final FeatureSwitch GLASS_INSPECTION = create(
             FeatureDefinition.GLASS_INSPECTION,
-            "Inspect visible glass boundaries and pane connection state without replacing textures.");
+            "Add sparse fullbright shape markers to vanilla glass blocks and panes without replacing their base model or stained color.");
     public static final FeatureSwitch MATERIAL_HIGHLIGHTS = create(
             FeatureDefinition.MATERIAL_HIGHLIGHTS,
             "Outline visible configured ores, ancient debris and obsidian without wall-through discovery.");
