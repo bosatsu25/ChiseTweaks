@@ -26,6 +26,7 @@ public final class BlockInspectionPolicy {
             "bloom", "waterlogged", "facing");
     private static final Set<String> GLASS_PROPERTIES = Set.of(
             "north", "east", "south", "west", "waterlogged");
+    private static final Set<String> KELP_PROPERTIES = Set.of("age");
 
     private static final Set<String> MATERIAL_HIGHLIGHT_IDS = createMaterialHighlightIds();
 
@@ -80,6 +81,7 @@ public final class BlockInspectionPolicy {
             case TECHNICAL_TRACE -> TECHNICAL_PROPERTIES;
             case HIDDEN_SURFACE -> HIDDEN_PROPERTIES;
             case GLASS_INSPECTION -> GLASS_PROPERTIES;
+            case KELP_HIGHLIGHT -> KELP_PROPERTIES;
             case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> Set.of();
         };
 
@@ -118,6 +120,7 @@ public final class BlockInspectionPolicy {
         if (isGlass(id)) result.add(BlockInspectionCategory.GLASS_INSPECTION);
         if (MATERIAL_HIGHLIGHT_IDS.contains(id)) result.add(BlockInspectionCategory.MATERIAL_HIGHLIGHT);
         if (NETHER_PALETTE_IDS.contains(id)) result.add(BlockInspectionCategory.NETHER_PALETTE);
+        if (isKelp(id)) result.add(BlockInspectionCategory.KELP_HIGHLIGHT);
         return Set.copyOf(result);
     }
 
@@ -134,6 +137,7 @@ public final class BlockInspectionPolicy {
             case GLASS_INSPECTION -> isGlass(id);
             case MATERIAL_HIGHLIGHT -> MATERIAL_HIGHLIGHT_IDS.contains(id);
             case NETHER_PALETTE -> NETHER_PALETTE_IDS.contains(id);
+            case KELP_HIGHLIGHT -> isKelp(id);
             case NONE -> false;
         };
     }
@@ -171,6 +175,10 @@ public final class BlockInspectionPolicy {
                 || id.equals("minecraft:tinted_glass")
                 || id.endsWith("_stained_glass")
                 || id.endsWith("_stained_glass_pane");
+    }
+
+    private static boolean isKelp(String id) {
+        return id.equals("minecraft:kelp") || id.equals("minecraft:kelp_plant");
     }
 
     private static String normalizeBlockId(String raw) {
