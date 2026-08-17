@@ -162,10 +162,10 @@ final class ChiseTweaksSettingsControllerTest {
 
             assertTrue(FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue());
             assertTrue(FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue());
+            assertTrue(FeatureSwitches.GLASS_INSPECTION.getBooleanValue());
             assertFalse(FeatureSwitches.NETHER_PALETTE.getBooleanValue());
             assertFalse(FeatureSwitches.FINE_THREAD_TRACE.getBooleanValue());
             assertFalse(FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue());
-            assertFalse(FeatureSwitches.GLASS_INSPECTION.getBooleanValue());
             assertTrue(controller.shouldTurnHighlightBulkOn());
         } finally {
             for (ChiseBooleanSetting highlight : highlights) highlight.setBooleanValueSilently(false);
@@ -192,6 +192,17 @@ final class ChiseTweaksSettingsControllerTest {
         assertSame(FeatureSwitches.KELP_HIGHLIGHT, kelp.booleanConfig());
         assertFalse(kelp.booleanConfig().getDefaultBooleanValue());
         assertFalse(kelp.booleanConfig().getBooleanValue());
+    }
+
+    @Test
+    void glassHighlightIsOptInAndUsesTheSharedHighlightSurface() {
+        var controller = new ChiseTweaksSettingsController(true);
+        ChiseTweaksSettingRowDefinition glass = row(controller.rows(), "glass");
+
+        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, glass.kind());
+        assertSame(FeatureSwitches.GLASS_INSPECTION, glass.booleanConfig());
+        assertFalse(glass.booleanConfig().getDefaultBooleanValue());
+        assertFalse(glass.booleanConfig().getBooleanValue());
     }
 
     @Test
