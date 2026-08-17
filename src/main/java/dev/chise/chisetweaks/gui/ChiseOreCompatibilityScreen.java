@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.api.ore.OreHighlightStyle;
 import dev.chise.chisetweaks.config.OreHighlightCompatibilityConfig;
-import dev.chise.chisetweaks.feature.rendering.model.OreHighlightRenderInvalidation;
+import dev.chise.chisetweaks.feature.rendering.model.OreHighlightModelReload;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -119,10 +119,10 @@ public final class ChiseOreCompatibilityScreen extends Screen {
             refreshControls();
             return;
         }
-        OreHighlightRenderInvalidation.request();
+        OreHighlightModelReload.request();
         idBox.setValue("");
         page = Math.max(0, (entries().size() - 1) / pageSize);
-        feedback = japanese ? "追加/更新しました。" : "Added/updated.";
+        feedback = japanese ? "追加/更新しました。描画モデルを再構築します。" : "Added/updated. Rebuilding visual models.";
         refreshControls();
     }
 
@@ -138,8 +138,8 @@ public final class ChiseOreCompatibilityScreen extends Screen {
         List<OreHighlightCompatibilityConfig.Entry> entries = entries();
         if (index < 0 || index >= entries.size()) return;
         if (OreHighlightCompatibilityConfig.remove(entries.get(index).blockId())) {
-            OreHighlightRenderInvalidation.request();
-            feedback = japanese ? "削除しました。" : "Removed.";
+            OreHighlightModelReload.request();
+            feedback = japanese ? "削除しました。描画モデルを再構築します。" : "Removed. Rebuilding visual models.";
         } else {
             feedback = japanese ? "削除内容を保存できませんでした。" : "Could not persist the removal.";
         }
@@ -154,9 +154,9 @@ public final class ChiseOreCompatibilityScreen extends Screen {
             refreshControls();
             return;
         }
-        OreHighlightRenderInvalidation.request();
+        OreHighlightModelReload.request();
         page = 0;
-        feedback = japanese ? "個別設定を空にしました。" : "Overrides cleared.";
+        feedback = japanese ? "個別設定を空にしました。描画モデルを再構築します。" : "Overrides cleared. Rebuilding visual models.";
         refreshControls();
     }
 

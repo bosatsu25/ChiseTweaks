@@ -60,6 +60,7 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
         assertTrue(plugin.contains("pluginContext.addModel("));
+        assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return model;"));
 
         for (String forbidden : Set.of(
                 "WorksiteScanner", "LavaAnalyzerThroughWallRenderer",
@@ -68,6 +69,7 @@ final class OreHighlightsReleaseReadinessContractTest {
             assertFalse(plugin.contains(forbidden), forbidden);
             assertFalse(model.contains(forbidden), forbidden);
         }
+        assertFalse(model.contains("OreHighlightResolver.resolve"));
     }
 
     @Test
@@ -92,11 +94,13 @@ final class OreHighlightsReleaseReadinessContractTest {
     }
 
     @Test
-    void oreSettingsNeverTriggerFullResourcePackReload() throws IOException {
+    void ordinaryTogglesUseChunkInvalidationWhileTargetMembershipChangesUseColdReload() throws IOException {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String invalidation = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightRenderInvalidation.java");
+        String modelReload = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java");
         String bindings = source(
                 "src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
         String editor = source(
@@ -109,11 +113,9 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertTrue(invalidation.contains("client.levelRenderer.allChanged()"));
         assertTrue(invalidation.contains("AtomicBoolean REQUESTED"));
         assertTrue(bindings.contains("OreHighlightRenderInvalidation.request"));
-        assertTrue(editor.contains("OreHighlightRenderInvalidation.request()"));
-        assertFalse(Files.exists(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/VisualModelReloadCoordinator.java")));
-        assertFalse(Files.exists(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/core/performance/VisualModelReloadThrottlePolicy.java")));
+        assertTrue(editor.contains("OreHighlightModelReload.request()"));
+        assertTrue(modelReload.contains("client.reloadResourcePacks()"));
+        assertTrue(modelReload.contains("ChiseVisualModelPlugin.isModelPipelineReady()"));
     }
 
     @Test
@@ -138,7 +140,7 @@ final class OreHighlightsReleaseReadinessContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
         String lighting = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayLighting.java");
-        assertTrue(plugin.contains("visual-model-overlay-7-ore-kelp-party"));
+        assertTrue(plugin.contains("visual-model-overlay-8-zero-scan"));
         assertTrue(model.contains("FullbrightOverlayLighting.apply(quad)"));
         assertTrue(lighting.contains("quad.emissive(true)"));
         assertTrue(lighting.contains("quad.diffuseShade(false)"));
@@ -201,6 +203,7 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertTrue(loader.contains("StrictJsonSecurityPolicy.validateObjectDocument"));
         assertTrue(api.contains("registerBlock"));
         assertTrue(api.contains("registerTag"));
+        assertTrue(api.contains("OreHighlightModelReload.request()"));
         assertTrue(config.contains("MAX_ENTRIES = 256"));
         assertTrue(config.contains("SecureConfigStorage.writeUtf8Atomic"));
         assertFalse(resolver.contains("ClientLevel"));

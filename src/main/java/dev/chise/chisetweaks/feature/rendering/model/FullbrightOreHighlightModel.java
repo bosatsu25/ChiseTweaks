@@ -1,10 +1,8 @@
 package dev.chise.chisetweaks.feature.rendering.model;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
-import dev.chise.chisetweaks.api.ore.OreHighlightStyle;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
-import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
 import dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import net.fabricmc.fabric.api.client.model.loading.v1.ExtraModelKey;
@@ -22,45 +20,35 @@ import org.jspecify.annotations.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
-/** Preserves the final base model and appends only Chise-owned ore overlay geometry. */
+/**
+ * Preserves the final base model and appends only Chise-owned ore overlay geometry.
+ *
+ * <p>Target classification is intentionally completed during model wrapping. Runtime emission does
+ * not resolve block IDs, tags, compatibility maps, or ore heuristics. Compatibility edits that can
+ * change the set of wrapped models request a coalesced resource-model reload instead.</p>
+ */
 final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
     private static final AtomicBoolean LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean EMIT_FAILURE_LOGGED = new AtomicBoolean();
 
-    private final @Nullable Target fixedTarget;
-    private final @Nullable ExtraModelKey<BlockStateModel> fixedStaticKey;
-    private final @Nullable ExtraModelKey<BlockStateModel> fixedAnimatedKey;
-    private final boolean dynamicModded;
+    private final @Nullable Target target;
+    private final ExtraModelKey<BlockStateModel> staticKey;
+    private final ExtraModelKey<BlockStateModel> animatedKey;
+
     private volatile @Nullable BlockStateModel staticOverlay;
     private volatile @Nullable BlockStateModel animatedOverlay;
     private volatile boolean staticOverlayResolved;
     private volatile boolean animatedOverlayResolved;
 
-    private volatile long dynamicResolverRevision = Long.MIN_VALUE;
-    private volatile @Nullable OreHighlightStyle dynamicStyle;
-    private volatile @Nullable BlockStateModel dynamicStaticOverlay;
-    private volatile @Nullable BlockStateModel dynamicAnimatedOverlay;
-    private volatile boolean dynamicStaticOverlayResolved;
-    private volatile boolean dynamicAnimatedOverlayResolved;
-
     FullbrightOreHighlightModel(
             BlockStateModel wrapped,
-            Target target,
-            ExtraModelKey<BlockStateModel> staticOverlayKey,
-            ExtraModelKey<BlockStateModel> animatedOverlayKey) {
+            @Nullable Target target,
+            ExtraModelKey<BlockStateModel> staticKey,
+            ExtraModelKey<BlockStateModel> animatedKey) {
         super(wrapped);
-        this.fixedTarget = target;
-        this.fixedStaticKey = staticOverlayKey;
-        this.fixedAnimatedKey = animatedOverlayKey;
-        this.dynamicModded = false;
-    }
-
-    FullbrightOreHighlightModel(BlockStateModel wrapped) {
-        super(wrapped);
-        this.fixedTarget = null;
-        this.fixedStaticKey = null;
-        this.fixedAnimatedKey = null;
-        this.dynamicModded = true;
+        this.target = target;
+        this.staticKey = staticKey;
+        this.animatedKey = animatedKey;
     }
 
     @Override
@@ -72,20 +60,10 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             RandomSource random,
             Predicate<@Nullable Direction> cullTest) {
         super.emitQuads(emitter, level, pos, state, random, cullTest);
+        if (!highlightEnabled()) return;
 
-        BlockStateModel overlay;
-        boolean animated;
-        if (dynamicModded) {
-            if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return;
-            OreHighlightStyle style = resolveDynamicStyle(state);
-            if (style == null) return;
-            animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
-            overlay = dynamicOverlayModel(style, animated);
-        } else {
-            if (!fixedHighlightEnabled()) return;
-            animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
-            overlay = fixedOverlayModel(animated);
-        }
+        boolean animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
+        BlockStateModel overlay = overlayModel(animated);
         if (overlay == null) return;
 
         emitter.pushTransform(quad -> {
@@ -101,12 +79,14 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         }
     }
 
-    private boolean fixedHighlightEnabled() {
-        if (fixedTarget == null) return false;
+    private boolean highlightEnabled() {
+        boolean masterEnabled = FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue();
+        if (!masterEnabled) return false;
+        if (target == null) return true;
         return OreHighlightRuntimePolicy.shouldRender(
-                FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue(),
+                true,
                 LocalFeatureConfig.getInstance().visualTargetMask,
-                fixedTarget);
+                target);
     }
 
     private static OreHighlightRuntimePolicy.Motion motion() {
@@ -114,11 +94,11 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
                 LocalFeatureConfig.getInstance().oreHighlightAnimationEnabled);
     }
 
-    private @Nullable BlockStateModel fixedOverlayModel(boolean animated) {
+    private @Nullable BlockStateModel overlayModel(boolean animated) {
         if (animated ? animatedOverlayResolved : staticOverlayResolved) {
             return animated ? animatedOverlay : staticOverlay;
         }
-        ExtraModelKey<BlockStateModel> key = animated ? fixedAnimatedKey : fixedStaticKey;
+        ExtraModelKey<BlockStateModel> key = animated ? animatedKey : staticKey;
         BlockStateModel loaded = lookup(key);
         if (animated) {
             animatedOverlay = loaded;
@@ -130,55 +110,13 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         return loaded;
     }
 
-    private @Nullable OreHighlightStyle resolveDynamicStyle(BlockState state) {
-        long revision = OreHighlightResolver.revision();
-        if (dynamicResolverRevision == revision) return dynamicStyle;
-        synchronized (this) {
-            if (dynamicResolverRevision == revision) return dynamicStyle;
-            OreHighlightResolver.Resolved resolved = OreHighlightResolver.resolve(state);
-            dynamicStyle = resolved != null && resolved.target() == null ? resolved.style() : null;
-            dynamicResolverRevision = revision;
-            dynamicStaticOverlay = null;
-            dynamicAnimatedOverlay = null;
-            dynamicStaticOverlayResolved = false;
-            dynamicAnimatedOverlayResolved = false;
-            return dynamicStyle;
-        }
-    }
-
-    private @Nullable BlockStateModel dynamicOverlayModel(OreHighlightStyle style, boolean animated) {
-        if (animated ? dynamicAnimatedOverlayResolved : dynamicStaticOverlayResolved) {
-            return animated ? dynamicAnimatedOverlay : dynamicStaticOverlay;
-        }
-        OreHighlightOverlayCatalog.OverlayModels models = OreHighlightOverlayCatalog.forStyle(style);
-        if (models == null) return null;
-        BlockStateModel loaded = lookup(animated ? models.animatedKey() : models.staticKey());
-        if (animated) {
-            dynamicAnimatedOverlay = loaded;
-            dynamicAnimatedOverlayResolved = true;
-        } else {
-            dynamicStaticOverlay = loaded;
-            dynamicStaticOverlayResolved = true;
-        }
-        return loaded;
-    }
-
-    private static @Nullable BlockStateModel lookup(@Nullable ExtraModelKey<BlockStateModel> key) {
-        if (key == null) return null;
+    private static @Nullable BlockStateModel lookup(ExtraModelKey<BlockStateModel> key) {
         try {
             return Minecraft.getInstance().getModelManager().getModel(key);
         } catch (RuntimeException failure) {
             warnOnce(LOOKUP_FAILURE_LOGGED, "Ore Highlight extra-model lookup", failure);
             return null;
         }
-    }
-
-    private static void warnOnce(AtomicBoolean gate, String operation, RuntimeException failure) {
-        if (!gate.compareAndSet(false, true)) return;
-        ChiseTweaksClient.LOGGER.warn(
-                "{} failed after {}; keeping the resource-pack base model without the Chise overlay",
-                operation,
-                failure.getClass().getSimpleName());
     }
 
     @Override
@@ -189,30 +127,20 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             BlockState state,
             RandomSource random) {
         Object wrappedKey = wrapped.createGeometryKey(level, pos, state, random);
-        if (wrappedKey == null) return null;
-        if (!dynamicModded) {
-            if (!fixedHighlightEnabled()) return wrappedKey;
-            return new FixedGeometryKey(wrappedKey, fixedTarget, motion());
-        }
-
-        if (!FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue()) return wrappedKey;
-        OreHighlightStyle style = resolveDynamicStyle(state);
-        if (style == null) return wrappedKey;
-        return new DynamicGeometryKey(
-                wrappedKey,
-                style,
-                motion(),
-                dynamicResolverRevision);
+        if (wrappedKey == null || !highlightEnabled()) return wrappedKey;
+        return new GeometryKey(wrappedKey, target, motion());
     }
 
-    private record FixedGeometryKey(
+    private record GeometryKey(
             Object wrappedKey,
             @Nullable Target target,
             OreHighlightRuntimePolicy.Motion motion) {}
 
-    private record DynamicGeometryKey(
-            Object wrappedKey,
-            OreHighlightStyle style,
-            OreHighlightRuntimePolicy.Motion motion,
-            long resolverRevision) {}
+    private static void warnOnce(AtomicBoolean gate, String operation, RuntimeException failure) {
+        if (!gate.compareAndSet(false, true)) return;
+        ChiseTweaksClient.LOGGER.warn(
+                "{} failed after {}; keeping the resource-pack base model without the Chise overlay",
+                operation,
+                failure.getClass().getSimpleName());
+    }
 }
