@@ -42,20 +42,51 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          artifact_name="$(gh api "repos/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}/artifacts" \
-            --jq '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verified-JAR"))) | .name' \
-            | head -n 1)"
+          retry() {
+            local attempt=1
+            local delay=2
+            local max_attempts=5
+            until "$@"; do
+              if (( attempt >= max_attempts )); then
+                echo "Command failed after ${max_attempts} attempts: $*" >&2
+                return 1
+              fi
+              echo "Transient GitHub API failure; retrying in ${delay}s (attempt $((attempt + 1))/${max_attempts})..." >&2
+              sleep "$delay"
+              attempt=$((attempt + 1))
+              delay=$((delay * 2))
+            done
+          }
+
+          retry gh api "repos/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}/artifacts" > /tmp/artifacts.json
+          artifact_name="$(jq -r '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verified-JAR"))) | .name' /tmp/artifacts.json | head -n 1)"
 
           if [[ -z "$artifact_name" ]]; then
             echo "Verified JAR artifact was not produced by CI run ${GITHUB_RUN_ID}." >&2
             exit 1
           fi
 
-          mkdir -p release
-          gh run download "$GITHUB_RUN_ID" \
-            --repo "$GH_REPO" \
-            --name "$artifact_name" \
-            --dir release
+          attempt=1
+          delay=2
+          max_attempts=5
+          while true; do
+            rm -rf release
+            mkdir -p release
+            if gh run download "$GITHUB_RUN_ID" \
+              --repo "$GH_REPO" \
+              --name "$artifact_name" \
+              --dir release; then
+              break
+            fi
+            if (( attempt >= max_attempts )); then
+              echo "Verified artifact download failed after ${max_attempts} attempts." >&2
+              exit 1
+            fi
+            echo "Artifact download was not confirmed; retrying in ${delay}s (attempt $((attempt + 1))/${max_attempts})..." >&2
+            sleep "$delay"
+            attempt=$((attempt + 1))
+            delay=$((delay * 2))
+          done
 
           echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
 
