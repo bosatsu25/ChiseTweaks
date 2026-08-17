@@ -13,9 +13,9 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.concurrent.CompletableFuture;
 
-/** Non-destructive Ore Highlights composition for vanilla and modded blocks. */
+/** Non-destructive Chise model composition for Ore Highlights and Kelp Highlight. */
 public final class ChiseVisualModelPlugin {
-    public static final String REVISION = "ore-highlight-composed-overlay-6-modded-compatible";
+    public static final String REVISION = "visual-model-overlay-7-ore-kelp-party";
 
     private ChiseVisualModelPlugin() {}
 
@@ -38,13 +38,16 @@ public final class ChiseVisualModelPlugin {
                                 overlay.animatedKey(),
                                 SimpleUnbakedExtraModel.blockStateModel(overlay.animatedModel()));
                     }
+                    pluginContext.addModel(
+                            KelpHighlightOverlayCatalog.KEY,
+                            SimpleUnbakedExtraModel.blockStateModel(KelpHighlightOverlayCatalog.MODEL));
 
                     pluginContext.modifyBlockModelAfterBake().register(
                             ModelModifier.WRAP_PHASE,
                             (model, context) -> wrap(model, context.state()));
 
                     ChiseTweaksClient.LOGGER.info(
-                            "Visual model {} active in ChiseTweaks {}; {} resource ore mapping(s) loaded",
+                            "Visual model {} active in ChiseTweaks {}; {} resource ore mapping(s) loaded; kelp party overlay ready",
                             REVISION,
                             ChiseTweaksMetadata.MOD_VERSION,
                             resourceEntries.size());
@@ -55,7 +58,15 @@ public final class ChiseVisualModelPlugin {
             net.minecraft.client.renderer.block.dispatch.BlockStateModel model,
             BlockState state) {
         if (state == null) return model;
-        String namespace = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace();
+        var blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        String namespace = blockId.getNamespace();
+        String path = blockId.getPath();
+
+        if ("minecraft".equals(namespace)
+                && ("kelp".equals(path) || "kelp_plant".equals(path))) {
+            return new FullbrightKelpHighlightModel(model);
+        }
+
         if (!"minecraft".equals(namespace)) {
             return new FullbrightOreHighlightModel(model);
         }
