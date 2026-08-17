@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.feature.rendering.model;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
 import dev.chise.chisetweaks.config.OreHighlightCompatibilityConfig;
+import dev.chise.chisetweaks.core.vision.GlassHighlightTargetPolicy;
 import dev.chise.chisetweaks.core.vision.OreHighlightExternalRegistry;
 import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier;
@@ -13,9 +14,9 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.concurrent.CompletableFuture;
 
-/** Non-destructive Chise model composition for Ore Highlights and Kelp Highlight. */
+/** Non-destructive Chise model composition for Ore, Kelp and Glass Highlights. */
 public final class ChiseVisualModelPlugin {
-    public static final String REVISION = "visual-model-overlay-8-zero-scan";
+    public static final String REVISION = "visual-model-overlay-9-glass-zero-scan";
 
     private static volatile boolean modelPipelineReady;
 
@@ -43,6 +44,12 @@ public final class ChiseVisualModelPlugin {
                     pluginContext.addModel(
                             KelpHighlightOverlayCatalog.KEY,
                             SimpleUnbakedExtraModel.blockStateModel(KelpHighlightOverlayCatalog.MODEL));
+                    pluginContext.addModel(
+                            GlassHighlightOverlayCatalog.BLOCK_KEY,
+                            SimpleUnbakedExtraModel.blockStateModel(GlassHighlightOverlayCatalog.BLOCK_MODEL));
+                    pluginContext.addModel(
+                            GlassHighlightOverlayCatalog.PANE_KEY,
+                            SimpleUnbakedExtraModel.blockStateModel(GlassHighlightOverlayCatalog.PANE_MODEL));
 
                     pluginContext.modifyBlockModelAfterBake().register(
                             ModelModifier.WRAP_PHASE,
@@ -66,12 +73,22 @@ public final class ChiseVisualModelPlugin {
             BlockState state) {
         if (state == null) return model;
         var blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        if (blockId == null) return model;
         String namespace = blockId.getNamespace();
         String path = blockId.getPath();
 
         if ("minecraft".equals(namespace)
                 && ("kelp".equals(path) || "kelp_plant".equals(path))) {
             return new FullbrightKelpHighlightModel(model);
+        }
+
+        GlassHighlightTargetPolicy.Shape glassShape =
+                GlassHighlightTargetPolicy.classify(namespace, path);
+        if (glassShape != GlassHighlightTargetPolicy.Shape.NONE) {
+            return new FullbrightGlassHighlightModel(
+                    model,
+                    glassShape,
+                    GlassHighlightOverlayCatalog.keyFor(glassShape));
         }
 
         // Resolve once while models are being baked. Non-target blocks keep the original model and
