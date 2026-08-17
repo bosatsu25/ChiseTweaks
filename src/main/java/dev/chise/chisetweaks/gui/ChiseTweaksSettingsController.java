@@ -28,7 +28,8 @@ final class ChiseTweaksSettingsController {
             FeatureSwitches.NETHER_PALETTE,
             FeatureSwitches.FINE_THREAD_TRACE,
             FeatureSwitches.HIDDEN_SURFACE_TRACE,
-            FeatureSwitches.GLASS_INSPECTION);
+            FeatureSwitches.GLASS_INSPECTION,
+            FeatureSwitches.KELP_HIGHLIGHT);
 
     private final boolean japanese;
     private final List<ChiseBooleanSetting> resourceTargets;
@@ -103,6 +104,7 @@ final class ChiseTweaksSettingsController {
         FeatureSwitches.FINE_THREAD_TRACE.resetToDefault();
         FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
         FeatureSwitches.GLASS_INSPECTION.resetToDefault();
+        FeatureSwitches.KELP_HIGHLIGHT.resetToDefault();
         FeatureSwitches.BUILDER_FOCUS_BLOCKS.resetToDefault();
         FeatureSwitches.BUILDER_FOCUS_ENTITIES.resetToDefault();
         LocalFeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
@@ -143,6 +145,8 @@ final class ChiseTweaksSettingsController {
                 "隠れブロックハイライト", "Hidden Block Highlight");
         compactBool(rows, "glass", FeatureSwitches.GLASS_INSPECTION,
                 "ガラスハイライト", "Glass Highlight");
+        compactBool(rows, "kelp", FeatureSwitches.KELP_HIGHLIGHT,
+                "昆布ハイライト", "Kelp Highlight");
 
         header(rows, "header.visualFilter", "Visual Filter", "Visual Filter");
         compactBoolAction(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
