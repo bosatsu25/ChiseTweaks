@@ -38,6 +38,8 @@ public final class FeatureControlBindings {
                 ignored -> OreHighlightRenderInvalidation.request());
         FeatureSwitches.KELP_HIGHLIGHT.addValueChangeListener(
                 ignored -> OreHighlightRenderInvalidation.request());
+        FeatureSwitches.GLASS_INSPECTION.addValueChangeListener(
+                ignored -> OreHighlightRenderInvalidation.request());
         LocalFeatureSettings.setOreHighlightChangedCallback(
                 OreHighlightRenderInvalidation::request);
         VisualTargetSettings.setMaterialTargetsChangedCallback(
