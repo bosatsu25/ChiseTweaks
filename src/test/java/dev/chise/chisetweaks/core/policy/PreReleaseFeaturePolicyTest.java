@@ -9,10 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PreReleaseFeaturePolicyTest {
     @Test
-    void oreAndKelpHighlightsAreAvailableInCurrentPrerelease() {
+    void oreKelpAndGlassHighlightsAreAvailableInCurrentPrerelease() {
         for (FeatureDefinition definition : FeatureDefinition.VALUES) {
             if (definition == FeatureDefinition.MATERIAL_HIGHLIGHTS
-                    || definition == FeatureDefinition.KELP_HIGHLIGHT) {
+                    || definition == FeatureDefinition.KELP_HIGHLIGHT
+                    || definition == FeatureDefinition.GLASS_INSPECTION) {
                 assertTrue(PreReleaseFeaturePolicy.isAvailable(definition), definition.id());
             } else {
                 assertFalse(PreReleaseFeaturePolicy.isAvailable(definition), definition.id());
