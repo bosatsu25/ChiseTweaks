@@ -1,0 +1,168 @@
+import groovy.json.JsonOutput
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+
+// Glass Highlight assets are generated at build time. Runtime rendering only emits pre-baked
+// model geometry; no Java-side animation, world scan or texture generation is shipped.
+def generatedGlassVisualAssetsDir = layout.buildDirectory.dir('generated/chiseGlassVisualAssets')
+
+def argb = { a, r, g, b ->
+    (((a as int) << 24) | ((r as int) << 16) | ((g as int) << 8) | (b as int)) as int
+}
+def putPixel = { BufferedImage image, int x, int y, int color ->
+    if (x >= 0 && x < image.width && y >= 0 && y < image.height) image.setRGB(x, y, color)
+}
+def line = { BufferedImage image, int x0Raw, int y0Raw, int x1Raw, int y1Raw, int color ->
+    int x0 = x0Raw
+    int y0 = y0Raw
+    int x1 = x1Raw
+    int y1 = y1Raw
+    int dx = Math.abs(x1 - x0)
+    int sx = x0 < x1 ? 1 : -1
+    int dy = -Math.abs(y1 - y0)
+    int sy = y0 < y1 ? 1 : -1
+    int error = dx + dy
+    while (true) {
+        putPixel(image, x0, y0, color)
+        if (x0 == x1 && y0 == y1) break
+        int twice = 2 * error
+        if (twice >= dy) { error += dy; x0 += sx }
+        if (twice <= dx) { error += dx; y0 += sy }
+    }
+}
+
+def GLASS_BLOCK_CYAN = [94, 235, 255]   // #5EEBFF
+def GLASS_PANE_AMBER = [255, 209, 102]  // #FFD166
+
+def blockPrimary = argb(190, GLASS_BLOCK_CYAN[0], GLASS_BLOCK_CYAN[1], GLASS_BLOCK_CYAN[2])
+def blockSoft = argb(95, GLASS_BLOCK_CYAN[0], GLASS_BLOCK_CYAN[1], GLASS_BLOCK_CYAN[2])
+def panePrimary = argb(205, GLASS_PANE_AMBER[0], GLASS_PANE_AMBER[1], GLASS_PANE_AMBER[2])
+def paneSoft = argb(105, GLASS_PANE_AMBER[0], GLASS_PANE_AMBER[1], GLASS_PANE_AMBER[2])
+
+def writeBlockTexture = { File output ->
+    BufferedImage image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB)
+
+    // Sparse corner brackets make a full glass block readable without recoloring its stained tint.
+    [[1, 1], [14, 1], [1, 14], [14, 14]].each { corner ->
+        int x = corner[0]
+        int y = corner[1]
+        int dx = x < 8 ? 1 : -1
+        int dy = y < 8 ? 1 : -1
+        putPixel(image, x, y, blockPrimary)
+        putPixel(image, x + dx, y, blockSoft)
+        putPixel(image, x, y + dy, blockSoft)
+        putPixel(image, x + 2 * dx, y, blockSoft)
+        putPixel(image, x, y + 2 * dy, blockSoft)
+    }
+
+    // A small diamond is the shape cue for full glass blocks.
+    line(image, 7, 5, 10, 8, blockSoft)
+    line(image, 10, 8, 7, 11, blockPrimary)
+    line(image, 7, 11, 4, 8, blockSoft)
+    line(image, 4, 8, 7, 5, blockPrimary)
+
+    output.parentFile.mkdirs()
+    if (!ImageIO.write(image, 'png', output)) {
+        throw new GradleException("No PNG writer is available for ${output}")
+    }
+}
+
+def writePaneTexture = { File output ->
+    BufferedImage image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB)
+
+    // A narrow segmented center rail is deliberately unlike the full-block diamond motif.
+    (1..14).each { y ->
+        putPixel(image, 7, y, panePrimary)
+        putPixel(image, 8, y, paneSoft)
+    }
+    [3, 7, 11].each { y ->
+        line(image, 5, y, 10, y, paneSoft)
+        putPixel(image, 7, y, panePrimary)
+    }
+
+    output.parentFile.mkdirs()
+    if (!ImageIO.write(image, 'png', output)) {
+        throw new GradleException("No PNG writer is available for ${output}")
+    }
+}
+
+def blockFaces = { texture ->
+    [
+            down : [texture: texture, uv: [0, 0, 16, 16], cullface: 'down'],
+            up   : [texture: texture, uv: [0, 0, 16, 16], cullface: 'up'],
+            north: [texture: texture, uv: [0, 0, 16, 16], cullface: 'north'],
+            south: [texture: texture, uv: [0, 0, 16, 16], cullface: 'south'],
+            west : [texture: texture, uv: [0, 0, 16, 16], cullface: 'west'],
+            east : [texture: texture, uv: [0, 0, 16, 16], cullface: 'east']
+    ]
+}
+
+def paneFaces = { texture ->
+    [
+            down : [texture: texture, uv: [0, 0, 16, 16]],
+            up   : [texture: texture, uv: [0, 0, 16, 16]],
+            north: [texture: texture, uv: [0, 0, 16, 16]],
+            south: [texture: texture, uv: [0, 0, 16, 16]],
+            west : [texture: texture, uv: [0, 0, 16, 16]],
+            east : [texture: texture, uv: [0, 0, 16, 16]]
+    ]
+}
+
+def blockOverlayModel = { texture ->
+    [
+            ambientocclusion: false,
+            textures: [highlight: texture, particle: texture],
+            elements: [[
+                    from: [-0.04d, -0.04d, -0.04d],
+                    to: [16.04d, 16.04d, 16.04d],
+                    shade: false,
+                    faces: blockFaces('#highlight')
+            ]]
+    ]
+}
+
+def paneOverlayModel = { texture ->
+    [
+            ambientocclusion: false,
+            textures: [highlight: texture, particle: texture],
+            elements: [[
+                    from: [7.35d, -0.04d, 7.35d],
+                    to: [8.65d, 16.04d, 8.65d],
+                    shade: false,
+                    faces: paneFaces('#highlight')
+            ]]
+    ]
+}
+
+def writeModel = { File output, model ->
+    output.parentFile.mkdirs()
+    output.setText(JsonOutput.prettyPrint(JsonOutput.toJson(model)) + '\n', 'UTF-8')
+}
+
+def generateChiseGlassVisualAssets = tasks.register('generateChiseGlassVisualAssets') {
+    outputs.dir(generatedGlassVisualAssetsDir)
+    doLast {
+        File root = generatedGlassVisualAssetsDir.get().asFile
+        project.delete(root)
+        File textureDir = new File(root, 'assets/chisetweaks/textures/block/visual/glass')
+        File modelDir = new File(root, 'assets/chisetweaks/models/block/visual/glass')
+
+        writeBlockTexture(new File(textureDir, 'glass_block_marker.png'))
+        writePaneTexture(new File(textureDir, 'glass_pane_marker.png'))
+        writeModel(
+                new File(modelDir, 'block_overlay.json'),
+                blockOverlayModel('chisetweaks:block/visual/glass/glass_block_marker'))
+        writeModel(
+                new File(modelDir, 'pane_overlay.json'),
+                paneOverlayModel('chisetweaks:block/visual/glass/glass_pane_marker'))
+    }
+}
+
+tasks.matching { it.name == 'processResources' }.configureEach {
+    dependsOn(generateChiseGlassVisualAssets)
+    from(generatedGlassVisualAssetsDir)
+}
+
+tasks.matching { it.name == 'test' }.configureEach {
+    dependsOn(generateChiseGlassVisualAssets)
+}
