@@ -7,7 +7,8 @@ public enum BlockInspectionCategory {
     HIDDEN_SURFACE(0xFF6EE7B7),
     GLASS_INSPECTION(0xFFC084FC),
     MATERIAL_HIGHLIGHT(0xFFFFD166),
-    NETHER_PALETTE(0xFFFF7A90);
+    NETHER_PALETTE(0xFFFF7A90),
+    KELP_HIGHLIGHT(0xFFFF4FD8);
 
     private final int argb;
 
