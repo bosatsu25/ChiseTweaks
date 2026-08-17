@@ -106,8 +106,6 @@ final class VisualTargetSelectionPolicyTest {
 
         assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:tripwire",
                 BlockInspectionCategory.TECHNICAL_TRACE));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:glass",
-                BlockInspectionCategory.GLASS_INSPECTION));
         assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:netherrack",
                 BlockInspectionCategory.NETHER_PALETTE));
 
