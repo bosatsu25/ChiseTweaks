@@ -12,8 +12,7 @@ public final class WorksiteVisibilitySelectionPolicy {
         HIDDEN_SURFACE,
         GLASS,
         MATERIAL_HIGHLIGHT,
-        NETHER_PALETTE,
-        KELP_HIGHLIGHT
+        NETHER_PALETTE
     }
 
     public static Set<Mode> afterToggle(
