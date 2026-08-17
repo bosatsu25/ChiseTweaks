@@ -20,7 +20,7 @@ enum PerformanceMetric {
         return lowerIsBetter;
     }
 
-    double valueOf(PerformanceRun run) {
+    Double valueOf(PerformanceRun run) {
         return switch (this) {
             case STARTUP_MS -> run.startupMs();
             case P50_FRAMETIME_MS -> run.p50FrametimeMs();
