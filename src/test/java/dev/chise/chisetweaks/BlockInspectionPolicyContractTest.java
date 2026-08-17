@@ -83,13 +83,13 @@ final class BlockInspectionPolicyContractTest {
     }
 
     @Test
-    void kelpInspectionKeepsOnlyAgeForTheGrowingHead() {
+    void kelpInspectionDoesNotRetainUnneededBlockState() {
         var head = BlockInspectionPolicy.inspect(
                 "minecraft:kelp",
                 Map.of("age", "24", "waterlogged", "true"),
                 BlockInspectionCategory.KELP_HIGHLIGHT);
         assertEquals(BlockInspectionCategory.KELP_HIGHLIGHT, head.category());
-        assertEquals(List.of("age=24"), head.details());
+        assertTrue(head.details().isEmpty());
 
         var plant = BlockInspectionPolicy.inspect(
                 "minecraft:kelp_plant",
