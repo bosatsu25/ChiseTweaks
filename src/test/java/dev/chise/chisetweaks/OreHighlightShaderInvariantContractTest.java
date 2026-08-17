@@ -17,19 +17,23 @@ final class OreHighlightShaderInvariantContractTest {
     void oreHighlightsAlwaysSubmitTheSameEmissiveChiseOwnedOverlayMaterial() throws IOException {
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+        String lighting = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayLighting.java");
 
         assertTrue(model.contains("super.emitQuads(emitter, level, pos, state, random, cullTest);"));
-        assertTrue(model.contains("applyShaderInvariantHighlightLighting(quad)"));
-        assertTrue(model.contains("quad.emissive(true)"));
-        assertTrue(model.contains("quad.diffuseShade(false)"));
-        assertTrue(model.contains("quad.ambientOcclusion(TriState.FALSE)"));
+        assertTrue(model.contains("FullbrightOverlayLighting.apply(quad)"));
+        assertTrue(lighting.contains("quad.emissive(true)"));
+        assertTrue(lighting.contains("quad.diffuseShade(false)"));
+        assertTrue(lighting.contains("quad.ambientOcclusion(TriState.FALSE)"));
         assertTrue(model.contains("overlay.emitQuads(emitter, level, pos, state, random, cullTest)"));
         assertFalse(model.contains("OreHighlightLightingPolicy"));
         assertFalse(model.contains("isOverlayVertex"));
-        assertFalse(model.contains("IrisApi"));
-        assertFalse(model.contains("isShaderPackInUse"));
-        assertFalse(model.contains("shaderPackName"));
-        assertFalse(model.contains("ShaderRenderer"));
+        for (String source : new String[] {model, lighting}) {
+            assertFalse(source.contains("IrisApi"));
+            assertFalse(source.contains("isShaderPackInUse"));
+            assertFalse(source.contains("shaderPackName"));
+            assertFalse(source.contains("ShaderRenderer"));
+        }
     }
 
     @Test
@@ -37,7 +41,7 @@ final class OreHighlightShaderInvariantContractTest {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
 
-        assertTrue(plugin.contains("ore-highlight-composed-overlay-6-modded-compatible"));
+        assertTrue(plugin.contains("visual-model-overlay-7-ore-kelp-party"));
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("pluginContext.addModel("));
         assertTrue(plugin.contains("SimpleUnbakedExtraModel.blockStateModel"));
