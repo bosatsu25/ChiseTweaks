@@ -26,7 +26,6 @@ public final class BlockInspectionPolicy {
             "bloom", "waterlogged", "facing");
     private static final Set<String> GLASS_PROPERTIES = Set.of(
             "north", "east", "south", "west", "waterlogged");
-    private static final Set<String> KELP_PROPERTIES = Set.of("age");
 
     private static final Set<String> MATERIAL_HIGHLIGHT_IDS = createMaterialHighlightIds();
 
@@ -81,8 +80,7 @@ public final class BlockInspectionPolicy {
             case TECHNICAL_TRACE -> TECHNICAL_PROPERTIES;
             case HIDDEN_SURFACE -> HIDDEN_PROPERTIES;
             case GLASS_INSPECTION -> GLASS_PROPERTIES;
-            case KELP_HIGHLIGHT -> blockId.equals("minecraft:kelp") ? KELP_PROPERTIES : Set.of();
-            case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> Set.of();
+            case MATERIAL_HIGHLIGHT, NETHER_PALETTE, KELP_HIGHLIGHT, NONE -> Set.of();
         };
 
         ArrayList<String> details = new ArrayList<>();
