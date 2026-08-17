@@ -93,51 +93,6 @@ public final class SurfaceLineVisualGeometry {
                 Math.max(1.0f, lineWidth * 0.42f));
     }
 
-    /**
-     * Draws an X-shaped two-color neon skin that follows the visual silhouette of kelp better than
-     * a full block cube. Both colors are always present; the emphasis swaps slowly instead of
-     * strobing so the effect remains readable during long underwater work sessions.
-     */
-    public static void drawKelpPartySkin(
-            VertexConsumer vertices,
-            PoseStack.Pose pose,
-            BlockPos position,
-            int magentaArgb,
-            int orangeArgb,
-            int phase,
-            float lineWidth) {
-        boolean swapped = Math.floorMod(phase, 8) >= 4;
-        int primary = swapped ? orangeArgb : magentaArgb;
-        int accent = swapped ? magentaArgb : orangeArgb;
-        float min = 0.22f;
-        float max = 0.78f;
-        float y0 = position.getY() + 0.06f;
-        float y1 = position.getY() + 0.94f;
-        float cx = position.getX() + 0.5f;
-        float cz = position.getZ() + 0.5f;
-
-        SurfaceLinePrimitives.doubleLine(
-                vertices, pose,
-                position.getX() + min, y0, cz,
-                position.getX() + max, y1, cz,
-                primary, accent, lineWidth);
-        SurfaceLinePrimitives.doubleLine(
-                vertices, pose,
-                position.getX() + max, y0, cz,
-                position.getX() + min, y1, cz,
-                accent, primary, lineWidth);
-        SurfaceLinePrimitives.doubleLine(
-                vertices, pose,
-                cx, y0, position.getZ() + min,
-                cx, y1, position.getZ() + max,
-                primary, accent, lineWidth);
-        SurfaceLinePrimitives.doubleLine(
-                vertices, pose,
-                cx, y0, position.getZ() + max,
-                cx, y1, position.getZ() + min,
-                accent, primary, lineWidth);
-    }
-
     /** Compact far-distance marker used to bound GPU vertex work. */
     public static void drawCompactFrame(
             VertexConsumer vertices,
