@@ -48,15 +48,21 @@ final class OreHighlightFailSoftContractTest {
     }
 
     @Test
-    void ordinaryRendererInvalidationIsBoundedFailSoftAndNeverReloadsResources() throws IOException {
+    void ordinaryRendererInvalidationIsOnDemandCoalescedBoundedAndFailSoft() throws IOException {
         String invalidation = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightRenderInvalidation.java");
+        String plugin = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         assertTrue(invalidation.contains("MAX_FAILURE_RETRIES = 3"));
-        assertTrue(invalidation.contains("catch (RuntimeException failure)"));
+        assertTrue(invalidation.contains("REQUESTED.compareAndSet(false, true)"));
+        assertTrue(invalidation.contains("client.execute(() -> refresh(client))"));
+        assertTrue(invalidation.contains("catch (RuntimeException | LinkageError failure)"));
         assertTrue(invalidation.contains("if (retry < MAX_FAILURE_RETRIES)"));
-        assertTrue(invalidation.contains("REQUESTED.set(true)"));
+        assertTrue(invalidation.contains("schedule();"));
         assertTrue(invalidation.contains("client.levelRenderer.allChanged()"));
+        assertFalse(invalidation.contains("ClientTickEvents"));
         assertFalse(invalidation.contains("reloadResourcePacks"));
+        assertFalse(plugin.contains("OreHighlightRenderInvalidation.register"));
     }
 
     @Test
