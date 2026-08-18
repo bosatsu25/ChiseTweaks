@@ -65,6 +65,8 @@ final class GlassHighlightArchitectureContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java"));
         String wrapper = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightGlassHighlightModel.java"));
+        String emission = Files.readString(Path.of(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java"));
         String scanner = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java"));
         String surfaceGeometry = Files.readString(Path.of(
@@ -74,7 +76,9 @@ final class GlassHighlightArchitectureContractTest {
         assertTrue(plugin.contains("FullbrightGlassHighlightModel"));
         assertTrue(wrapper.contains("super.emitQuads"));
         assertTrue(wrapper.contains("FeatureSwitches.GLASS_INSPECTION"));
-        assertTrue(wrapper.contains("FullbrightOverlayLighting.apply"));
+        assertTrue(wrapper.contains("FullbrightOverlayEmission.emit("));
+        assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
+        assertTrue(emission.contains("overlay.emitQuads(emitter, level, pos, state, random, cullTest)"));
         assertFalse(scanner.contains("GLASS_SAMPLES"));
         assertFalse(scanner.contains("GLASS_INSPECTION"));
         assertFalse(surfaceGeometry.contains("drawGlassSkin"));

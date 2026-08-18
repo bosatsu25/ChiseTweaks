@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify generated Kelp and Glass visual assets are present and structurally valid in the runtime JAR."""
+"""Verify generated Kelp and Glass visual assets are present and unchanged in the runtime JAR."""
 from __future__ import annotations
 
 import json
@@ -11,6 +11,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LIBS = ROOT / "build" / "libs"
 CI = ROOT / "build" / "ci"
+KELP_GENERATED = ROOT / "build" / "generated" / "chiseKelpVisualAssets"
+GLASS_GENERATED = ROOT / "build" / "generated" / "chiseGlassVisualAssets"
 
 KELP_MODEL = "assets/chisetweaks/models/block/visual/kelp/party_overlay.json"
 KELP_TEXTURE = "assets/chisetweaks/textures/block/visual/kelp/kelp_party.png"
@@ -36,6 +38,21 @@ def runtime_jar() -> Path:
     if len(candidates) != 1:
         raise ValueError(f"expected exactly one runtime JAR, found {len(candidates)}")
     return candidates[0]
+
+
+def generated_asset(path: str) -> Path:
+    root = KELP_GENERATED if path.startswith("assets/chisetweaks/") and "/kelp/" in path else GLASS_GENERATED
+    return root / path
+
+
+def require_generated_asset_identity(archive: zipfile.ZipFile, path: str) -> None:
+    generated = generated_asset(path)
+    if not generated.is_file():
+        raise ValueError(f"generated source asset is missing: {generated.relative_to(ROOT)}")
+    jar_bytes = archive.read(path)
+    generated_bytes = generated.read_bytes()
+    if jar_bytes != generated_bytes:
+        raise ValueError(f"runtime JAR asset differs from generated source asset: {path}")
 
 
 def png_dimensions(data: bytes) -> tuple[int, int, int, int]:
@@ -75,6 +92,9 @@ def main() -> int:
             if missing:
                 raise ValueError("missing generated visual assets: " + ", ".join(missing))
 
+            for path in REQUIRED:
+                require_generated_asset_identity(archive, path)
+
             kelp_png = png_dimensions(archive.read(KELP_TEXTURE))
             block_png = png_dimensions(archive.read(GLASS_BLOCK_TEXTURE))
             pane_png = png_dimensions(archive.read(GLASS_PANE_TEXTURE))
@@ -107,6 +127,7 @@ def main() -> int:
         CI.mkdir(parents=True, exist_ok=True)
         report = {
             "runtime_jar": jar.name,
+            "generated_asset_identity": True,
             "kelp": {"texture": KELP_TEXTURE, "dimensions": [16, 128], "frames": 8},
             "glass": {
                 "block_texture": GLASS_BLOCK_TEXTURE,
@@ -119,6 +140,7 @@ def main() -> int:
             json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print("VISUAL ASSET AUDIT: PASS")
         print(f"runtime={jar.name}")
+        print("generated_asset_identity=true")
         print("kelp=16x128_rgba/8_frames")
         print("glass=2_models/2x16x16_rgba")
         return 0

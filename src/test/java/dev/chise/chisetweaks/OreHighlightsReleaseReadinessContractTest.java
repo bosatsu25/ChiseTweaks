@@ -87,8 +87,10 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertFalse(plugin.contains("OVERRIDE_PHASE"));
         assertFalse(plugin.contains("modifyBlockModelOnLoad"));
         assertFalse(plugin.contains("SingleVariant"));
-        assertTrue(model.contains("super.emitQuads(emitter, level, pos, state, random, cullTest);"));
-        assertTrue(model.indexOf("super.emitQuads") < model.indexOf("emitter.pushTransform"));
+        int baseEmit = model.indexOf("super.emitQuads(emitter, level, pos, state, random, cullTest);");
+        int optionalEmission = model.indexOf("FullbrightOverlayEmission.emit(", baseEmit);
+        assertTrue(baseEmit >= 0);
+        assertTrue(baseEmit < optionalEmission);
         assertFalse(generator.contains("minecraft:block/diamond_ore"));
         assertFalse(generator.contains("cubeModel"));
         assertFalse(generator.contains("ancientDebrisModel"));
@@ -124,12 +126,19 @@ final class OreHighlightsReleaseReadinessContractTest {
     void overlayOwnershipIsExplicitRatherThanCoordinateInferred() throws IOException {
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
-        assertTrue(model.contains("overlay.emitQuads"));
-        assertTrue(model.contains("emitter.pushTransform"));
-        assertTrue(model.indexOf("emitter.pushTransform") < model.indexOf("overlay.emitQuads"));
-        assertTrue(model.indexOf("overlay.emitQuads") < model.indexOf("emitter.popTransform"));
+        String emission = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java");
+
+        assertTrue(model.contains("FullbrightOverlayEmission.emit("));
+        assertTrue(emission.contains("emitter.pushTransform"));
+        assertTrue(emission.contains("overlay.emitQuads"));
+        assertTrue(emission.contains("emitter.popTransform"));
+        assertTrue(emission.indexOf("emitter.pushTransform") < emission.indexOf("overlay.emitQuads"));
+        assertTrue(emission.indexOf("overlay.emitQuads") < emission.indexOf("emitter.popTransform"));
         assertFalse(model.contains("isOverlayVertex"));
         assertFalse(model.contains("OreHighlightLightingPolicy"));
+        assertFalse(emission.contains("isOverlayVertex"));
+        assertFalse(emission.contains("OreHighlightLightingPolicy"));
         assertFalse(Files.exists(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/core/vision/OreHighlightLightingPolicy.java")));
     }
@@ -140,17 +149,21 @@ final class OreHighlightsReleaseReadinessContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+        String emission = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java");
         String lighting = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayLighting.java");
         assertTrue(plugin.contains("visual-model-overlay-"));
         assertTrue(plugin.contains("zero-scan"));
-        assertTrue(model.contains("FullbrightOverlayLighting.apply(quad)"));
+        assertTrue(model.contains("FullbrightOverlayEmission.emit("));
+        assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
         assertTrue(lighting.contains("quad.emissive(true)"));
         assertTrue(lighting.contains("quad.diffuseShade(false)"));
         assertTrue(lighting.contains("quad.ambientOcclusion(TriState.FALSE)"));
         for (String forbidden : Set.of("IrisApi", "isShaderPackInUse", "shaderPackName", "ShaderRenderer")) {
             assertFalse(plugin.contains(forbidden), forbidden);
             assertFalse(model.contains(forbidden), forbidden);
+            assertFalse(emission.contains(forbidden), forbidden);
             assertFalse(lighting.contains(forbidden), forbidden);
         }
     }
