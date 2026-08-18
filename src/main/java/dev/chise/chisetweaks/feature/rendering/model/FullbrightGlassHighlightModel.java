@@ -24,6 +24,7 @@ import java.util.function.Predicate;
  * recoloring stained glass.
  */
 final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
+    private static final int MAX_LOOKUP_ATTEMPTS = 3;
     private static final AtomicBoolean LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean EMIT_FAILURE_LOGGED = new AtomicBoolean();
 
@@ -31,7 +32,7 @@ final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
     private final ExtraModelKey<BlockStateModel> overlayKey;
 
     private volatile @Nullable BlockStateModel overlay;
-    private volatile boolean overlayResolved;
+    private volatile int overlayLookupFailures;
 
     FullbrightGlassHighlightModel(
             BlockStateModel wrapped,
@@ -65,7 +66,7 @@ final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
         });
         try {
             highlightOverlay.emitQuads(emitter, level, pos, state, random, cullTest);
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException | LinkageError failure) {
             warnOnce(EMIT_FAILURE_LOGGED, "Glass Highlight overlay emission", failure);
         } finally {
             emitter.popTransform();
@@ -73,17 +74,29 @@ final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
     }
 
     private @Nullable BlockStateModel overlayModel() {
-        if (overlayResolved) return overlay;
-        BlockStateModel loaded = lookup(overlayKey);
-        overlay = loaded;
-        overlayResolved = true;
-        return loaded;
+        BlockStateModel cached = overlay;
+        if (cached != null) return cached;
+        if (overlayLookupFailures >= MAX_LOOKUP_ATTEMPTS) return null;
+
+        synchronized (this) {
+            cached = overlay;
+            if (cached != null) return cached;
+            if (overlayLookupFailures >= MAX_LOOKUP_ATTEMPTS) return null;
+
+            BlockStateModel loaded = lookup(overlayKey);
+            if (loaded != null) {
+                overlay = loaded;
+                return loaded;
+            }
+            overlayLookupFailures++;
+            return null;
+        }
     }
 
     private static @Nullable BlockStateModel lookup(ExtraModelKey<BlockStateModel> key) {
         try {
             return Minecraft.getInstance().getModelManager().getModel(key);
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException | LinkageError failure) {
             warnOnce(LOOKUP_FAILURE_LOGGED, "Glass Highlight extra-model lookup", failure);
             return null;
         }
@@ -103,7 +116,7 @@ final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
 
     private record GlassGeometryKey(Object wrappedKey, GlassHighlightTargetPolicy.Shape shape) {}
 
-    private static void warnOnce(AtomicBoolean gate, String operation, RuntimeException failure) {
+    private static void warnOnce(AtomicBoolean gate, String operation, Throwable failure) {
         if (!gate.compareAndSet(false, true)) return;
         ChiseTweaksClient.LOGGER.warn(
                 "{} failed after {}; keeping the resource-pack base glass model without the Chise overlay",
