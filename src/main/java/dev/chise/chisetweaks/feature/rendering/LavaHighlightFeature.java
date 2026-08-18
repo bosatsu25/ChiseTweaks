@@ -50,6 +50,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     private int lastScanFingerprint = Integer.MIN_VALUE;
     private ClientLevel lastLevel;
     private boolean renderQuarantined;
+    private boolean runtimeQuarantined;
 
     @Override
     public String getId() {
@@ -75,7 +76,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
             resetScanState();
             return;
         }
-        if (renderQuarantined) return;
+        if (isSessionQuarantined()) return;
         if (client == null || client.player == null || client.level == null) {
             resetScanState();
             return;
@@ -225,7 +226,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     }
 
     private void render(LevelRenderContext context) {
-        if (!isEnabled() || renderQuarantined) return;
+        if (!isEnabled() || isSessionQuarantined()) return;
         List<BlockPos> snapshot = highlightedSources;
         if (snapshot.isEmpty()) return;
         try {
@@ -233,7 +234,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         } catch (RuntimeException | LinkageError failure) {
             renderQuarantined = true;
             clearTargets();
-            disableAfterRenderFailure();
+            disableAfterQuarantine();
             ChiseTweaksClient.LOGGER.error(
                     "Lava Source Highlight rendering was quarantined after {}",
                     failure.getClass().getSimpleName());
@@ -249,13 +250,13 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         sourceRenderer.render(context, snapshot);
     }
 
-    private void disableAfterRenderFailure() {
+    private void disableAfterQuarantine() {
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         if (!local.lavaHighlightEnabled) return;
         local.lavaHighlightEnabled = false;
         if (!local.save()) {
             ChiseTweaksClient.LOGGER.warn(
-                    "Lava Source Highlight quarantine could not be persisted; it remains disabled for this session");
+                    "Lava Source Highlight quarantine could not be persisted; it remains disabled for this client process");
         }
     }
 
@@ -282,15 +283,29 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         return result;
     }
 
+    private boolean isSessionQuarantined() {
+        return runtimeQuarantined || renderQuarantined;
+    }
+
+    @Override
+    public void onQuarantined(Minecraft client) {
+        runtimeQuarantined = true;
+        resetScanState();
+        disableAfterQuarantine();
+    }
+
     @Override
     public void resetSession(Minecraft client) {
         resetScanState();
+        // Render-path failures may be transient across world/session setup. Manager-owned runtime
+        // quarantine is process-lifetime and therefore intentionally does not reset here.
         renderQuarantined = false;
     }
 
     @Override
     public boolean isEnabled() {
         return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
+                && !isSessionQuarantined()
                 && LocalFeatureConfig.getInstance().lavaHighlightEnabled;
     }
 
@@ -299,13 +314,13 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         boolean effective = PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
                 && enabled
-                && !renderQuarantined;
+                && !isSessionQuarantined();
         local.lavaHighlightEnabled = effective;
         local.save();
         resetScanState();
-        if (enabled && renderQuarantined) {
+        if (enabled && isSessionQuarantined()) {
             ChiseTweaksClient.LOGGER.warn(
-                    "Lava Source Highlight remains quarantined until the next client session");
+                    "Lava Source Highlight remains quarantined until it is safe to retry");
         }
     }
 }
