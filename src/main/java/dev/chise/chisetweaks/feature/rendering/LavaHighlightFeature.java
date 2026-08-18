@@ -261,6 +261,16 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         }
     }
 
+    private void closeRendererAfterRuntimeQuarantine() {
+        try {
+            sourceRenderer.close();
+        } catch (RuntimeException | LinkageError cleanupFailure) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Lava Source Highlight renderer close failed after {}",
+                    cleanupFailure.getClass().getSimpleName());
+        }
+    }
+
     private void disableAfterQuarantine() {
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         if (!local.lavaHighlightEnabled) return;
@@ -302,6 +312,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     public void onQuarantined(Minecraft client) {
         runtimeQuarantined = true;
         resetScanState();
+        closeRendererAfterRuntimeQuarantine();
         disableAfterQuarantine();
     }
 
