@@ -24,6 +24,18 @@ final class PostGlassRegressionHardeningContractTest {
     }
 
     @Test
+    void lockedBuilderFocusDoesNotCompileRegistryRulesOrWireCallbacksAtStartup() throws IOException {
+        String config = source("src/main/java/dev/chise/chisetweaks/config/FeatureConfig.java");
+        String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
+        for (String source : new String[] {config, bindings}) {
+            assertTrue(source.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)"));
+            assertTrue(source.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES)"));
+        }
+        assertTrue(config.contains("if (builderFocusAvailable()) BuilderFocusVisibility.applyConfig();"));
+        assertTrue(bindings.contains("if (builderFocusAvailable())"));
+    }
+
+    @Test
     void lockedCompatibilitySensitiveMixinsAreFailClosedBeforeApplication() throws IOException {
         String config = source("src/main/resources/chisetweaks.features.mixins.json");
         String plugin = source("src/main/java/dev/chise/chisetweaks/mixin/PreReleaseMixinConfigPlugin.java");
