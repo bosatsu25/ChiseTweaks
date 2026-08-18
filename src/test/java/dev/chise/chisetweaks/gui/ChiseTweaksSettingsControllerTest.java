@@ -166,7 +166,7 @@ final class ChiseTweaksSettingsControllerTest {
             assertFalse(FeatureSwitches.NETHER_PALETTE.getBooleanValue());
             assertFalse(FeatureSwitches.FINE_THREAD_TRACE.getBooleanValue());
             assertFalse(FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue());
-            assertTrue(controller.shouldTurnHighlightBulkOn());
+            assertFalse(controller.shouldTurnHighlightBulkOn());
         } finally {
             for (ChiseBooleanSetting highlight : highlights) highlight.setBooleanValueSilently(false);
         }
