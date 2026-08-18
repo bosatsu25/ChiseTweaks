@@ -52,7 +52,7 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
     private static final float BOX_INSET = 0.018f;
 
-    private final ByteBufferBuilder allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
+    private ByteBufferBuilder allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
     private BufferBuilder buffer;
     private MappableRingBuffer vertexBuffer;
     private boolean closed;
@@ -168,6 +168,18 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
             renderPass.setIndexBuffer(indices, indexType);
             renderPass.drawIndexed(0 / format.getVertexSize(), 0, drawParameters.indexCount(), 1);
         }
+    }
+
+    /** Drops all transient CPU/GPU workspace so a later session never inherits a failed frame. */
+    void resetAfterFailure() {
+        if (closed) return;
+        buffer = null;
+        if (vertexBuffer != null) {
+            vertexBuffer.close();
+            vertexBuffer = null;
+        }
+        allocator.close();
+        allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
     }
 
     private static void drawWireBox(
