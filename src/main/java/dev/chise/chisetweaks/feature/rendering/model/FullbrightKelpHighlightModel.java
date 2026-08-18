@@ -27,6 +27,7 @@ final class FullbrightKelpHighlightModel extends WrapperBlockStateModel {
 
     private volatile @Nullable BlockStateModel overlay;
     private volatile int overlayLookupFailures;
+    private volatile boolean emissionQuarantined;
 
     FullbrightKelpHighlightModel(BlockStateModel wrapped) {
         super(wrapped);
@@ -41,21 +42,16 @@ final class FullbrightKelpHighlightModel extends WrapperBlockStateModel {
             RandomSource random,
             Predicate<@Nullable Direction> cullTest) {
         super.emitQuads(emitter, level, pos, state, random, cullTest);
-        if (!FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue()) return;
+        if (!FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue() || emissionQuarantined) return;
 
         BlockStateModel partyOverlay = overlayModel();
         if (partyOverlay == null) return;
 
-        emitter.pushTransform(quad -> {
-            FullbrightOverlayLighting.apply(quad);
-            return true;
-        });
-        try {
-            partyOverlay.emitQuads(emitter, level, pos, state, random, cullTest);
-        } catch (RuntimeException | LinkageError failure) {
+        Throwable failure = FullbrightOverlayEmission.emit(
+                emitter, partyOverlay, level, pos, state, random, cullTest);
+        if (failure != null) {
+            emissionQuarantined = true;
             warnOnce(EMIT_FAILURE_LOGGED, "Kelp Highlight overlay emission", failure);
-        } finally {
-            emitter.popTransform();
         }
     }
 
@@ -96,7 +92,11 @@ final class FullbrightKelpHighlightModel extends WrapperBlockStateModel {
             BlockState state,
             RandomSource random) {
         Object wrappedKey = wrapped.createGeometryKey(level, pos, state, random);
-        if (wrappedKey == null || !FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue()) return wrappedKey;
+        if (wrappedKey == null
+                || !FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue()
+                || emissionQuarantined) {
+            return wrappedKey;
+        }
         return new KelpGeometryKey(wrappedKey);
     }
 
