@@ -178,7 +178,7 @@ public final class ChiseOreCompatibilityScreen extends Screen {
         if (styleButton != null) styleButton.setMessage(styleMessage());
         if (addButton != null) {
             String value = idBox == null || idBox.getValue() == null ? "" : idBox.getValue().trim();
-            addButton.active = !value.isEmpty() && entries.size() < OreHighlightCompatibilityConfig.MAX_ENTRIES;
+            addButton.active = canSubmitEntry(value, entries);
         }
         if (clearButton != null) clearButton.active = !entries.isEmpty();
         int maxPage = entries.isEmpty() ? 0 : (entries.size() - 1) / pageSize;
@@ -190,6 +190,20 @@ public final class ChiseOreCompatibilityScreen extends Screen {
             button.visible = first + slot < entries.size();
             button.active = button.visible;
         }
+    }
+
+    static boolean canSubmitEntry(
+            String rawValue,
+            List<OreHighlightCompatibilityConfig.Entry> entries) {
+        if (rawValue == null || rawValue.isBlank()) return false;
+        String normalized = rawValue.trim().toLowerCase(Locale.ROOT);
+        if (entries != null) {
+            for (OreHighlightCompatibilityConfig.Entry entry : entries) {
+                if (entry != null && normalized.equals(entry.blockId())) return true;
+            }
+        }
+        int size = entries == null ? 0 : entries.size();
+        return size < OreHighlightCompatibilityConfig.MAX_ENTRIES;
     }
 
     private Component styleMessage() {
