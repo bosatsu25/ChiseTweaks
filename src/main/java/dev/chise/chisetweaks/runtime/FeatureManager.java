@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.runtime;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
+import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
 import dev.chise.chisetweaks.feature.Feature;
 import dev.chise.chisetweaks.feature.SessionAwareFeature;
@@ -43,8 +44,12 @@ public final class FeatureManager {
     public synchronized void init() {
         if (initialized) return;
 
-        registerFeature(new LavaHighlightFeature());
-        registerRuntimeComponent(new WorksiteVisibilityEngine());
+        if (PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
+            registerFeature(new LavaHighlightFeature());
+        }
+        if (hasAvailableWorksiteVisibilityFeature()) {
+            registerRuntimeComponent(new WorksiteVisibilityEngine());
+        }
 
         for (Feature feature : features.values()) initFeature(feature);
         for (RuntimeComponent component : runtimeComponents.values()) initRuntimeComponent(component);
@@ -52,12 +57,14 @@ public final class FeatureManager {
         tickSchedule = mutableTickSlots.toArray(TickSlot[]::new);
         sessionSchedule = mutableSessionComponents.toArray(SessionAwareRuntimeComponent[]::new);
 
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            TickSlot[] schedule = tickSchedule;
-            for (int index = 0; index < schedule.length; index++) {
-                schedule[index].runForTick(client);
-            }
-        });
+        if (tickSchedule.length != 0) {
+            ClientTickEvents.END_CLIENT_TICK.register(client -> {
+                TickSlot[] schedule = tickSchedule;
+                for (int index = 0; index < schedule.length; index++) {
+                    schedule[index].runForTick(client);
+                }
+            });
+        }
         initialized = true;
     }
 
@@ -112,6 +119,16 @@ public final class FeatureManager {
                         failure.getClass().getSimpleName());
             }
         }
+    }
+
+    private static boolean hasAvailableWorksiteVisibilityFeature() {
+        for (FeatureDefinition definition : FeatureDefinition.VALUES) {
+            if (definition.isWorksiteVisibilityMode()
+                    && PreReleaseFeaturePolicy.isAvailable(definition)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void initFeature(Feature feature) {

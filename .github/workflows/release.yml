@@ -103,6 +103,10 @@ jobs:
             echo 'Verified runtime or sources JAR is missing from the downloaded artifact.' >&2
             exit 1
           fi
+          if [[ ! -f visual-asset-audit.json ]]; then
+            echo 'Verified visual asset audit evidence is missing from the downloaded artifact.' >&2
+            exit 1
+          fi
 
           actual_runtime_sha256="$(sha256sum "$runtime_jar" | cut -d' ' -f1)"
           if [[ "$actual_runtime_sha256" != "$runtime_sha256" ]]; then
@@ -157,9 +161,10 @@ jobs:
           - Java: \`25\`
           - Runtime JAR: \`${RUNTIME_JAR}\`
           - SHA-256: \`${RUNTIME_SHA256}\`
+          - Visual asset audit: \`PASS\`
           - Server installation required: \`false\`
 
-          The sources JAR, checksums, artifact audit and quality summary are attached.
+          The sources JAR, checksums, artifact audit, visual asset audit and quality summary are attached.
           EOF
 
       - name: Create version tag and GitHub Release
@@ -177,6 +182,7 @@ jobs:
             "release/$SOURCES_JAR" \
             "release/SHA256SUMS.txt" \
             "release/artifact-audit.json" \
+            "release/visual-asset-audit.json" \
             "release/quality-summary.md" \
             --target "$GITHUB_SHA" \
             --title "ChiseTweaks ${DISPLAY_VERSION} — Minecraft ${MC_VERSION}" \

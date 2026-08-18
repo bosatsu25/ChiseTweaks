@@ -14,7 +14,8 @@ permissions:
 
 concurrency:
   group: chisetweaks-ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel obsolete PR validation, but never interrupt a verified main publication midway.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:
@@ -113,6 +114,10 @@ jobs:
             echo 'Verified runtime or sources JAR is missing.' >&2
             exit 1
           fi
+          if [[ ! -f visual-asset-audit.json ]]; then
+            echo 'Verified visual asset audit evidence is missing.' >&2
+            exit 1
+          fi
 
           actual_runtime_sha256="$(sha256sum "$runtime_jar" | cut -d' ' -f1)"
           if [[ "$actual_runtime_sha256" != "$runtime_sha256" ]]; then
@@ -158,6 +163,7 @@ jobs:
             printf -- '- Fabric Loader: `0.19.3`\n'
             printf -- '- Runtime JAR: `%s`\n' "$RUNTIME_JAR"
             printf -- '- Runtime SHA-256: `%s`\n' "$RUNTIME_SHA256"
+            printf -- '- Visual asset audit: `PASS`\n'
             printf -- '- Server installation required: `false`\n'
             printf '\n'
             printf '%s\n' 'This verified build is immutable and is **not the manually approved stable release**. Stable releases still require Prism gameplay smoke testing through the separate Official Release workflow.'
@@ -289,11 +295,12 @@ jobs:
           ensure_asset "release/$SOURCES_JAR"
           ensure_asset 'release/SHA256SUMS.txt'
           ensure_asset 'release/artifact-audit.json'
+          ensure_asset 'release/visual-asset-audit.json'
           ensure_asset 'release/quality-summary.md'
 
           retry gh api "repos/${GH_REPO}/releases/tags/${TAG}" > /tmp/verified-release.json
 
-          for expected in "$RUNTIME_JAR" "$SOURCES_JAR" SHA256SUMS.txt artifact-audit.json quality-summary.md; do
+          for expected in "$RUNTIME_JAR" "$SOURCES_JAR" SHA256SUMS.txt artifact-audit.json visual-asset-audit.json quality-summary.md; do
             if ! jq -e --arg name "$expected" '.assets[]? | select(.name == $name)' /tmp/verified-release.json >/dev/null; then
               echo "Verified release is missing expected asset '$expected'." >&2
               exit 1

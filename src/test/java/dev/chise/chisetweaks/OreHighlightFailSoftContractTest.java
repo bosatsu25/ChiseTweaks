@@ -26,39 +26,57 @@ final class OreHighlightFailSoftContractTest {
     }
 
     @Test
-    void optionalOverlayLookupAndEmissionCannotThrowIntoChunkCompilation() throws IOException {
+    void optionalOverlayLookupAndEmissionAreBoundedRecoverableAndFailSoft() throws IOException {
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
-        assertTrue(model.contains("catch (RuntimeException failure)"));
-        assertTrue(model.contains("LOOKUP_FAILURE_LOGGED"));
-        assertTrue(model.contains("EMIT_FAILURE_LOGGED"));
+        String kelp = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightKelpHighlightModel.java");
+        String glass = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightGlassHighlightModel.java");
+        for (String wrapper : new String[] {model, kelp, glass}) {
+            assertTrue(wrapper.contains("MAX_LOOKUP_ATTEMPTS = 3"));
+            assertTrue(wrapper.contains("catch (RuntimeException | LinkageError failure)"));
+            assertTrue(wrapper.contains("LOOKUP_FAILURE_LOGGED"));
+            assertTrue(wrapper.contains("EMIT_FAILURE_LOGGED"));
+            assertTrue(wrapper.contains("synchronized (this)"));
+            assertFalse(wrapper.contains("overlayResolved"));
+            assertTrue(wrapper.contains("emitter.popTransform();"));
+        }
         assertTrue(model.contains("keeping the resource-pack base model without the Chise overlay"));
-        assertTrue(model.contains("emitter.popTransform();"));
+        assertTrue(kelp.contains("keeping the resource-pack base kelp model without the Chise overlay"));
+        assertTrue(glass.contains("keeping the resource-pack base glass model without the Chise overlay"));
     }
 
     @Test
-    void ordinaryRendererInvalidationIsBoundedFailSoftAndNeverReloadsResources() throws IOException {
+    void ordinaryRendererInvalidationIsOnDemandCoalescedBoundedAndFailSoft() throws IOException {
         String invalidation = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightRenderInvalidation.java");
+        String plugin = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         assertTrue(invalidation.contains("MAX_FAILURE_RETRIES = 3"));
-        assertTrue(invalidation.contains("catch (RuntimeException failure)"));
+        assertTrue(invalidation.contains("REQUESTED.compareAndSet(false, true)"));
+        assertTrue(invalidation.contains("client.execute(() -> refresh(client))"));
+        assertTrue(invalidation.contains("catch (RuntimeException | LinkageError failure)"));
         assertTrue(invalidation.contains("if (retry < MAX_FAILURE_RETRIES)"));
-        assertTrue(invalidation.contains("REQUESTED.set(true)"));
+        assertTrue(invalidation.contains("schedule();"));
         assertTrue(invalidation.contains("client.levelRenderer.allChanged()"));
+        assertFalse(invalidation.contains("ClientTickEvents"));
         assertFalse(invalidation.contains("reloadResourcePacks"));
+        assertFalse(plugin.contains("OreHighlightRenderInvalidation.register"));
     }
 
     @Test
-    void rareModelMembershipReloadIsCoalescedAndFailSoft() throws IOException {
+    void rareModelMembershipReloadStaysCoalescedUntilAsyncCompletion() throws IOException {
         String reload = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java");
         assertTrue(reload.contains("AtomicBoolean REQUESTED"));
         assertTrue(reload.contains("compareAndSet(false, true)"));
         assertTrue(reload.contains("ChiseVisualModelPlugin.isModelPipelineReady()"));
-        assertTrue(reload.contains("client.execute"));
-        assertTrue(reload.contains("client.reloadResourcePacks()"));
-        assertTrue(reload.contains("catch (RuntimeException failure)"));
+        assertTrue(reload.contains("client.execute(() -> startReload(client))"));
+        assertTrue(reload.contains("client.reloadResourcePacks().whenComplete"));
+        assertTrue(reload.contains("catch (RuntimeException | LinkageError failure)"));
         assertTrue(reload.contains("REQUESTED.set(false)"));
+        assertFalse(reload.contains("finally {\n                REQUESTED.set(false);\n            }"));
     }
 
     private static String source(String relativePath) throws IOException {

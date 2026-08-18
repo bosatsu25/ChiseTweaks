@@ -24,7 +24,6 @@ public final class ChiseVisualModelPlugin {
 
     public static void register() {
         OreHighlightCompatibilityConfig.load();
-        OreHighlightRenderInvalidation.register();
 
         PreparableModelLoadingPlugin.register(
                 (sharedState, executor) -> CompletableFuture.supplyAsync(

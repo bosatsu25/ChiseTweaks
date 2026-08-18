@@ -29,16 +29,32 @@ public final class OreHighlightModelReload {
             return;
         }
 
-        client.execute(() -> {
-            try {
-                client.reloadResourcePacks();
-            } catch (RuntimeException failure) {
-                ChiseTweaksClient.LOGGER.warn(
-                        "Ore Highlight model reload failed after {}; keeping the current baked models",
-                        failure.getClass().getSimpleName());
-            } finally {
-                REQUESTED.set(false);
-            }
-        });
+        try {
+            client.execute(() -> startReload(client));
+        } catch (RuntimeException | LinkageError failure) {
+            REQUESTED.set(false);
+            warnFailure(failure);
+        }
+    }
+
+    private static void startReload(Minecraft client) {
+        try {
+            client.reloadResourcePacks().whenComplete((ignored, failure) -> {
+                try {
+                    if (failure != null) warnFailure(failure);
+                } finally {
+                    REQUESTED.set(false);
+                }
+            });
+        } catch (RuntimeException | LinkageError failure) {
+            REQUESTED.set(false);
+            warnFailure(failure);
+        }
+    }
+
+    private static void warnFailure(Throwable failure) {
+        ChiseTweaksClient.LOGGER.warn(
+                "Ore Highlight model reload failed after {}; keeping the current baked models",
+                failure.getClass().getSimpleName());
     }
 }

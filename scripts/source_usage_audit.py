@@ -54,6 +54,9 @@ def fabric_reflective_classes() -> set[str]:
             continue
         config = read_json(RESOURCES / config_name)
         package = config.get("package", "")
+        plugin = config.get("plugin")
+        if isinstance(plugin, str) and plugin.strip():
+            result.add(plugin.strip())
         for section in ("mixins", "client", "server"):
             for item in config.get(section, []):
                 if isinstance(item, str):

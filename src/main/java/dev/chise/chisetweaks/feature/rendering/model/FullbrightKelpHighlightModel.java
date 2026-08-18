@@ -21,11 +21,12 @@ import java.util.function.Predicate;
  * crossed planes in the same baked-model rendering pipeline used by Ore Highlights.
  */
 final class FullbrightKelpHighlightModel extends WrapperBlockStateModel {
+    private static final int MAX_LOOKUP_ATTEMPTS = 3;
     private static final AtomicBoolean LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean EMIT_FAILURE_LOGGED = new AtomicBoolean();
 
     private volatile @Nullable BlockStateModel overlay;
-    private volatile boolean overlayResolved;
+    private volatile int overlayLookupFailures;
 
     FullbrightKelpHighlightModel(BlockStateModel wrapped) {
         super(wrapped);
@@ -51,7 +52,7 @@ final class FullbrightKelpHighlightModel extends WrapperBlockStateModel {
         });
         try {
             partyOverlay.emitQuads(emitter, level, pos, state, random, cullTest);
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException | LinkageError failure) {
             warnOnce(EMIT_FAILURE_LOGGED, "Kelp Highlight overlay emission", failure);
         } finally {
             emitter.popTransform();
@@ -59,17 +60,29 @@ final class FullbrightKelpHighlightModel extends WrapperBlockStateModel {
     }
 
     private @Nullable BlockStateModel overlayModel() {
-        if (overlayResolved) return overlay;
-        BlockStateModel loaded = lookup();
-        overlay = loaded;
-        overlayResolved = true;
-        return loaded;
+        BlockStateModel cached = overlay;
+        if (cached != null) return cached;
+        if (overlayLookupFailures >= MAX_LOOKUP_ATTEMPTS) return null;
+
+        synchronized (this) {
+            cached = overlay;
+            if (cached != null) return cached;
+            if (overlayLookupFailures >= MAX_LOOKUP_ATTEMPTS) return null;
+
+            BlockStateModel loaded = lookup();
+            if (loaded != null) {
+                overlay = loaded;
+                return loaded;
+            }
+            overlayLookupFailures++;
+            return null;
+        }
     }
 
     private static @Nullable BlockStateModel lookup() {
         try {
             return Minecraft.getInstance().getModelManager().getModel(KelpHighlightOverlayCatalog.KEY);
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException | LinkageError failure) {
             warnOnce(LOOKUP_FAILURE_LOGGED, "Kelp Highlight extra-model lookup", failure);
             return null;
         }
@@ -89,7 +102,7 @@ final class FullbrightKelpHighlightModel extends WrapperBlockStateModel {
 
     private record KelpGeometryKey(Object wrappedKey) {}
 
-    private static void warnOnce(AtomicBoolean gate, String operation, RuntimeException failure) {
+    private static void warnOnce(AtomicBoolean gate, String operation, Throwable failure) {
         if (!gate.compareAndSet(false, true)) return;
         ChiseTweaksClient.LOGGER.warn(
                 "{} failed after {}; keeping the resource-pack base kelp model without the Chise overlay",
