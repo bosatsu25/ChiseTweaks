@@ -120,9 +120,44 @@ jobs:
             exit 1
           fi
 
+          fabric_metadata="$(unzip -p "$runtime_jar" fabric.mod.json)"
+          if [[ -z "$fabric_metadata" ]]; then
+            echo 'Verified runtime JAR does not contain fabric.mod.json.' >&2
+            exit 1
+          fi
+          fabric_version="$(jq -r '.version // empty' <<<"$fabric_metadata")"
+          fabric_mc="$(jq -r '.depends.minecraft // empty' <<<"$fabric_metadata")"
+          loader_constraint="$(jq -r '.depends.fabricloader // empty' <<<"$fabric_metadata")"
+          fabric_api_constraint="$(jq -r '.depends["fabric-api"] // empty' <<<"$fabric_metadata")"
+          java_constraint="$(jq -r '.depends.java // empty' <<<"$fabric_metadata")"
+          environment="$(jq -r '.environment // empty' <<<"$fabric_metadata")"
+          server_required="$(jq -r '.custom.chisetweaks.serverInstallationRequired // empty' <<<"$fabric_metadata")"
+
+          for value in "$fabric_version" "$fabric_mc" "$loader_constraint" "$fabric_api_constraint" "$java_constraint" "$environment" "$server_required"; do
+            if [[ -z "$value" ]]; then
+              echo 'fabric.mod.json release metadata is incomplete.' >&2
+              exit 1
+            fi
+          done
+          if [[ "$fabric_version" != "$version" ]]; then
+            echo "fabric.mod.json version '$fabric_version' does not match artifact version '$version'." >&2
+            exit 1
+          fi
+          if [[ "$fabric_mc" != "$mc_version" ]]; then
+            echo "fabric.mod.json Minecraft dependency '$fabric_mc' does not match audited '$mc_version'." >&2
+            exit 1
+          fi
+          if [[ "$environment" != 'client' || "$server_required" != 'false' ]]; then
+            echo 'Verified runtime no longer satisfies the client-only release contract.' >&2
+            exit 1
+          fi
+
           display_version="${version%%+mc*}"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "minecraft_version=$mc_version" >> "$GITHUB_OUTPUT"
+          echo "loader_constraint=$loader_constraint" >> "$GITHUB_OUTPUT"
+          echo "fabric_api_constraint=$fabric_api_constraint" >> "$GITHUB_OUTPUT"
+          echo "java_constraint=$java_constraint" >> "$GITHUB_OUTPUT"
           echo "runtime_jar=$runtime_jar" >> "$GITHUB_OUTPUT"
           echo "sources_jar=$sources_jar" >> "$GITHUB_OUTPUT"
           echo "runtime_sha256=$runtime_sha256" >> "$GITHUB_OUTPUT"
@@ -145,6 +180,9 @@ jobs:
         env:
           VERSION: ${{ steps.metadata.outputs.version }}
           MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
+          LOADER_CONSTRAINT: ${{ steps.metadata.outputs.loader_constraint }}
+          FABRIC_API_CONSTRAINT: ${{ steps.metadata.outputs.fabric_api_constraint }}
+          JAVA_CONSTRAINT: ${{ steps.metadata.outputs.java_constraint }}
           RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
           RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
           CI_RUN_ID: ${{ steps.metadata.outputs.ci_run_id }}
@@ -152,13 +190,15 @@ jobs:
           cat > release-notes.md <<EOF
           ## ChiseTweaks ${VERSION}
 
-          Verified release for **Minecraft ${MC_VERSION}**, **Fabric Loader 0.19.3** and **Java 25**.
+          Verified release for **Minecraft ${MC_VERSION}**, **Fabric Loader ${LOADER_CONSTRAINT}**, **Fabric API ${FABRIC_API_CONSTRAINT}** and **Java ${JAVA_CONSTRAINT}**.
 
           This release reuses the exact artifact produced by successful main-branch CI run **${CI_RUN_ID}** for commit \`${GITHUB_SHA}\`.
           CI is not executed a second time during release. A manual Prism gameplay smoke test is required before publishing.
 
           - Minecraft: \`${MC_VERSION}\`
-          - Java: \`25\`
+          - Fabric Loader: \`${LOADER_CONSTRAINT}\`
+          - Fabric API: \`${FABRIC_API_CONSTRAINT}\`
+          - Java: \`${JAVA_CONSTRAINT}\`
           - Runtime JAR: \`${RUNTIME_JAR}\`
           - SHA-256: \`${RUNTIME_SHA256}\`
           - Visual asset audit: \`PASS\`
