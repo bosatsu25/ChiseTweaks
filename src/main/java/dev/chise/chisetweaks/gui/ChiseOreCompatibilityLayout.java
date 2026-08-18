@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.gui;
 /** Pure responsive geometry for the currently user-operable modded-ore compatibility editor. */
 public final class ChiseOreCompatibilityLayout {
     private static final int MAX_PANEL_WIDTH = 760;
+    private static final int MIN_STANDARD_PANEL_WIDTH = 342;
     private static final int ROW_HEIGHT = 24;
 
     private ChiseOreCompatibilityLayout() {}
@@ -13,7 +14,7 @@ public final class ChiseOreCompatibilityLayout {
         int margin = safeWidth >= 80 ? Math.min(12, Math.max(4, safeWidth / 24)) : 0;
         int panelWidth = Math.max(1, Math.min(MAX_PANEL_WIDTH, safeWidth - margin * 2));
         int panelX = Math.max(0, (safeWidth - panelWidth) / 2);
-        boolean compact = panelWidth < 336;
+        boolean compact = panelWidth < MIN_STANDARD_PANEL_WIDTH;
 
         Rect idInput;
         Rect style;
