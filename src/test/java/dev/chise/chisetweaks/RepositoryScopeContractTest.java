@@ -68,6 +68,25 @@ final class RepositoryScopeContractTest {
     }
 
     @Test
+    void lavaSourceHighlightGuardsSessionConfigChunkEdgesAndRenderFailures() throws IOException {
+        String feature = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"));
+        String renderer = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java"));
+
+        assertTrue(feature.contains("lastLevel != client.level"));
+        assertTrue(feature.contains("client.level != lastLevel"));
+        assertTrue(feature.contains("fingerprint != lastScanFingerprint"));
+        assertTrue(feature.contains("hasKnownSourceBoundary"));
+        assertTrue(feature.contains("hasChunk(neighborChunkX, neighborChunkZ)"));
+        assertTrue(feature.contains("local.lavaHighlightEnabled = false"));
+        assertTrue(feature.contains("enabled\n                && !renderQuarantined"));
+        assertTrue(renderer.contains("if (!geometryComplete) buffer = null"));
+        assertTrue(renderer.contains("builtBuffer = buffer.buildOrThrow()"));
+        assertTrue(renderer.contains("Never reuse a builder after either a successful build"));
+    }
+
+    @Test
     void fabricMetadataRemainsStrictlyClientOnlyAndStandalone() throws IOException {
         JsonObject root = JsonParser.parseString(Files.readString(
                 ROOT.resolve("src/main/resources/fabric.mod.json"))).getAsJsonObject();
