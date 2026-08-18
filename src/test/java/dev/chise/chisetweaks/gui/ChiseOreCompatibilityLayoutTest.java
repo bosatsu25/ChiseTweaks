@@ -27,6 +27,20 @@ final class ChiseOreCompatibilityLayoutTest {
     }
 
     @Test
+    void old336PixelPanelBoundaryUsesCompactFooterInsteadOfOverlappingButtons() {
+        var layout = ChiseOreCompatibilityLayout.calculate(360, 240);
+        assertTrue(layout.compact());
+        assertContained(layout);
+    }
+
+    @Test
+    void firstStandardWidthHasNoFooterOverlap() {
+        var layout = ChiseOreCompatibilityLayout.calculate(366, 240);
+        assertFalse(layout.compact());
+        assertContained(layout);
+    }
+
+    @Test
     void veryNarrowPolicyStillKeepsInteractiveRectsInsideThePanel() {
         var layout = ChiseOreCompatibilityLayout.calculate(220, 200);
         assertTrue(layout.compact());
