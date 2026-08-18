@@ -70,11 +70,14 @@ final class KelpHighlightStyleContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightKelpHighlightModel.java"));
         String oreModel = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java"));
+        String emission = Files.readString(Path.of(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java"));
         String lighting = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayLighting.java"));
 
-        assertTrue(kelpModel.contains("FullbrightOverlayLighting.apply(quad)"));
-        assertTrue(oreModel.contains("FullbrightOverlayLighting.apply(quad)"));
+        assertTrue(kelpModel.contains("FullbrightOverlayEmission.emit("));
+        assertTrue(oreModel.contains("FullbrightOverlayEmission.emit("));
+        assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
         assertTrue(lighting.contains("quad.emissive(true)"));
         assertTrue(lighting.contains("quad.diffuseShade(false)"));
         assertTrue(lighting.contains("ambientOcclusion(TriState.FALSE)"));
