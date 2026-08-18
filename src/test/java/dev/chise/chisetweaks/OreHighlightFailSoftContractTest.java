@@ -19,7 +19,7 @@ final class OreHighlightFailSoftContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
         int baseEmit = model.indexOf("super.emitQuads(emitter, level, pos, state, random, cullTest);");
         int optionalBranch = model.indexOf("if (!highlightEnabled()) return;", baseEmit);
-        int overlayEmit = model.indexOf("overlay.emitQuads(emitter, level, pos, state, random, cullTest);");
+        int overlayEmit = model.indexOf("FullbrightOverlayEmission.emit(", optionalBranch);
         assertTrue(baseEmit >= 0);
         assertTrue(baseEmit < optionalBranch);
         assertTrue(optionalBranch < overlayEmit);
@@ -33,6 +33,9 @@ final class OreHighlightFailSoftContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightKelpHighlightModel.java");
         String glass = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightGlassHighlightModel.java");
+        String emission = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java");
+
         for (String wrapper : new String[] {model, kelp, glass}) {
             assertTrue(wrapper.contains("MAX_LOOKUP_ATTEMPTS = 3"));
             assertTrue(wrapper.contains("catch (RuntimeException | LinkageError failure)"));
@@ -40,8 +43,17 @@ final class OreHighlightFailSoftContractTest {
             assertTrue(wrapper.contains("EMIT_FAILURE_LOGGED"));
             assertTrue(wrapper.contains("synchronized (this)"));
             assertFalse(wrapper.contains("overlayResolved"));
-            assertTrue(wrapper.contains("emitter.popTransform();"));
+            assertTrue(wrapper.contains("FullbrightOverlayEmission.emit("));
+            assertTrue(wrapper.contains("Quarantined") || wrapper.contains("quarantined"));
         }
+
+        assertTrue(emission.contains("boolean pushed = false"));
+        assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
+        assertTrue(emission.contains("overlay.emitQuads(emitter, level, pos, state, random, cullTest)"));
+        assertTrue(emission.contains("catch (RuntimeException | LinkageError emissionFailure)"));
+        assertTrue(emission.contains("finally"));
+        assertTrue(emission.contains("emitter.popTransform();"));
+
         assertTrue(model.contains("keeping the resource-pack base model without the Chise overlay"));
         assertTrue(kelp.contains("keeping the resource-pack base kelp model without the Chise overlay"));
         assertTrue(glass.contains("keeping the resource-pack base glass model without the Chise overlay"));
