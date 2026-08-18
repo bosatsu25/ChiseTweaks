@@ -1,12 +1,15 @@
 package dev.chise.chisetweaks.feature.rendering.model;
 
 import dev.chise.chisetweaks.api.ore.OreHighlightStyle;
+import net.minecraft.server.packs.resources.ResourceManager;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Proxy;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class OreHighlightResourceCompatibilityLoaderTest {
     @Test
@@ -46,5 +49,41 @@ final class OreHighlightResourceCompatibilityLoaderTest {
                           {"block":"minecraft:diamond_ore","style":"diamond"}
                         ]}
                         """));
+    }
+
+    @Test
+    void compatibilityResourceRejectsTypeConfusion() {
+        assertThrows(IllegalArgumentException.class, () ->
+                OreHighlightResourceCompatibilityLoader.parseDocument("""
+                        {"schemaVersion":"1","entries":[]}
+                        """));
+        assertThrows(IllegalArgumentException.class, () ->
+                OreHighlightResourceCompatibilityLoader.parseDocument("""
+                        {"schemaVersion":1,"entries":[{"block":123,"style":"iron"}]}
+                        """));
+        assertThrows(IllegalArgumentException.class, () ->
+                OreHighlightResourceCompatibilityLoader.parseDocument("""
+                        {"schemaVersion":1,"entries":[{"block":"example:tin_ore","style":1}]}
+                        """));
+    }
+
+    @Test
+    void compatibilityResourceRejectsNonIntegralSchemaVersion() {
+        assertThrows(IllegalArgumentException.class, () ->
+                OreHighlightResourceCompatibilityLoader.parseDocument("""
+                        {"schemaVersion":1.5,"entries":[]}
+                        """));
+    }
+
+    @Test
+    void discoveryFailureReturnsNoMappingsInsteadOfFailingResourceReload() {
+        ResourceManager failing = (ResourceManager) Proxy.newProxyInstance(
+                ResourceManager.class.getClassLoader(),
+                new Class<?>[] {ResourceManager.class},
+                (proxy, method, arguments) -> {
+                    throw new IllegalStateException("synthetic resource manager failure");
+                });
+
+        assertTrue(OreHighlightResourceCompatibilityLoader.load(failing).isEmpty());
     }
 }

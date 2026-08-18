@@ -47,13 +47,14 @@ final class FeatureManagerTickSlotTest {
     }
 
     @Test
-    void failingFeatureIsDisabledWhenItsTickSlotIsQuarantined() {
+    void failingFeatureIsNotifiedOfQuarantineAndDisabled() {
         FailingFeature feature = new FailingFeature();
         FeatureManager.TickSlot slot = new FeatureManager.TickSlot(feature);
 
         slot.runForTick(null);
 
         assertTrue(slot.isQuarantined());
+        assertEquals(1, feature.quarantineCalls);
         assertFalse(feature.enabled);
     }
 
@@ -90,11 +91,13 @@ final class FeatureManagerTickSlotTest {
 
     private static final class FailingFeature implements TickingFeature {
         private boolean enabled = true;
+        private int quarantineCalls;
 
         @Override public String getId() { return "failing-feature"; }
         @Override public String getName() { return "Failing feature"; }
         @Override public boolean isEnabled() { return enabled; }
         @Override public void setEnabled(boolean enabled) { this.enabled = enabled; }
         @Override public void tick(Minecraft client) { throw new IllegalStateException("boom"); }
+        @Override public void onQuarantined(Minecraft client) { quarantineCalls++; }
     }
 }

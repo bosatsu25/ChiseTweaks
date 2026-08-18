@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.api.ore.OreHighlightStyle;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
@@ -15,6 +16,7 @@ import dev.chise.chisetweaks.core.vision.OreHighlightExternalRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.Identifier;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,7 +41,7 @@ public final class OreHighlightCompatibilityConfig {
                 replaceEntries(List.of(), false);
                 return;
             }
-            replaceEntries(parse(stored.get()), false);
+            replaceEntries(parseDocument(stored.get()), false);
         } catch (java.io.IOException | RuntimeException failure) {
             entries = List.of();
             publish();
@@ -101,11 +103,11 @@ public final class OreHighlightCompatibilityConfig {
         OreHighlightExternalRegistry.replaceConfigBlocks(Map.copyOf(styles));
     }
 
-    private static List<Entry> parse(String json) {
+    static List<Entry> parseDocument(String json) {
         StrictJsonSecurityPolicy.Validation validation = StrictJsonSecurityPolicy.validateObjectDocument(json);
         if (!validation.valid()) throw new IllegalArgumentException("unsafe compatibility JSON");
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-        if (root.has("schemaVersion") && root.get("schemaVersion").getAsInt() != SCHEMA_VERSION) {
+        if (root.has("schemaVersion") && exactInt(root.get("schemaVersion"), "schemaVersion") != SCHEMA_VERSION) {
             throw new IllegalArgumentException("unsupported compatibility schema");
         }
         JsonElement rawEntries = root.get("entries");
@@ -118,16 +120,40 @@ public final class OreHighlightCompatibilityConfig {
         for (JsonElement element : array) {
             if (!element.isJsonObject()) throw new IllegalArgumentException("entry must be an object");
             JsonObject object = element.getAsJsonObject();
-            if (!object.has("block") || !object.has("style")) {
-                throw new IllegalArgumentException("entry requires block and style");
-            }
             Entry entry = validatedEntry(
-                    object.get("block").getAsString(),
-                    OreHighlightStyle.fromKey(object.get("style").getAsString()));
+                    requiredString(object, "block"),
+                    OreHighlightStyle.fromKey(requiredString(object, "style")));
             if (entry == null) throw new IllegalArgumentException("invalid compatibility entry");
             parsed.add(entry);
         }
         return List.copyOf(parsed);
+    }
+
+    private static String requiredString(JsonObject object, String key) {
+        JsonElement value = object.get(key);
+        if (value == null || !value.isJsonPrimitive()) {
+            throw new IllegalArgumentException("entry requires string field: " + key);
+        }
+        JsonPrimitive primitive = value.getAsJsonPrimitive();
+        if (!primitive.isString()) {
+            throw new IllegalArgumentException("entry requires string field: " + key);
+        }
+        return primitive.getAsString();
+    }
+
+    private static int exactInt(JsonElement value, String field) {
+        if (value == null || !value.isJsonPrimitive()) {
+            throw new IllegalArgumentException(field + " must be an integer");
+        }
+        JsonPrimitive primitive = value.getAsJsonPrimitive();
+        if (!primitive.isNumber()) throw new IllegalArgumentException(field + " must be an integer");
+        try {
+            BigDecimal number = new BigDecimal(primitive.getAsString()).stripTrailingZeros();
+            if (number.scale() > 0) throw new ArithmeticException("fraction");
+            return number.intValueExact();
+        } catch (ArithmeticException | NumberFormatException failure) {
+            throw new IllegalArgumentException(field + " must be an integer", failure);
+        }
     }
 
     private static Entry validatedEntry(String rawBlockId, OreHighlightStyle style) {

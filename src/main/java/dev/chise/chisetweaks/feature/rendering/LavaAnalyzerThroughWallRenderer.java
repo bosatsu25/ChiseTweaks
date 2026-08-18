@@ -32,7 +32,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
 /**
- * Small dedicated GPU path for Lava Analyzer source cubes that remain visible through terrain.
+ * Small dedicated GPU path for Lava Source Highlight cubes that remain visible through terrain.
  *
  * <p>The pipeline intentionally has no depth/stencil state. It is used only for already-retained,
  * nearby lava-source positions; it never reads world data, loads chunks, or expands the scan radius.
@@ -52,7 +52,7 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
     private static final float BOX_INSET = 0.018f;
 
-    private final ByteBufferBuilder allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
+    private ByteBufferBuilder allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
     private BufferBuilder buffer;
     private MappableRingBuffer vertexBuffer;
     private boolean closed;
@@ -64,6 +64,7 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
 
         PoseStack matrices = context.poseStack();
         matrices.pushPose();
+        boolean geometryComplete = false;
         try {
             matrices.translate(-camera.x, -camera.y, -camera.z);
             if (buffer == null) {
@@ -82,16 +83,23 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
                         Math.sqrt(dx * dx + dy * dy + dz * dz));
                 drawWireBox(pose, buffer, source, argb, LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS);
             }
+            geometryComplete = true;
         } finally {
             matrices.popPose();
+            if (!geometryComplete) buffer = null;
         }
 
         drawThroughWalls(Minecraft.getInstance(), THROUGH_WALL_PIPELINE);
     }
 
     private void drawThroughWalls(Minecraft client, RenderPipeline pipeline) {
-        MeshData builtBuffer = buffer.buildOrThrow();
-        buffer = null;
+        MeshData builtBuffer;
+        try {
+            builtBuffer = buffer.buildOrThrow();
+        } finally {
+            // Never reuse a builder after either a successful build or a build-time failure.
+            buffer = null;
+        }
         try {
             MeshData.DrawState drawParameters = builtBuffer.drawState();
             VertexFormat format = drawParameters.format();
@@ -108,7 +116,7 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
         if (vertexBuffer == null || vertexBuffer.size() < vertexBufferSize) {
             if (vertexBuffer != null) vertexBuffer.close();
             vertexBuffer = new MappableRingBuffer(
-                    () -> "ChiseTweaks Lava Analyzer through-wall buffer",
+                    () -> "ChiseTweaks Lava Source Highlight through-wall buffer",
                     GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE,
                     vertexBufferSize);
         }
@@ -148,7 +156,7 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
         try (RenderPass renderPass = RenderSystem.getDevice()
                 .createCommandEncoder()
                 .createRenderPass(
-                        () -> "ChiseTweaks Lava Analyzer through-wall rendering",
+                        () -> "ChiseTweaks Lava Source Highlight through-wall rendering",
                         client.getMainRenderTarget().getColorTextureView(),
                         OptionalInt.empty(),
                         client.getMainRenderTarget().getDepthTextureView(),
@@ -160,6 +168,18 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
             renderPass.setIndexBuffer(indices, indexType);
             renderPass.drawIndexed(0 / format.getVertexSize(), 0, drawParameters.indexCount(), 1);
         }
+    }
+
+    /** Drops all transient CPU/GPU workspace so a later session never inherits a failed frame. */
+    void resetAfterFailure() {
+        if (closed) return;
+        buffer = null;
+        if (vertexBuffer != null) {
+            vertexBuffer.close();
+            vertexBuffer = null;
+        }
+        allocator.close();
+        allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
     }
 
     private static void drawWireBox(

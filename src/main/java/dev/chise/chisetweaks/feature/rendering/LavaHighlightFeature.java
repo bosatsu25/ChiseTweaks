@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.material.FluidState;
@@ -26,7 +27,7 @@ import java.util.List;
  *
  * <p>The feature never recolors lava, loads chunks, mutates the world, or sends packets. It scans
  * only already-loaded nearby blocks on the existing Chise tick cadence, retains a bounded set of
- * lava sources that have a visible source boundary, and renders a full-bright 1x1x1 source
+ * lava sources that have a known source boundary, and renders a full-bright 1x1x1 source
  * wireframe through nearby terrain. The wireframe stays in Chise's reserved deep-green family and
  * strengthens smoothly toward {@code #075B32} as the player approaches the source.</p>
  */
@@ -46,7 +47,10 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
 
     private volatile List<BlockPos> highlightedSources = List.of();
     private int ticksUntilScan;
+    private int lastScanFingerprint = Integer.MIN_VALUE;
+    private ClientLevel lastLevel;
     private boolean renderQuarantined;
+    private boolean runtimeQuarantined;
 
     @Override
     public String getId() {
@@ -69,25 +73,35 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     @Override
     public void tick(Minecraft client) {
         if (!isEnabled()) {
-            clearTargets();
-            ticksUntilScan = 0;
+            resetScanState();
             return;
         }
-        if (renderQuarantined) return;
+        if (isSessionQuarantined()) return;
         if (client == null || client.player == null || client.level == null) {
-            clearTargets();
-            ticksUntilScan = 0;
+            resetScanState();
             return;
         }
+
+        if (lastLevel != client.level) {
+            clearTargets();
+            ticksUntilScan = 0;
+            lastScanFingerprint = Integer.MIN_VALUE;
+            lastLevel = client.level;
+        }
+
+        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
+        int fingerprint = scanFingerprint(local);
+        if (fingerprint != lastScanFingerprint) ticksUntilScan = 0;
+
         if (ticksUntilScan > 0) {
             ticksUntilScan--;
             return;
         }
 
-        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         ticksUntilScan = WorksiteVisibilityBudgetPolicy.clampIntervalTicks(
                 local.lavaAnalyzerIntervalTicks) - 1;
         scanLoadedSources(client, local);
+        lastScanFingerprint = fingerprint;
     }
 
     private void scanLoadedSources(Minecraft client, LocalFeatureConfig local) {
@@ -134,7 +148,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
                     cursor.set(x, y, z);
                     FluidState fluidState = client.level.getFluidState(cursor);
                     boolean source = isSourceLava(fluidState);
-                    boolean boundary = source && hasSourceBoundary(client, cursor);
+                    boolean boundary = source && hasKnownSourceBoundary(client, cursor);
                     if (!LavaVisionPalettePolicy.shouldHighlight(true, source, boundary)) continue;
 
                     double dx = x + 0.5 - eye.x;
@@ -156,12 +170,25 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         highlightedSources = List.copyOf(prepared);
     }
 
-    private boolean hasSourceBoundary(Minecraft client, BlockPos position) {
+    /**
+     * Treats an unloaded horizontal neighbor as unknown rather than as air/non-source.
+     * This keeps the boundary decision inside chunks the client already owns and prevents a
+     * chunk-edge false positive from violating the loaded-chunk-only contract.
+     */
+    private boolean hasKnownSourceBoundary(Minecraft client, BlockPos position) {
+        int sourceChunkX = position.getX() >> 4;
+        int sourceChunkZ = position.getZ() >> 4;
         for (Direction direction : DIRECTIONS) {
             neighborCursor.set(
                     position.getX() + direction.getStepX(),
                     position.getY() + direction.getStepY(),
                     position.getZ() + direction.getStepZ());
+            int neighborChunkX = neighborCursor.getX() >> 4;
+            int neighborChunkZ = neighborCursor.getZ() >> 4;
+            if ((neighborChunkX != sourceChunkX || neighborChunkZ != sourceChunkZ)
+                    && !client.level.getChunkSource().hasChunk(neighborChunkX, neighborChunkZ)) {
+                continue;
+            }
             if (!isSourceLava(client.level.getFluidState(neighborCursor))) return true;
         }
         return false;
@@ -199,7 +226,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     }
 
     private void render(LevelRenderContext context) {
-        if (!isEnabled() || renderQuarantined) return;
+        if (!isEnabled() || isSessionQuarantined()) return;
         List<BlockPos> snapshot = highlightedSources;
         if (snapshot.isEmpty()) return;
         try {
@@ -207,6 +234,8 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         } catch (RuntimeException | LinkageError failure) {
             renderQuarantined = true;
             clearTargets();
+            resetRendererAfterFailure();
+            disableAfterQuarantine();
             ChiseTweaksClient.LOGGER.error(
                     "Lava Source Highlight rendering was quarantined after {}",
                     failure.getClass().getSimpleName());
@@ -215,34 +244,105 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
 
     private void renderSafely(LevelRenderContext context, List<BlockPos> snapshot) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null || client.level == null || client.screen != null) return;
+        if (client.player == null
+                || client.level == null
+                || client.level != lastLevel
+                || client.screen != null) return;
         sourceRenderer.render(context, snapshot);
+    }
+
+    private void resetRendererAfterFailure() {
+        try {
+            sourceRenderer.resetAfterFailure();
+        } catch (RuntimeException | LinkageError cleanupFailure) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Lava Source Highlight renderer cleanup failed after {}",
+                    cleanupFailure.getClass().getSimpleName());
+        }
+    }
+
+    private void closeRendererAfterRuntimeQuarantine() {
+        try {
+            sourceRenderer.close();
+        } catch (RuntimeException | LinkageError cleanupFailure) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Lava Source Highlight renderer close failed after {}",
+                    cleanupFailure.getClass().getSimpleName());
+        }
+    }
+
+    private void disableAfterQuarantine() {
+        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
+        if (!local.lavaHighlightEnabled) return;
+        local.lavaHighlightEnabled = false;
+        if (!local.save()) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Lava Source Highlight quarantine could not be persisted; it remains disabled for this client process");
+        }
     }
 
     private void clearTargets() {
         if (!highlightedSources.isEmpty()) highlightedSources = List.of();
     }
 
-    @Override
-    public void resetSession(Minecraft client) {
+    private void resetScanState() {
         clearTargets();
         ticksUntilScan = 0;
+        lastScanFingerprint = Integer.MIN_VALUE;
+        lastLevel = null;
+    }
+
+    private static int scanFingerprint(LocalFeatureConfig local) {
+        int result = WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(
+                local.lavaAnalyzerHorizontalRadius);
+        result = 31 * result + WorksiteVisibilityBudgetPolicy.clampVerticalRadius(
+                local.lavaAnalyzerVerticalRadius);
+        result = 31 * result + WorksiteVisibilityBudgetPolicy.clampIntervalTicks(
+                local.lavaAnalyzerIntervalTicks);
+        result = 31 * result + WorksiteVisibilityBudgetPolicy.clampOverlayResults(
+                local.lavaAnalyzerMaxOverlayResults);
+        return result;
+    }
+
+    private boolean isSessionQuarantined() {
+        return runtimeQuarantined || renderQuarantined;
+    }
+
+    @Override
+    public void onQuarantined(Minecraft client) {
+        runtimeQuarantined = true;
+        resetScanState();
+        closeRendererAfterRuntimeQuarantine();
+        disableAfterQuarantine();
+    }
+
+    @Override
+    public void resetSession(Minecraft client) {
+        resetScanState();
+        // Render-path failures may be transient across world/session setup. Manager-owned runtime
+        // quarantine is process-lifetime and therefore intentionally does not reset here.
         renderQuarantined = false;
     }
 
     @Override
     public boolean isEnabled() {
         return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
+                && !isSessionQuarantined()
                 && LocalFeatureConfig.getInstance().lavaHighlightEnabled;
     }
 
     @Override
     public void setEnabled(boolean enabled) {
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
-        local.lavaHighlightEnabled = PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
-                && enabled;
+        boolean effective = PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
+                && enabled
+                && !isSessionQuarantined();
+        local.lavaHighlightEnabled = effective;
         local.save();
-        ticksUntilScan = 0;
-        if (!local.lavaHighlightEnabled) clearTargets();
+        resetScanState();
+        if (enabled && isSessionQuarantined()) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Lava Source Highlight remains quarantined until it is safe to retry");
+        }
     }
 }
