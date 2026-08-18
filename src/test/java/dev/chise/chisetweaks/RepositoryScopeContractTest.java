@@ -45,10 +45,12 @@ final class RepositoryScopeContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/building/PumpkinScaffoldFeature.java")));
         assertFalse(Files.exists(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/PlacementGuideLineGeometry.java")));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightConfig.java")));
     }
 
     @Test
-    void lavaAnalyzerUsesTheCurrentStandaloneRendererPath() throws IOException {
+    void lavaSourceHighlightUsesTheBoundedStandaloneRendererPath() throws IOException {
         String feature = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"));
         String renderer = Files.readString(ROOT.resolve(
@@ -58,6 +60,7 @@ final class RepositoryScopeContractTest {
         assertTrue(feature.contains("hasChunk"));
         assertTrue(feature.contains("MAX_OVERLAY_RESULTS"));
         assertTrue(feature.contains("LavaVisionPalettePolicy.shouldHighlight"));
+        assertTrue(feature.contains("Lava Source Highlight initialized"));
         assertTrue(renderer.contains("withDepthStencilState(Optional.empty())"));
         assertTrue(renderer.contains("LavaVisionPalettePolicy.colorForDistance"));
         assertFalse(feature.contains("DefaultFluidRenderer"));

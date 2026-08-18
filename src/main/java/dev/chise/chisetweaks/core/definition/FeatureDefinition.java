@@ -93,7 +93,7 @@ public enum FeatureDefinition {
             "lava_highlight",
             FeatureArea.RENDERING,
             "config.name.locallavahighlight",
-            "Lava Analyzer",
+            "Lava Source Highlight",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
             null,

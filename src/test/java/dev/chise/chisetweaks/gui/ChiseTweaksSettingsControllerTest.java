@@ -78,7 +78,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals("昆布ハイライト", row(rows, "kelp").name());
         assertEquals("ブロックフィルター", row(rows, "focusBlocks").name());
         assertEquals("エンティティフィルター", row(rows, "focusEntities").name());
-        assertEquals("溶岩解析", row(rows, "lava").name());
+        assertEquals("溶岩源ハイライト", row(rows, "lava").name());
         assertEquals("火炎表示を低くする", row(rows, "fireVisibility").name());
     }
 
@@ -170,6 +170,17 @@ final class ChiseTweaksSettingsControllerTest {
         } finally {
             for (ChiseBooleanSetting highlight : highlights) highlight.setBooleanValueSilently(false);
         }
+    }
+
+    @Test
+    void lavaSourceHighlightIsOptInAndUsesTheDedicatedSurface() {
+        var controller = new ChiseTweaksSettingsController(true);
+        ChiseTweaksSettingRowDefinition lava = row(controller.rows(), "lava");
+
+        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN_ACTION, lava.kind());
+        assertSame(LocalFeatureSwitches.LAVA_HIGHLIGHT, lava.booleanConfig());
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS, lava.action());
+        assertFalse(lava.booleanConfig().getDefaultBooleanValue());
     }
 
     @Test

@@ -9,14 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PreReleaseUiPolicyTest {
     @Test
-    void mainSurfaceAllowsOreKelpAndGlassHighlightsAndKeepsOtherFeaturesLocked() {
+    void mainSurfaceAllowsReleasedVisualHighlightsAndKeepsOtherFeaturesLocked() {
         var controller = new ChiseTweaksSettingsController(true);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
         for (ChiseTweaksSettingRowDefinition row : rows) {
             boolean expected = switch (row.id()) {
                 case "header.highlight", "header.visualFilter", "header.visibilityImprovement",
-                        "materials", "kelp", "glass" -> true;
+                        "materials", "kelp", "glass", "lava" -> true;
                 default -> false;
             };
             assertTrue(
@@ -27,15 +27,15 @@ final class PreReleaseUiPolicyTest {
         assertTrue(PreReleaseUiPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.MAIN,
                 ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS));
+        assertTrue(PreReleaseUiPolicy.isActionInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN,
+                ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS));
         assertFalse(PreReleaseUiPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.MAIN,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER));
         assertFalse(PreReleaseUiPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.MAIN,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER));
-        assertFalse(PreReleaseUiPolicy.isActionInteractive(
-                ChiseTweaksSettingsController.Surface.MAIN,
-                ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS));
     }
 
     @Test
@@ -59,17 +59,12 @@ final class PreReleaseUiPolicyTest {
     }
 
     @Test
-    void lavaDetailControlsRemainVisibleButLocked() {
+    void lavaSourceHighlightDetailControlsAreInteractive() {
         var controller = new ChiseTweaksSettingsController(true);
         for (ChiseTweaksSettingRowDefinition row : controller.rows(
                 ChiseTweaksSettingsController.Surface.LAVA_DETAILS)) {
-            if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
-                assertTrue(PreReleaseUiPolicy.isRowInteractive(
-                        ChiseTweaksSettingsController.Surface.LAVA_DETAILS, row));
-            } else {
-                assertFalse(PreReleaseUiPolicy.isRowInteractive(
-                        ChiseTweaksSettingsController.Surface.LAVA_DETAILS, row), row.id());
-            }
+            assertTrue(PreReleaseUiPolicy.isRowInteractive(
+                    ChiseTweaksSettingsController.Surface.LAVA_DETAILS, row), row.id());
         }
     }
 }

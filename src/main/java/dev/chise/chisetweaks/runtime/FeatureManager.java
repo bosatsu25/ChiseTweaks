@@ -103,11 +103,6 @@ public final class FeatureManager {
         return sessionSchedule.length == 0 ? mutableSessionComponents.size() : sessionSchedule.length;
     }
 
-    public LavaHighlightFeature getLavaHighlightFeature() {
-        Feature value = features.get(FeatureDefinition.LAVA_HIGHLIGHT.id());
-        return value instanceof LavaHighlightFeature typed ? typed : null;
-    }
-
     public void resetSessionState(Minecraft client) {
         SessionAwareRuntimeComponent[] schedule = sessionSchedule;
         for (int index = 0; index < schedule.length; index++) {

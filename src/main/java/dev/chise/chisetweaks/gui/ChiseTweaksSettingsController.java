@@ -71,7 +71,7 @@ final class ChiseTweaksSettingsController {
         return switch (surface == null ? Surface.MAIN : surface) {
             case MAIN -> "";
             case HIGHLIGHT_DETAILS -> japanese ? "ハイライト設定" : "Highlight Settings";
-            case LAVA_DETAILS -> japanese ? "溶岩解析設定" : "Lava Analysis Settings";
+            case LAVA_DETAILS -> japanese ? "溶岩源ハイライト設定" : "Lava Source Highlight Settings";
         };
     }
 
@@ -158,7 +158,7 @@ final class ChiseTweaksSettingsController {
 
         header(rows, "header.visibilityImprovement", "視認改善", "Visibility Improvements");
         compactBoolAction(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
-                "溶岩解析", "Lava Analysis",
+                "溶岩源ハイライト", "Lava Source Highlight",
                 ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS);
         compactBool(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
                 "火炎表示を低くする", "Lower Fire Overlay");
@@ -210,19 +210,19 @@ final class ChiseTweaksSettingsController {
     }
 
     private void addLavaDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        header(rows, "detail.lava.scan", "解析設定", "Analysis Settings");
+        header(rows, "detail.lava.scan", "溶岩源の検出設定", "Lava Source Detection");
         integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
-                "解析範囲", "Analysis Range",
-                "周辺の溶岩源を確認する水平範囲", "Horizontal radius used for lava analysis.", 1);
+                "検出範囲", "Source Range",
+                "溶岩源を確認する水平範囲", "Horizontal radius used for lava source detection.", 1);
         integer(rows, "lavaVerticalRange", LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
                 "垂直範囲", "Vertical Range",
-                "周辺の溶岩源を確認する垂直範囲", "Vertical radius used for lava analysis.", 1);
+                "溶岩源を確認する垂直範囲", "Vertical radius used for lava source detection.", 1);
         integer(rows, "lavaInterval", LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
-                "解析間隔", "Analysis Interval",
-                "溶岩源の確認を行うtick間隔", "Ticks between lava analysis updates.", 5);
+                "更新間隔", "Update Interval",
+                "溶岩源を再確認するtick間隔", "Ticks between lava source detection updates.", 5);
         integer(rows, "lavaMaxOverlays", LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
                 "最大表示数", "Maximum Markers",
-                "同時に保持する溶岩マーカー数", "Maximum retained lava markers.", 1);
+                "同時に保持する溶岩源マーカー数", "Maximum retained lava source markers.", 1);
     }
 
     private void resetHighlightDetails() {
@@ -338,7 +338,7 @@ final class ChiseTweaksSettingsController {
     private static String englishActionName(ChiseTweaksSettingRowDefinition.Action action) {
         return switch (action) {
             case OPEN_HIGHLIGHT_DETAILS -> "Highlight settings";
-            case OPEN_LAVA_DETAILS -> "Lava analysis settings";
+            case OPEN_LAVA_DETAILS -> "Lava source highlight settings";
             case EDIT_BLOCK_FILTER -> "Block targets";
             case EDIT_ENTITY_FILTER -> "Entity targets";
             case EDIT_ORE_COMPAT -> "Modded ore targets";
@@ -348,7 +348,7 @@ final class ChiseTweaksSettingsController {
     private static String englishActionDescription(ChiseTweaksSettingRowDefinition.Action action) {
         return switch (action) {
             case OPEN_HIGHLIGHT_DETAILS -> "Open highlight target and scan settings.";
-            case OPEN_LAVA_DETAILS -> "Open Lava Analyzer scan settings.";
+            case OPEN_LAVA_DETAILS -> "Open Lava Source Highlight scan settings.";
             case EDIT_BLOCK_FILTER -> "Edit the block include/exclude mode and block IDs.";
             case EDIT_ENTITY_FILTER -> "Edit the entity include/exclude mode and entity IDs.";
             case EDIT_ORE_COMPAT -> "Edit modded block IDs and their Chise highlight styles.";

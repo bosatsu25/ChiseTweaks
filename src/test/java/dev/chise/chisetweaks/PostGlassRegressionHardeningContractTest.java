@@ -14,7 +14,7 @@ final class PostGlassRegressionHardeningContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void lockedRuntimeFeaturesDoNotRegisterIdleTickWork() throws IOException {
+    void runtimeRegistersOnlyAvailableTickFeaturesAndDoesNotReviveLockedWorksiteStack() throws IOException {
         String manager = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
         String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
         assertTrue(manager.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)"));

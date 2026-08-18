@@ -5,6 +5,7 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
+import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.feature.SessionAwareFeature;
 import dev.chise.chisetweaks.feature.TickingFeature;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -21,20 +22,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Bounded, client-only analyzer for nearby lava source blocks.
+ * Bounded, client-only highlighter for nearby lava source blocks.
  *
  * <p>The feature never recolors lava, loads chunks, mutates the world, or sends packets. It scans
  * only already-loaded nearby blocks on the existing Chise tick cadence, retains a bounded set of
- * exposed lava sources, and renders a full-bright 1x1x1 source wireframe through nearby terrain.
- * The wireframe stays in Chise's reserved deep-green family and strengthens smoothly toward
- * {@code #075B32} as the player approaches the source.</p>
+ * lava sources that have a visible source boundary, and renders a full-bright 1x1x1 source
+ * wireframe through nearby terrain. The wireframe stays in Chise's reserved deep-green family and
+ * strengthens smoothly toward {@code #075B32} as the player approaches the source.</p>
  */
 public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature {
     private static final int MAX_CANDIDATES = WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS;
     private static final Direction[] DIRECTIONS = Direction.values();
 
-    private final LavaHighlightConfig config = new LavaHighlightConfig();
-    private final LavaAnalyzerThroughWallRenderer analyzerRenderer = new LavaAnalyzerThroughWallRenderer();
+    private final LavaAnalyzerThroughWallRenderer sourceRenderer = new LavaAnalyzerThroughWallRenderer();
     private final int[] candidateX = new int[MAX_CANDIDATES];
     private final int[] candidateY = new int[MAX_CANDIDATES];
     private final int[] candidateZ = new int[MAX_CANDIDATES];
@@ -44,7 +44,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private final BlockPos.MutableBlockPos neighborCursor = new BlockPos.MutableBlockPos();
 
-    private volatile List<BlockPos> analyzedSources = List.of();
+    private volatile List<BlockPos> highlightedSources = List.of();
     private int ticksUntilScan;
     private boolean renderQuarantined;
 
@@ -61,9 +61,9 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     @Override
     public void init() {
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(this::render);
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> analyzerRenderer.close());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> sourceRenderer.close());
         ChiseTweaksClient.LOGGER.info(
-                "Lava Analyzer initialized with bounded through-terrain proximity rendering");
+                "Lava Source Highlight initialized with bounded through-terrain source rendering");
     }
 
     @Override
@@ -134,8 +134,8 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
                     cursor.set(x, y, z);
                     FluidState fluidState = client.level.getFluidState(cursor);
                     boolean source = isSourceLava(fluidState);
-                    boolean exposed = source && isExposedSource(client, cursor);
-                    if (!LavaVisionPalettePolicy.shouldHighlight(true, source, exposed)) continue;
+                    boolean boundary = source && hasSourceBoundary(client, cursor);
+                    if (!LavaVisionPalettePolicy.shouldHighlight(true, source, boundary)) continue;
 
                     double dx = x + 0.5 - eye.x;
                     double dy = y + 0.5 - eye.y;
@@ -153,10 +153,10 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         for (int index = 0; index < count; index++) {
             prepared.add(new BlockPos(candidateX[index], candidateY[index], candidateZ[index]));
         }
-        analyzedSources = List.copyOf(prepared);
+        highlightedSources = List.copyOf(prepared);
     }
 
-    private boolean isExposedSource(Minecraft client, BlockPos position) {
+    private boolean hasSourceBoundary(Minecraft client, BlockPos position) {
         for (Direction direction : DIRECTIONS) {
             neighborCursor.set(
                     position.getX() + direction.getStepX(),
@@ -200,7 +200,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
 
     private void render(LevelRenderContext context) {
         if (!isEnabled() || renderQuarantined) return;
-        List<BlockPos> snapshot = analyzedSources;
+        List<BlockPos> snapshot = highlightedSources;
         if (snapshot.isEmpty()) return;
         try {
             renderSafely(context, snapshot);
@@ -208,7 +208,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
             renderQuarantined = true;
             clearTargets();
             ChiseTweaksClient.LOGGER.error(
-                    "Lava Analyzer rendering was quarantined after {}",
+                    "Lava Source Highlight rendering was quarantined after {}",
                     failure.getClass().getSimpleName());
         }
     }
@@ -216,11 +216,11 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     private void renderSafely(LevelRenderContext context, List<BlockPos> snapshot) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null || client.screen != null) return;
-        analyzerRenderer.render(context, snapshot);
+        sourceRenderer.render(context, snapshot);
     }
 
     private void clearTargets() {
-        if (!analyzedSources.isEmpty()) analyzedSources = List.of();
+        if (!highlightedSources.isEmpty()) highlightedSources = List.of();
     }
 
     @Override
@@ -232,16 +232,17 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabled();
+        return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
+                && LocalFeatureConfig.getInstance().lavaHighlightEnabled;
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        config.setEnabled(enabled);
-        if (!enabled) clearTargets();
-    }
-
-    public LavaHighlightConfig getConfig() {
-        return config;
+        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
+        local.lavaHighlightEnabled = PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
+                && enabled;
+        local.save();
+        ticksUntilScan = 0;
+        if (!local.lavaHighlightEnabled) clearTargets();
     }
 }

@@ -117,6 +117,6 @@ final class RetainedFeatureScopeTest {
         assertEquals("Nether Palette", FeatureDefinition.NETHER_PALETTE.englishName());
         assertEquals("Kelp Highlight", FeatureDefinition.KELP_HIGHLIGHT.englishName());
         assertEquals("Fire Visibility", FeatureDefinition.FIRE_VISIBILITY.englishName());
-        assertEquals("Lava Analyzer", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
+        assertEquals("Lava Source Highlight", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
     }
 }
