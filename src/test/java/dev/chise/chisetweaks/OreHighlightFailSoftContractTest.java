@@ -66,17 +66,20 @@ final class OreHighlightFailSoftContractTest {
     }
 
     @Test
-    void rareModelMembershipReloadStaysCoalescedUntilAsyncCompletion() throws IOException {
+    void rareModelMembershipReloadPreservesChangesArrivingDuringAsyncReload() throws IOException {
         String reload = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java");
         assertTrue(reload.contains("AtomicBoolean REQUESTED"));
-        assertTrue(reload.contains("compareAndSet(false, true)"));
+        assertTrue(reload.contains("AtomicBoolean PENDING"));
+        assertTrue(reload.contains("if (!REQUESTED.compareAndSet(false, true))"));
+        assertTrue(reload.contains("PENDING.set(true)"));
         assertTrue(reload.contains("ChiseVisualModelPlugin.isModelPipelineReady()"));
         assertTrue(reload.contains("client.execute(() -> startReload(client))"));
         assertTrue(reload.contains("client.reloadResourcePacks().whenComplete"));
         assertTrue(reload.contains("catch (RuntimeException | LinkageError failure)"));
-        assertTrue(reload.contains("REQUESTED.set(false)"));
-        assertFalse(reload.contains("finally {\n                REQUESTED.set(false);\n            }"));
+        assertTrue(reload.contains("if (PENDING.getAndSet(false)) request();"));
+        assertTrue(reload.contains("resetAfterAbortedSchedule()"));
+        assertFalse(reload.contains("ClientTickEvents"));
     }
 
     private static String source(String relativePath) throws IOException {
