@@ -23,11 +23,9 @@ final class ChiseTweaksSettingsController {
         LAVA_DETAILS
     }
 
+    /** Only currently released members participate in the hidden bulk-highlight state machine. */
     private static final List<ChiseBooleanSetting> HIGHLIGHT_FEATURES = List.of(
             FeatureSwitches.MATERIAL_HIGHLIGHTS,
-            FeatureSwitches.NETHER_PALETTE,
-            FeatureSwitches.FINE_THREAD_TRACE,
-            FeatureSwitches.HIDDEN_SURFACE_TRACE,
             FeatureSwitches.GLASS_INSPECTION,
             FeatureSwitches.KELP_HIGHLIGHT);
 
