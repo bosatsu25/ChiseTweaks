@@ -47,4 +47,28 @@ final class OreHighlightResourceCompatibilityLoaderTest {
                         ]}
                         """));
     }
+
+    @Test
+    void compatibilityResourceRejectsTypeConfusion() {
+        assertThrows(IllegalArgumentException.class, () ->
+                OreHighlightResourceCompatibilityLoader.parseDocument("""
+                        {"schemaVersion":"1","entries":[]}
+                        """));
+        assertThrows(IllegalArgumentException.class, () ->
+                OreHighlightResourceCompatibilityLoader.parseDocument("""
+                        {"schemaVersion":1,"entries":[{"block":123,"style":"iron"}]}
+                        """));
+        assertThrows(IllegalArgumentException.class, () ->
+                OreHighlightResourceCompatibilityLoader.parseDocument("""
+                        {"schemaVersion":1,"entries":[{"block":"example:tin_ore","style":1}]}
+                        """));
+    }
+
+    @Test
+    void compatibilityResourceRejectsNonIntegralSchemaVersion() {
+        assertThrows(IllegalArgumentException.class, () ->
+                OreHighlightResourceCompatibilityLoader.parseDocument("""
+                        {"schemaVersion":1.5,"entries":[]}
+                        """));
+    }
 }
