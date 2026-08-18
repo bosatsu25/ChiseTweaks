@@ -24,7 +24,7 @@ final class SecurityPrimitiveTest {
 
     @Test
     void strictUtf8RoundTripsMultilingualTextAndRejectsMalformedInput() throws IOException {
-        String value = "鉱石ハイライト / Lava Analyzer / 🚀";
+        String value = "鉱石ハイライト / Lava Source Highlight / 🚀";
         byte[] encoded = StrictUtf8.encode(value);
 
         assertEquals(value, StrictUtf8.decode(encoded));
