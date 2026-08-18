@@ -28,6 +28,7 @@ import java.util.function.Predicate;
  * change the set of wrapped models request a coalesced resource-model reload instead.</p>
  */
 final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
+    private static final int MAX_LOOKUP_ATTEMPTS = 3;
     private static final AtomicBoolean LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean EMIT_FAILURE_LOGGED = new AtomicBoolean();
 
@@ -37,8 +38,8 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
 
     private volatile @Nullable BlockStateModel staticOverlay;
     private volatile @Nullable BlockStateModel animatedOverlay;
-    private volatile boolean staticOverlayResolved;
-    private volatile boolean animatedOverlayResolved;
+    private volatile int staticLookupFailures;
+    private volatile int animatedLookupFailures;
 
     FullbrightOreHighlightModel(
             BlockStateModel wrapped,
@@ -72,7 +73,7 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         });
         try {
             overlay.emitQuads(emitter, level, pos, state, random, cullTest);
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException | LinkageError failure) {
             warnOnce(EMIT_FAILURE_LOGGED, "Ore Highlight overlay emission", failure);
         } finally {
             emitter.popTransform();
@@ -95,25 +96,40 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
     }
 
     private @Nullable BlockStateModel overlayModel(boolean animated) {
-        if (animated ? animatedOverlayResolved : staticOverlayResolved) {
-            return animated ? animatedOverlay : staticOverlay;
+        BlockStateModel cached = animated ? animatedOverlay : staticOverlay;
+        if (cached != null) return cached;
+        if (lookupFailures(animated) >= MAX_LOOKUP_ATTEMPTS) return null;
+
+        synchronized (this) {
+            cached = animated ? animatedOverlay : staticOverlay;
+            if (cached != null) return cached;
+            if (lookupFailures(animated) >= MAX_LOOKUP_ATTEMPTS) return null;
+
+            ExtraModelKey<BlockStateModel> key = animated ? animatedKey : staticKey;
+            BlockStateModel loaded = lookup(key);
+            if (loaded != null) {
+                if (animated) animatedOverlay = loaded;
+                else staticOverlay = loaded;
+                return loaded;
+            }
+            recordLookupFailure(animated);
+            return null;
         }
-        ExtraModelKey<BlockStateModel> key = animated ? animatedKey : staticKey;
-        BlockStateModel loaded = lookup(key);
-        if (animated) {
-            animatedOverlay = loaded;
-            animatedOverlayResolved = true;
-        } else {
-            staticOverlay = loaded;
-            staticOverlayResolved = true;
-        }
-        return loaded;
+    }
+
+    private int lookupFailures(boolean animated) {
+        return animated ? animatedLookupFailures : staticLookupFailures;
+    }
+
+    private void recordLookupFailure(boolean animated) {
+        if (animated) animatedLookupFailures++;
+        else staticLookupFailures++;
     }
 
     private static @Nullable BlockStateModel lookup(ExtraModelKey<BlockStateModel> key) {
         try {
             return Minecraft.getInstance().getModelManager().getModel(key);
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException | LinkageError failure) {
             warnOnce(LOOKUP_FAILURE_LOGGED, "Ore Highlight extra-model lookup", failure);
             return null;
         }
@@ -136,7 +152,7 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             @Nullable Target target,
             OreHighlightRuntimePolicy.Motion motion) {}
 
-    private static void warnOnce(AtomicBoolean gate, String operation, RuntimeException failure) {
+    private static void warnOnce(AtomicBoolean gate, String operation, Throwable failure) {
         if (!gate.compareAndSet(false, true)) return;
         ChiseTweaksClient.LOGGER.warn(
                 "{} failed after {}; keeping the resource-pack base model without the Chise overlay",
