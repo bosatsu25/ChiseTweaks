@@ -70,6 +70,20 @@ final class PerformanceArchitectureContractTest {
     }
 
     @Test
+    void releaseDependencyNotesComeFromTheVerifiedRuntimeJar() throws IOException {
+        String release = Files.readString(ROOT.resolve(".github/workflows/release.yml"));
+
+        assertTrue(release.contains("unzip -p \"$runtime_jar\" fabric.mod.json"));
+        assertTrue(release.contains(".depends.fabricloader"));
+        assertTrue(release.contains(".depends[\"fabric-api\"]"));
+        assertTrue(release.contains(".depends.java"));
+        assertTrue(release.contains("serverInstallationRequired"));
+        assertTrue(release.contains("server_required\" != 'false'"));
+        assertFalse(release.contains("Fabric Loader 0.19.3"));
+        assertFalse(release.contains("- Java: \\`25\\`"));
+    }
+
+    @Test
     void zeroScanOreCompatibilityDoesNotReintroduceTheOldAllModWrapperPattern() throws IOException {
         Path plugin = ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
