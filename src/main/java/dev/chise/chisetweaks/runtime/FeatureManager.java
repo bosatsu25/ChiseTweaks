@@ -131,7 +131,9 @@ public final class FeatureManager {
             feature.init();
         } catch (RuntimeException | LinkageError failure) {
             quarantineTickSlot(feature.getId());
-            notifyInitializationQuarantine(feature);
+            if (feature instanceof TickingRuntimeComponent ticking) {
+                notifyInitializationQuarantine(feature.getId(), ticking);
+            }
             safeDisable(feature);
             ChiseTweaksClient.LOGGER.error(
                     "Feature '{}' was disabled during initialization after {}",
@@ -145,7 +147,9 @@ public final class FeatureManager {
             component.init();
         } catch (RuntimeException | LinkageError failure) {
             quarantineTickSlot(component.getId());
-            notifyInitializationQuarantine(component);
+            if (component instanceof TickingRuntimeComponent ticking) {
+                notifyInitializationQuarantine(component.getId(), ticking);
+            }
             ChiseTweaksClient.LOGGER.error(
                     "Runtime component '{}' was quarantined during initialization after {}",
                     component.getId(),
@@ -153,14 +157,13 @@ public final class FeatureManager {
         }
     }
 
-    private static void notifyInitializationQuarantine(RuntimeComponent component) {
-        if (!(component instanceof TickingRuntimeComponent ticking)) return;
+    private static void notifyInitializationQuarantine(String id, TickingRuntimeComponent component) {
         try {
-            ticking.onQuarantined(Minecraft.getInstance());
+            component.onQuarantined(Minecraft.getInstance());
         } catch (RuntimeException | LinkageError cleanupFailure) {
             ChiseTweaksClient.LOGGER.warn(
                     "Runtime component '{}' initialization cleanup failed after {}",
-                    component.getId(),
+                    id,
                     cleanupFailure.getClass().getSimpleName());
         }
     }
