@@ -23,13 +23,14 @@ public final class FeatureControlBindings {
     private static final List<FeatureSwitch> WORKSITE_VISIBILITY_TOGGLES =
             FeatureSwitches.VALUES.stream()
                     .filter(toggle -> toggle.definition().isWorksiteVisibilityMode())
+                    .filter(toggle -> PreReleaseFeaturePolicy.isAvailable(toggle.definition()))
                     .toList();
     private static boolean applyingExclusiveWorksiteSelection;
 
     private FeatureControlBindings() {}
 
     public static void init() {
-        bindWorksiteVisibilityCallbacks();
+        if (!WORKSITE_VISIBILITY_TOGGLES.isEmpty()) bindWorksiteVisibilityCallbacks();
         if (builderFocusAvailable()) {
             bindBuilderFocusLists();
             bindSceneFilterRefresh();
