@@ -29,7 +29,7 @@ final class PreReleaseConfigGateTest {
     }
 
     @Test
-    void oldLocalConfigCannotReactivateLavaOrFire() {
+    void releasedLavaSettingCanBeRestoredWhileFireRemainsLocked() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         assertTrue(config.replaceFromJsonDocument("""
                 {
@@ -40,7 +40,7 @@ final class PreReleaseConfigGateTest {
                 }
                 """));
 
-        assertFalse(config.lavaHighlightEnabled);
+        assertTrue(config.lavaHighlightEnabled);
         assertFalse(config.fireVisibilityEnabled);
     }
 }
