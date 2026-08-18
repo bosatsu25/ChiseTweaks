@@ -20,7 +20,7 @@ RETAINED_ENGLISH_NAMES = (
     "Nether Palette",
     "Kelp Highlight",
     "Fire Visibility",
-    "Lava Analyzer",
+    "Lava Source Highlight",
 )
 
 FORBIDDEN_JAVA_TOKENS = (
@@ -43,6 +43,7 @@ FORBIDDEN_PATHS = (
     "src/main/java/dev/chise/chisetweaks/feature/building/PumpkinScaffoldFeature.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/PlacementGuideLineGeometry.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaFluidRenderHandler.java",
+    "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightConfig.java",
     "src/main/java/dev/chise/chisetweaks/runtime/ExternalHookCircuitBreaker.java",
     "src/main/java/dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy.java",
     "src/main/java/dev/chise/chisetweaks/core/policy/ModVersionPolicy.java",
