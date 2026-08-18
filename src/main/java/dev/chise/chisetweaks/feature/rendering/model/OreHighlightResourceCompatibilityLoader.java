@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.api.ore.OreHighlightStyle;
 import dev.chise.chisetweaks.config.OreHighlightCompatibilityConfig;
@@ -15,6 +16,7 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 import java.io.BufferedReader;
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -68,7 +70,7 @@ final class OreHighlightResourceCompatibilityLoader {
 
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
         if (root.has("schemaVersion")
-                && root.get("schemaVersion").getAsInt() != OreHighlightCompatibilityConfig.SCHEMA_VERSION) {
+                && exactInt(root.get("schemaVersion"), "schemaVersion") != OreHighlightCompatibilityConfig.SCHEMA_VERSION) {
             throw new IllegalArgumentException("unsupported compatibility schema");
         }
         JsonElement rawEntries = root.get("entries");
@@ -83,16 +85,40 @@ final class OreHighlightResourceCompatibilityLoader {
         for (JsonElement element : entries) {
             if (!element.isJsonObject()) throw new IllegalArgumentException("entry must be an object");
             JsonObject object = element.getAsJsonObject();
-            if (!object.has("block") || !object.has("style")) {
-                throw new IllegalArgumentException("entry requires block and style");
-            }
-            Identifier blockId = Identifier.tryParse(ModdedOreIdPolicy.normalize(object.get("block").getAsString()));
-            OreHighlightStyle style = OreHighlightStyle.fromKey(object.get("style").getAsString());
+            Identifier blockId = Identifier.tryParse(ModdedOreIdPolicy.normalize(requiredString(object, "block")));
+            OreHighlightStyle style = OreHighlightStyle.fromKey(requiredString(object, "style"));
             if (blockId == null || style == null || "minecraft".equals(blockId.getNamespace())) {
                 throw new IllegalArgumentException("invalid compatibility entry");
             }
             parsed.put(blockId.toString(), style);
         }
         return Map.copyOf(parsed);
+    }
+
+    private static String requiredString(JsonObject object, String key) {
+        JsonElement value = object.get(key);
+        if (value == null || !value.isJsonPrimitive()) {
+            throw new IllegalArgumentException("entry requires string field: " + key);
+        }
+        JsonPrimitive primitive = value.getAsJsonPrimitive();
+        if (!primitive.isString()) {
+            throw new IllegalArgumentException("entry requires string field: " + key);
+        }
+        return primitive.getAsString();
+    }
+
+    private static int exactInt(JsonElement value, String field) {
+        if (value == null || !value.isJsonPrimitive()) {
+            throw new IllegalArgumentException(field + " must be an integer");
+        }
+        JsonPrimitive primitive = value.getAsJsonPrimitive();
+        if (!primitive.isNumber()) throw new IllegalArgumentException(field + " must be an integer");
+        try {
+            BigDecimal number = new BigDecimal(primitive.getAsString()).stripTrailingZeros();
+            if (number.scale() > 0) throw new ArithmeticException("fraction");
+            return number.intValueExact();
+        } catch (ArithmeticException | NumberFormatException failure) {
+            throw new IllegalArgumentException(field + " must be an integer", failure);
+        }
     }
 }
