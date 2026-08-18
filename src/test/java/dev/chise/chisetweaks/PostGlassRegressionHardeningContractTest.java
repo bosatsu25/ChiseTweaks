@@ -62,6 +62,7 @@ final class PostGlassRegressionHardeningContractTest {
         String registry = source("src/main/java/dev/chise/chisetweaks/core/vision/OreHighlightExternalRegistry.java");
         assertTrue(registry.contains("MAX_API_BLOCKS = 2048"));
         assertTrue(registry.contains("MAX_API_TAGS = 256"));
+        assertTrue(registry.contains("MAX_PUBLISHED_BLOCKS = 512"));
         assertTrue(registry.contains("Identifier.tryParse(normalized)"));
         assertTrue(registry.contains("\"minecraft\".equals(id.getNamespace())"));
         assertTrue(registry.contains("Ore Highlight API block registration limit exceeded"));
@@ -73,6 +74,7 @@ final class PostGlassRegressionHardeningContractTest {
         String audit = source("scripts/visual_asset_audit.py");
         String verify = source(".github/workflows/verify-build.yml");
         String ci = source(".github/workflows/ci.yml");
+        String release = source(".github/workflows/release.yml");
         assertTrue(audit.contains("zipfile.ZipFile(jar)"));
         assertTrue(audit.contains("KELP_ANIMATION"));
         assertTrue(audit.contains("GLASS_BLOCK_MODEL"));
@@ -81,6 +83,8 @@ final class PostGlassRegressionHardeningContractTest {
         assertTrue(verify.contains("cp build/ci/visual-asset-audit.json build/verified/"));
         assertTrue(ci.contains("ensure_asset 'release/visual-asset-audit.json'"));
         assertTrue(ci.contains("artifact-audit.json visual-asset-audit.json quality-summary.md"));
+        assertTrue(release.contains("Verified visual asset audit evidence is missing"));
+        assertTrue(release.contains("\"release/visual-asset-audit.json\""));
     }
 
     @Test
