@@ -30,10 +30,17 @@ final class OreHighlightResourceCompatibilityLoader {
     static Map<String, OreHighlightStyle> load(ResourceManager resourceManager) {
         if (resourceManager == null) return Map.of();
         LinkedHashMap<String, OreHighlightStyle> result = new LinkedHashMap<>();
-        FINDER.listMatchingResources(resourceManager).entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> readResource(entry.getKey(), entry.getValue(), result));
-        return Map.copyOf(result);
+        try {
+            FINDER.listMatchingResources(resourceManager).entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> readResource(entry.getKey(), entry.getValue(), result));
+            return Map.copyOf(result);
+        } catch (RuntimeException | LinkageError failure) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Ore Highlight compatibility resource discovery failed after {}; using no resource-pack mappings",
+                    failure.getClass().getSimpleName());
+            return Map.of();
+        }
     }
 
     private static void readResource(
