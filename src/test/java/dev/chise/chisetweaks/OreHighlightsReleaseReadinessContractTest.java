@@ -50,13 +50,15 @@ final class OreHighlightsReleaseReadinessContractTest {
     void oreHighlightsStayModelBackedAndCannotBecomeAWorldScanXrayPath() throws IOException {
         String engine = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java");
+        String worksitePolicy = source(
+                "src/main/java/dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy.java");
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
 
-        assertTrue(engine.contains(
-                "definition.inspectionCategory() != BlockInspectionCategory.MATERIAL_HIGHLIGHT"));
+        assertFalse(engine.contains("BlockInspectionCategory.MATERIAL_HIGHLIGHT"));
+        assertFalse(worksitePolicy.contains("MATERIAL_HIGHLIGHT"));
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
         assertTrue(plugin.contains("pluginContext.addModel("));
@@ -196,6 +198,8 @@ final class OreHighlightsReleaseReadinessContractTest {
                 "src/main/java/dev/chise/chisetweaks/api/ore/OreHighlightApi.java");
         String config = source(
                 "src/main/java/dev/chise/chisetweaks/config/OreHighlightCompatibilityConfig.java");
+        String registry = source(
+                "src/main/java/dev/chise/chisetweaks/core/vision/OreHighlightExternalRegistry.java");
 
         assertTrue(resolver.contains("ConventionalBlockTags.ORES"));
         assertTrue(resolver.contains("ModdedOreIdPolicy.looksLikeOre"));
@@ -207,6 +211,9 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertTrue(api.contains("OreHighlightModelReload.request()"));
         assertTrue(config.contains("MAX_ENTRIES = 256"));
         assertTrue(config.contains("SecureConfigStorage.writeUtf8Atomic"));
+        assertTrue(registry.contains("MAX_API_BLOCKS = 2048"));
+        assertTrue(registry.contains("MAX_API_TAGS = 256"));
+        assertTrue(registry.contains("Identifier.tryParse"));
         assertFalse(resolver.contains("ClientLevel"));
         assertFalse(loader.contains("HttpClient"));
         assertFalse(api.contains("network"));
