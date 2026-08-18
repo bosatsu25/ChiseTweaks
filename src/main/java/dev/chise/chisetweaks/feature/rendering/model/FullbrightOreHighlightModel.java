@@ -40,6 +40,8 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
     private volatile @Nullable BlockStateModel animatedOverlay;
     private volatile int staticLookupFailures;
     private volatile int animatedLookupFailures;
+    private volatile boolean staticEmissionQuarantined;
+    private volatile boolean animatedEmissionQuarantined;
 
     FullbrightOreHighlightModel(
             BlockStateModel wrapped,
@@ -64,19 +66,15 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         if (!highlightEnabled()) return;
 
         boolean animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
+        if (emissionQuarantined(animated)) return;
         BlockStateModel overlay = overlayModel(animated);
         if (overlay == null) return;
 
-        emitter.pushTransform(quad -> {
-            FullbrightOverlayLighting.apply(quad);
-            return true;
-        });
-        try {
-            overlay.emitQuads(emitter, level, pos, state, random, cullTest);
-        } catch (RuntimeException | LinkageError failure) {
+        Throwable failure = FullbrightOverlayEmission.emit(
+                emitter, overlay, level, pos, state, random, cullTest);
+        if (failure != null) {
+            quarantineEmission(animated);
             warnOnce(EMIT_FAILURE_LOGGED, "Ore Highlight overlay emission", failure);
-        } finally {
-            emitter.popTransform();
         }
     }
 
@@ -126,6 +124,15 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
         else staticLookupFailures++;
     }
 
+    private boolean emissionQuarantined(boolean animated) {
+        return animated ? animatedEmissionQuarantined : staticEmissionQuarantined;
+    }
+
+    private void quarantineEmission(boolean animated) {
+        if (animated) animatedEmissionQuarantined = true;
+        else staticEmissionQuarantined = true;
+    }
+
     private static @Nullable BlockStateModel lookup(ExtraModelKey<BlockStateModel> key) {
         try {
             return Minecraft.getInstance().getModelManager().getModel(key);
@@ -144,7 +151,10 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             RandomSource random) {
         Object wrappedKey = wrapped.createGeometryKey(level, pos, state, random);
         if (wrappedKey == null || !highlightEnabled()) return wrappedKey;
-        return new GeometryKey(wrappedKey, target, motion());
+        OreHighlightRuntimePolicy.Motion currentMotion = motion();
+        boolean animated = currentMotion == OreHighlightRuntimePolicy.Motion.ANIMATED;
+        if (emissionQuarantined(animated)) return wrappedKey;
+        return new GeometryKey(wrappedKey, target, currentMotion);
     }
 
     private record GeometryKey(
