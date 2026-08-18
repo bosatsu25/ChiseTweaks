@@ -20,7 +20,6 @@ import java.util.Locale;
 /** Safe editor for explicit modded ore block IDs and Chise-owned visual styles. */
 public final class ChiseOreCompatibilityScreen extends Screen {
     private static final int ROW_HEIGHT = 24;
-    private static final int REMOVE_WIDTH = 68;
 
     private final Screen parent;
     private final boolean japanese;
@@ -36,6 +35,8 @@ public final class ChiseOreCompatibilityScreen extends Screen {
     private int panelWidth;
     private int listTop;
     private int pageSize;
+    private int removeWidth;
+    private boolean compactLayout;
     private int page;
     private String feedback = "";
 
@@ -48,28 +49,35 @@ public final class ChiseOreCompatibilityScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        panelWidth = Math.min(760, Math.max(336, width - 24));
-        panelX = Math.max(12, (width - panelWidth) / 2);
-        listTop = 112;
-        pageSize = Math.max(2, Math.min(10, (Math.max(260, height) - listTop - 54) / ROW_HEIGHT));
+        ChiseOreCompatibilityLayout.Geometry layout =
+                ChiseOreCompatibilityLayout.calculate(width, height);
+        panelX = layout.panel().x();
+        panelWidth = layout.panel().width();
+        listTop = layout.listTop();
+        pageSize = layout.pageSize();
+        removeWidth = layout.removeWidth();
+        compactLayout = layout.compact();
 
-        int styleWidth = Math.min(150, Math.max(110, panelWidth / 4));
-        int addWidth = 76;
-        int inputWidth = Math.max(110, panelWidth - styleWidth - addWidth - 32);
+        var idRect = layout.idInput();
         idBox = addRenderableWidget(new EditBox(
-                font, panelX + 8, 70, inputWidth, 20,
+                font, idRect.x(), idRect.y(), idRect.width(), idRect.height(),
                 Component.literal(japanese ? "MODブロックID" : "Mod block ID")));
         idBox.setHint(Component.literal("examplemod:copper_ore"));
         idBox.setResponder(ignored -> refreshControls());
 
+        var styleRect = layout.style();
         styleButton = addRenderableWidget(Button.builder(styleMessage(), ignored -> {
             selectedStyle = selectedStyle.next();
             styleButton.setMessage(styleMessage());
-        }).bounds(panelX + 12 + inputWidth, 70, styleWidth, 20).build());
+        }).bounds(styleRect.x(), styleRect.y(), styleRect.width(), styleRect.height()).build());
 
+        var addRect = layout.add();
         addButton = addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "追加/更新" : "Add/Update"), ignored -> addEntry())
-                .bounds(panelX + 16 + inputWidth + styleWidth, 70, addWidth, 20)
+                Component.literal(compactLayout
+                        ? (japanese ? "追加" : "Add")
+                        : (japanese ? "追加/更新" : "Add/Update")),
+                ignored -> addEntry())
+                .bounds(addRect.x(), addRect.y(), addRect.width(), addRect.height())
                 .build());
 
         removeButtons.clear();
@@ -77,24 +85,32 @@ public final class ChiseOreCompatibilityScreen extends Screen {
             final int visibleSlot = slot;
             removeButtons.add(addRenderableWidget(Button.builder(
                     Component.literal(japanese ? "削除" : "Remove"), ignored -> removeEntry(visibleSlot))
-                    .bounds(panelX + panelWidth - REMOVE_WIDTH - 10,
-                            listTop + slot * ROW_HEIGHT, REMOVE_WIDTH, 20)
+                    .bounds(panelX + panelWidth - removeWidth - 10,
+                            listTop + slot * ROW_HEIGHT, removeWidth, 20)
                     .build()));
         }
 
-        int footerY = height - 28;
+        var previous = layout.previous();
         previousButton = addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "前へ" : "Previous"), ignored -> movePage(-1))
-                .bounds(panelX + 8, footerY, 58, 20).build());
+                Component.literal(compactLayout ? "‹" : (japanese ? "前へ" : "Previous")),
+                ignored -> movePage(-1))
+                .bounds(previous.x(), previous.y(), previous.width(), previous.height()).build());
+        var next = layout.next();
         nextButton = addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "次へ" : "Next"), ignored -> movePage(1))
-                .bounds(panelX + 70, footerY, 58, 20).build());
+                Component.literal(compactLayout ? "›" : (japanese ? "次へ" : "Next")),
+                ignored -> movePage(1))
+                .bounds(next.x(), next.y(), next.width(), next.height()).build());
+        var clear = layout.clear();
         clearButton = addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "個別設定を空にする" : "Clear overrides"), ignored -> clearEntries())
-                .bounds(panelX + 132, footerY, 122, 20).build());
+                Component.literal(compactLayout
+                        ? (japanese ? "全削除" : "Clear")
+                        : (japanese ? "個別設定を空にする" : "Clear overrides")),
+                ignored -> clearEntries())
+                .bounds(clear.x(), clear.y(), clear.width(), clear.height()).build());
+        var back = layout.back();
         addRenderableWidget(Button.builder(
                 Component.literal(japanese ? "戻る" : "Back"), ignored -> onClose())
-                .bounds(panelX + panelWidth - 88, footerY, 80, 20).build());
+                .bounds(back.x(), back.y(), back.width(), back.height()).build());
         refreshControls();
     }
 
@@ -217,7 +233,7 @@ public final class ChiseOreCompatibilityScreen extends Screen {
     @Override
     public void extractBackground(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float delta) {
         super.extractBackground(extractor, mouseX, mouseY, delta);
-        extractor.fill(panelX, 34, panelX + panelWidth, height - 34, 0xC8121212);
+        extractor.fill(panelX, 34, panelX + panelWidth, Math.max(35, height - 34), 0xC8121212);
         List<OreHighlightCompatibilityConfig.Entry> entries = entries();
         int first = page * pageSize;
         for (int slot = 0; slot < pageSize; slot++) {
@@ -242,21 +258,22 @@ public final class ChiseOreCompatibilityScreen extends Screen {
 
         List<OreHighlightCompatibilityConfig.Entry> entries = entries();
         int first = page * pageSize;
-        int textRight = panelX + panelWidth - REMOVE_WIDTH - 18;
+        int textRight = panelX + panelWidth - removeWidth - 18;
         for (int slot = 0; slot < pageSize; slot++) {
             int index = first + slot;
             if (index >= entries.size()) break;
             OreHighlightCompatibilityConfig.Entry entry = entries.get(index);
             String text = entry.blockId() + "  →  " + entry.style().key();
-            extractor.text(font, ellipsize(text, Math.max(80, textRight - panelX - 18)),
+            extractor.text(font, ellipsize(text, Math.max(40, textRight - panelX - 18)),
                     panelX + 14, listTop + slot * ROW_HEIGHT + 5, 0xFFFFFFFF);
         }
         int maxPage = entries.isEmpty() ? 0 : (entries.size() - 1) / pageSize;
         extractor.centeredText(font,
                 Component.literal((page + 1) + " / " + (maxPage + 1) + "  (" + entries.size() + ")"),
-                width / 2, height - 42, 0xFFAAAAAA);
+                width / 2, Math.max(0, height - 42), 0xFFAAAAAA);
         if (!feedback.isEmpty()) {
-            extractor.centeredText(font, Component.literal(feedback), width / 2, 96, 0xFFFFD166);
+            extractor.centeredText(font, Component.literal(feedback), width / 2,
+                    compactLayout ? 104 : 96, 0xFFFFD166);
         }
     }
 
