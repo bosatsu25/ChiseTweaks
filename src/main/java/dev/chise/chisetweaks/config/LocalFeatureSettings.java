@@ -33,18 +33,19 @@ public final class LocalFeatureSettings {
             "Keep at most one scan-based highlight mode active at a time.",
             "スキャン型ハイライトを同時に1つまでに制限します。");
 
+    // Serialized field/key names retain the historical "Analyzer" wording for config compatibility.
     public static final ChiseIntegerSetting LAVA_ANALYZER_HORIZONTAL_RADIUS = integer(
             "localLavaAnalyzerHorizontalRadius", 5, 1, 8,
-            "Lava analysis range", "溶岩解析範囲");
+            "Lava source highlight range", "溶岩源ハイライト範囲");
     public static final ChiseIntegerSetting LAVA_ANALYZER_VERTICAL_RADIUS = integer(
             "localLavaAnalyzerVerticalRadius", 3, 1, 5,
-            "Lava vertical range", "溶岩垂直範囲");
+            "Lava source vertical range", "溶岩源垂直範囲");
     public static final ChiseIntegerSetting LAVA_ANALYZER_INTERVAL = integer(
             "localLavaAnalyzerIntervalTicks", 10, 5, 100,
-            "Lava analysis interval", "溶岩解析間隔");
+            "Lava source update interval", "溶岩源更新間隔");
     public static final ChiseIntegerSetting LAVA_ANALYZER_MAX_OVERLAYS = integer(
             "localLavaAnalyzerMaxOverlays", 12, 1, 24,
-            "Maximum lava markers", "溶岩最大表示数");
+            "Maximum lava source markers", "溶岩源最大表示数");
 
     private static boolean initialized;
     private static boolean syncing;
