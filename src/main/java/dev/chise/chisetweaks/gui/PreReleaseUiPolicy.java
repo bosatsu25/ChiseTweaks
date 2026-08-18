@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
-/** Keeps unreleased controls visible but non-interactive during the ore-kelp-glass pre-release. */
+/** Keeps unreleased controls visible but non-interactive during the current visual-feature pre-release. */
 final class PreReleaseUiPolicy {
     private PreReleaseUiPolicy() {}
 
@@ -24,9 +24,10 @@ final class PreReleaseUiPolicy {
         return switch (resolved) {
             case MAIN -> "materials".equals(row.id())
                     || "kelp".equals(row.id())
-                    || "glass".equals(row.id());
+                    || "glass".equals(row.id())
+                    || "lava".equals(row.id());
             case HIGHLIGHT_DETAILS -> isOreHighlightDetail(row.id());
-            case LAVA_DETAILS -> false;
+            case LAVA_DETAILS -> true;
         };
     }
 
@@ -38,7 +39,8 @@ final class PreReleaseUiPolicy {
                 ? ChiseTweaksSettingsController.Surface.MAIN
                 : surface;
         return switch (resolved) {
-            case MAIN -> action == ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS;
+            case MAIN -> action == ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS
+                    || action == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS;
             case HIGHLIGHT_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
             case LAVA_DETAILS -> false;
         };
