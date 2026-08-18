@@ -17,18 +17,21 @@ final class OreHighlightShaderInvariantContractTest {
     void oreHighlightsAlwaysSubmitTheSameEmissiveChiseOwnedOverlayMaterial() throws IOException {
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+        String emission = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java");
         String lighting = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayLighting.java");
 
         assertTrue(model.contains("super.emitQuads(emitter, level, pos, state, random, cullTest);"));
-        assertTrue(model.contains("FullbrightOverlayLighting.apply(quad)"));
+        assertTrue(model.contains("FullbrightOverlayEmission.emit("));
+        assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
         assertTrue(lighting.contains("quad.emissive(true)"));
         assertTrue(lighting.contains("quad.diffuseShade(false)"));
         assertTrue(lighting.contains("quad.ambientOcclusion(TriState.FALSE)"));
-        assertTrue(model.contains("overlay.emitQuads(emitter, level, pos, state, random, cullTest)"));
+        assertTrue(emission.contains("overlay.emitQuads(emitter, level, pos, state, random, cullTest)"));
         assertFalse(model.contains("OreHighlightLightingPolicy"));
         assertFalse(model.contains("isOverlayVertex"));
-        for (String source : new String[] {model, lighting}) {
+        for (String source : new String[] {model, emission, lighting}) {
             assertFalse(source.contains("IrisApi"));
             assertFalse(source.contains("isShaderPackInUse"));
             assertFalse(source.contains("shaderPackName"));
