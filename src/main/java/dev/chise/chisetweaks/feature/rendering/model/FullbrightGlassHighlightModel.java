@@ -33,6 +33,7 @@ final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
 
     private volatile @Nullable BlockStateModel overlay;
     private volatile int overlayLookupFailures;
+    private volatile boolean emissionQuarantined;
 
     FullbrightGlassHighlightModel(
             BlockStateModel wrapped,
@@ -55,21 +56,16 @@ final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
             RandomSource random,
             Predicate<@Nullable Direction> cullTest) {
         super.emitQuads(emitter, level, pos, state, random, cullTest);
-        if (!FeatureSwitches.GLASS_INSPECTION.getBooleanValue()) return;
+        if (!FeatureSwitches.GLASS_INSPECTION.getBooleanValue() || emissionQuarantined) return;
 
         BlockStateModel highlightOverlay = overlayModel();
         if (highlightOverlay == null) return;
 
-        emitter.pushTransform(quad -> {
-            FullbrightOverlayLighting.apply(quad);
-            return true;
-        });
-        try {
-            highlightOverlay.emitQuads(emitter, level, pos, state, random, cullTest);
-        } catch (RuntimeException | LinkageError failure) {
+        Throwable failure = FullbrightOverlayEmission.emit(
+                emitter, highlightOverlay, level, pos, state, random, cullTest);
+        if (failure != null) {
+            emissionQuarantined = true;
             warnOnce(EMIT_FAILURE_LOGGED, "Glass Highlight overlay emission", failure);
-        } finally {
-            emitter.popTransform();
         }
     }
 
@@ -110,7 +106,11 @@ final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
             BlockState state,
             RandomSource random) {
         Object wrappedKey = wrapped.createGeometryKey(level, pos, state, random);
-        if (wrappedKey == null || !FeatureSwitches.GLASS_INSPECTION.getBooleanValue()) return wrappedKey;
+        if (wrappedKey == null
+                || !FeatureSwitches.GLASS_INSPECTION.getBooleanValue()
+                || emissionQuarantined) {
+            return wrappedKey;
+        }
         return new GlassGeometryKey(wrappedKey, shape);
     }
 
