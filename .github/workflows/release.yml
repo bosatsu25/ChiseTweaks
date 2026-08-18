@@ -131,7 +131,7 @@ jobs:
           fabric_api_constraint="$(jq -r '.depends["fabric-api"] // empty' <<<"$fabric_metadata")"
           java_constraint="$(jq -r '.depends.java // empty' <<<"$fabric_metadata")"
           environment="$(jq -r '.environment // empty' <<<"$fabric_metadata")"
-          server_required="$(jq -r '.custom.chisetweaks.serverInstallationRequired // empty' <<<"$fabric_metadata")"
+          server_required="$(jq -r 'if (.custom.chisetweaks | has("serverInstallationRequired")) then .custom.chisetweaks.serverInstallationRequired else empty end' <<<"$fabric_metadata")"
 
           for value in "$fabric_version" "$fabric_mc" "$loader_constraint" "$fabric_api_constraint" "$java_constraint" "$environment" "$server_required"; do
             if [[ -z "$value" ]]; then
