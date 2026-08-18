@@ -8,6 +8,8 @@ import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
+import dev.chise.chisetweaks.core.definition.FeatureDefinition;
+import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import dev.chise.chisetweaks.feature.rendering.model.OreHighlightRenderInvalidation;
@@ -28,8 +30,10 @@ public final class FeatureControlBindings {
 
     public static void init() {
         bindWorksiteVisibilityCallbacks();
-        bindBuilderFocusLists();
-        bindSceneFilterRefresh();
+        if (builderFocusAvailable()) {
+            bindBuilderFocusLists();
+            bindSceneFilterRefresh();
+        }
         bindModelHighlightRefresh();
     }
 
@@ -104,6 +108,11 @@ public final class FeatureControlBindings {
         } finally {
             applyingExclusiveWorksiteSelection = false;
         }
+    }
+
+    private static boolean builderFocusAvailable() {
+        return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)
+                || PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES);
     }
 
     private static List<FeatureSwitch> worksiteVisibilityToggles() {
