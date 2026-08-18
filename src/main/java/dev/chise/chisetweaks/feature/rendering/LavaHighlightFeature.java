@@ -234,6 +234,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         } catch (RuntimeException | LinkageError failure) {
             renderQuarantined = true;
             clearTargets();
+            resetRendererAfterFailure();
             disableAfterQuarantine();
             ChiseTweaksClient.LOGGER.error(
                     "Lava Source Highlight rendering was quarantined after {}",
@@ -248,6 +249,16 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
                 || client.level != lastLevel
                 || client.screen != null) return;
         sourceRenderer.render(context, snapshot);
+    }
+
+    private void resetRendererAfterFailure() {
+        try {
+            sourceRenderer.resetAfterFailure();
+        } catch (RuntimeException | LinkageError cleanupFailure) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Lava Source Highlight renderer cleanup failed after {}",
+                    cleanupFailure.getClass().getSimpleName());
+        }
     }
 
     private void disableAfterQuarantine() {
