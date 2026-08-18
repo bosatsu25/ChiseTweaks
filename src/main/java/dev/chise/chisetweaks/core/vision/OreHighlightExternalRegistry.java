@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -14,6 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class OreHighlightExternalRegistry {
     private static final int MAX_API_BLOCKS = 2048;
     private static final int MAX_API_TAGS = 256;
+    private static final int MAX_PUBLISHED_BLOCKS = 512;
     private static final ConcurrentHashMap<String, OreHighlightStyle> API_BLOCKS = new ConcurrentHashMap<>();
     private static final CopyOnWriteArrayList<TagRegistration> API_TAGS = new CopyOnWriteArrayList<>();
     private static volatile Map<String, OreHighlightStyle> resourceBlocks = Map.of();
@@ -79,12 +81,13 @@ public final class OreHighlightExternalRegistry {
 
     private static Map<String, OreHighlightStyle> sanitizedCopy(Map<String, OreHighlightStyle> entries) {
         if (entries == null || entries.isEmpty()) return Map.of();
-        ConcurrentHashMap<String, OreHighlightStyle> sanitized = new ConcurrentHashMap<>();
+        LinkedHashMap<String, OreHighlightStyle> sanitized = new LinkedHashMap<>();
         for (Map.Entry<String, OreHighlightStyle> entry : entries.entrySet()) {
-            String normalized = ModdedOreIdPolicy.normalize(entry.getKey());
-            if (!normalized.isEmpty() && entry.getValue() != null) {
-                sanitized.put(normalized, entry.getValue());
-            }
+            if (sanitized.size() >= MAX_PUBLISHED_BLOCKS) break;
+            if (entry == null || entry.getValue() == null) continue;
+            Identifier id = Identifier.tryParse(ModdedOreIdPolicy.normalize(entry.getKey()));
+            if (id == null || "minecraft".equals(id.getNamespace())) continue;
+            sanitized.put(id.toString(), entry.getValue());
         }
         return Map.copyOf(sanitized);
     }
