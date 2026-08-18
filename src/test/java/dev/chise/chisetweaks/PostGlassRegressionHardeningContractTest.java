@@ -16,11 +16,14 @@ final class PostGlassRegressionHardeningContractTest {
     @Test
     void lockedRuntimeFeaturesDoNotRegisterIdleTickWork() throws IOException {
         String manager = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
+        String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
         assertTrue(manager.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)"));
         assertTrue(manager.contains("hasAvailableWorksiteVisibilityFeature()"));
         assertTrue(manager.contains("definition.isWorksiteVisibilityMode()"));
         assertTrue(manager.contains("PreReleaseFeaturePolicy.isAvailable(definition)"));
         assertTrue(manager.contains("if (tickSchedule.length != 0)"));
+        assertTrue(bindings.contains(".filter(toggle -> PreReleaseFeaturePolicy.isAvailable(toggle.definition()))"));
+        assertTrue(bindings.contains("if (!WORKSITE_VISIBILITY_TOGGLES.isEmpty()) bindWorksiteVisibilityCallbacks();"));
     }
 
     @Test
