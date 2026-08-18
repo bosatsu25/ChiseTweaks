@@ -45,7 +45,7 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void scanBackedFeaturesUseOnlyTheFourRetainedWorksiteModes() {
+    void scanBackedFeaturesUseOnlyTheThreeRetainedWorksiteModes() {
         Set<WorksiteVisibilitySelectionPolicy.Mode> modes = FeatureDefinition.VALUES.stream()
                 .filter(FeatureDefinition::isWorksiteVisibilityMode)
                 .map(FeatureDefinition::worksiteMode)
@@ -53,15 +53,12 @@ final class RetainedFeatureScopeTest {
         assertEquals(Set.of(
                 WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD,
                 WorksiteVisibilitySelectionPolicy.Mode.HIDDEN_SURFACE,
-                WorksiteVisibilitySelectionPolicy.Mode.MATERIAL_HIGHLIGHT,
                 WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE), modes);
 
         assertEquals(BlockInspectionCategory.TECHNICAL_TRACE,
                 FeatureDefinition.FINE_THREAD_TRACE.inspectionCategory());
         assertEquals(BlockInspectionCategory.HIDDEN_SURFACE,
                 FeatureDefinition.HIDDEN_SURFACE_TRACE.inspectionCategory());
-        assertEquals(BlockInspectionCategory.MATERIAL_HIGHLIGHT,
-                FeatureDefinition.MATERIAL_HIGHLIGHTS.inspectionCategory());
         assertEquals(BlockInspectionCategory.NETHER_PALETTE,
                 FeatureDefinition.NETHER_PALETTE.inspectionCategory());
     }
@@ -71,12 +68,14 @@ final class RetainedFeatureScopeTest {
         assertFalse(FeatureDefinition.BUILDER_FOCUS_BLOCKS.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.BUILDER_FOCUS_ENTITIES.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.GLASS_INSPECTION.isWorksiteVisibilityMode());
+        assertFalse(FeatureDefinition.MATERIAL_HIGHLIGHTS.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.KELP_HIGHLIGHT.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.FIRE_VISIBILITY.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.LAVA_HIGHLIGHT.isWorksiteVisibilityMode());
         assertEquals(null, FeatureDefinition.BUILDER_FOCUS_BLOCKS.inspectionCategory());
         assertEquals(null, FeatureDefinition.BUILDER_FOCUS_ENTITIES.inspectionCategory());
         assertEquals(null, FeatureDefinition.GLASS_INSPECTION.inspectionCategory());
+        assertEquals(null, FeatureDefinition.MATERIAL_HIGHLIGHTS.inspectionCategory());
         assertEquals(null, FeatureDefinition.KELP_HIGHLIGHT.inspectionCategory());
         assertEquals(null, FeatureDefinition.FIRE_VISIBILITY.inspectionCategory());
         assertEquals(null, FeatureDefinition.LAVA_HIGHLIGHT.inspectionCategory());
