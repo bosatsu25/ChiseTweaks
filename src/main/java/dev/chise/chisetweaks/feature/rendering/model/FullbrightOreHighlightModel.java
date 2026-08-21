@@ -1,8 +1,6 @@
 package dev.chise.chisetweaks.feature.rendering.model;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
-import dev.chise.chisetweaks.config.FeatureSwitches;
-import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import net.fabricmc.fabric.api.client.model.loading.v1.ExtraModelKey;
@@ -63,9 +61,10 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             RandomSource random,
             Predicate<@Nullable Direction> cullTest) {
         super.emitQuads(emitter, level, pos, state, random, cullTest);
-        if (!highlightEnabled()) return;
+        VisualRenderState.Snapshot renderState = VisualRenderState.current();
+        if (!renderState.shouldRenderOre(target)) return;
 
-        boolean animated = motion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
+        boolean animated = renderState.oreMotion() == OreHighlightRuntimePolicy.Motion.ANIMATED;
         if (emissionQuarantined(animated)) return;
         BlockStateModel overlay = overlayModel(animated);
         if (overlay == null) return;
@@ -76,21 +75,6 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             quarantineEmission(animated);
             warnOnce(EMIT_FAILURE_LOGGED, "Ore Highlight overlay emission", failure);
         }
-    }
-
-    private boolean highlightEnabled() {
-        boolean masterEnabled = FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue();
-        if (!masterEnabled) return false;
-        if (target == null) return true;
-        return OreHighlightRuntimePolicy.shouldRender(
-                true,
-                LocalFeatureConfig.getInstance().visualTargetMask,
-                target);
-    }
-
-    private static OreHighlightRuntimePolicy.Motion motion() {
-        return OreHighlightRuntimePolicy.motion(
-                LocalFeatureConfig.getInstance().oreHighlightAnimationEnabled);
     }
 
     private @Nullable BlockStateModel overlayModel(boolean animated) {
@@ -150,8 +134,11 @@ final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
             BlockState state,
             RandomSource random) {
         Object wrappedKey = wrapped.createGeometryKey(level, pos, state, random);
-        if (wrappedKey == null || !highlightEnabled()) return wrappedKey;
-        OreHighlightRuntimePolicy.Motion currentMotion = motion();
+        if (wrappedKey == null) return null;
+
+        VisualRenderState.Snapshot renderState = VisualRenderState.current();
+        if (!renderState.shouldRenderOre(target)) return wrappedKey;
+        OreHighlightRuntimePolicy.Motion currentMotion = renderState.oreMotion();
         boolean animated = currentMotion == OreHighlightRuntimePolicy.Motion.ANIMATED;
         if (emissionQuarantined(animated)) return wrappedKey;
         return new GeometryKey(wrappedKey, target, currentMotion);
