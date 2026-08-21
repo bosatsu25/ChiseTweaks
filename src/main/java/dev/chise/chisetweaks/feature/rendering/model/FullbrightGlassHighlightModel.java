@@ -1,7 +1,6 @@
 package dev.chise.chisetweaks.feature.rendering.model;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
-import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.core.vision.GlassHighlightTargetPolicy;
 import net.fabricmc.fabric.api.client.model.loading.v1.ExtraModelKey;
 import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel;
@@ -56,7 +55,7 @@ final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
             RandomSource random,
             Predicate<@Nullable Direction> cullTest) {
         super.emitQuads(emitter, level, pos, state, random, cullTest);
-        if (!FeatureSwitches.GLASS_INSPECTION.getBooleanValue() || emissionQuarantined) return;
+        if (!VisualRenderState.current().glassEnabled() || emissionQuarantined) return;
 
         BlockStateModel highlightOverlay = overlayModel();
         if (highlightOverlay == null) return;
@@ -107,7 +106,7 @@ final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
             RandomSource random) {
         Object wrappedKey = wrapped.createGeometryKey(level, pos, state, random);
         if (wrappedKey == null
-                || !FeatureSwitches.GLASS_INSPECTION.getBooleanValue()
+                || !VisualRenderState.current().glassEnabled()
                 || emissionQuarantined) {
             return wrappedKey;
         }
