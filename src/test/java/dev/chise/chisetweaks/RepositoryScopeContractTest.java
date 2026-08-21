@@ -57,12 +57,16 @@ final class RepositoryScopeContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java"));
 
         assertTrue(feature.contains("fluidState.isSource()"));
-        assertTrue(feature.contains("hasChunk"));
+        assertTrue(feature.contains("getChunkNow"));
+        assertTrue(feature.contains("LevelChunk[] loadedChunkBuffer"));
         assertTrue(feature.contains("MAX_OVERLAY_RESULTS"));
+        assertTrue(feature.contains("LavaSourceSnapshot"));
         assertTrue(feature.contains("LavaVisionPalettePolicy.shouldHighlight"));
         assertTrue(feature.contains("Lava Source Highlight initialized"));
         assertTrue(renderer.contains("withDepthStencilState(Optional.empty())"));
         assertTrue(renderer.contains("LavaVisionPalettePolicy.colorForDistance"));
+        assertTrue(renderer.contains("sources.renderRevision() != uploadedRevision"));
+        assertTrue(renderer.contains("anchorX - camera.x"));
         assertFalse(feature.contains("DefaultFluidRenderer"));
         assertFalse(renderer.contains("DefaultFluidRenderer"));
     }
@@ -80,15 +84,18 @@ final class RepositoryScopeContractTest {
         assertTrue(feature.contains("client.level != lastLevel"));
         assertTrue(feature.contains("fingerprint != lastScanFingerprint"));
         assertTrue(feature.contains("hasKnownSourceBoundary"));
-        assertTrue(feature.contains("hasChunk(neighborChunkX, neighborChunkZ)"));
+        assertTrue(feature.contains("getChunkNow(neighborChunkX, neighborChunkZ)"));
+        assertTrue(feature.contains("neighborChunk == null"));
         assertTrue(feature.contains("local.lavaHighlightEnabled = false"));
         assertTrue(feature.contains("runtimeQuarantined"));
         assertTrue(feature.contains("!isSessionQuarantined()"));
         assertTrue(feature.contains("public void onQuarantined(Minecraft client)"));
+        assertTrue(feature.contains("MAX_STABLE_BACKOFF_SHIFT = 2"));
         assertTrue(manager.contains("notifyInitializationQuarantine(feature.getId(), ticking)"));
-        assertTrue(renderer.contains("if (!geometryComplete) buffer = null"));
-        assertTrue(renderer.contains("builtBuffer = buffer.buildOrThrow()"));
-        assertTrue(renderer.contains("Never reuse a builder after either a successful build"));
+        assertTrue(renderer.contains("resetAfterFailure()"));
+        assertTrue(renderer.contains("drawVertexBuffer = null"));
+        assertTrue(renderer.contains("uploadedRevision = Long.MIN_VALUE"));
+        assertTrue(renderer.contains("vertexBuffer.close()"));
     }
 
     @Test
