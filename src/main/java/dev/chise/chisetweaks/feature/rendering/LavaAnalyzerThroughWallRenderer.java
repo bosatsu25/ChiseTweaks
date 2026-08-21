@@ -9,8 +9,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
@@ -26,18 +26,18 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
 /**
- * Small dedicated GPU path for Lava Source Highlight cubes that remain visible through terrain.
+ * Retained GPU path for Lava Source Highlight cubes that remain visible through terrain.
  *
- * <p>The pipeline intentionally has no depth/stencil state. It is used only for already-retained,
- * nearby lava-source positions; it never reads world data, loads chunks, or expands the scan radius.
- * The geometry is a 12-edge wireframe built from narrow solid bars so it can use Minecraft's public
- * position-colour debug snippet without depending on renderer internals.</p>
+ * <p>Geometry is rebuilt and uploaded only when the scanner publishes a new render revision. The
+ * vertex buffer is anchored near the highlighted sources, keeping local float coordinates precise
+ * even at large world coordinates. Per-frame work is reduced to a camera-relative model-view
+ * transform plus draw submission; no world reads, geometry creation, colour distance calculation,
+ * mesh build, or vertex upload occurs on an unchanged frame.</p>
  */
 final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
     private static final RenderPipeline THROUGH_WALL_PIPELINE = RenderPipelines.register(
@@ -50,62 +50,79 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
     private static final Vector3f MODEL_OFFSET = new Vector3f();
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
+    private static final Matrix4fc IDENTITY_POSE = new Matrix4f();
     private static final float BOX_INSET = 0.018f;
 
+    private final LavaSourceSnapshot.Capture capture = new LavaSourceSnapshot.Capture(
+            WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS);
+    private final Matrix4f dynamicModelView = new Matrix4f();
+
     private ByteBufferBuilder allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
-    private BufferBuilder buffer;
     private MappableRingBuffer vertexBuffer;
+    private GpuBuffer drawVertexBuffer;
+    private int drawIndexCount;
+    private int anchorX;
+    private int anchorY;
+    private int anchorZ;
+    private long uploadedRevision = Long.MIN_VALUE;
     private boolean closed;
 
-    void render(LevelRenderContext context, List<BlockPos> sources) {
+    void render(LevelRenderContext context, LavaSourceSnapshot sources) {
         if (closed || context == null || sources == null || sources.isEmpty()) return;
         Vec3 camera = context.levelState().cameraRenderState.pos;
         if (camera == null) return;
 
-        PoseStack matrices = context.poseStack();
-        matrices.pushPose();
-        boolean geometryComplete = false;
-        try {
-            matrices.translate(-camera.x, -camera.y, -camera.z);
-            if (buffer == null) {
-                buffer = new BufferBuilder(
-                        allocator,
-                        THROUGH_WALL_PIPELINE.getVertexFormatMode(),
-                        THROUGH_WALL_PIPELINE.getVertexFormat());
+        if (sources.renderRevision() != uploadedRevision) {
+            sources.captureInto(capture);
+            if (capture.count() == 0) {
+                drawIndexCount = 0;
+                uploadedRevision = capture.revision();
+                return;
             }
-
-            Matrix4fc pose = matrices.last().pose();
-            for (BlockPos source : sources) {
-                double dx = source.getX() + 0.5 - camera.x;
-                double dy = source.getY() + 0.5 - camera.y;
-                double dz = source.getZ() + 0.5 - camera.z;
-                int argb = LavaVisionPalettePolicy.colorForDistance(
-                        Math.sqrt(dx * dx + dy * dy + dz * dz));
-                drawWireBox(pose, buffer, source, argb, LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS);
-            }
-            geometryComplete = true;
-        } finally {
-            matrices.popPose();
-            if (!geometryComplete) buffer = null;
+            rebuildAndUpload(capture);
+            uploadedRevision = capture.revision();
         }
 
-        drawThroughWalls(Minecraft.getInstance(), THROUGH_WALL_PIPELINE);
+        if (drawVertexBuffer == null || drawIndexCount == 0) return;
+        draw(Minecraft.getInstance(), THROUGH_WALL_PIPELINE, camera);
     }
 
-    private void drawThroughWalls(Minecraft client, RenderPipeline pipeline) {
-        MeshData builtBuffer;
-        try {
-            builtBuffer = buffer.buildOrThrow();
-        } finally {
-            // Never reuse a builder after either a successful build or a build-time failure.
-            buffer = null;
+    private void rebuildAndUpload(LavaSourceSnapshot.Capture state) {
+        long anchor = state.positionAt(0);
+        anchorX = BlockPos.getX(anchor);
+        anchorY = BlockPos.getY(anchor);
+        anchorZ = BlockPos.getZ(anchor);
+
+        BufferBuilder buffer = new BufferBuilder(
+                allocator,
+                THROUGH_WALL_PIPELINE.getVertexFormatMode(),
+                THROUGH_WALL_PIPELINE.getVertexFormat());
+        for (int index = 0; index < state.count(); index++) {
+            long packed = state.positionAt(index);
+            int x = BlockPos.getX(packed);
+            int y = BlockPos.getY(packed);
+            int z = BlockPos.getZ(packed);
+            double dx = x + 0.5 - state.eyeX();
+            double dy = y + 0.5 - state.eyeY();
+            double dz = z + 0.5 - state.eyeZ();
+            int argb = LavaVisionPalettePolicy.colorForDistance(
+                    Math.sqrt(dx * dx + dy * dy + dz * dz));
+            drawWireBox(
+                    IDENTITY_POSE,
+                    buffer,
+                    x - anchorX,
+                    y - anchorY,
+                    z - anchorZ,
+                    argb,
+                    LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS);
         }
+
+        MeshData builtBuffer = buffer.buildOrThrow();
         try {
             MeshData.DrawState drawParameters = builtBuffer.drawState();
             VertexFormat format = drawParameters.format();
-            GpuBuffer vertices = upload(drawParameters, format, builtBuffer);
-            draw(client, pipeline, builtBuffer, drawParameters, vertices, format);
-            vertexBuffer.rotate();
+            drawVertexBuffer = upload(drawParameters, format, builtBuffer);
+            drawIndexCount = drawParameters.indexCount();
         } finally {
             builtBuffer.close();
         }
@@ -116,47 +133,43 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
         if (vertexBuffer == null || vertexBuffer.size() < vertexBufferSize) {
             if (vertexBuffer != null) vertexBuffer.close();
             vertexBuffer = new MappableRingBuffer(
-                    () -> "ChiseTweaks Lava Source Highlight through-wall buffer",
+                    () -> "ChiseTweaks Lava Source Highlight retained buffer",
                     GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE,
                     vertexBufferSize);
+            drawVertexBuffer = null;
         }
 
+        GpuBuffer uploadTarget = vertexBuffer.currentBuffer();
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
         try (GpuBuffer.MappedView mappedView = commandEncoder.mapBuffer(
-                vertexBuffer.currentBuffer().slice(0, builtBuffer.vertexBuffer().remaining()),
+                uploadTarget.slice(0, builtBuffer.vertexBuffer().remaining()),
                 false,
                 true)) {
             MemoryUtil.memCopy(builtBuffer.vertexBuffer(), mappedView.data());
         }
-        return vertexBuffer.currentBuffer();
+        // Rotate only after retaining the buffer that owns this revision. The next rebuild writes to
+        // another ring slot while unchanged frames keep drawing the retained buffer.
+        vertexBuffer.rotate();
+        return uploadTarget;
     }
 
-    private void draw(
-            Minecraft client,
-            RenderPipeline pipeline,
-            MeshData builtBuffer,
-            MeshData.DrawState drawParameters,
-            GpuBuffer vertices,
-            VertexFormat format) {
-        GpuBuffer indices;
-        VertexFormat.IndexType indexType;
-        if (pipeline.getVertexFormatMode() == VertexFormat.Mode.QUADS) {
-            builtBuffer.sortQuads(allocator, RenderSystem.getProjectionType().vertexSorting());
-            indices = pipeline.getVertexFormat().uploadImmediateIndexBuffer(builtBuffer.indexBuffer());
-            indexType = builtBuffer.drawState().indexType();
-        } else {
-            RenderSystem.AutoStorageIndexBuffer shapeIndexBuffer =
-                    RenderSystem.getSequentialBuffer(pipeline.getVertexFormatMode());
-            indices = shapeIndexBuffer.getBuffer(drawParameters.indexCount());
-            indexType = shapeIndexBuffer.type();
-        }
+    private void draw(Minecraft client, RenderPipeline pipeline, Vec3 camera) {
+        RenderSystem.AutoStorageIndexBuffer shapeIndexBuffer =
+                RenderSystem.getSequentialBuffer(pipeline.getVertexFormatMode());
+        GpuBuffer indices = shapeIndexBuffer.getBuffer(drawIndexCount);
+        VertexFormat.IndexType indexType = shapeIndexBuffer.type();
 
+        dynamicModelView.set(RenderSystem.getModelViewMatrix());
+        dynamicModelView.translate(
+                (float) (anchorX - camera.x),
+                (float) (anchorY - camera.y),
+                (float) (anchorZ - camera.z));
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms()
-                .writeTransform(RenderSystem.getModelViewMatrix(), COLOR_MODULATOR, MODEL_OFFSET, TEXTURE_MATRIX);
+                .writeTransform(dynamicModelView, COLOR_MODULATOR, MODEL_OFFSET, TEXTURE_MATRIX);
         try (RenderPass renderPass = RenderSystem.getDevice()
                 .createCommandEncoder()
                 .createRenderPass(
-                        () -> "ChiseTweaks Lava Source Highlight through-wall rendering",
+                        () -> "ChiseTweaks Lava Source Highlight retained rendering",
                         client.getMainRenderTarget().getColorTextureView(),
                         OptionalInt.empty(),
                         client.getMainRenderTarget().getDepthTextureView(),
@@ -164,16 +177,18 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
             renderPass.setPipeline(pipeline);
             RenderSystem.bindDefaultUniforms(renderPass);
             renderPass.setUniform("DynamicTransforms", dynamicTransforms);
-            renderPass.setVertexBuffer(0, vertices);
+            renderPass.setVertexBuffer(0, drawVertexBuffer);
             renderPass.setIndexBuffer(indices, indexType);
-            renderPass.drawIndexed(0 / format.getVertexSize(), 0, drawParameters.indexCount(), 1);
+            renderPass.drawIndexed(0, 0, drawIndexCount, 1);
         }
     }
 
     /** Drops all transient CPU/GPU workspace so a later session never inherits a failed frame. */
     void resetAfterFailure() {
         if (closed) return;
-        buffer = null;
+        drawVertexBuffer = null;
+        drawIndexCount = 0;
+        uploadedRevision = Long.MIN_VALUE;
         if (vertexBuffer != null) {
             vertexBuffer.close();
             vertexBuffer = null;
@@ -185,15 +200,17 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
     private static void drawWireBox(
             Matrix4fc pose,
             BufferBuilder vertices,
-            BlockPos position,
+            int blockX,
+            int blockY,
+            int blockZ,
             int argb,
             float thickness) {
-        float minX = position.getX() + BOX_INSET;
-        float minY = position.getY() + BOX_INSET;
-        float minZ = position.getZ() + BOX_INSET;
-        float maxX = position.getX() + 1.0f - BOX_INSET;
-        float maxY = position.getY() + 1.0f - BOX_INSET;
-        float maxZ = position.getZ() + 1.0f - BOX_INSET;
+        float minX = blockX + BOX_INSET;
+        float minY = blockY + BOX_INSET;
+        float minZ = blockZ + BOX_INSET;
+        float maxX = blockX + 1.0f - BOX_INSET;
+        float maxY = blockY + 1.0f - BOX_INSET;
+        float maxZ = blockZ + 1.0f - BOX_INSET;
         float half = thickness * 0.5f;
 
         bar(vertices, pose, minX, minY - half, minZ - half, maxX, minY + half, minZ + half, argb);
@@ -275,6 +292,8 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
             vertexBuffer.close();
             vertexBuffer = null;
         }
-        buffer = null;
+        drawVertexBuffer = null;
+        drawIndexCount = 0;
+        uploadedRevision = Long.MIN_VALUE;
     }
 }
