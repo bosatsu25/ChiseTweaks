@@ -50,8 +50,10 @@ final class OreHighlightShaderInvariantContractTest {
         assertTrue(plugin.contains("pluginContext.addModel("));
         assertTrue(plugin.contains("SimpleUnbakedExtraModel.blockStateModel"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
+        assertTrue(plugin.contains("classificationCache.computeIfAbsent("));
         assertTrue(plugin.contains("new FullbrightOreHighlightModel("));
-        assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return model;"));
+        assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return VisualModelClassification.NONE;"));
+        assertTrue(plugin.contains("case NONE -> model;"));
         assertFalse(plugin.contains("ModelModifier.OVERRIDE_PHASE"));
         assertFalse(plugin.contains("modifyBlockModelOnLoad"));
         assertFalse(plugin.contains("SingleVariant.Unbaked"));

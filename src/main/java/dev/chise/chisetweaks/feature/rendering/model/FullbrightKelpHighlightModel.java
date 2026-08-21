@@ -1,7 +1,6 @@
 package dev.chise.chisetweaks.feature.rendering.model;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
-import dev.chise.chisetweaks.config.FeatureSwitches;
 import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 import net.minecraft.client.Minecraft;
@@ -42,7 +41,7 @@ final class FullbrightKelpHighlightModel extends WrapperBlockStateModel {
             RandomSource random,
             Predicate<@Nullable Direction> cullTest) {
         super.emitQuads(emitter, level, pos, state, random, cullTest);
-        if (!FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue() || emissionQuarantined) return;
+        if (!VisualRenderState.current().kelpEnabled() || emissionQuarantined) return;
 
         BlockStateModel partyOverlay = overlayModel();
         if (partyOverlay == null) return;
@@ -93,7 +92,7 @@ final class FullbrightKelpHighlightModel extends WrapperBlockStateModel {
             RandomSource random) {
         Object wrappedKey = wrapped.createGeometryKey(level, pos, state, random);
         if (wrappedKey == null
-                || !FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue()
+                || !VisualRenderState.current().kelpEnabled()
                 || emissionQuarantined) {
             return wrappedKey;
         }

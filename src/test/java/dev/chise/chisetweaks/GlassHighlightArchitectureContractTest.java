@@ -75,7 +75,8 @@ final class GlassHighlightArchitectureContractTest {
         assertTrue(plugin.contains("GlassHighlightTargetPolicy.classify"));
         assertTrue(plugin.contains("FullbrightGlassHighlightModel"));
         assertTrue(wrapper.contains("super.emitQuads"));
-        assertTrue(wrapper.contains("FeatureSwitches.GLASS_INSPECTION"));
+        assertTrue(wrapper.contains("VisualRenderState.current().glassEnabled()"));
+        assertFalse(wrapper.contains("FeatureSwitches.GLASS_INSPECTION"));
         assertTrue(wrapper.contains("FullbrightOverlayEmission.emit("));
         assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
         assertTrue(emission.contains("overlay.emitQuads(emitter, level, pos, state, random, cullTest)"));

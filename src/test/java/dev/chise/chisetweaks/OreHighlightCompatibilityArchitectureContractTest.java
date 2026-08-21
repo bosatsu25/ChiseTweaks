@@ -60,14 +60,17 @@ final class OreHighlightCompatibilityArchitectureContractTest {
 
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
+        assertTrue(plugin.contains("classificationCache.computeIfAbsent("));
         assertTrue(plugin.contains("OreHighlightResolver.resolve(state)"));
-        assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return model;"));
+        assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return VisualModelClassification.NONE;"));
+        assertTrue(plugin.contains("case NONE -> model;"));
         assertFalse(plugin.contains("if (!\"minecraft\".equals(namespace))"));
         assertFalse(plugin.contains("new FullbrightOreHighlightModel(model)"));
         assertFalse(plugin.contains("OVERRIDE_PHASE"));
 
         assertTrue(model.contains("super.emitQuads(emitter, level, pos, state, random, cullTest);"));
-        assertTrue(model.contains("if (!highlightEnabled()) return;"));
+        assertTrue(model.contains("VisualRenderState.Snapshot renderState = VisualRenderState.current();"));
+        assertTrue(model.contains("if (!renderState.shouldRenderOre(target)) return;"));
         assertFalse(model.contains("OreHighlightResolver.resolve"));
         assertFalse(model.contains("OreHighlightResolver.revision()"));
         assertFalse(model.contains("dynamicModded"));

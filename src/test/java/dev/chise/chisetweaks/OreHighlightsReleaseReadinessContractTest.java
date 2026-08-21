@@ -62,7 +62,9 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
         assertTrue(plugin.contains("pluginContext.addModel("));
-        assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return model;"));
+        assertTrue(plugin.contains("classificationCache.computeIfAbsent("));
+        assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return VisualModelClassification.NONE;"));
+        assertTrue(plugin.contains("case NONE -> model;"));
 
         for (String forbidden : Set.of(
                 "WorksiteScanner", "LavaAnalyzerThroughWallRenderer",
@@ -72,6 +74,7 @@ final class OreHighlightsReleaseReadinessContractTest {
             assertFalse(model.contains(forbidden), forbidden);
         }
         assertFalse(model.contains("OreHighlightResolver.resolve"));
+        assertTrue(model.contains("VisualRenderState.current()"));
     }
 
     @Test
@@ -116,7 +119,8 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertFalse(editor.contains("reloadResourcePacks"));
         assertTrue(invalidation.contains("client.levelRenderer.allChanged()"));
         assertTrue(invalidation.contains("AtomicBoolean REQUESTED"));
-        assertTrue(bindings.contains("OreHighlightRenderInvalidation.request"));
+        assertTrue(bindings.contains("VisualRenderState.refreshFromConfig()"));
+        assertTrue(bindings.contains("OreHighlightRenderInvalidation.request()"));
         assertTrue(editor.contains("OreHighlightModelReload.request()"));
         assertTrue(modelReload.contains("client.reloadResourcePacks()"));
         assertTrue(modelReload.contains("ChiseVisualModelPlugin.isModelPipelineReady()"));

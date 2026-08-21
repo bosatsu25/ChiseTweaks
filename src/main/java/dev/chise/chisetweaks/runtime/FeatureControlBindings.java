@@ -13,6 +13,7 @@ import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import dev.chise.chisetweaks.feature.rendering.model.OreHighlightRenderInvalidation;
+import dev.chise.chisetweaks.feature.rendering.model.VisualRenderState;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -39,16 +40,22 @@ public final class FeatureControlBindings {
     }
 
     private static void bindModelHighlightRefresh() {
+        VisualRenderState.refreshFromConfig();
         FeatureSwitches.MATERIAL_HIGHLIGHTS.addValueChangeListener(
-                ignored -> OreHighlightRenderInvalidation.request());
+                ignored -> refreshVisualStateAndInvalidate());
         FeatureSwitches.KELP_HIGHLIGHT.addValueChangeListener(
-                ignored -> OreHighlightRenderInvalidation.request());
+                ignored -> refreshVisualStateAndInvalidate());
         FeatureSwitches.GLASS_INSPECTION.addValueChangeListener(
-                ignored -> OreHighlightRenderInvalidation.request());
+                ignored -> refreshVisualStateAndInvalidate());
         LocalFeatureSettings.setOreHighlightChangedCallback(
-                OreHighlightRenderInvalidation::request);
+                FeatureControlBindings::refreshVisualStateAndInvalidate);
         VisualTargetSettings.setMaterialTargetsChangedCallback(
-                OreHighlightRenderInvalidation::request);
+                FeatureControlBindings::refreshVisualStateAndInvalidate);
+    }
+
+    private static void refreshVisualStateAndInvalidate() {
+        VisualRenderState.refreshFromConfig();
+        OreHighlightRenderInvalidation.request();
     }
 
     private static void bindSceneFilterRefresh() {

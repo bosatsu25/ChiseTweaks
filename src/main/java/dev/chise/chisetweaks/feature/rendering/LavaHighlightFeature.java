@@ -15,39 +15,44 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * Bounded, client-only highlighter for nearby lava source blocks.
  *
  * <p>The feature never recolors lava, loads chunks, mutates the world, or sends packets. It scans
- * only already-loaded nearby blocks on the existing Chise tick cadence, retains a bounded set of
- * lava sources that have a known source boundary, and renders a full-bright 1x1x1 source
- * wireframe through nearby terrain. The wireframe stays in Chise's reserved deep-green family and
- * strengthens smoothly toward {@code #075B32} as the player approaches the source.</p>
+ * only already-loaded nearby blocks on an adaptive Chise tick cadence, publishes a fixed-capacity
+ * primitive snapshot, and lets a retained GPU renderer draw the selected sources through nearby
+ * terrain. Stable stationary scenes back off automatically while movement and config edits restore
+ * the normal scan cadence.</p>
  */
 public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature {
     private static final int MAX_CANDIDATES = WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS;
+    private static final int MAX_STABLE_BACKOFF_SHIFT = 2;
     private static final Direction[] DIRECTIONS = Direction.values();
 
     private final LavaAnalyzerThroughWallRenderer sourceRenderer = new LavaAnalyzerThroughWallRenderer();
+    private final LavaSourceSnapshot highlightedSources = new LavaSourceSnapshot(MAX_CANDIDATES);
     private final int[] candidateX = new int[MAX_CANDIDATES];
     private final int[] candidateY = new int[MAX_CANDIDATES];
     private final int[] candidateZ = new int[MAX_CANDIDATES];
     private final double[] candidateDistanceSquared = new double[MAX_CANDIDATES];
-    private final boolean[] loadedChunkBuffer = new boolean[
+    private final long[] packedCandidatePositions = new long[MAX_CANDIDATES];
+    private final LevelChunk[] loadedChunkBuffer = new LevelChunk[
             WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES];
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private final BlockPos.MutableBlockPos neighborCursor = new BlockPos.MutableBlockPos();
 
-    private volatile List<BlockPos> highlightedSources = List.of();
     private int ticksUntilScan;
+    private int stableScanCount;
     private int lastScanFingerprint = Integer.MIN_VALUE;
+    private long lastObservedPlayerBlock = Long.MIN_VALUE;
+    private boolean movementSinceLastScan;
     private ClientLevel lastLevel;
     private boolean renderQuarantined;
     private boolean runtimeQuarantined;
@@ -67,7 +72,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(this::render);
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> sourceRenderer.close());
         ChiseTweaksClient.LOGGER.info(
-                "Lava Source Highlight initialized with bounded through-terrain source rendering");
+                "Lava Source Highlight initialized with adaptive bounded scanning and retained through-terrain rendering");
     }
 
     @Override
@@ -83,28 +88,39 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         }
 
         if (lastLevel != client.level) {
-            clearTargets();
-            ticksUntilScan = 0;
-            lastScanFingerprint = Integer.MIN_VALUE;
-            lastLevel = client.level;
+            resetForLevel(client.level);
         }
 
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         int fingerprint = scanFingerprint(local);
-        if (fingerprint != lastScanFingerprint) ticksUntilScan = 0;
+        int baseInterval = WorksiteVisibilityBudgetPolicy.clampIntervalTicks(
+                local.lavaAnalyzerIntervalTicks);
+        long currentPlayerBlock = client.player.blockPosition().asLong();
+        if (currentPlayerBlock != lastObservedPlayerBlock) {
+            lastObservedPlayerBlock = currentPlayerBlock;
+            movementSinceLastScan = true;
+            stableScanCount = 0;
+            // Returning from a stationary backoff must never make moving users wait longer than the
+            // configured base cadence, but movement also must not scan more often than that cadence.
+            ticksUntilScan = Math.min(ticksUntilScan, baseInterval - 1);
+        }
+        if (fingerprint != lastScanFingerprint) {
+            ticksUntilScan = 0;
+            stableScanCount = 0;
+        }
 
         if (ticksUntilScan > 0) {
             ticksUntilScan--;
             return;
         }
 
-        ticksUntilScan = WorksiteVisibilityBudgetPolicy.clampIntervalTicks(
-                local.lavaAnalyzerIntervalTicks) - 1;
-        scanLoadedSources(client, local);
+        boolean sourcesChanged = scanLoadedSources(client, local);
+        ticksUntilScan = nextIntervalTicks(baseInterval, sourcesChanged, movementSinceLastScan) - 1;
+        movementSinceLastScan = false;
         lastScanFingerprint = fingerprint;
     }
 
-    private void scanLoadedSources(Minecraft client, LocalFeatureConfig local) {
+    private boolean scanLoadedSources(Minecraft client, LocalFeatureConfig local) {
         int horizontalRadius = WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(
                 local.lavaAnalyzerHorizontalRadius);
         int verticalRadius = WorksiteVisibilityBudgetPolicy.clampVerticalRadius(
@@ -125,14 +141,14 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         int chunkSpanX = maxChunkX - minChunkX + 1;
         int chunkCount = chunkSpanX * (maxChunkZ - minChunkZ + 1);
         if (chunkCount > loadedChunkBuffer.length) {
-            clearTargets();
-            return;
+            return highlightedSources.clear();
         }
 
         int chunkIndex = 0;
         for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
             for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-                loadedChunkBuffer[chunkIndex++] = client.level.getChunkSource().hasChunk(chunkX, chunkZ);
+                // getChunkNow() is explicitly non-loading; never replace this with getChunk(..., true).
+                loadedChunkBuffer[chunkIndex++] = client.level.getChunkSource().getChunkNow(chunkX, chunkZ);
             }
         }
 
@@ -142,13 +158,14 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
             int loadedRow = ((z >> 4) - minChunkZ) * chunkSpanX;
             for (int x = minX; x <= maxX; x++) {
                 int loadedIndex = loadedRow + ((x >> 4) - minChunkX);
-                if (!loadedChunkBuffer[loadedIndex]) continue;
+                LevelChunk sourceChunk = loadedChunkBuffer[loadedIndex];
+                if (sourceChunk == null) continue;
                 for (int yOffset = -verticalRadius; yOffset <= verticalRadius; yOffset++) {
                     int y = originY + yOffset;
                     cursor.set(x, y, z);
-                    FluidState fluidState = client.level.getFluidState(cursor);
+                    FluidState fluidState = sourceChunk.getFluidState(cursor);
                     boolean source = isSourceLava(fluidState);
-                    boolean boundary = source && hasKnownSourceBoundary(client, cursor);
+                    boolean boundary = source && hasKnownSourceBoundary(client, sourceChunk, cursor);
                     if (!LavaVisionPalettePolicy.shouldHighlight(true, source, boundary)) continue;
 
                     double dx = x + 0.5 - eye.x;
@@ -159,15 +176,17 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
             }
         }
 
-        if (count == 0) {
-            clearTargets();
-            return;
-        }
-        ArrayList<BlockPos> prepared = new ArrayList<>(count);
         for (int index = 0; index < count; index++) {
-            prepared.add(new BlockPos(candidateX[index], candidateY[index], candidateZ[index]));
+            packedCandidatePositions[index] = BlockPos.asLong(
+                    candidateX[index], candidateY[index], candidateZ[index]);
         }
-        highlightedSources = List.copyOf(prepared);
+        Arrays.sort(packedCandidatePositions, 0, count);
+        return highlightedSources.publish(
+                packedCandidatePositions,
+                count,
+                eye.x,
+                eye.y,
+                eye.z);
     }
 
     /**
@@ -175,7 +194,10 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
      * This keeps the boundary decision inside chunks the client already owns and prevents a
      * chunk-edge false positive from violating the loaded-chunk-only contract.
      */
-    private boolean hasKnownSourceBoundary(Minecraft client, BlockPos position) {
+    private boolean hasKnownSourceBoundary(
+            Minecraft client,
+            LevelChunk sourceChunk,
+            BlockPos position) {
         int sourceChunkX = position.getX() >> 4;
         int sourceChunkZ = position.getZ() >> 4;
         for (Direction direction : DIRECTIONS) {
@@ -185,11 +207,12 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
                     position.getZ() + direction.getStepZ());
             int neighborChunkX = neighborCursor.getX() >> 4;
             int neighborChunkZ = neighborCursor.getZ() >> 4;
-            if ((neighborChunkX != sourceChunkX || neighborChunkZ != sourceChunkZ)
-                    && !client.level.getChunkSource().hasChunk(neighborChunkX, neighborChunkZ)) {
-                continue;
+            LevelChunk neighborChunk = sourceChunk;
+            if (neighborChunkX != sourceChunkX || neighborChunkZ != sourceChunkZ) {
+                neighborChunk = client.level.getChunkSource().getChunkNow(neighborChunkX, neighborChunkZ);
+                if (neighborChunk == null) continue;
             }
-            if (!isSourceLava(client.level.getFluidState(neighborCursor))) return true;
+            if (!isSourceLava(neighborChunk.getFluidState(neighborCursor))) return true;
         }
         return false;
     }
@@ -225,12 +248,22 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         return count;
     }
 
+    private int nextIntervalTicks(int baseInterval, boolean sourcesChanged, boolean movedSinceLastScan) {
+        if (sourcesChanged || movedSinceLastScan) {
+            stableScanCount = 0;
+        } else {
+            stableScanCount = Math.min(stableScanCount + 1, MAX_STABLE_BACKOFF_SHIFT);
+        }
+        int multiplier = 1 << stableScanCount;
+        return Math.min(
+                WorksiteVisibilityBudgetPolicy.MAX_INTERVAL_TICKS,
+                baseInterval * multiplier);
+    }
+
     private void render(LevelRenderContext context) {
-        if (!isEnabled() || isSessionQuarantined()) return;
-        List<BlockPos> snapshot = highlightedSources;
-        if (snapshot.isEmpty()) return;
+        if (!isEnabled() || isSessionQuarantined() || highlightedSources.isEmpty()) return;
         try {
-            renderSafely(context, snapshot);
+            renderSafely(context);
         } catch (RuntimeException | LinkageError failure) {
             renderQuarantined = true;
             clearTargets();
@@ -242,13 +275,13 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         }
     }
 
-    private void renderSafely(LevelRenderContext context, List<BlockPos> snapshot) {
+    private void renderSafely(LevelRenderContext context) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null
                 || client.level == null
                 || client.level != lastLevel
                 || client.screen != null) return;
-        sourceRenderer.render(context, snapshot);
+        sourceRenderer.render(context, highlightedSources);
     }
 
     private void resetRendererAfterFailure() {
@@ -282,13 +315,26 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     }
 
     private void clearTargets() {
-        if (!highlightedSources.isEmpty()) highlightedSources = List.of();
+        highlightedSources.clear();
+    }
+
+    private void resetForLevel(ClientLevel level) {
+        clearTargets();
+        ticksUntilScan = 0;
+        stableScanCount = 0;
+        lastScanFingerprint = Integer.MIN_VALUE;
+        lastObservedPlayerBlock = Long.MIN_VALUE;
+        movementSinceLastScan = false;
+        lastLevel = level;
     }
 
     private void resetScanState() {
         clearTargets();
         ticksUntilScan = 0;
+        stableScanCount = 0;
         lastScanFingerprint = Integer.MIN_VALUE;
+        lastObservedPlayerBlock = Long.MIN_VALUE;
+        movementSinceLastScan = false;
         lastLevel = null;
     }
 
