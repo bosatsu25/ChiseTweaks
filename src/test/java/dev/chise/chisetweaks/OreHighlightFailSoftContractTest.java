@@ -18,10 +18,12 @@ final class OreHighlightFailSoftContractTest {
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
         int baseEmit = model.indexOf("super.emitQuads(emitter, level, pos, state, random, cullTest);");
-        int optionalBranch = model.indexOf("if (!highlightEnabled()) return;", baseEmit);
+        int stateRead = model.indexOf("VisualRenderState.Snapshot renderState = VisualRenderState.current();", baseEmit);
+        int optionalBranch = model.indexOf("if (!renderState.shouldRenderOre(target)) return;", stateRead);
         int overlayEmit = model.indexOf("FullbrightOverlayEmission.emit(", optionalBranch);
         assertTrue(baseEmit >= 0);
-        assertTrue(baseEmit < optionalBranch);
+        assertTrue(baseEmit < stateRead);
+        assertTrue(stateRead < optionalBranch);
         assertTrue(optionalBranch < overlayEmit);
     }
 
