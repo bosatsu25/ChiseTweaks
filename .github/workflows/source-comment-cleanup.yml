@@ -1,0 +1,40 @@
+name: One-shot Source Comment Cleanup
+
+on:
+  push:
+    branches:
+      - cleanup/finish-japanese-source-comments
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: cleanup/finish-japanese-source-comments
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6.0.0
+        with:
+          python-version: '3.13'
+
+      - name: Clean production source comments
+        run: python scripts/cleanup_source_comments.py
+
+      - name: Commit cleanup result
+        run: |
+          if git diff --quiet -- src/main/java; then
+            echo 'No source comment changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java
+          git commit -m 'chore: finish Japanese production source comments'
+          git push origin HEAD:cleanup/finish-japanese-source-comments
