@@ -18,7 +18,7 @@ on:
         type: boolean
         default: false
       cleanup_legacy_verified_tags:
-        description: Remove obsolete CI-generated verified-v* tags/releases from the old pipeline
+        description: Remove obsolete CI-generated verified-v* tags/releases after the new official release succeeds
         required: true
         type: boolean
         default: true
@@ -168,23 +168,6 @@ jobs:
           echo "java_constraint=$java_constraint" >> "$GITHUB_OUTPUT"
           echo "display_version=$display_version" >> "$GITHUB_OUTPUT"
 
-      - name: Remove legacy CI-generated verified tags
-        if: ${{ inputs.cleanup_legacy_verified_tags }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          mapfile -t legacy_tags < <(git tag --list 'verified-v*')
-          for legacy_tag in "${legacy_tags[@]}"; do
-            [[ -z "$legacy_tag" ]] && continue
-            if gh release view "$legacy_tag" --repo "$GH_REPO" >/dev/null 2>&1; then
-              gh release delete "$legacy_tag" --repo "$GH_REPO" --yes
-            fi
-            git push origin ":refs/tags/$legacy_tag"
-            git tag -d "$legacy_tag" >/dev/null 2>&1 || true
-            echo "Removed legacy CI tag: $legacy_tag"
-          done
-
       - name: Prepare release notes
         env:
           VERSION: ${{ steps.artifact-audit.outputs.version }}
@@ -253,3 +236,20 @@ jobs:
 
           printf '\n### Official Release\n- Tag: `%s`\n- Uploaded mod assets: `1`\n- Install: `%s`\n' \
             "$TAG" "$RUNTIME_JAR" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove legacy CI-generated verified tags after successful release
+        if: ${{ inputs.cleanup_legacy_verified_tags }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mapfile -t legacy_tags < <(git tag --list 'verified-v*')
+          for legacy_tag in "${legacy_tags[@]}"; do
+            [[ -z "$legacy_tag" ]] && continue
+            if gh release view "$legacy_tag" --repo "$GH_REPO" >/dev/null 2>&1; then
+              gh release delete "$legacy_tag" --repo "$GH_REPO" --yes
+            fi
+            git push origin ":refs/tags/$legacy_tag"
+            git tag -d "$legacy_tag" >/dev/null 2>&1 || true
+            echo "Removed legacy CI tag: $legacy_tag"
+          done
