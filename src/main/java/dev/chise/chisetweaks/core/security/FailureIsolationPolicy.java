@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.core.security;
 
-/** Pure policy for quarantining a failing optional feature without hiding JVM-fatal errors. */
+/** JVM致命障害を隠さず、失敗した任意機能だけを隔離する判定規則。 */
 public final class FailureIsolationPolicy {
     public static final int MAX_RECOVERABLE_FAILURES = 1;
 
