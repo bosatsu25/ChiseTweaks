@@ -1,20 +1,24 @@
 package dev.chise.chisetweaks.feature;
 
-/**
- * ChiseTweaks機能の基本契約。
- *
- * <p>クライアントTick処理が必要な機能だけが{@link TickingFeature}を実装する。
- * イベント駆動機能をTickディスパッチから分離し、無効時と待機時の定常コストを抑える。</p>
- */
-public interface Feature {
-    String getId();
+import dev.chise.chisetweaks.runtime.RuntimeComponent;
 
+/**
+ * ChiseTweaksのユーザー向けランタイム機能契約。
+ *
+ * <p>機能も内部サービスも同じ{@link RuntimeComponent}ライフサイクルで管理し、
+ * ユーザー向け機能だけ表示名と有効状態を追加する。</p>
+ */
+public interface Feature extends RuntimeComponent {
     String getName();
 
+    @Override
     default void init() {
     }
 
     boolean isEnabled();
 
-    void setEnabled(boolean enabled);
+    @Override
+    default boolean isActive() {
+        return isEnabled();
+    }
 }
