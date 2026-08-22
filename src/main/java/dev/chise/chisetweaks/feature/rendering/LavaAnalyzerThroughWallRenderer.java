@@ -1,34 +1,18 @@
 package dev.chise.chisetweaks.feature.rendering;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MappableRingBuffer;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
-import org.lwjgl.system.MemoryUtil;
 
 import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
 
 final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
     private static final RenderPipeline THROUGH_WALL_PIPELINE = RenderPipelines.register(
@@ -37,24 +21,14 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
                             "chisetweaks", "pipeline/lava_analyzer_through_walls"))
                     .withDepthStencilState(Optional.empty())
                     .build());
-
-    private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
-    private static final Vector3f MODEL_OFFSET = new Vector3f();
-    private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
-    private static final Matrix4fc IDENTITY_POSE = new Matrix4f();
     private static final float BOX_INSET = 0.018f;
 
     private final LavaSourceSnapshot.Capture capture = new LavaSourceSnapshot.Capture(
             WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS);
-    private final Matrix4f dynamicModelView = new Matrix4f();
+    private final RetainedThroughWallBuffer retainedBuffer = new RetainedThroughWallBuffer(
+            "ChiseTweaks Lava Source Highlight retained buffer",
+            "ChiseTweaks Lava Source Highlight retained rendering");
 
-    private ByteBufferBuilder allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
-    private MappableRingBuffer vertexBuffer;
-    private GpuBuffer drawVertexBuffer;
-    private int drawIndexCount;
-    private int anchorX;
-    private int anchorY;
-    private int anchorZ;
     private long uploadedRevision = Long.MIN_VALUE;
     private boolean closed;
 
@@ -66,7 +40,7 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
         if (sources.renderRevision() != uploadedRevision) {
             sources.captureInto(capture);
             if (capture.count() == 0) {
-                drawIndexCount = 0;
+                retainedBuffer.clearDrawData();
                 uploadedRevision = capture.revision();
                 return;
             }
@@ -74,20 +48,16 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
             uploadedRevision = capture.revision();
         }
 
-        if (drawVertexBuffer == null || drawIndexCount == 0) return;
-        draw(Minecraft.getInstance(), THROUGH_WALL_PIPELINE, camera);
+        retainedBuffer.draw(Minecraft.getInstance(), THROUGH_WALL_PIPELINE, camera);
     }
 
     private void rebuildAndUpload(LavaSourceSnapshot.Capture state) {
         long anchor = state.positionAt(0);
-        anchorX = BlockPos.getX(anchor);
-        anchorY = BlockPos.getY(anchor);
-        anchorZ = BlockPos.getZ(anchor);
+        int anchorX = BlockPos.getX(anchor);
+        int anchorY = BlockPos.getY(anchor);
+        int anchorZ = BlockPos.getZ(anchor);
 
-        BufferBuilder buffer = new BufferBuilder(
-                allocator,
-                THROUGH_WALL_PIPELINE.getVertexFormatMode(),
-                THROUGH_WALL_PIPELINE.getVertexFormat());
+        BufferBuilder buffer = retainedBuffer.newBufferBuilder(THROUGH_WALL_PIPELINE);
         for (int index = 0; index < state.count(); index++) {
             long packed = state.positionAt(index);
             int x = BlockPos.getX(packed);
@@ -98,195 +68,36 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
             double dz = z + 0.5 - state.eyeZ();
             int argb = LavaVisionPalettePolicy.colorForDistance(
                     Math.sqrt(dx * dx + dy * dy + dz * dz));
-            drawWireBox(
-                    IDENTITY_POSE,
+            ThroughWallWireBoxGeometry.drawWireBox(
                     buffer,
                     x - anchorX,
                     y - anchorY,
                     z - anchorZ,
                     argb,
-                    LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS);
+                    LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS,
+                    BOX_INSET);
         }
 
         MeshData builtBuffer = buffer.buildOrThrow();
         try {
-            MeshData.DrawState drawParameters = builtBuffer.drawState();
-            VertexFormat format = drawParameters.format();
-            drawVertexBuffer = upload(drawParameters, format, builtBuffer);
-            drawIndexCount = drawParameters.indexCount();
+            retainedBuffer.upload(THROUGH_WALL_PIPELINE, builtBuffer, anchorX, anchorY, anchorZ);
         } finally {
             builtBuffer.close();
         }
     }
 
-    private GpuBuffer upload(MeshData.DrawState drawParameters, VertexFormat format, MeshData builtBuffer) {
-        int vertexBufferSize = drawParameters.vertexCount() * format.getVertexSize();
-        if (vertexBuffer == null || vertexBuffer.size() < vertexBufferSize) {
-            if (vertexBuffer != null) vertexBuffer.close();
-            vertexBuffer = new MappableRingBuffer(
-                    () -> "ChiseTweaks Lava Source Highlight retained buffer",
-                    GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE,
-                    vertexBufferSize);
-            drawVertexBuffer = null;
-        }
-
-        GpuBuffer uploadTarget = vertexBuffer.currentBuffer();
-        CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-        try (GpuBuffer.MappedView mappedView = commandEncoder.mapBuffer(
-                uploadTarget.slice(0, builtBuffer.vertexBuffer().remaining()),
-                false,
-                true)) {
-            MemoryUtil.memCopy(builtBuffer.vertexBuffer(), mappedView.data());
-        }
-        // このリビジョンを保持するバッファを確定してからリングを進める。変化のないフレームは保持済みバッファを再利用する。
-
-        vertexBuffer.rotate();
-        return uploadTarget;
-    }
-
-    private void draw(Minecraft client, RenderPipeline pipeline, Vec3 camera) {
-        RenderSystem.AutoStorageIndexBuffer shapeIndexBuffer =
-                RenderSystem.getSequentialBuffer(pipeline.getVertexFormatMode());
-        GpuBuffer indices = shapeIndexBuffer.getBuffer(drawIndexCount);
-        VertexFormat.IndexType indexType = shapeIndexBuffer.type();
-
-        dynamicModelView.set(RenderSystem.getModelViewMatrix());
-        dynamicModelView.translate(
-                (float) (anchorX - camera.x),
-                (float) (anchorY - camera.y),
-                (float) (anchorZ - camera.z));
-        GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms()
-                .writeTransform(dynamicModelView, COLOR_MODULATOR, MODEL_OFFSET, TEXTURE_MATRIX);
-        try (RenderPass renderPass = RenderSystem.getDevice()
-                .createCommandEncoder()
-                .createRenderPass(
-                        () -> "ChiseTweaks Lava Source Highlight retained rendering",
-                        client.getMainRenderTarget().getColorTextureView(),
-                        OptionalInt.empty(),
-                        client.getMainRenderTarget().getDepthTextureView(),
-                        OptionalDouble.empty())) {
-            renderPass.setPipeline(pipeline);
-            RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.setUniform("DynamicTransforms", dynamicTransforms);
-            renderPass.setVertexBuffer(0, drawVertexBuffer);
-            renderPass.setIndexBuffer(indices, indexType);
-            renderPass.drawIndexed(0, 0, drawIndexCount, 1);
-        }
-    }
-
-    /**
-     * 一時的なCPU/GPU作業領域をすべて破棄し、後続セッションへ失敗フレームの状態を持ち越さない。
-     */
+    /** 一時的なCPU/GPU作業領域を破棄し、後続セッションへ失敗フレームの状態を持ち越さない。 */
     void resetAfterFailure() {
         if (closed) return;
-        drawVertexBuffer = null;
-        drawIndexCount = 0;
         uploadedRevision = Long.MIN_VALUE;
-        if (vertexBuffer != null) {
-            vertexBuffer.close();
-            vertexBuffer = null;
-        }
-        allocator.close();
-        allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
-    }
-
-    private static void drawWireBox(
-            Matrix4fc pose,
-            BufferBuilder vertices,
-            int blockX,
-            int blockY,
-            int blockZ,
-            int argb,
-            float thickness) {
-        float minX = blockX + BOX_INSET;
-        float minY = blockY + BOX_INSET;
-        float minZ = blockZ + BOX_INSET;
-        float maxX = blockX + 1.0f - BOX_INSET;
-        float maxY = blockY + 1.0f - BOX_INSET;
-        float maxZ = blockZ + 1.0f - BOX_INSET;
-        float half = thickness * 0.5f;
-
-        bar(vertices, pose, minX, minY - half, minZ - half, maxX, minY + half, minZ + half, argb);
-        bar(vertices, pose, minX, minY - half, maxZ - half, maxX, minY + half, maxZ + half, argb);
-        bar(vertices, pose, minX, maxY - half, minZ - half, maxX, maxY + half, minZ + half, argb);
-        bar(vertices, pose, minX, maxY - half, maxZ - half, maxX, maxY + half, maxZ + half, argb);
-
-        bar(vertices, pose, minX - half, minY, minZ - half, minX + half, maxY, minZ + half, argb);
-        bar(vertices, pose, maxX - half, minY, minZ - half, maxX + half, maxY, minZ + half, argb);
-        bar(vertices, pose, minX - half, minY, maxZ - half, minX + half, maxY, maxZ + half, argb);
-        bar(vertices, pose, maxX - half, minY, maxZ - half, maxX + half, maxY, maxZ + half, argb);
-
-        bar(vertices, pose, minX - half, minY - half, minZ, minX + half, minY + half, maxZ, argb);
-        bar(vertices, pose, maxX - half, minY - half, minZ, maxX + half, minY + half, maxZ, argb);
-        bar(vertices, pose, minX - half, maxY - half, minZ, minX + half, maxY + half, maxZ, argb);
-        bar(vertices, pose, maxX - half, maxY - half, minZ, maxX + half, maxY + half, maxZ, argb);
-    }
-
-    private static void bar(
-            BufferBuilder vertices,
-            Matrix4fc pose,
-            float minX,
-            float minY,
-            float minZ,
-            float maxX,
-            float maxY,
-            float maxZ,
-            int argb) {
-        float red = ((argb >>> 16) & 0xFF) / 255.0f;
-        float green = ((argb >>> 8) & 0xFF) / 255.0f;
-        float blue = (argb & 0xFF) / 255.0f;
-        float alpha = ((argb >>> 24) & 0xFF) / 255.0f;
-
-        vertex(vertices, pose, minX, minY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, minY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, maxY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, maxY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, minY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, minY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, maxY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, maxY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, minY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, minY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, maxY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, maxY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, minY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, minY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, maxY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, maxY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, maxY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, maxY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, maxY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, maxY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, minY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, minY, minZ, red, green, blue, alpha);
-        vertex(vertices, pose, maxX, minY, maxZ, red, green, blue, alpha);
-        vertex(vertices, pose, minX, minY, maxZ, red, green, blue, alpha);
-    }
-
-    private static void vertex(
-            BufferBuilder vertices,
-            Matrix4fc pose,
-            float x,
-            float y,
-            float z,
-            float red,
-            float green,
-            float blue,
-            float alpha) {
-        vertices.addVertex(pose, x, y, z).setColor(red, green, blue, alpha);
+        retainedBuffer.resetAfterFailure();
     }
 
     @Override
     public void close() {
         if (closed) return;
         closed = true;
-        allocator.close();
-        if (vertexBuffer != null) {
-            vertexBuffer.close();
-            vertexBuffer = null;
-        }
-        drawVertexBuffer = null;
-        drawIndexCount = 0;
         uploadedRevision = Long.MIN_VALUE;
+        retainedBuffer.close();
     }
 }

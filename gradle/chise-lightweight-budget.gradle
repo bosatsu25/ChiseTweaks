@@ -1,3 +1,9 @@
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
 // ChiseTweaksの配布用実行JARに対する容量上限。
 //
 // 実行時性能と機能等価性を優先しつつ、巨大な依存物や配布不要の高解像度素材が
@@ -5,10 +11,84 @@
 def CHISE_RUNTIME_JAR_MAX_BYTES = Long.parseLong(project.property('runtime_jar_max_bytes').toString())
 def CHISE_RUNTIME_ICON_PIXELS = Integer.parseInt(project.property('runtime_icon_target_pixels').toString())
 def CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'
+def CHISE_MANIFEST_PATH = 'META-INF/MANIFEST.MF'
+
+def recompressRuntimeJar = { File runtimeJar, org.gradle.api.logging.Logger taskLogger ->
+    def sourceEntries = []
+    ZipFile sourceArchive = new ZipFile(runtimeJar)
+    try {
+        sourceArchive.entries().each { entry ->
+            if (!entry.directory) {
+                sourceEntries.add([name: entry.name, bytes: sourceArchive.getInputStream(entry).bytes])
+            }
+        }
+    } finally {
+        sourceArchive.close()
+    }
+
+    sourceEntries.sort { left, right ->
+        if (left.name == CHISE_MANIFEST_PATH) return right.name == CHISE_MANIFEST_PATH ? 0 : -1
+        if (right.name == CHISE_MANIFEST_PATH) return 1
+        left.name <=> right.name
+    }
+
+    def parentPath = runtimeJar.parentFile.toPath()
+    def temporaryPath = Files.createTempFile(parentPath, runtimeJar.name + '.', '.max-deflate.tmp')
+    try {
+        ZipOutputStream output = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(temporaryPath)))
+        try {
+            output.setLevel(9)
+            sourceEntries.each { sourceEntry ->
+                ZipEntry targetEntry = new ZipEntry(sourceEntry.name)
+                targetEntry.setTime(0L)
+                targetEntry.setMethod(ZipEntry.DEFLATED)
+                output.putNextEntry(targetEntry)
+                output.write(sourceEntry.bytes)
+                output.closeEntry()
+            }
+        } finally {
+            output.close()
+        }
+
+        long originalSize = runtimeJar.length()
+        long recompressedSize = Files.size(temporaryPath)
+        if (recompressedSize < originalSize) {
+            try {
+                Files.move(
+                        temporaryPath,
+                        runtimeJar.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE)
+            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
+                Files.move(temporaryPath, runtimeJar.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+            taskLogger.lifecycle(
+                    'Runtime JAR max-deflate: {} -> {} bytes (saved {} bytes)',
+                    originalSize,
+                    recompressedSize,
+                    originalSize - recompressedSize)
+        } else {
+            taskLogger.lifecycle(
+                    'Runtime JAR max-deflate kept original: {} bytes (candidate {} bytes)',
+                    originalSize,
+                    recompressedSize)
+        }
+    } finally {
+        Files.deleteIfExists(temporaryPath)
+    }
+}
+
+pluginManager.withPlugin('java') {
+    tasks.named('jar').configure {
+        doLast { task ->
+            recompressRuntimeJar(task.archiveFile.get().asFile, task.logger)
+        }
+    }
+}
 
 tasks.register('verifyRuntimeJarBudget') {
     group = 'verification'
-    description = '実行JARが700KB未満で、配布用アイコンが規定解像度であることを検証します。'
+    description = '実行JARが400KB未満で、配布用アイコンが規定解像度であることを検証します。'
     dependsOn 'jar'
 
     doLast {
@@ -21,14 +101,21 @@ tasks.register('verifyRuntimeJarBudget') {
                 size,
                 CHISE_RUNTIME_JAR_MAX_BYTES)
 
-        if (size >= CHISE_RUNTIME_JAR_MAX_BYTES) {
-            throw new GradleException(
-                    "Runtime JAR is ${size} bytes; ChiseTweaks must remain below " +
-                    "${CHISE_RUNTIME_JAR_MAX_BYTES} bytes.")
-        }
-
-        def archive = new java.util.zip.ZipFile(runtimeJar)
+        def archive = new ZipFile(runtimeJar)
         try {
+            def largestEntries = archive.entries().toList()
+                    .findAll { entry -> !entry.directory }
+                    .sort { left, right -> Long.compare(right.compressedSize, left.compressedSize) }
+                    .take(12)
+            logger.lifecycle('Largest compressed runtime JAR entries:')
+            largestEntries.each { entry ->
+                logger.lifecycle(
+                        '  {} bytes compressed / {} bytes raw  {}',
+                        entry.compressedSize,
+                        entry.size,
+                        entry.name)
+            }
+
             def iconEntry = archive.getEntry(CHISE_RUNTIME_ICON_PATH)
             if (iconEntry == null) {
                 throw new GradleException("Runtime JAR is missing ${CHISE_RUNTIME_ICON_PATH}")
@@ -47,6 +134,12 @@ tasks.register('verifyRuntimeJarBudget') {
             }
         } finally {
             archive.close()
+        }
+
+        if (size >= CHISE_RUNTIME_JAR_MAX_BYTES) {
+            throw new GradleException(
+                    "Runtime JAR is ${size} bytes; ChiseTweaks must remain below " +
+                    "${CHISE_RUNTIME_JAR_MAX_BYTES} bytes.")
         }
 
         logger.lifecycle(

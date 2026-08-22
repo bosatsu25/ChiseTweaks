@@ -29,15 +29,17 @@ final class RetainedVisualPerformanceArchitectureContractTest {
 
     @Test
     void lavaRendererRetainsGeometryAcrossUnchangedFrames() throws IOException {
-        String source = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java");
+        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java");
+        String retained = read("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
 
-        assertTrue(source.contains("sources.renderRevision() != uploadedRevision"));
-        assertTrue(source.contains("drawVertexBuffer"));
-        assertTrue(source.contains("vertexBuffer.rotate()"));
-        assertTrue(source.contains("anchorX - camera.x"));
-        assertTrue(source.contains("rebuildAndUpload(capture)"));
-        assertFalse(source.contains("PoseStack"));
-        assertFalse(source.contains("matrices.translate(-camera"));
+        assertTrue(renderer.contains("sources.renderRevision() != uploadedRevision"));
+        assertTrue(renderer.contains("RetainedThroughWallBuffer"));
+        assertTrue(renderer.contains("rebuildAndUpload(capture)"));
+        assertTrue(retained.contains("drawVertexBuffer"));
+        assertTrue(retained.contains("vertexBuffer.rotate()"));
+        assertTrue(retained.contains("anchorX - camera.x"));
+        assertFalse(renderer.contains("PoseStack"));
+        assertFalse(renderer.contains("matrices.translate(-camera"));
     }
 
     @Test

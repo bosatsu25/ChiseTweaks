@@ -72,11 +72,14 @@ final class AncientDebrisAnalyzerArchitectureContractTest {
     @Test
     void rendererUsesRetainedRevisionDrivenGeometry() throws IOException {
         String renderer = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisThroughWallRenderer.java");
+        String retained = source("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
 
         assertTrue(renderer.contains("sources.renderRevision() != uploadedRevision"));
-        assertTrue(renderer.contains("MappableRingBuffer"));
+        assertTrue(renderer.contains("RetainedThroughWallBuffer"));
         assertTrue(renderer.contains("rebuildAndUpload(capture)"));
-        assertTrue(renderer.contains("anchorX - camera.x"));
+        assertTrue(retained.contains("MappableRingBuffer"));
+        assertTrue(retained.contains("anchorX - camera.x"));
+        assertTrue(retained.contains("vertexBuffer.rotate()"));
         assertFalse(renderer.contains("getBlockState("));
         assertFalse(renderer.contains("getFluidState("));
     }

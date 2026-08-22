@@ -55,6 +55,8 @@ final class RepositoryScopeContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"));
         String renderer = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java"));
+        String retained = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java"));
 
         assertTrue(feature.contains("fluidState.isSource()"));
         assertTrue(feature.contains("getChunkNow"));
@@ -66,7 +68,8 @@ final class RepositoryScopeContractTest {
         assertTrue(renderer.contains("withDepthStencilState(Optional.empty())"));
         assertTrue(renderer.contains("LavaVisionPalettePolicy.colorForDistance"));
         assertTrue(renderer.contains("sources.renderRevision() != uploadedRevision"));
-        assertTrue(renderer.contains("anchorX - camera.x"));
+        assertTrue(renderer.contains("RetainedThroughWallBuffer"));
+        assertTrue(retained.contains("anchorX - camera.x"));
         assertFalse(feature.contains("DefaultFluidRenderer"));
         assertFalse(renderer.contains("DefaultFluidRenderer"));
     }
@@ -79,6 +82,8 @@ final class RepositoryScopeContractTest {
                 "src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java"));
         String renderer = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java"));
+        String retained = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java"));
 
         assertTrue(feature.contains("lastLevel != client.level"));
         assertTrue(feature.contains("client.level != lastLevel"));
@@ -93,9 +98,10 @@ final class RepositoryScopeContractTest {
         assertTrue(feature.contains("MAX_STABLE_BACKOFF_SHIFT = 2"));
         assertTrue(manager.contains("notifyInitializationQuarantine(feature.getId(), ticking)"));
         assertTrue(renderer.contains("resetAfterFailure()"));
-        assertTrue(renderer.contains("drawVertexBuffer = null"));
         assertTrue(renderer.contains("uploadedRevision = Long.MIN_VALUE"));
-        assertTrue(renderer.contains("vertexBuffer.close()"));
+        assertTrue(retained.contains("drawVertexBuffer = null"));
+        assertTrue(retained.contains("vertexBuffer.close()"));
+        assertTrue(retained.contains("allocator = new ByteBufferBuilder"));
     }
 
     @Test
