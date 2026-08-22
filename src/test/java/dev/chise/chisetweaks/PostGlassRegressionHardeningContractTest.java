@@ -70,29 +70,27 @@ final class PostGlassRegressionHardeningContractTest {
     }
 
     @Test
-    void visualAssetsAreAuditedFromTheBuiltJarAndRetainedAsActionsEvidence() throws IOException {
+    void visualAssetsAreAuditedWithoutPublishingQaArchives() throws IOException {
         String audit = source("scripts/visual_asset_audit.py");
         String verify = source(".github/workflows/verify-build.yml");
-        String ci = source(".github/workflows/ci.yml");
         String release = source(".github/workflows/release.yml");
         assertTrue(audit.contains("zipfile.ZipFile(jar)"));
         assertTrue(audit.contains("KELP_ANIMATION"));
         assertTrue(audit.contains("GLASS_BLOCK_MODEL"));
         assertTrue(audit.contains("GLASS_PANE_MODEL"));
         assertTrue(verify.contains("python scripts/visual_asset_audit.py"));
-        assertTrue(verify.contains("cp build/ci/visual-asset-audit.json build/verified/"));
-        assertTrue(verify.contains("-verification-evidence"));
-        assertTrue(ci.contains("for evidence in visual-asset-audit.json quality-summary.md artifact-audit.json SHA256SUMS.txt; do"));
-        assertTrue(release.contains("for evidence in visual-asset-audit.json quality-summary.md artifact-audit.json SHA256SUMS.txt; do"));
-        assertFalse(ci.contains("ensure_asset 'release/visual-asset-audit.json'"));
-        assertFalse(release.contains("\"release/visual-asset-audit.json\""));
+        assertTrue(release.contains("python scripts/visual_asset_audit.py"));
+        assertFalse(verify.contains("actions/upload-artifact"));
+        assertFalse(release.contains("actions/upload-artifact"));
+        assertFalse(release.contains("release/visual-asset-audit.json"));
     }
 
     @Test
-    void verifiedMainPublicationCannotBeCancelledByANewerPush() throws IOException {
+    void obsoleteCiRunsCanBeCancelledBecauseCiNeverPublishes() throws IOException {
         String ci = source(".github/workflows/ci.yml");
-        assertTrue(ci.contains("cancel-in-progress: ${{ github.event_name == 'pull_request' }}"));
-        assertFalse(ci.contains("cancel-in-progress: true"));
+        assertTrue(ci.contains("cancel-in-progress: true"));
+        assertFalse(ci.contains("publish-verified-release"));
+        assertFalse(ci.contains("gh release"));
     }
 
     private static String source(String relativePath) throws IOException {
