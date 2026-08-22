@@ -70,7 +70,7 @@ final class PostGlassRegressionHardeningContractTest {
     }
 
     @Test
-    void visualAssetsAreAuditedFromTheBuiltJarAndShippedAsEvidence() throws IOException {
+    void visualAssetsAreAuditedFromTheBuiltJarAndRetainedAsActionsEvidence() throws IOException {
         String audit = source("scripts/visual_asset_audit.py");
         String verify = source(".github/workflows/verify-build.yml");
         String ci = source(".github/workflows/ci.yml");
@@ -81,10 +81,11 @@ final class PostGlassRegressionHardeningContractTest {
         assertTrue(audit.contains("GLASS_PANE_MODEL"));
         assertTrue(verify.contains("python scripts/visual_asset_audit.py"));
         assertTrue(verify.contains("cp build/ci/visual-asset-audit.json build/verified/"));
-        assertTrue(ci.contains("ensure_asset 'release/visual-asset-audit.json'"));
-        assertTrue(ci.contains("artifact-audit.json visual-asset-audit.json quality-summary.md"));
-        assertTrue(release.contains("Verified visual asset audit evidence is missing"));
-        assertTrue(release.contains("\"release/visual-asset-audit.json\""));
+        assertTrue(verify.contains("-verification-evidence"));
+        assertTrue(ci.contains("for evidence in visual-asset-audit.json quality-summary.md artifact-audit.json SHA256SUMS.txt; do"));
+        assertTrue(release.contains("for evidence in visual-asset-audit.json quality-summary.md artifact-audit.json SHA256SUMS.txt; do"));
+        assertFalse(ci.contains("ensure_asset 'release/visual-asset-audit.json'"));
+        assertFalse(release.contains("\"release/visual-asset-audit.json\""));
     }
 
     @Test
