@@ -129,25 +129,7 @@ public final class LocalFeatureConfig {
     }
 
     void resetToDefaults() {
-        lavaHighlightEnabled = false;
-        ancientDebrisAnalyzerEnabled = false;
-        fireVisibilityEnabled = false;
-        oreHighlightAnimationEnabled = false;
-        worksiteVisibilityHorizontalRadius = 5;
-        worksiteVisibilityVerticalRadius = 3;
-        worksiteVisibilityIntervalTicks = 10;
-        worksiteVisibilityMaxResults = 6;
-        worksiteVisibilityMaxOverlayResults = 12;
-        worksiteVisibilityWorldOverlay = true;
-        worksiteVisibilityExclusiveMode = false;
-        lavaAnalyzerHorizontalRadius = 5;
-        lavaAnalyzerVerticalRadius = 3;
-        lavaAnalyzerIntervalTicks = 10;
-        lavaAnalyzerMaxOverlayResults = 12;
-        ancientDebrisAnalyzerRangeBlocks = AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS;
-        ancientDebrisAnalyzerMaxMarkers = AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS;
-        visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
-        visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
+        copyFrom(new LocalFeatureConfig());
     }
 
     void sanitize() {

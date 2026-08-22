@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
+/** ローカル描画機能のUIスイッチ。安全判定はruntimeへ委譲し、永続化はApply境界で行う。 */
 public final class LocalFeatureSwitch extends ChiseBooleanSetting {
     private static final boolean DEFAULT_ENABLED = false;
 
@@ -51,8 +52,6 @@ public final class LocalFeatureSwitch extends ChiseBooleanSetting {
             runtimeFeature.setEnabled(effectiveValue);
             return;
         }
-        LocalFeatureConfig config = LocalFeatureConfig.getInstance();
-        setter.accept(config, effectiveValue);
-        config.save();
+        setter.accept(LocalFeatureConfig.getInstance(), effectiveValue);
     }
 }

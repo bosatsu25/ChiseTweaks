@@ -70,13 +70,11 @@ public final class VisualTargetSettings {
     private VisualTargetSettings() {}
 
     public static synchronized void init() {
-        syncFromStorage();
+        syncFromConfig();
         if (initialized) return;
         bindCallbacks();
         initialized = true;
     }
-
-    public static void refreshTranslations() {}
 
     public static synchronized void setAllOreHighlightTargets(boolean enabled) {
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
@@ -84,8 +82,7 @@ public final class VisualTargetSettings {
         config.visualTargetMask = VisualTargetSelectionPolicy.withAllOreHighlightTargets(
                 config.visualTargetMask,
                 enabled);
-        config.save();
-        syncFromStorage();
+        syncFromConfig();
         if (config.visualTargetMask != previous) materialTargetsChangedCallback.run();
     }
 
@@ -93,7 +90,7 @@ public final class VisualTargetSettings {
         materialTargetsChangedCallback = callback == null ? () -> {} : callback;
     }
 
-    private static void syncFromStorage() {
+    private static void syncFromConfig() {
         syncing = true;
         try {
             int mask = LocalFeatureConfig.getInstance().visualTargetMask;
@@ -108,18 +105,17 @@ public final class VisualTargetSettings {
 
     private static void bindCallbacks() {
         for (Entry entry : ENTRIES) {
-            entry.option().setValueChangeCallback(ignored -> save(entry));
+            entry.option().setValueChangeCallback(ignored -> apply(entry));
         }
     }
 
-    private static void save(Entry entry) {
+    private static void apply(Entry entry) {
         if (syncing) return;
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
         config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
                 config.visualTargetMask,
                 entry.target(),
                 entry.option().getBooleanValue());
-        config.save();
         if (isMaterialTarget(entry.target())) materialTargetsChangedCallback.run();
     }
 

@@ -98,35 +98,35 @@ public final class LocalFeatureSettings {
 
     private static void bindCallbacks() {
         ORE_HIGHLIGHT_ANIMATION.setValueChangeCallback(ignored -> {
-            save(c -> c.oreHighlightAnimationEnabled = ORE_HIGHLIGHT_ANIMATION.getBooleanValue());
+            apply(c -> c.oreHighlightAnimationEnabled = ORE_HIGHLIGHT_ANIMATION.getBooleanValue());
             oreHighlightChangedCallback.run();
         });
-        WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> save(
+        WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> apply(
                 c -> c.worksiteVisibilityHorizontalRadius = WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.getIntegerValue()));
-        WORKSITE_VISIBILITY_VERTICAL_RADIUS.setValueChangeCallback(ignored -> save(
+        WORKSITE_VISIBILITY_VERTICAL_RADIUS.setValueChangeCallback(ignored -> apply(
                 c -> c.worksiteVisibilityVerticalRadius = WORKSITE_VISIBILITY_VERTICAL_RADIUS.getIntegerValue()));
-        WORKSITE_VISIBILITY_INTERVAL.setValueChangeCallback(ignored -> save(
+        WORKSITE_VISIBILITY_INTERVAL.setValueChangeCallback(ignored -> apply(
                 c -> c.worksiteVisibilityIntervalTicks = WORKSITE_VISIBILITY_INTERVAL.getIntegerValue()));
-        WORKSITE_VISIBILITY_MAX_OVERLAYS.setValueChangeCallback(ignored -> save(
+        WORKSITE_VISIBILITY_MAX_OVERLAYS.setValueChangeCallback(ignored -> apply(
                 c -> c.worksiteVisibilityMaxOverlayResults = WORKSITE_VISIBILITY_MAX_OVERLAYS.getIntegerValue()));
-        WORKSITE_VISIBILITY_WORLD_OVERLAY.setValueChangeCallback(ignored -> save(
+        WORKSITE_VISIBILITY_WORLD_OVERLAY.setValueChangeCallback(ignored -> apply(
                 c -> c.worksiteVisibilityWorldOverlay = WORKSITE_VISIBILITY_WORLD_OVERLAY.getBooleanValue()));
         WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setValueChangeCallback(ignored -> {
             if (syncing) return;
-            save(c -> c.worksiteVisibilityExclusiveMode = WORKSITE_VISIBILITY_EXCLUSIVE_MODE.getBooleanValue());
+            apply(c -> c.worksiteVisibilityExclusiveMode = WORKSITE_VISIBILITY_EXCLUSIVE_MODE.getBooleanValue());
             worksiteVisibilityModeChangedCallback.run();
         });
-        LAVA_ANALYZER_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> save(
+        LAVA_ANALYZER_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> apply(
                 c -> c.lavaAnalyzerHorizontalRadius = LAVA_ANALYZER_HORIZONTAL_RADIUS.getIntegerValue()));
-        LAVA_ANALYZER_VERTICAL_RADIUS.setValueChangeCallback(ignored -> save(
+        LAVA_ANALYZER_VERTICAL_RADIUS.setValueChangeCallback(ignored -> apply(
                 c -> c.lavaAnalyzerVerticalRadius = LAVA_ANALYZER_VERTICAL_RADIUS.getIntegerValue()));
-        LAVA_ANALYZER_INTERVAL.setValueChangeCallback(ignored -> save(
+        LAVA_ANALYZER_INTERVAL.setValueChangeCallback(ignored -> apply(
                 c -> c.lavaAnalyzerIntervalTicks = LAVA_ANALYZER_INTERVAL.getIntegerValue()));
-        LAVA_ANALYZER_MAX_OVERLAYS.setValueChangeCallback(ignored -> save(
+        LAVA_ANALYZER_MAX_OVERLAYS.setValueChangeCallback(ignored -> apply(
                 c -> c.lavaAnalyzerMaxOverlayResults = LAVA_ANALYZER_MAX_OVERLAYS.getIntegerValue()));
-        ANCIENT_DEBRIS_ANALYZER_RANGE.setValueChangeCallback(ignored -> save(
+        ANCIENT_DEBRIS_ANALYZER_RANGE.setValueChangeCallback(ignored -> apply(
                 c -> c.ancientDebrisAnalyzerRangeBlocks = ANCIENT_DEBRIS_ANALYZER_RANGE.getIntegerValue()));
-        ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.setValueChangeCallback(ignored -> save(
+        ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.setValueChangeCallback(ignored -> apply(
                 c -> c.ancientDebrisAnalyzerMaxMarkers = ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.getIntegerValue()));
     }
 
@@ -138,11 +138,9 @@ public final class LocalFeatureSettings {
         oreHighlightChangedCallback = callback == null ? () -> {} : callback;
     }
 
-    private static void save(Consumer<LocalFeatureConfig> update) {
+    private static void apply(Consumer<LocalFeatureConfig> update) {
         if (syncing) return;
-        LocalFeatureConfig c = LocalFeatureConfig.getInstance();
-        update.accept(c);
-        c.save();
+        update.accept(LocalFeatureConfig.getInstance());
     }
 
     private static SimpleBooleanSetting bool(
