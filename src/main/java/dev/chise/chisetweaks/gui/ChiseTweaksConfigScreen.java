@@ -70,32 +70,32 @@ public final class ChiseTweaksConfigScreen extends Screen {
         var done = geometry.doneButton();
         if (surface == ChiseTweaksSettingsController.Surface.MAIN) {
             addRenderableWidget(Button.builder(
-                    Component.literal(controller.japanese() ? "使い方" : "Guide"),
+                    Component.translatable("screen.chisetweaks.settings.guide"),
                     ignored -> openHelp())
                     .bounds(help.x(), help.y(), help.width(), help.height())
                     .build());
         } else {
             addRenderableWidget(Button.builder(
-                    Component.literal(controller.japanese() ? "戻る" : "Back"),
+                    Component.translatable("screen.chisetweaks.common.back"),
                     ignored -> onClose())
                     .bounds(help.x(), help.y(), help.width(), help.height())
                     .build());
         }
         addRenderableWidget(Button.builder(
-                Component.literal(controller.japanese()
-                        ? (surface == ChiseTweaksSettingsController.Surface.MAIN ? "設定をリセット" : "初期化")
-                        : "Reset"),
+                Component.translatable(surface == ChiseTweaksSettingsController.Surface.MAIN
+                        ? "screen.chisetweaks.settings.reset_all"
+                        : "screen.chisetweaks.settings.reset"),
                 ignored -> resetCurrentSurface())
                 .bounds(reset.x(), reset.y(), reset.width(), reset.height())
                 .build());
         applyButton = addRenderableWidget(Button.builder(
-                Component.literal(controller.japanese() ? "適用" : "Apply"),
+                Component.translatable("screen.chisetweaks.settings.apply"),
                 ignored -> applyChanges())
                 .bounds(apply.x(), apply.y(), apply.width(), apply.height())
                 .build());
         applyButton.active = dirty;
         addRenderableWidget(Button.builder(
-                Component.literal(controller.japanese() ? "完了" : "Done"),
+                Component.translatable("screen.chisetweaks.settings.done"),
                 ignored -> onClose())
                 .bounds(done.x(), done.y(), done.width(), done.height())
                 .build());
@@ -195,11 +195,10 @@ public final class ChiseTweaksConfigScreen extends Screen {
             case OPEN_HIGHLIGHT_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
             case OPEN_LAVA_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.LAVA_DETAILS);
             case EDIT_BLOCK_FILTER -> minecraft.setScreen(new ChiseSceneFilterEditorScreen(
-                    this, ChiseSceneFilterEditorScreen.Target.BLOCKS, controller.japanese()));
+                    this, ChiseSceneFilterEditorScreen.Target.BLOCKS));
             case EDIT_ENTITY_FILTER -> minecraft.setScreen(new ChiseSceneFilterEditorScreen(
-                    this, ChiseSceneFilterEditorScreen.Target.ENTITIES, controller.japanese()));
-            case EDIT_ORE_COMPAT -> minecraft.setScreen(new ChiseOreCompatibilityScreen(
-                    this, controller.japanese()));
+                    this, ChiseSceneFilterEditorScreen.Target.ENTITIES));
+            case EDIT_ORE_COMPAT -> minecraft.setScreen(new ChiseOreCompatibilityScreen(this));
         }
     }
 
@@ -235,9 +234,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private boolean applyChanges() {
         if (!dirty) return true;
         if (!controller.saveConfig()) {
-            persistenceFeedback = controller.japanese()
-                    ? "設定を保存できませんでした。保存先を確認して再試行してください。"
-                    : "Could not save settings. Check config storage and try again.";
+            persistenceFeedback = text("screen.chisetweaks.settings.save_failed");
             if (applyButton != null) applyButton.active = true;
             return false;
         }
@@ -453,10 +450,13 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private Component bulkMessage() {
-        boolean turnOn = controller.shouldTurnHighlightBulkOn();
-        return Component.literal(controller.japanese()
-                ? (turnOn ? "一括ON" : "一括OFF")
-                : (turnOn ? "All ON" : "All OFF"));
+        return Component.translatable(controller.shouldTurnHighlightBulkOn()
+                ? "screen.chisetweaks.settings.bulk.on"
+                : "screen.chisetweaks.settings.bulk.off");
+    }
+
+    private static String text(String key) {
+        return Component.translatable(key).getString();
     }
 
     private static int saturatedStep(int current, int step) {
