@@ -138,7 +138,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         if (client == null || client.player == null || client.level == null || !isNether(client.level)) return;
         int rangeBlocks = AncientDebrisAnalyzerPolicy.clampRangeBlocks(
                 LocalFeatureConfig.getInstance().ancientDebrisAnalyzerRangeBlocks);
-        int chunkRadius = Math.min(16, (rangeBlocks + 15) / 16 + 1);
+        int chunkRadius = Math.min(17, (rangeBlocks + 15) / 16 + 1);
         int centerChunkX = client.player.blockPosition().getX() >> 4;
         int centerChunkZ = client.player.blockPosition().getZ() >> 4;
         for (int chunkZ = centerChunkZ - chunkRadius; chunkZ <= centerChunkZ + chunkRadius; chunkZ++) {
@@ -302,7 +302,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     }
 
     private static long chunkKey(LevelChunk chunk) {
-        return packChunk(chunk.getPos().x, chunk.getPos().z);
+        return packChunk(chunk.getPos().getMinBlockX() >> 4, chunk.getPos().getMinBlockZ() >> 4);
     }
 
     private static long packChunk(int chunkX, int chunkZ) {
