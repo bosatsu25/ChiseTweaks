@@ -14,14 +14,14 @@ final class LightweightRuntimeBudgetContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void runtimeJarHasSingleSevenHundredKilobyteLimitAndOptimizedIconContract() throws IOException {
+    void runtimeJarHasSingleFourHundredKilobyteLimitAndOptimizedIconContract() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
         String properties = source("gradle.properties");
         String build = source("build.gradle");
         String settings = source("settings.gradle");
 
-        assertTrue(properties.contains("runtime_jar_max_bytes=700000"));
-        assertTrue(properties.contains("runtime_icon_target_pixels=512"));
+        assertTrue(properties.contains("runtime_jar_max_bytes=400000"));
+        assertTrue(properties.contains("runtime_icon_target_pixels=256"));
         assertTrue(budget.contains("project.property('runtime_jar_max_bytes')"));
         assertTrue(budget.contains("project.property('runtime_icon_target_pixels')"));
         assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_MAX_BYTES)"));
@@ -29,9 +29,10 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(budget.contains("iconImage.width != CHISE_RUNTIME_ICON_PIXELS"));
         assertTrue(budget.contains("dependsOn 'jar'"));
         assertTrue(budget.contains("it.name == 'check' || it.name == 'qualityGate'"));
-        assertTrue(build.contains("new File(destinationDir, runtimeIconRelativePath)"));
+        assertTrue(build.contains("destinationDirectory.file(runtimeIconRelativePath).get().asFile"));
         assertTrue(settings.contains("gradle/chise-lightweight-budget.gradle"));
 
+        assertFalse(budget.contains("700000"));
         assertFalse(budget.contains("1_000_000L"));
         assertFalse(budget.contains("1_500_000L"));
     }
