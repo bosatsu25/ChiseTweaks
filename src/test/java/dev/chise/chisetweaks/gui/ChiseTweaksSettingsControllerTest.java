@@ -32,7 +32,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void mainSurfaceKeepsThreeCompactGroupsAndAnalyzerToggles() {
+    void mainSurfaceKeepsSemanticGroupsAndAnalyzerTogglesCompact() {
         var controller = new ChiseTweaksSettingsController(true);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
@@ -47,12 +47,13 @@ final class ChiseTweaksSettingsControllerTest {
                 "header.visualFilter",
                 "focusBlocks",
                 "focusEntities",
-                "header.visibilityImprovement",
+                "header.analyzer",
                 "lava",
                 "ancientDebrisAnalyzer",
+                "header.visibilityImprovement",
                 "fireVisibility"), ids(rows));
 
-        assertEquals(List.of("ハイライト", "Visual Filter", "視認改善"),
+        assertEquals(List.of("ハイライト", "Visual Filter", "アナライザー", "見やすさ"),
                 rows.stream()
                         .filter(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER)
                         .map(ChiseTweaksSettingRowDefinition::name)
@@ -80,7 +81,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void settingsActionsAreAttachedToGroupHeadersInsteadOfCrowdingAnalyzerRows() {
+    void settingsActionsAreAttachedOnlyToTheGroupsTheyActuallyConfigure() {
         var controller = new ChiseTweaksSettingsController(true);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
@@ -88,9 +89,13 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS, highlightHeader.action());
         assertEquals("設定", highlightHeader.actionLabel());
 
+        ChiseTweaksSettingRowDefinition analyzerHeader = row(rows, "header.analyzer");
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS, analyzerHeader.action());
+        assertEquals("設定", analyzerHeader.actionLabel());
+
         ChiseTweaksSettingRowDefinition visibilityHeader = row(rows, "header.visibilityImprovement");
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS, visibilityHeader.action());
-        assertEquals("設定", visibilityHeader.actionLabel());
+        assertNull(visibilityHeader.action());
+        assertEquals("", visibilityHeader.actionLabel());
 
         ChiseTweaksSettingRowDefinition blocks = row(rows, "focusBlocks");
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN_ACTION, blocks.kind());
@@ -199,7 +204,7 @@ final class ChiseTweaksSettingsControllerTest {
     void lavaSourceHighlightIsOptInAndSharesTheAnalyzerSettingsSurface() {
         var controller = new ChiseTweaksSettingsController(true);
         ChiseTweaksSettingRowDefinition lava = row(controller.rows(), "lava");
-        ChiseTweaksSettingRowDefinition header = row(controller.rows(), "header.visibilityImprovement");
+        ChiseTweaksSettingRowDefinition header = row(controller.rows(), "header.analyzer");
 
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, lava.kind());
         assertSame(LocalFeatureSwitches.LAVA_HIGHLIGHT, lava.booleanConfig());
@@ -208,14 +213,16 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void fireVisibilityRemainsOptIn() {
+    void fireVisibilityRemainsOptInAndOutsideAnalyzerSettings() {
         var controller = new ChiseTweaksSettingsController(true);
         ChiseTweaksSettingRowDefinition fire = row(controller.rows(), "fireVisibility");
+        ChiseTweaksSettingRowDefinition visibility = row(controller.rows(), "header.visibilityImprovement");
 
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, fire.kind());
         assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, fire.booleanConfig());
         assertFalse(fire.booleanConfig().getDefaultBooleanValue());
         assertFalse(fire.booleanConfig().getBooleanValue());
+        assertNull(visibility.action());
     }
 
     @Test
