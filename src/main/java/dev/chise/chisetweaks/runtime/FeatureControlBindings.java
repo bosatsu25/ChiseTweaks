@@ -32,6 +32,7 @@ public final class FeatureControlBindings {
     public static void init() {
         if (!WORKSITE_VISIBILITY_TOGGLES.isEmpty()) bindWorksiteVisibilityCallbacks();
         if (builderFocusAvailable()) {
+            BuilderFocusVisibility.applyConfig();
             bindBuilderFocusLists();
             bindSceneFilterRefresh();
         }
