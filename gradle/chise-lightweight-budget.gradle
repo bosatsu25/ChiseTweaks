@@ -21,14 +21,21 @@ tasks.register('verifyRuntimeJarBudget') {
                 size,
                 CHISE_RUNTIME_JAR_MAX_BYTES)
 
-        if (size >= CHISE_RUNTIME_JAR_MAX_BYTES) {
-            throw new GradleException(
-                    "Runtime JAR is ${size} bytes; ChiseTweaks must remain below " +
-                    "${CHISE_RUNTIME_JAR_MAX_BYTES} bytes.")
-        }
-
         def archive = new java.util.zip.ZipFile(runtimeJar)
         try {
+            def largestEntries = archive.entries().toList()
+                    .findAll { entry -> !entry.directory }
+                    .sort { left, right -> Long.compare(right.compressedSize, left.compressedSize) }
+                    .take(12)
+            logger.lifecycle('Largest compressed runtime JAR entries:')
+            largestEntries.each { entry ->
+                logger.lifecycle(
+                        '  {} bytes compressed / {} bytes raw  {}',
+                        entry.compressedSize,
+                        entry.size,
+                        entry.name)
+            }
+
             def iconEntry = archive.getEntry(CHISE_RUNTIME_ICON_PATH)
             if (iconEntry == null) {
                 throw new GradleException("Runtime JAR is missing ${CHISE_RUNTIME_ICON_PATH}")
@@ -47,6 +54,12 @@ tasks.register('verifyRuntimeJarBudget') {
             }
         } finally {
             archive.close()
+        }
+
+        if (size >= CHISE_RUNTIME_JAR_MAX_BYTES) {
+            throw new GradleException(
+                    "Runtime JAR is ${size} bytes; ChiseTweaks must remain below " +
+                    "${CHISE_RUNTIME_JAR_MAX_BYTES} bytes.")
         }
 
         logger.lifecycle(
