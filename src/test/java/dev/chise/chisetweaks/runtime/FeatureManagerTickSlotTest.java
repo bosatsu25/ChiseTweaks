@@ -64,8 +64,8 @@ final class FeatureManagerTickSlotTest {
 
         @Override public String getId() { return "fake-runtime"; }
         @Override public void init() {}
-        @Override public boolean isActive() { return active; }
         @Override public void tick(Minecraft client) { ticks++; active = true; }
+        boolean isActive() { return active; }
     }
 
     private static class FailingRuntimeComponent implements TickingRuntimeComponent {
@@ -74,7 +74,6 @@ final class FeatureManagerTickSlotTest {
 
         @Override public String getId() { return "failing-runtime"; }
         @Override public void init() {}
-        @Override public boolean isActive() { return false; }
         @Override public void tick(Minecraft client) { ticks++; throw new IllegalStateException("boom"); }
         @Override public void onQuarantined(Minecraft client) { cleanupCalls++; }
 
