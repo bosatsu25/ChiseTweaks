@@ -13,15 +13,24 @@ final class RepositoryRuntimeReviewContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void tickDispatchCannotDeadlockAndQuarantineOwnsCleanup() throws IOException {
+    void runtimeLifecycleUsesOneComponentContractAndQuarantineOwnsCleanup() throws IOException {
+        String feature = source("src/main/java/dev/chise/chisetweaks/feature/Feature.java");
         String manager = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
         String ticking = source("src/main/java/dev/chise/chisetweaks/runtime/TickingRuntimeComponent.java");
         String worksite = source("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java");
+
+        assertTrue(feature.contains("public interface Feature extends RuntimeComponent"));
+        assertTrue(manager.contains("Map<String, RuntimeComponent> components"));
         assertTrue(manager.contains("component.tick(client);"));
         assertTrue(manager.contains("component.onQuarantined(client);"));
+        assertTrue(manager.contains("removeFromSchedules(component);"));
         assertTrue(ticking.contains("default void onQuarantined(Minecraft client)"));
         assertTrue(worksite.contains("public void onQuarantined(Minecraft client)"));
+        assertFalse(manager.contains("Map<String, Feature>"));
+        assertFalse(manager.contains("runtimeComponents"));
         assertFalse(manager.contains("if (!active && !wasActive) return;"));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/SessionAwareFeature.java")));
     }
 
     @Test
@@ -52,11 +61,13 @@ final class RepositoryRuntimeReviewContractTest {
     }
 
     @Test
-    void removedPoliciesAndLegacyOreAssetsCannotReturn() {
+    void removedPoliciesLegacyAssetsAndMisleadingWrappersCannotReturn() {
         assertFalse(Files.exists(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy.java")));
         assertFalse(Files.exists(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/core/policy/ModVersionPolicy.java")));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackFeature.java")));
         assertFalse(Files.exists(ROOT.resolve(
                 "src/main/resources/assets/chisetweaks/models/block/visual/diamond_ore.json")));
         assertFalse(Files.exists(ROOT.resolve(
