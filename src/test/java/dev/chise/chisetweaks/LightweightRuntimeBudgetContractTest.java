@@ -29,7 +29,7 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(budget.contains("iconImage.width != CHISE_RUNTIME_ICON_PIXELS"));
         assertTrue(budget.contains("dependsOn 'jar'"));
         assertTrue(budget.contains("it.name == 'check' || it.name == 'qualityGate'"));
-        assertTrue(build.contains("destinationDirectory.file(runtimeIconRelativePath).get().asFile"));
+        assertTrue(build.contains("new File(outputs.files.singleFile, runtimeIconRelativePath)"));
         assertTrue(settings.contains("gradle/chise-lightweight-budget.gradle"));
 
         assertFalse(budget.contains("700000"));
