@@ -20,20 +20,18 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Arrays;
-
 public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntimeComponent {
     private static final int MAX_CANDIDATES = WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS;
     private static final int MAX_STABLE_BACKOFF_SHIFT = 2;
     private static final Direction[] DIRECTIONS = Direction.values();
 
-    private final LavaAnalyzerThroughWallRenderer sourceRenderer = new LavaAnalyzerThroughWallRenderer();
-    private final LavaSourceSnapshot highlightedSources = new LavaSourceSnapshot(MAX_CANDIDATES);
-    private final int[] candidateX = new int[MAX_CANDIDATES];
-    private final int[] candidateY = new int[MAX_CANDIDATES];
-    private final int[] candidateZ = new int[MAX_CANDIDATES];
-    private final double[] candidateDistanceSquared = new double[MAX_CANDIDATES];
-    private final long[] packedCandidatePositions = new long[MAX_CANDIDATES];
+    private final ThroughWallMarkerRenderer sourceRenderer = new ThroughWallMarkerRenderer(
+            ThroughWallMarkerRenderer.Style.LAVA_SOURCE,
+            MAX_CANDIDATES,
+            "ChiseTweaks Lava Source Highlight retained buffer",
+            "ChiseTweaks Lava Source Highlight retained rendering");
+    private final ThroughWallPositionSnapshot highlightedSources = new ThroughWallPositionSnapshot(MAX_CANDIDATES);
+    private final NearestPositionBuffer nearestSources = new NearestPositionBuffer(MAX_CANDIDATES);
     private final LevelChunk[] loadedChunkBuffer = new LevelChunk[
             WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES];
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -91,7 +89,6 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
             lastObservedPlayerBlock = currentPlayerBlock;
             movementSinceLastScan = true;
             stableScanCount = 0;
-
             ticksUntilScan = Math.min(ticksUntilScan, baseInterval - 1);
         }
         if (fingerprint != lastScanFingerprint) {
@@ -131,6 +128,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
         int chunkSpanX = maxChunkX - minChunkX + 1;
         int chunkCount = chunkSpanX * (maxChunkZ - minChunkZ + 1);
         if (chunkCount > loadedChunkBuffer.length) {
+            nearestSources.clear();
             return highlightedSources.clear();
         }
 
@@ -142,7 +140,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
             }
         }
 
-        int count = 0;
+        nearestSources.clear();
         int originY = origin.getY();
         for (int z = minZ; z <= maxZ; z++) {
             int loadedRow = ((z >> 4) - minChunkZ) * chunkSpanX;
@@ -161,19 +159,18 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
                     double dx = x + 0.5 - eye.x;
                     double dy = y + 0.5 - eye.y;
                     double dz = z + 0.5 - eye.z;
-                    count = retainNearest(x, y, z, dx * dx + dy * dy + dz * dz, count, limit);
+                    nearestSources.offer(
+                            BlockPos.asLong(x, y, z),
+                            dx * dx + dy * dy + dz * dz,
+                            limit);
                 }
             }
         }
 
-        for (int index = 0; index < count; index++) {
-            packedCandidatePositions[index] = BlockPos.asLong(
-                    candidateX[index], candidateY[index], candidateZ[index]);
-        }
-        Arrays.sort(packedCandidatePositions, 0, count);
+        nearestSources.sortPositions();
         return highlightedSources.publish(
-                packedCandidatePositions,
-                count,
+                nearestSources.positions(),
+                nearestSources.count(),
                 eye.x,
                 eye.y,
                 eye.z);
@@ -208,32 +205,6 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
     private static boolean isSourceLava(FluidState fluidState) {
         if (fluidState == null || !fluidState.isSource()) return false;
         return fluidState.getType() == Fluids.LAVA || fluidState.getType() == Fluids.FLOWING_LAVA;
-    }
-
-    private int retainNearest(int x, int y, int z, double distanceSquared, int count, int limit) {
-        if (count < limit) {
-            candidateX[count] = x;
-            candidateY[count] = y;
-            candidateZ[count] = z;
-            candidateDistanceSquared[count] = distanceSquared;
-            return count + 1;
-        }
-
-        int farthestIndex = 0;
-        double farthestDistance = candidateDistanceSquared[0];
-        for (int index = 1; index < count; index++) {
-            if (candidateDistanceSquared[index] > farthestDistance) {
-                farthestDistance = candidateDistanceSquared[index];
-                farthestIndex = index;
-            }
-        }
-        if (distanceSquared >= farthestDistance) return count;
-
-        candidateX[farthestIndex] = x;
-        candidateY[farthestIndex] = y;
-        candidateZ[farthestIndex] = z;
-        candidateDistanceSquared[farthestIndex] = distanceSquared;
-        return count;
     }
 
     private int nextIntervalTicks(int baseInterval, boolean sourcesChanged, boolean movedSinceLastScan) {
@@ -293,6 +264,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
 
     private void clearTargets() {
         highlightedSources.clear();
+        nearestSources.clear();
     }
 
     private void resetForLevel(ClientLevel level) {
