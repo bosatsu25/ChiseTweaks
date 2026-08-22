@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Guards the separation between CI verification, SemVer policy and the one JAR users install. */
+/** CI検証、SemVer、利用者が導入する単一JARの境界を固定する。 */
 final class ReleaseDistributionContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
@@ -43,19 +43,19 @@ final class ReleaseDistributionContractTest {
     }
 
     @Test
-    void officialReleaseRunsItsOwnGateAndUploadsExactlyOneRuntimeJar() throws IOException {
+    void officialReleaseFollowsSuccessfulMainCiAndUploadsExactlyOneRuntimeJar() throws IOException {
         String release = source(".github/workflows/release.yml");
 
-        assertTrue(release.contains("release_type:"));
-        assertTrue(release.contains("type: choice"));
-        assertTrue(release.contains("- patch"));
-        assertTrue(release.contains("- minor"));
-        assertTrue(release.contains("- major"));
+        assertTrue(release.contains("workflow_run:"));
+        assertTrue(release.contains("github.event.workflow_run.conclusion == 'success'"));
+        assertTrue(release.contains("github.event.workflow_run.event == 'push'"));
+        assertTrue(release.contains("github.event.workflow_run.head_branch == 'main'"));
+        assertTrue(release.contains("ref: ${{ github.event.workflow_run.head_sha }}"));
         assertTrue(release.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
         assertTrue(release.contains("python scripts/version_policy.py"));
         assertTrue(release.contains("gh release create \"$TAG\""));
         assertTrue(release.contains("\"build/libs/$RUNTIME_JAR\""));
-        assertTrue(release.contains("Official release must expose exactly one uploaded mod asset"));
+        assertTrue(release.contains("Official Release must expose exactly one uploaded mod asset"));
         assertFalse(release.contains("actions/upload-artifact"));
         assertFalse(release.contains("\"build/libs/$SOURCES_JAR\""));
         assertFalse(release.contains("\"build/ci/SHA256SUMS.txt\""));
@@ -65,12 +65,12 @@ final class ReleaseDistributionContractTest {
     }
 
     @Test
-    void legacyPerCommitVerifiedTagsAreCleanupOnlyNotCreationTargets() throws IOException {
+    void legacyPerCommitVerifiedTagsAreReadOnlyVersionFallbacks() throws IOException {
         String release = source(".github/workflows/release.yml");
 
         assertTrue(release.contains("git tag --list 'verified-v*'"));
-        assertTrue(release.contains("gh release delete \"$legacy_tag\""));
-        assertTrue(release.contains("git push origin \":refs/tags/$legacy_tag\""));
+        assertFalse(release.contains("gh release delete \"$legacy_tag\""));
+        assertFalse(release.contains("git push origin \":refs/tags/$legacy_tag\""));
         assertFalse(release.contains("tag=\"verified-v"));
     }
 
@@ -100,9 +100,13 @@ final class ReleaseDistributionContractTest {
     void releaseNotesTellPrismUsersToInstallOnlyRuntimeJar() throws IOException {
         String release = source(".github/workflows/release.yml");
 
-        assertTrue(release.contains("Install this file / 導入するファイル"));
-        assertTrue(release.contains("Prism Launcher の Mods には次の1ファイルだけを追加してください"));
-        assertTrue(release.contains("Uploaded mod assets: \\`1 runtime JAR\\`"));
+        assertTrue(release.contains("Install / 導入"));
+        assertTrue(release.contains("Prism Launcher の Mods には **\\`${RUNTIME_JAR}\\`** だけを追加してください"));
+        assertTrue(release.contains("- Minecraft:"));
+        assertTrue(release.contains("- Fabric Loader:"));
+        assertTrue(release.contains("- Fabric API:"));
+        assertTrue(release.contains("- Java:"));
+        assertTrue(release.contains("- SHA-256:"));
     }
 
     private static String source(String relativePath) throws IOException {
