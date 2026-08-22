@@ -78,9 +78,11 @@ def recompressRuntimeJar = { File runtimeJar, org.gradle.api.logging.Logger task
     }
 }
 
-tasks.named('jar').configure {
-    doLast { task ->
-        recompressRuntimeJar(task.archiveFile.get().asFile, task.logger)
+pluginManager.withPlugin('java') {
+    tasks.named('jar').configure {
+        doLast { task ->
+            recompressRuntimeJar(task.archiveFile.get().asFile, task.logger)
+        }
     }
 }
 
