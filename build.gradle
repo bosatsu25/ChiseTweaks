@@ -1,11 +1,11 @@
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
     id 'info.solidsoft.pitest' version '1.19.0'
     id 'jacoco'
 }
 
-// Keep the SemVer product version independent from the Minecraft compatibility suffix.
-version = "${project.mod_version}+mc${project.minecraft_version}"
+version = project.mod_version
 group = project.maven_group
 base { archivesName = project.archives_base_name }
 
@@ -188,8 +188,19 @@ pitest {
 }
 
 java {
+    withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.named('sourcesJar') {
+    from('LICENSE') { rename { "${it}_${archives_base_name}" } }
+    from('LICENSE_MIT') { rename { "${it}_${archives_base_name}" } }
+    from('LICENSE_APACHE-2.0') { rename { "${it}_${archives_base_name}" } }
+    from('NOTICE')
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
 }
 
 jar {
@@ -203,6 +214,12 @@ jar {
     exclude '**/*Test.class', '**/test/**'
 }
 
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) { from components.java }
+    }
+}
+
 tasks.register('qualityGate') {
     group = 'verification'
     description = 'Runs all JUnit contracts once, plus JaCoCo and PIT quality gates.'
@@ -214,7 +231,7 @@ tasks.register('qualityGate') {
 
 tasks.register('ciGate') {
     group = 'verification'
-    description = 'Single CI entry point: quality gates plus the reproducible runtime JAR.'
+    description = 'Single CI entry point: quality gates plus reproducible runtime and sources artifacts.'
     dependsOn tasks.named('qualityGate')
     dependsOn tasks.named('build')
 }
