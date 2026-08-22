@@ -1,26 +1,20 @@
 package dev.chise.chisetweaks.feature;
 
 /**
- * Base contract for a ChiseTweaks feature.
+ * ChiseTweaks機能の基本契約。
  *
- * <p>Features that need client-tick work implement {@link TickingFeature}.
- * Event-driven features remain outside the tick dispatcher, which keeps the
- * disabled and idle cost close to zero.</p>
+ * <p>クライアントTick処理が必要な機能だけが{@link TickingFeature}を実装する。
+ * イベント駆動機能をTickディスパッチから分離し、無効時と待機時の定常コストを抑える。</p>
  */
 public interface Feature {
-    /** Stable identifier used by diagnostics and configuration. */
     String getId();
 
-    /** User-facing feature name. */
     String getName();
 
-    /** Registers callbacks and performs one-time initialization. */
     default void init() {
     }
 
-    /** Returns whether this feature currently participates in runtime work. */
     boolean isEnabled();
 
-    /** Enables or disables the feature. */
     void setEnabled(boolean enabled);
 }
