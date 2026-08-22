@@ -29,6 +29,16 @@ final class SettingsAndAnalyzerDesignContractTest {
     }
 
     @Test
+    void configLoadingDoesNotReachIntoRenderingState() throws IOException {
+        String config = source("src/main/java/dev/chise/chisetweaks/config/FeatureConfig.java");
+        String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
+
+        assertFalse(config.contains("feature.rendering"));
+        assertFalse(config.contains("BuilderFocusVisibility"));
+        assertTrue(bindings.contains("BuilderFocusVisibility.applyConfig()"));
+    }
+
+    @Test
     void analyzerFeaturesShareOnlyGenericRetentionAndRenderingInfrastructure() throws IOException {
         String lava = source("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
         String debris = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
