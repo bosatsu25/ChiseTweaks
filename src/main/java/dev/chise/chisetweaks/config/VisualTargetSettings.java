@@ -5,7 +5,10 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 
 import java.util.List;
 
+/** UI metadata bound directly to the visual target mask stored in {@link LocalFeatureConfig}. */
 public final class VisualTargetSettings {
+    private static Runnable materialTargetsChangedCallback = () -> {};
+
     private static final List<Entry> ENTRIES = List.of(
             entry(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre",
                     "Ore: Coal", "鉱石：石炭",
@@ -57,24 +60,16 @@ public final class VisualTargetSettings {
                     "Allow Hidden Surface Trace to mark visible powder snow.", "隠面トレースで見えている粉雪を表示対象にします。"),
             entry(Target.HIDDEN_SCULK_CATALYST, "visualTargetHiddenSculkCatalyst",
                     "Hidden Surface: Sculk Catalyst", "隠面：スカルクカタリスト",
-                    "Allow Hidden Surface Trace to mark sculk catalysts.", "隠面トレースでスカルクカタリストを表示対象にします。"));
+                    "Allow Hidden Surface Trace to mark sculk catalysts.", "隠面トレースでスカルクカタリストを表示対象にします."));
 
     public static final List<ChiseBooleanSetting> ALL_OPTIONS = ENTRIES.stream()
             .map(entry -> (ChiseBooleanSetting) entry.option())
             .toList();
 
-    private static boolean initialized;
-    private static boolean syncing;
-    private static Runnable materialTargetsChangedCallback = () -> {};
-
     private VisualTargetSettings() {}
 
-    public static synchronized void init() {
-        syncFromConfig();
-        if (initialized) return;
-        bindCallbacks();
-        initialized = true;
-    }
+    /** Kept as an explicit bootstrap boundary; direct bindings require no synchronization. */
+    public static void init() {}
 
     public static synchronized void setAllOreHighlightTargets(boolean enabled) {
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
@@ -82,41 +77,11 @@ public final class VisualTargetSettings {
         config.visualTargetMask = VisualTargetSelectionPolicy.withAllOreHighlightTargets(
                 config.visualTargetMask,
                 enabled);
-        syncFromConfig();
         if (config.visualTargetMask != previous) materialTargetsChangedCallback.run();
     }
 
     public static void setMaterialTargetsChangedCallback(Runnable callback) {
         materialTargetsChangedCallback = callback == null ? () -> {} : callback;
-    }
-
-    private static void syncFromConfig() {
-        syncing = true;
-        try {
-            int mask = LocalFeatureConfig.getInstance().visualTargetMask;
-            for (Entry entry : ENTRIES) {
-                entry.option().setBooleanValueSilently(
-                        VisualTargetSelectionPolicy.isEnabled(mask, entry.target()));
-            }
-        } finally {
-            syncing = false;
-        }
-    }
-
-    private static void bindCallbacks() {
-        for (Entry entry : ENTRIES) {
-            entry.option().setValueChangeCallback(ignored -> apply(entry));
-        }
-    }
-
-    private static void apply(Entry entry) {
-        if (syncing) return;
-        LocalFeatureConfig config = LocalFeatureConfig.getInstance();
-        config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
-                config.visualTargetMask,
-                entry.target(),
-                entry.option().getBooleanValue());
-        if (isMaterialTarget(entry.target())) materialTargetsChangedCallback.run();
     }
 
     private static boolean isMaterialTarget(Target target) {
@@ -131,15 +96,27 @@ public final class VisualTargetSettings {
             String japaneseName,
             String englishComment,
             String japaneseComment) {
-        return new Entry(
-                target,
-                new SimpleBooleanSetting(
-                        configName,
-                        true,
-                        englishName,
-                        japaneseName,
-                        englishComment,
-                        japaneseComment));
+        SimpleBooleanSetting option = new SimpleBooleanSetting(
+                configName,
+                true,
+                englishName,
+                japaneseName,
+                englishComment,
+                japaneseComment,
+                () -> VisualTargetSelectionPolicy.isEnabled(
+                        LocalFeatureConfig.getInstance().visualTargetMask,
+                        target),
+                enabled -> {
+                    LocalFeatureConfig config = LocalFeatureConfig.getInstance();
+                    config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
+                            config.visualTargetMask,
+                            target,
+                            enabled);
+                });
+        if (isMaterialTarget(target)) {
+            option.setValueChangeCallback(ignored -> materialTargetsChangedCallback.run());
+        }
+        return new Entry(target, option);
     }
 
     private record Entry(Target target, SimpleBooleanSetting option) {}
