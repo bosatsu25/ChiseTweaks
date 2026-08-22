@@ -106,10 +106,13 @@ final class ChiseTweaksSettingsController {
         FeatureSwitches.BUILDER_FOCUS_BLOCKS.resetToDefault();
         FeatureSwitches.BUILDER_FOCUS_ENTITIES.resetToDefault();
         LocalFeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
+        LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER.resetToDefault();
         LocalFeatureSwitches.FIRE_VISIBILITY.resetToDefault();
 
         resetHighlightDetails();
         resetLavaDetails();
+        LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE.resetToDefault();
+        LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.resetToDefault();
 
         BuilderFocusConfig.REFRESH_RENDERER.resetToDefault();
         BuilderFocusConfig.BLOCK_RULE_MODE.resetToDefault();
@@ -158,6 +161,16 @@ final class ChiseTweaksSettingsController {
         compactBoolAction(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
                 "溶岩源ハイライト", "Lava Source Highlight",
                 ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS);
+        compactBool(rows, "ancientDebrisAnalyzer", LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
+                "古代の残骸アナライザー", "Ancient Debris Analyzer");
+        integer(rows, "ancientDebrisRange", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE,
+                "検出範囲", "Detection Range",
+                "ロード済みチャンク内で古代の残骸を表示する最大距離（最大256ブロック）",
+                "Maximum distance for Ancient Debris markers in already-loaded chunks (up to 256 blocks).", 16);
+        integer(rows, "ancientDebrisMaxMarkers", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS,
+                "最大表示数", "Maximum Markers",
+                "同時に保持する古代の残骸マーカー数",
+                "Maximum retained Ancient Debris markers.", 8);
         compactBool(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
                 "火炎表示を低くする", "Lower Fire Overlay");
     }
@@ -192,7 +205,7 @@ final class ChiseTweaksSettingsController {
         bool(rows, "highlightExclusiveMode", LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE,
                 "ハイライト排他モード", "Exclusive Highlight Mode",
                 "スキャン型ハイライトを同時に1つまでに制限する",
-                "Keep at most one scan-based highlight mode active.");
+                "Keep at most one scan-based highlight mode active at a time.");
 
         header(rows, "detail.highlight.materialTargets", "鉱石・資材の対象", "Ore and Material Targets");
         for (ChiseBooleanSetting option : resourceTargets) {
