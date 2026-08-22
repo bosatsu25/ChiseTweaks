@@ -130,10 +130,6 @@ final class ChiseTweaksSettingsController {
             return;
         }
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
-        int previous = config.visualTargetMask;
         config.visualTargetMask = VisualTargetGroupPolicy.withAll(config.visualTargetMask, group, true);
-        if (config.visualTargetMask != previous) {
-            // Direct-bound target options read this mask immediately; no synchronization pass is needed.
-        }
     }
 }
