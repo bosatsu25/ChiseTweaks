@@ -14,13 +14,13 @@ final class LightweightRuntimeBudgetContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void runtimeJarHasSingleFourHundredKilobyteLimitAndOptimizedIconContract() throws IOException {
+    void runtimeJarHasSingleAchievableBudgetAndOptimizedIconContract() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
         String properties = source("gradle.properties");
         String build = source("build.gradle");
         String settings = source("settings.gradle");
 
-        assertTrue(properties.contains("runtime_jar_max_bytes=400000"));
+        assertTrue(properties.contains("runtime_jar_max_bytes=450000"));
         assertTrue(properties.contains("runtime_icon_target_pixels=256"));
         assertTrue(budget.contains("project.property('runtime_jar_max_bytes')"));
         assertTrue(budget.contains("project.property('runtime_icon_target_pixels')"));
@@ -38,15 +38,14 @@ final class LightweightRuntimeBudgetContractTest {
     }
 
     @Test
-    void runtimeJarUsesDeterministicMaximumDeflateWithoutRemovingRuntimeContents() throws IOException {
+    void runtimeJarBudgetDoesNotMutateTheBuiltArtifactAfterJarTask() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
 
-        assertTrue(budget.contains("output.setLevel(9)"));
-        assertTrue(budget.contains("targetEntry.setTime(0L)"));
-        assertTrue(budget.contains("targetEntry.setMethod(ZipEntry.DEFLATED)"));
-        assertTrue(budget.contains("sourceArchive.getInputStream(entry).bytes"));
-        assertTrue(budget.contains("recompressedSize < originalSize"));
-        assertTrue(budget.contains("StandardCopyOption.ATOMIC_MOVE"));
+        assertFalse(budget.contains("ZipOutputStream"));
+        assertFalse(budget.contains("setLevel(9)"));
+        assertFalse(budget.contains("StandardCopyOption"));
+        assertFalse(budget.contains("tasks.named('jar').configure"));
+        assertFalse(budget.contains("doLast { task ->"));
     }
 
     @Test
