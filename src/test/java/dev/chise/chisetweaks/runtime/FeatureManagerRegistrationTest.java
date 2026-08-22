@@ -61,6 +61,5 @@ final class FeatureManagerRegistrationTest {
     private record FakeRuntimeComponent(String id) implements RuntimeComponent {
         @Override public String getId() { return id; }
         @Override public void init() {}
-        @Override public boolean isActive() { return true; }
     }
 }
