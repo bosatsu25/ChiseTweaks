@@ -86,10 +86,6 @@ TRANSLATIONS: tuple[tuple[str, str], ...] = (
         "毎フレームの描画で文字列や状態を再判定しないよう、描画専用情報を事前計算して保持する。",
     ),
     (
-        "No scan may load chunks or run every frame",
-        "走査処理は未ロードチャンクを読み込まず、毎フレーム実行もしない。",
-    ),
-    (
         "Hard CPU/allocation budget for ray based line-of-sight checks in one scan",
         "1回の走査で行う視線判定にはCPU処理量と一時割り当ての上限を設ける。",
     ),
@@ -118,6 +114,7 @@ TRANSLATIONS: tuple[tuple[str, str], ...] = (
         "Minecraftの一人称視点に重なる炎エフェクトだけを下げ、ワールド上の炎モデルやテクスチャは変更しない。",
     ),
 )
+
 
 @dataclass(frozen=True)
 class Comment:
@@ -223,23 +220,72 @@ def translation_for(normalized: str) -> str | None:
     return None
 
 
-def render_translation(comment: Comment, text: str) -> str:
+def line_indent(source: str, index: int) -> str:
+    line_start = source.rfind("\n", 0, index) + 1
+    prefix = source[line_start:index]
+    return prefix if not prefix.strip() else ""
+
+
+def render_translation(source: str, comment: Comment, text: str) -> str:
     if comment.kind == "line":
         return "// " + text
+    indent = line_indent(source, comment.start)
     if comment.kind == "javadoc":
-        return "/**\n * " + text + "\n */"
+        return "/**\n" + indent + " * " + text + "\n" + indent + " */"
     return "/* " + text + " */"
 
 
 def blank_replacement(comment: Comment) -> str:
     if comment.kind == "line":
         return ""
-    # ブロックコメントが2つのトークンの間にあっても連結しないよう空白を1つ残す。
-    return " " + ("\n" * comment.raw.count("\n"))
+    # インラインのブロックコメントでも前後のトークンを連結しない。
+    return " "
+
+
+def normalize_java_whitespace(source: str) -> str:
+    had_final_newline = source.endswith("\n")
+    lines = [line.rstrip() for line in source.splitlines()]
+
+    # コメント削除後に残る連続空行を1行へ畳む。
+    compact: list[str] = []
+    previous_blank = False
+    for line in lines:
+        blank = not line.strip()
+        if blank and previous_blank:
+            continue
+        compact.append(line)
+        previous_blank = blank
+
+    # Javadocの中身を開始行と同じインデントへ揃える。
+    formatted: list[str] = []
+    in_javadoc = False
+    javadoc_indent = ""
+    for line in compact:
+        stripped = line.lstrip()
+        if not in_javadoc and stripped == "/**":
+            javadoc_indent = line[: len(line) - len(stripped)]
+            formatted.append(javadoc_indent + "/**")
+            in_javadoc = True
+            continue
+        if in_javadoc:
+            if stripped == "*/":
+                formatted.append(javadoc_indent + " */")
+                in_javadoc = False
+                continue
+            if stripped.startswith("*"):
+                formatted.append(javadoc_indent + " " + stripped)
+                continue
+        formatted.append(line)
+
+    result = "\n".join(formatted)
+    if had_final_newline:
+        result += "\n"
+    return result
 
 
 def process_file(path: Path) -> tuple[bool, int, int]:
-    source = path.read_text(encoding="utf-8")
+    original = path.read_text(encoding="utf-8")
+    source = original
     edits: list[tuple[int, int, str]] = []
     translated = 0
     removed = 0
@@ -257,12 +303,13 @@ def process_file(path: Path) -> tuple[bool, int, int]:
                 edits.append((comment.start, comment.end, blank_replacement(comment)))
                 removed += 1
             else:
-                edits.append((comment.start, comment.end, render_translation(comment, translated_text)))
+                edits.append((comment.start, comment.end, render_translation(source, comment, translated_text)))
                 translated += 1
-    if not edits:
-        return False, translated, removed
     for start, end, replacement in reversed(edits):
         source = source[:start] + replacement + source[end:]
+    source = normalize_java_whitespace(source)
+    if source == original:
+        return False, translated, removed
     path.write_text(source, encoding="utf-8")
     return True, translated, removed
 
