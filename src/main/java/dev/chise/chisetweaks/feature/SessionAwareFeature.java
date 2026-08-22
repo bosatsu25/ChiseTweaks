@@ -2,6 +2,6 @@ package dev.chise.chisetweaks.feature;
 
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 
-/** User-facing feature state that must be restored or cleared across sessions. */
+/** セッション切替時に状態を復元または破棄する必要があるユーザー向け機能。 */
 public interface SessionAwareFeature extends SessionAwareRuntimeComponent {
 }

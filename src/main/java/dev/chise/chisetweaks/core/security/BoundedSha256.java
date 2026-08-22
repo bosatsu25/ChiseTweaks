@@ -11,7 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HexFormat;
 
-/** Bounded SHA-256 helpers for small local files and staged imports. */
+/** 小さなローカルファイルと一時取込データを上限付きでSHA-256検証する補助機能。 */
 public final class BoundedSha256 {
     private static final int BUFFER_BYTES = 8 * 1024;
 

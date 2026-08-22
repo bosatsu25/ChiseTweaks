@@ -7,7 +7,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
-/** Strict UTF-8 codec that rejects malformed bytes and unpaired surrogate input. */
+/** 不正なバイト列や孤立サロゲートを拒否する厳格なUTF-8変換処理。 */
 public final class StrictUtf8 {
     private StrictUtf8() {
     }

@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.runtime;
 
-/** Internal runtime service. Unlike a Feature, it does not own user settings. */
+/** ユーザー設定を所有しない内部ランタイムサービス。 */
 public interface RuntimeComponent {
     String getId();
     void init();

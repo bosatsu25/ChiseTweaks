@@ -2,10 +2,10 @@ package dev.chise.chisetweaks.runtime;
 
 import net.minecraft.client.Minecraft;
 
-/** Internal runtime service that performs bounded work on the client tick. */
+/** クライアントTickで上限付き処理を行う内部ランタイムサービス。 */
 public interface TickingRuntimeComponent extends RuntimeComponent {
     void tick(Minecraft client);
 
-    /** Releases session-local state when the tick dispatcher quarantines this component. */
+    /** Tickディスパッチャがこのコンポーネントを隔離した際に、セッション内状態を解放する。 */
     default void onQuarantined(Minecraft client) {}
 }

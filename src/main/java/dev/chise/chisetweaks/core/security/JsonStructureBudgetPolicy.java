@@ -3,10 +3,10 @@ package dev.chise.chisetweaks.core.security;
 import java.util.Objects;
 
 /**
- * Rejects hostile or corrupted JSON before Gson parses it.
+ * Gsonで解析する前に、敵対的または破損したJSONを拒否する。
  *
- * <p>The scanner performs one allocation for its state object and one linear pass over the input.
- * It validates structural balance and enforces explicit budgets for nesting, tokens and strings.</p>
+ * <p>走査用状態オブジェクト1個だけを確保して入力を1回線形走査し、構造の対応関係に加えて
+ * ネスト深度・トークン数・文字列長の明示的な上限を検証する。</p>
  */
 public final class JsonStructureBudgetPolicy {
     public static final int MAX_NESTING_DEPTH = 32;
