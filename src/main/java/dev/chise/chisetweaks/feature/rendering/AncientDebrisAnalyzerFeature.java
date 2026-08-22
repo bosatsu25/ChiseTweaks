@@ -29,9 +29,11 @@ import java.util.Map;
 /**
  * Nether-only, client-only analyzer for Ancient Debris already present in loaded client chunks.
  *
- * <p>Chunk contents are scanned once when they become available (plus a one-shot bootstrap when the
- * feature is enabled). Steady-state ticks only filter cached packed positions by player distance and
- * occasionally validate already-known markers. No unloaded chunk is requested or generated.</p>
+ * <p>Chunk contents are scanned once when they become relevant: on client chunk load, on one-shot
+ * bootstrap when the feature is enabled, or when the player crosses a chunk boundary and an
+ * already-loaded chunk enters the configured analyzer neighborhood. Steady-state ticks only filter
+ * cached packed positions by player distance and occasionally validate already-known markers. No
+ * unloaded chunk is requested or generated.</p>
  */
 public final class AncientDebrisAnalyzerFeature implements TickingFeature, SessionAwareFeature {
     private static final long[] EMPTY_POSITIONS = new long[0];
@@ -45,6 +47,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
 
     private ClientLevel lastLevel;
     private long lastPlayerBlock = Long.MIN_VALUE;
+    private long lastPlayerChunk = Long.MIN_VALUE;
     private int lastRangeBlocks = Integer.MIN_VALUE;
     private int lastMaxMarkers = Integer.MIN_VALUE;
     private int ticksUntilValidation;
@@ -92,9 +95,16 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         int rangeBlocks = AncientDebrisAnalyzerPolicy.clampRangeBlocks(local.ancientDebrisAnalyzerRangeBlocks);
         int maxMarkers = AncientDebrisAnalyzerPolicy.clampMaxMarkers(local.ancientDebrisAnalyzerMaxMarkers);
-        long playerBlock = client.player.blockPosition().asLong();
-        if (playerBlock != lastPlayerBlock || rangeBlocks != lastRangeBlocks || maxMarkers != lastMaxMarkers) {
-            if (rangeBlocks != lastRangeBlocks) bootstrapLoadedChunks(client);
+        BlockPos playerPosition = client.player.blockPosition();
+        long playerBlock = playerPosition.asLong();
+        long playerChunk = packChunk(playerPosition.getX() >> 4, playerPosition.getZ() >> 4);
+        boolean rangeChanged = rangeBlocks != lastRangeBlocks;
+        boolean playerChunkChanged = playerChunk != lastPlayerChunk;
+        if (rangeChanged || playerChunkChanged) {
+            bootstrapLoadedChunks(client);
+            lastPlayerChunk = playerChunk;
+        }
+        if (playerBlock != lastPlayerBlock || rangeChanged || maxMarkers != lastMaxMarkers) {
             lastPlayerBlock = playerBlock;
             lastRangeBlocks = rangeBlocks;
             lastMaxMarkers = maxMarkers;
@@ -261,6 +271,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         visibleMarkers.clear();
         lastLevel = level;
         lastPlayerBlock = Long.MIN_VALUE;
+        lastPlayerChunk = Long.MIN_VALUE;
         lastRangeBlocks = Integer.MIN_VALUE;
         lastMaxMarkers = Integer.MIN_VALUE;
         ticksUntilValidation = 0;
@@ -272,6 +283,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         visibleMarkers.clear();
         lastLevel = null;
         lastPlayerBlock = Long.MIN_VALUE;
+        lastPlayerChunk = Long.MIN_VALUE;
         lastRangeBlocks = Integer.MIN_VALUE;
         lastMaxMarkers = Integer.MIN_VALUE;
         ticksUntilValidation = 0;
@@ -291,6 +303,10 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
 
     private static long chunkKey(LevelChunk chunk) {
         return chunk.getPos().toLong();
+    }
+
+    private static long packChunk(int chunkX, int chunkZ) {
+        return ((long) chunkX << 32) ^ (chunkZ & 0xFFFFFFFFL);
     }
 
     private boolean isSessionQuarantined() {
