@@ -16,9 +16,4 @@ public interface Feature extends RuntimeComponent {
     }
 
     boolean isEnabled();
-
-    @Override
-    default boolean isActive() {
-        return isEnabled();
-    }
 }
