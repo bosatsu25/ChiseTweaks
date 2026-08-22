@@ -6,8 +6,8 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
-import dev.chise.chisetweaks.feature.SessionAwareFeature;
 import dev.chise.chisetweaks.feature.TickingFeature;
+import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
@@ -22,7 +22,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Arrays;
 
-public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature {
+public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntimeComponent {
     private static final int MAX_CANDIDATES = WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS;
     private static final int MAX_STABLE_BACKOFF_SHIFT = 2;
     private static final Direction[] DIRECTIONS = Direction.values();
@@ -256,7 +256,6 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
             renderQuarantined = true;
             clearTargets();
             resetRendererAfterFailure();
-            disableAfterQuarantine();
             ChiseTweaksClient.LOGGER.error(
                     "Lava Source Highlight rendering was quarantined after {}",
                     failure.getClass().getSimpleName());
@@ -289,16 +288,6 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
             ChiseTweaksClient.LOGGER.warn(
                     "Lava Source Highlight renderer close failed after {}",
                     cleanupFailure.getClass().getSimpleName());
-        }
-    }
-
-    private void disableAfterQuarantine() {
-        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
-        if (!local.lavaHighlightEnabled) return;
-        local.lavaHighlightEnabled = false;
-        if (!local.save()) {
-            ChiseTweaksClient.LOGGER.warn(
-                    "Lava Source Highlight quarantine could not be persisted; it remains disabled for this client process");
         }
     }
 
@@ -347,14 +336,12 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         runtimeQuarantined = true;
         resetScanState();
         closeRendererAfterRuntimeQuarantine();
-        disableAfterQuarantine();
     }
 
     @Override
     public void resetSession(Minecraft client) {
         resetScanState();
         // 描画経路の失敗はワールドやセッション初期化中だけの一過性である場合がある。Manager側の隔離状態はプロセス全体で保持するため、ここではリセットしない。
-
         renderQuarantined = false;
     }
 
@@ -363,20 +350,5 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
                 && !isSessionQuarantined()
                 && LocalFeatureConfig.getInstance().lavaHighlightEnabled;
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
-        boolean effective = PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
-                && enabled
-                && !isSessionQuarantined();
-        local.lavaHighlightEnabled = effective;
-        local.save();
-        resetScanState();
-        if (enabled && isSessionQuarantined()) {
-            ChiseTweaksClient.LOGGER.warn(
-                    "Lava Source Highlight remains quarantined until it is safe to retry");
-        }
     }
 }
