@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.core.policy;
 
-/** Pure bounds and visual LOD policy for the Nether-only Ancient Debris Analyzer. */
+/** Pure bounds, loaded-chunk neighborhood and visual LOD policy for the Nether-only Ancient Debris Analyzer. */
 public final class AncientDebrisAnalyzerPolicy {
     public static final int DEFAULT_RANGE_BLOCKS = 64;
     public static final int MIN_RANGE_BLOCKS = 16;
@@ -10,6 +10,7 @@ public final class AncientDebrisAnalyzerPolicy {
     public static final int MIN_MAX_MARKERS = 8;
     public static final int MAX_MAX_MARKERS = 128;
 
+    public static final int MAX_BOOTSTRAP_CHUNK_RADIUS = 17;
     public static final int MAX_TRACKED_CHUNKS = 4096;
     public static final int MAX_DEBRIS_PER_CHUNK = 256;
     public static final int VALIDATION_INTERVAL_TICKS = 20;
@@ -22,6 +23,28 @@ public final class AncientDebrisAnalyzerPolicy {
 
     public static int clampMaxMarkers(int value) {
         return Math.max(MIN_MAX_MARKERS, Math.min(MAX_MAX_MARKERS, value));
+    }
+
+    /**
+     * Returns the bounded chunk neighborhood needed to cover the configured block range plus one
+     * edge chunk. The extra chunk keeps range-edge markers stable while never loading a chunk.
+     */
+    public static int chunkRadiusForRangeBlocks(int rangeBlocks) {
+        int range = clampRangeBlocks(rangeBlocks);
+        return Math.min(MAX_BOOTSTRAP_CHUNK_RADIUS, (range + 15) / 16 + 1);
+    }
+
+    /** True only when the candidate chunk belongs to the bounded analyzer neighborhood. */
+    public static boolean isChunkRelevant(
+            int centerChunkX,
+            int centerChunkZ,
+            int candidateChunkX,
+            int candidateChunkZ,
+            int rangeBlocks) {
+        int radius = chunkRadiusForRangeBlocks(rangeBlocks);
+        long deltaX = Math.abs((long) candidateChunkX - centerChunkX);
+        long deltaZ = Math.abs((long) candidateChunkZ - centerChunkZ);
+        return deltaX <= radius && deltaZ <= radius;
     }
 
     public static boolean withinRangeSquared(double distanceSquared, int rangeBlocks) {

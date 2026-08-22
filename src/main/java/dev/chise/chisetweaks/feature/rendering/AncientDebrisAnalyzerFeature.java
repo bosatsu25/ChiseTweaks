@@ -89,7 +89,6 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
 
         if (lastLevel != client.level) {
             resetForLevel(client.level);
-            bootstrapLoadedChunks(client);
         }
 
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
@@ -97,11 +96,13 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         int maxMarkers = AncientDebrisAnalyzerPolicy.clampMaxMarkers(local.ancientDebrisAnalyzerMaxMarkers);
         BlockPos playerPosition = client.player.blockPosition();
         long playerBlock = playerPosition.asLong();
-        long playerChunk = packChunk(playerPosition.getX() >> 4, playerPosition.getZ() >> 4);
+        int centerChunkX = playerPosition.getX() >> 4;
+        int centerChunkZ = playerPosition.getZ() >> 4;
+        long playerChunk = packChunk(centerChunkX, centerChunkZ);
         boolean rangeChanged = rangeBlocks != lastRangeBlocks;
         boolean playerChunkChanged = playerChunk != lastPlayerChunk;
         if (rangeChanged || playerChunkChanged) {
-            bootstrapLoadedChunks(client);
+            bootstrapLoadedChunks(client, rangeBlocks, centerChunkX, centerChunkZ);
             lastPlayerChunk = playerChunk;
         }
         if (playerBlock != lastPlayerBlock || rangeChanged || maxMarkers != lastMaxMarkers) {
@@ -125,22 +126,40 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     }
 
     private void onChunkLoad(ClientLevel level, LevelChunk chunk) {
-        if (!isEnabled() || !isNether(level) || level != Minecraft.getInstance().level) return;
+        Minecraft client = Minecraft.getInstance();
+        if (!isEnabled()
+                || !isNether(level)
+                || chunk == null
+                || client.level != level
+                || client.player == null) return;
+
+        BlockPos playerPosition = client.player.blockPosition();
+        int rangeBlocks = AncientDebrisAnalyzerPolicy.clampRangeBlocks(
+                LocalFeatureConfig.getInstance().ancientDebrisAnalyzerRangeBlocks);
+        if (!AncientDebrisAnalyzerPolicy.isChunkRelevant(
+                playerPosition.getX() >> 4,
+                playerPosition.getZ() >> 4,
+                chunk.getPos().getMinBlockX() >> 4,
+                chunk.getPos().getMinBlockZ() >> 4,
+                rangeBlocks)) return;
         scanChunk(level, chunk);
     }
 
     private void onChunkUnload(ClientLevel level, LevelChunk chunk) {
         if (level == null || chunk == null) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client.level != level || (lastLevel != null && level != lastLevel)) return;
         if (positionsByChunk.remove(chunkKey(chunk)) != null) selectionDirty = true;
     }
 
-    private void bootstrapLoadedChunks(Minecraft client) {
+    private void bootstrapLoadedChunks(
+            Minecraft client,
+            int rangeBlocks,
+            int centerChunkX,
+            int centerChunkZ) {
         if (client == null || client.player == null || client.level == null || !isNether(client.level)) return;
-        int rangeBlocks = AncientDebrisAnalyzerPolicy.clampRangeBlocks(
-                LocalFeatureConfig.getInstance().ancientDebrisAnalyzerRangeBlocks);
-        int chunkRadius = Math.min(17, (rangeBlocks + 15) / 16 + 1);
-        int centerChunkX = client.player.blockPosition().getX() >> 4;
-        int centerChunkZ = client.player.blockPosition().getZ() >> 4;
+        int chunkRadius = AncientDebrisAnalyzerPolicy.chunkRadiusForRangeBlocks(rangeBlocks);
+        pruneTrackedChunksOutsideNeighborhood(centerChunkX, centerChunkZ, rangeBlocks);
         for (int chunkZ = centerChunkZ - chunkRadius; chunkZ <= centerChunkZ + chunkRadius; chunkZ++) {
             for (int chunkX = centerChunkX - chunkRadius; chunkX <= centerChunkX + chunkRadius; chunkX++) {
                 LevelChunk chunk = client.level.getChunkSource().getChunkNow(chunkX, chunkZ);
@@ -149,6 +168,26 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
                 if (!positionsByChunk.containsKey(key)) scanChunk(client.level, chunk);
             }
         }
+    }
+
+    private void pruneTrackedChunksOutsideNeighborhood(
+            int centerChunkX,
+            int centerChunkZ,
+            int rangeBlocks) {
+        boolean removed = false;
+        Iterator<Long> iterator = positionsByChunk.keySet().iterator();
+        while (iterator.hasNext()) {
+            long key = iterator.next();
+            if (AncientDebrisAnalyzerPolicy.isChunkRelevant(
+                    centerChunkX,
+                    centerChunkZ,
+                    unpackChunkX(key),
+                    unpackChunkZ(key),
+                    rangeBlocks)) continue;
+            iterator.remove();
+            removed = true;
+        }
+        if (removed) selectionDirty = true;
     }
 
     private void scanChunk(ClientLevel level, LevelChunk chunk) {
@@ -294,7 +333,10 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         if (!local.ancientDebrisAnalyzerEnabled) return;
         local.ancientDebrisAnalyzerEnabled = false;
-        local.save();
+        if (!local.save()) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Ancient Debris Analyzer quarantine could not be persisted; it remains disabled for this client process");
+        }
     }
 
     private static boolean isNether(ClientLevel level) {
@@ -307,6 +349,14 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
 
     private static long packChunk(int chunkX, int chunkZ) {
         return ((long) chunkX << 32) ^ (chunkZ & 0xFFFFFFFFL);
+    }
+
+    private static int unpackChunkX(long packed) {
+        return (int) (packed >> 32);
+    }
+
+    private static int unpackChunkZ(long packed) {
+        return (int) packed;
     }
 
     private boolean isSessionQuarantined() {
@@ -353,7 +403,14 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
             Minecraft client = Minecraft.getInstance();
             if (client.level != null && client.player != null && isNether(client.level)) {
                 resetForLevel(client.level);
-                bootstrapLoadedChunks(client);
+                BlockPos playerPosition = client.player.blockPosition();
+                int rangeBlocks = AncientDebrisAnalyzerPolicy.clampRangeBlocks(
+                        local.ancientDebrisAnalyzerRangeBlocks);
+                bootstrapLoadedChunks(
+                        client,
+                        rangeBlocks,
+                        playerPosition.getX() >> 4,
+                        playerPosition.getZ() >> 4);
             }
         }
     }

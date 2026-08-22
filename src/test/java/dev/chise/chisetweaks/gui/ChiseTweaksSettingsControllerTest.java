@@ -32,7 +32,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void mainSurfaceKeepsThreeGroupsAndAddsAncientDebrisAnalyzerControls() {
+    void mainSurfaceKeepsSemanticGroupsAndAnalyzerTogglesCompact() {
         var controller = new ChiseTweaksSettingsController(true);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
@@ -47,18 +47,18 @@ final class ChiseTweaksSettingsControllerTest {
                 "header.visualFilter",
                 "focusBlocks",
                 "focusEntities",
-                "header.visibilityImprovement",
+                "header.analyzer",
                 "lava",
                 "ancientDebrisAnalyzer",
-                "ancientDebrisRange",
-                "ancientDebrisMaxMarkers",
+                "header.visibilityImprovement",
                 "fireVisibility"), ids(rows));
 
-        assertEquals(List.of("ハイライト", "Visual Filter", "視認改善"),
+        assertEquals(List.of("ハイライト", "Visual Filter", "アナライザー", "見やすさ"),
                 rows.stream()
                         .filter(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER)
                         .map(ChiseTweaksSettingRowDefinition::name)
                         .toList());
+        assertFalse(rows.stream().anyMatch(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.INTEGER));
         assertRowContracts(rows);
     }
 
@@ -77,19 +77,25 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals("エンティティフィルター", row(rows, "focusEntities").name());
         assertEquals("溶岩源ハイライト", row(rows, "lava").name());
         assertEquals("古代の残骸アナライザー", row(rows, "ancientDebrisAnalyzer").name());
-        assertEquals("検出範囲", row(rows, "ancientDebrisRange").name());
-        assertEquals("最大表示数", row(rows, "ancientDebrisMaxMarkers").name());
         assertEquals("火炎表示を低くする", row(rows, "fireVisibility").name());
     }
 
     @Test
-    void settingsActionsAreAttachedToTheRowsTheyConfigure() {
+    void settingsActionsAreAttachedOnlyToTheGroupsTheyActuallyConfigure() {
         var controller = new ChiseTweaksSettingsController(true);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
         ChiseTweaksSettingRowDefinition highlightHeader = row(rows, "header.highlight");
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS, highlightHeader.action());
         assertEquals("設定", highlightHeader.actionLabel());
+
+        ChiseTweaksSettingRowDefinition analyzerHeader = row(rows, "header.analyzer");
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS, analyzerHeader.action());
+        assertEquals("設定", analyzerHeader.actionLabel());
+
+        ChiseTweaksSettingRowDefinition visibilityHeader = row(rows, "header.visibilityImprovement");
+        assertNull(visibilityHeader.action());
+        assertEquals("", visibilityHeader.actionLabel());
 
         ChiseTweaksSettingRowDefinition blocks = row(rows, "focusBlocks");
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN_ACTION, blocks.kind());
@@ -99,26 +105,26 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN_ACTION, entities.kind());
         assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER, entities.action());
 
-        ChiseTweaksSettingRowDefinition lava = row(rows, "lava");
-        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN_ACTION, lava.kind());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS, lava.action());
+        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, row(rows, "lava").kind());
+        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, row(rows, "ancientDebrisAnalyzer").kind());
     }
 
     @Test
     void ancientDebrisAnalyzerIsOptInAndUsesIndependentBoundedSettings() {
         var controller = new ChiseTweaksSettingsController(true);
-        List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
-        ChiseTweaksSettingRowDefinition analyzer = row(rows, "ancientDebrisAnalyzer");
+        ChiseTweaksSettingRowDefinition analyzer = row(controller.rows(), "ancientDebrisAnalyzer");
+        List<ChiseTweaksSettingRowDefinition> details = controller.rows(
+                ChiseTweaksSettingsController.Surface.LAVA_DETAILS);
 
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, analyzer.kind());
         assertSame(LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER, analyzer.booleanConfig());
         assertFalse(analyzer.booleanConfig().getDefaultBooleanValue());
         assertSame(LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE,
-                row(rows, "ancientDebrisRange").integerConfig());
-        assertEquals(64, row(rows, "ancientDebrisRange").integerConfig().getDefaultIntegerValue());
+                row(details, "ancientDebrisRange").integerConfig());
+        assertEquals(64, row(details, "ancientDebrisRange").integerConfig().getDefaultIntegerValue());
         assertSame(LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS,
-                row(rows, "ancientDebrisMaxMarkers").integerConfig());
-        assertEquals(64, row(rows, "ancientDebrisMaxMarkers").integerConfig().getDefaultIntegerValue());
+                row(details, "ancientDebrisMaxMarkers").integerConfig());
+        assertEquals(64, row(details, "ancientDebrisMaxMarkers").integerConfig().getDefaultIntegerValue());
     }
 
     @Test
@@ -148,11 +154,12 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void lavaDetailSurfaceUsesDedicatedSettingsInsteadOfSharedHighlightBudget() {
+    void analyzerDetailSurfaceKeepsDynamicLavaAndStaticDebrisSettingsSeparate() {
         var controller = new ChiseTweaksSettingsController(true);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
                 ChiseTweaksSettingsController.Surface.LAVA_DETAILS);
 
+        assertEquals("アナライザー設定", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.LAVA_DETAILS));
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 row(rows, "lavaRange").integerConfig());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
@@ -161,6 +168,10 @@ final class ChiseTweaksSettingsControllerTest {
                 row(rows, "lavaInterval").integerConfig());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
                 row(rows, "lavaMaxOverlays").integerConfig());
+        assertSame(LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE,
+                row(rows, "ancientDebrisRange").integerConfig());
+        assertSame(LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS,
+                row(rows, "ancientDebrisMaxMarkers").integerConfig());
 
         assertFalse(rows.stream().anyMatch(row ->
                 row.integerConfig() == LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS));
@@ -190,25 +201,28 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void lavaSourceHighlightIsOptInAndUsesTheDedicatedSurface() {
+    void lavaSourceHighlightIsOptInAndSharesTheAnalyzerSettingsSurface() {
         var controller = new ChiseTweaksSettingsController(true);
         ChiseTweaksSettingRowDefinition lava = row(controller.rows(), "lava");
+        ChiseTweaksSettingRowDefinition header = row(controller.rows(), "header.analyzer");
 
-        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN_ACTION, lava.kind());
+        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, lava.kind());
         assertSame(LocalFeatureSwitches.LAVA_HIGHLIGHT, lava.booleanConfig());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS, lava.action());
         assertFalse(lava.booleanConfig().getDefaultBooleanValue());
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS, header.action());
     }
 
     @Test
-    void fireVisibilityRemainsOptIn() {
+    void fireVisibilityRemainsOptInAndOutsideAnalyzerSettings() {
         var controller = new ChiseTweaksSettingsController(true);
         ChiseTweaksSettingRowDefinition fire = row(controller.rows(), "fireVisibility");
+        ChiseTweaksSettingRowDefinition visibility = row(controller.rows(), "header.visibilityImprovement");
 
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, fire.kind());
         assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, fire.booleanConfig());
         assertFalse(fire.booleanConfig().getDefaultBooleanValue());
         assertFalse(fire.booleanConfig().getBooleanValue());
+        assertNull(visibility.action());
     }
 
     @Test

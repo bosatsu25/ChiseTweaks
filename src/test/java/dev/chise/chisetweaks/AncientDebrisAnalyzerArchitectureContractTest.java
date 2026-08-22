@@ -37,6 +37,17 @@ final class AncientDebrisAnalyzerArchitectureContractTest {
     }
 
     @Test
+    void loadedChunkDiscoveryIsRestrictedToTheCurrentAnalyzerNeighborhood() throws IOException {
+        String feature = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
+
+        assertTrue(feature.contains("AncientDebrisAnalyzerPolicy.isChunkRelevant("));
+        assertTrue(feature.contains("pruneTrackedChunksOutsideNeighborhood("));
+        assertTrue(feature.contains("AncientDebrisAnalyzerPolicy.chunkRadiusForRangeBlocks("));
+        assertTrue(feature.contains("client.level != level"));
+        assertTrue(feature.contains("level != lastLevel"));
+    }
+
+    @Test
     void productRangeAndMarkerBudgetsRemainHardBounded() throws IOException {
         String policy = source("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java");
 
@@ -45,8 +56,17 @@ final class AncientDebrisAnalyzerArchitectureContractTest {
         assertTrue(policy.contains("MAX_RANGE_BLOCKS = 256"));
         assertTrue(policy.contains("DEFAULT_MAX_MARKERS = 64"));
         assertTrue(policy.contains("MAX_MAX_MARKERS = 128"));
+        assertTrue(policy.contains("MAX_BOOTSTRAP_CHUNK_RADIUS = 17"));
         assertTrue(policy.contains("MAX_TRACKED_CHUNKS = 4096"));
         assertTrue(policy.contains("MAX_DEBRIS_PER_CHUNK = 256"));
+    }
+
+    @Test
+    void analyzerPolicyParticipatesInBothCoverageAndMutationQualityGates() throws IOException {
+        String build = source("build.gradle");
+
+        assertTrue(build.contains("core/policy/AncientDebrisAnalyzerPolicy*.class"));
+        assertTrue(build.contains("core.policy.AncientDebrisAnalyzerPolicy'"));
     }
 
     @Test

@@ -9,14 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PreReleaseUiPolicyTest {
     @Test
-    void mainSurfaceAllowsReleasedVisualHighlightsAndKeepsOtherFeaturesLocked() {
+    void mainSurfaceAllowsReleasedVisualFeaturesAndKeepsUnreleasedFeaturesLocked() {
         var controller = new ChiseTweaksSettingsController(true);
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
         for (ChiseTweaksSettingRowDefinition row : rows) {
             boolean expected = switch (row.id()) {
-                case "header.highlight", "header.visualFilter", "header.visibilityImprovement",
-                        "materials", "kelp", "glass", "lava" -> true;
+                case "header.highlight", "header.visualFilter", "header.analyzer", "header.visibilityImprovement",
+                        "materials", "kelp", "glass", "lava", "ancientDebrisAnalyzer" -> true;
                 default -> false;
             };
             assertTrue(
@@ -36,6 +36,39 @@ final class PreReleaseUiPolicyTest {
         assertFalse(PreReleaseUiPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.MAIN,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER));
+    }
+
+    @Test
+    void releasedAncientDebrisAnalyzerCannotRegressToADisabledMainToggle() {
+        var controller = new ChiseTweaksSettingsController(true);
+        ChiseTweaksSettingRowDefinition ancient = controller.rows().stream()
+                .filter(row -> "ancientDebrisAnalyzer".equals(row.id()))
+                .findFirst()
+                .orElseThrow();
+
+        assertTrue(PreReleaseUiPolicy.isRowInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN,
+                ancient));
+    }
+
+    @Test
+    void analyzerActionLivesOnAnalyzerHeaderInsteadOfGeneralVisibilityHeader() {
+        var controller = new ChiseTweaksSettingsController(true);
+        ChiseTweaksSettingRowDefinition analyzer = controller.rows().stream()
+                .filter(row -> "header.analyzer".equals(row.id()))
+                .findFirst()
+                .orElseThrow();
+        ChiseTweaksSettingRowDefinition visibility = controller.rows().stream()
+                .filter(row -> "header.visibilityImprovement".equals(row.id()))
+                .findFirst()
+                .orElseThrow();
+
+        assertTrue(PreReleaseUiPolicy.isRowInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN, analyzer));
+        assertTrue(PreReleaseUiPolicy.isRowInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN, visibility));
+        assertTrue(analyzer.action() == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS);
+        assertTrue(visibility.action() == null);
     }
 
     @Test
@@ -59,7 +92,7 @@ final class PreReleaseUiPolicyTest {
     }
 
     @Test
-    void lavaSourceHighlightDetailControlsAreInteractive() {
+    void analyzerDetailControlsAreInteractiveForBothReleasedAnalyzers() {
         var controller = new ChiseTweaksSettingsController(true);
         for (ChiseTweaksSettingRowDefinition row : controller.rows(
                 ChiseTweaksSettingsController.Surface.LAVA_DETAILS)) {
