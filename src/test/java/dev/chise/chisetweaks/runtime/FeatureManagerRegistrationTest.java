@@ -9,23 +9,23 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class FeatureManagerRegistrationTest {
     @Test
-    void featureAndRuntimeComponentIdsShareOneNamespace() throws Exception {
+    void featureAndRuntimeServiceIdsShareOneNamespace() throws Exception {
         FeatureManager manager = newManager();
-        manager.registerFeature(new FakeFeature("shared-id"));
+        manager.registerComponent(new FakeFeature("shared-id"));
 
         assertThrows(
                 IllegalStateException.class,
-                () -> manager.registerRuntimeComponent(new FakeRuntimeComponent("shared-id")));
+                () -> manager.registerComponent(new FakeRuntimeComponent("shared-id")));
     }
 
     @Test
-    void runtimeComponentAndFeatureIdsShareOneNamespace() throws Exception {
+    void runtimeServiceAndFeatureIdsShareOneNamespace() throws Exception {
         FeatureManager manager = newManager();
-        manager.registerRuntimeComponent(new FakeRuntimeComponent("shared-id"));
+        manager.registerComponent(new FakeRuntimeComponent("shared-id"));
 
         assertThrows(
                 IllegalStateException.class,
-                () -> manager.registerFeature(new FakeFeature("shared-id")));
+                () -> manager.registerComponent(new FakeFeature("shared-id")));
     }
 
     @Test
@@ -34,10 +34,10 @@ final class FeatureManagerRegistrationTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> manager.registerFeature(new FakeFeature(" spaced-id ")));
+                () -> manager.registerComponent(new FakeFeature(" spaced-id ")));
         assertThrows(
                 IllegalArgumentException.class,
-                () -> manager.registerRuntimeComponent(new FakeRuntimeComponent(" spaced-id ")));
+                () -> manager.registerComponent(new FakeRuntimeComponent(" spaced-id ")));
     }
 
     private static FeatureManager newManager() throws Exception {
@@ -48,7 +48,6 @@ final class FeatureManagerRegistrationTest {
 
     private static final class FakeFeature implements Feature {
         private final String id;
-        private boolean enabled = true;
 
         private FakeFeature(String id) {
             this.id = id;
@@ -56,8 +55,7 @@ final class FeatureManagerRegistrationTest {
 
         @Override public String getId() { return id; }
         @Override public String getName() { return "Fake feature"; }
-        @Override public boolean isEnabled() { return enabled; }
-        @Override public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        @Override public boolean isEnabled() { return true; }
     }
 
     private record FakeRuntimeComponent(String id) implements RuntimeComponent {
