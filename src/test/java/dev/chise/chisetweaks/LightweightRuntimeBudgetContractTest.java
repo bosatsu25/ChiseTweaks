@@ -16,13 +16,14 @@ final class LightweightRuntimeBudgetContractTest {
     @Test
     void runtimeJarKeepsFourHundredKilobyteTargetAndSeparateRegressionLimit() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
+        String jarSize = source("gradle/chise-jar-size.gradle");
         String properties = source("gradle.properties");
         String build = source("build.gradle");
         String settings = source("settings.gradle");
 
         assertTrue(properties.contains("runtime_jar_target_bytes=400000"));
         assertTrue(properties.contains("runtime_jar_max_bytes=440000"));
-        assertTrue(properties.contains("runtime_icon_target_pixels=256"));
+        assertTrue(properties.contains("runtime_icon_target_pixels=128"));
         assertTrue(budget.contains("project.property('runtime_jar_target_bytes')"));
         assertTrue(budget.contains("project.property('runtime_jar_max_bytes')"));
         assertTrue(budget.contains("project.property('runtime_icon_target_pixels')"));
@@ -34,6 +35,9 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(budget.contains("it.name == 'check' || it.name == 'qualityGate'"));
         assertTrue(build.contains("new File(outputs.files.singleFile, runtimeIconRelativePath)"));
         assertTrue(settings.contains("gradle/chise-lightweight-budget.gradle"));
+        assertTrue(settings.contains("gradle/chise-jar-size.gradle"));
+        assertTrue(jarSize.contains("options.debug = true"));
+        assertTrue(jarSize.contains("options.debugOptions.debugLevel = 'source,lines'"));
     }
 
     @Test

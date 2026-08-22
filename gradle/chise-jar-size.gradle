@@ -1,0 +1,6 @@
+// Runtime JAR size optimization that preserves actionable stack traces.
+// Keep source/line metadata for diagnostics while dropping local-variable debug tables.
+tasks.withType(org.gradle.api.tasks.compile.JavaCompile).configureEach {
+    options.debug = true
+    options.debugOptions.debugLevel = 'source,lines'
+}
