@@ -15,6 +15,7 @@ gradle.beforeProject { project ->
         project.apply from: new File(settingsDir, 'gradle/chise-kelp-visual-assets.gradle')
         project.apply from: new File(settingsDir, 'gradle/chise-glass-visual-assets.gradle')
         project.apply from: new File(settingsDir, 'gradle/chise-lightweight-budget.gradle')
+        project.apply from: new File(settingsDir, 'gradle/chise-jar-size.gradle')
     }
 }
 
