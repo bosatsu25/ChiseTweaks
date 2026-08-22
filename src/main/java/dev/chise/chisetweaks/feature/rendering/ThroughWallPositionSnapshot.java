@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.feature.rendering;
 import java.util.Arrays;
 
 /** 壁越し解析結果を固定上限のdouble-bufferでRendererへ受け渡す共通snapshot。 */
-final class ThroughWallPositionSnapshot {
+class ThroughWallPositionSnapshot {
     private final long[][] positions;
     private final int[] counts = new int[2];
 
