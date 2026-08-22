@@ -5,7 +5,7 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
-/** Stable help inventory derived from the single Chise feature definition source. */
+ 
 public final class FeatureHelpCatalog {
     private static final List<FeatureHelpEntry> ENTRIES = FeatureDefinition.VALUES.stream()
             .map(definition -> new FeatureHelpEntry(

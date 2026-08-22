@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-/** Extracts the facing cue still required by Fine Thread Trace tripwire hooks. */
+ 
 public final class OrientationOverlayPolicy {
     private OrientationOverlayPolicy() {}
 

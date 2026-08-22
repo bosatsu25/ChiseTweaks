@@ -4,12 +4,12 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
-/**
- * Stable Chise-owned visual styles that may be assigned to vanilla or modded ore blocks.
- *
- * <p>Styles reference only Chise-authored overlay assets. They never copy or sample textures from
- * another mod, which keeps compatibility definitions independent from third-party artwork.</p>
- */
+ 
+
+
+
+
+
 public enum OreHighlightStyle {
     GENERIC("generic"),
     COAL("coal"),

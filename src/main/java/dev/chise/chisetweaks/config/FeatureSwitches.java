@@ -4,7 +4,7 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
-/** Stable registry of the retained Chise-owned user-facing feature switches. */
+ 
 public final class FeatureSwitches {
     public static final FeatureSwitch BUILDER_FOCUS_BLOCKS = create(
             FeatureDefinition.BUILDER_FOCUS_BLOCKS,

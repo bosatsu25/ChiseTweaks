@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.config;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/** Chise-owned bounded integer setting with explicit min/max and no external config dependency. */
+ 
 public final class ChiseIntegerSetting {
     private final String name;
     private final int defaultValue;

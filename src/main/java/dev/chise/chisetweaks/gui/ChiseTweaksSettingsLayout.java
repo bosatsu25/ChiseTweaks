@@ -1,12 +1,12 @@
 package dev.chise.chisetweaks.gui;
 
-/**
- * Pure geometry policy for the standalone Chise settings screen.
- *
- * <p>This class deliberately has no Minecraft dependencies so responsive layout contracts can be
- * tested headlessly in CI. The main surface is intentionally compact: one name column and a small
- * action/toggle area, with advanced controls moved to dedicated settings surfaces.</p>
- */
+ 
+
+
+
+
+
+
 public final class ChiseTweaksSettingsLayout {
     private static final int OUTER_MARGIN = 12;
     private static final int MAX_CONTENT_WIDTH = 960;

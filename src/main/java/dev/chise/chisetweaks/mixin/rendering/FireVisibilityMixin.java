@@ -12,10 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Lowers only Minecraft's first-person fire screen effect.
- *
- * <p>The world fire model and all fire textures remain owned by Minecraft or the active resource
- * pack. With the feature disabled, this mixin performs no pose mutation.</p>
+ * Minecraftの一人称視点に重なる炎エフェクトだけを下げ、ワールド上の炎モデルやテクスチャは変更しない。
  */
 @Mixin(ScreenEffectRenderer.class)
 public abstract class FireVisibilityMixin {

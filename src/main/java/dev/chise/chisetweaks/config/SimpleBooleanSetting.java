@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.config;
 
-/** In-memory boolean setting used for Chise-owned persisted configuration. */
+ 
 public final class SimpleBooleanSetting extends ChiseBooleanSetting {
     private boolean value;
 

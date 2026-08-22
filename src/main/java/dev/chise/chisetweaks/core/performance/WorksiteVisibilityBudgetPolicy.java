@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.core.performance;
 
-/** Fixed budgets for local visibility scans. No scan may load chunks or run every frame. */
+ 
 public final class WorksiteVisibilityBudgetPolicy {
     public static final int MIN_HORIZONTAL_RADIUS = 1;
     public static final int MAX_HORIZONTAL_RADIUS = 8;
@@ -11,19 +11,15 @@ public final class WorksiteVisibilityBudgetPolicy {
     public static final int MAX_SCAN_CANDIDATES = 128;
     public static final int MAX_OVERLAY_RESULTS = 24;
 
-    /**
-     * Historical persisted result limit retained only so old config documents remain valid.
-     * The HUD renderer that originally consumed this setting no longer exists.
-     */
+     
+
+
+
     public static final int LEGACY_MAX_RESULTS = 8;
 
     /**
-     * Hard CPU/allocation budget for ray based line-of-sight checks in one scan.
-     *
-     * <p>Each clip query creates short-lived Minecraft geometry/context objects. Capping the
-     * number of rays therefore bounds both main-thread work and scan-triggered allocation spikes,
-     * even when many high-priority candidates are hidden behind terrain.</p>
-     */
+ * 1回の走査で行う視線判定にはCPU処理量と一時割り当ての上限を設ける。
+ */
     public static final int MAX_LINE_OF_SIGHT_RAYS_PER_SCAN = 192;
 
     public static final int MAX_LOADED_CHUNK_PROBES = maximumLoadedChunkProbesFor(MAX_HORIZONTAL_RADIUS);
@@ -47,7 +43,7 @@ public final class WorksiteVisibilityBudgetPolicy {
         return clamp(requested, 1, MAX_OVERLAY_RESULTS);
     }
 
-    /** Sanitizes the obsolete persisted result field without reviving the removed HUD path. */
+     
     public static int clampLegacyResults(int requested) {
         return clamp(requested, 1, LEGACY_MAX_RESULTS);
     }
@@ -58,13 +54,13 @@ public final class WorksiteVisibilityBudgetPolicy {
         return (horizontal * 2 + 1) * (horizontal * 2 + 1) * (vertical * 2 + 1);
     }
 
-    /**
-     * Worst-case loaded-chunk probes needed to cover the horizontal scan square.
-     *
-     * <p>The scanner checks each intersected chunk once, then reuses that result for every block
-     * column and Y level. With the current radius cap this is at most four chunk probes per scan,
-     * instead of one chunk-source lookup per candidate block.</p>
-     */
+     
+
+
+
+
+
+
     public static int maximumLoadedChunkProbesFor(int horizontalRadius) {
         int horizontal = clampHorizontalRadius(horizontalRadius);
         int width = horizontal * 2 + 1;

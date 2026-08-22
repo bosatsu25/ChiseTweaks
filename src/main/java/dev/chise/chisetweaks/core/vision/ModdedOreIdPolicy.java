@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.core.vision;
 
 import java.util.Locale;
 
-/** Conservative registry-id fallback used only when no explicit/tag classification is available. */
+ 
 public final class ModdedOreIdPolicy {
     private ModdedOreIdPolicy() {}
 

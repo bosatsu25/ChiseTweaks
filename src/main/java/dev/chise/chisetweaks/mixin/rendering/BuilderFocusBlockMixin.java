@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Applies Chise-owned Scene Filter block rules at the state render-shape boundary. */
+ 
 @Mixin(BlockBehaviour.BlockStateBase.class)
 public abstract class BuilderFocusBlockMixin {
     @Shadow protected abstract BlockState asState();

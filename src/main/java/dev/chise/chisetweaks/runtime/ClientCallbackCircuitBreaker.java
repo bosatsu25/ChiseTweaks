@@ -7,7 +7,7 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-/** Fixed-size circuit breaker for Chise-owned visual callbacks. */
+ 
 public final class ClientCallbackCircuitBreaker {
     private static final AtomicInteger OPEN_MASK = new AtomicInteger();
 

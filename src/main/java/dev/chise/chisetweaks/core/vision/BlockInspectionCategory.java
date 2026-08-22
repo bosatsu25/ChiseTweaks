@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.core.vision;
 
-/** Visual-assistance categories retained by the focused ChiseTweaks build. */
+ 
 public enum BlockInspectionCategory {
     NONE(0xFFFFFFFF),
     TECHNICAL_TRACE(0xFFFFC857),

@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.config;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/** Chise-owned rule-mode setting for scene filters. */
+ 
 public final class ChiseRuleModeSetting {
     private final String name;
     private final ChiseRuleMode defaultValue;

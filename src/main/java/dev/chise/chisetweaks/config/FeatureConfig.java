@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Chise-owned persistent configuration for feature toggles and Scene Filter rules. */
+ 
 public final class FeatureConfig {
     private static final String CONFIG_FILE_NAME = ChiseTweaksMetadata.MOD_ID + ".json";
     private static boolean sanitizingStringLists;

@@ -7,13 +7,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 
-/**
- * Public registration surface for mods that want Chise Ore Highlights without a hard integration.
- *
- * <p>Registrations performed during client initialization are consumed by the first model bake.
- * Later registrations are rare compatibility changes, so Chise coalesces them into a model/resource
- * reload instead of keeping every third-party block on a runtime resolver path.</p>
- */
+ 
+
+
+
+
+
+
 public final class OreHighlightApi {
     private OreHighlightApi() {}
 

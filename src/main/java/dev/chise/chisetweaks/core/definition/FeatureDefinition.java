@@ -6,7 +6,7 @@ import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import java.util.List;
 import java.util.Objects;
 
-/** Canonical metadata for the retained user-facing ChiseTweaks features. */
+ 
 public enum FeatureDefinition {
     BUILDER_FOCUS_BLOCKS(
             "builder_focus_blocks",

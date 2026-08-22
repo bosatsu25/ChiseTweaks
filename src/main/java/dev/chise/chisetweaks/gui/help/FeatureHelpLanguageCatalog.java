@@ -13,7 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/** Bounded, read-only Japanese/English text catalog used only by the feature guide. */
+ 
 public final class FeatureHelpLanguageCatalog {
     private static final int MAX_LANGUAGE_BYTES = 256 * 1024;
     private static final Map<FeatureHelpDisplayLanguage, Map<String, String>> TEXTS = loadAll();

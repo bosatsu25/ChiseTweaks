@@ -13,7 +13,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import java.util.EnumSet;
 import java.util.List;
 
-/** Coordinates bounded worksite world overlays without owning user feature state. */
+ 
 public final class WorksiteVisibilityEngine
         implements TickingRuntimeComponent, SessionAwareRuntimeComponent {
     public static final String RUNTIME_ID = "worksite_visibility_engine";

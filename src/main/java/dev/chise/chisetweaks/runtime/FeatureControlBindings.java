@@ -19,7 +19,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-/** Callback wiring for Chise-owned feature toggles and bounded mode coordination. */
+ 
 public final class FeatureControlBindings {
     private static final List<FeatureSwitch> WORKSITE_VISIBILITY_TOGGLES =
             FeatureSwitches.VALUES.stream()

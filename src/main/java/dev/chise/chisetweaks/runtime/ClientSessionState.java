@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.runtime;
 import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
 import net.minecraft.client.Minecraft;
 
-/** Clears session-local visual caches on join/disconnect boundaries. */
+ 
 public final class ClientSessionState {
     private ClientSessionState() {}
 

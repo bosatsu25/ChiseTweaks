@@ -13,7 +13,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Replaces filtered entities with an invisible, inert render state. */
+/**
+ * 除外対象エンティティは不可視かつ副作用のない描画状態へ置き換える。
+ */
 @Mixin(LevelRenderer.class)
 public abstract class BuilderFocusEntityMixin {
     @Inject(method = "extractEntity", at = @At("HEAD"), cancellable = true)

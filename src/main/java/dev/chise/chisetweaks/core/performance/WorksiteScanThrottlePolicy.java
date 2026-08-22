@@ -1,12 +1,12 @@
 package dev.chise.chisetweaks.core.performance;
 
-/**
- * Decides when the bounded worksite scanner should run.
- *
- * <p>Movement keeps the configured scan cadence, while a stationary client falls back to a
- * slower periodic refresh. Configuration/category changes are urgent so UI changes remain
- * responsive without forcing a full volume scan every tick.</p>
- */
+ 
+
+
+
+
+
+
 public final class WorksiteScanThrottlePolicy {
     public static final int IDLE_INTERVAL_MULTIPLIER = 4;
     public static final int MIN_IDLE_INTERVAL_TICKS = 20;

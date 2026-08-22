@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
-/** Keeps unreleased controls visible but non-interactive during the current visual-feature pre-release. */
+ 
 final class PreReleaseUiPolicy {
     private PreReleaseUiPolicy() {}
 

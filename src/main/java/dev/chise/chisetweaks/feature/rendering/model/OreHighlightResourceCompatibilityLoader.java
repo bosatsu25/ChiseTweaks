@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Loads optional modpack/resource-pack ore mappings without partially applying invalid documents. */
+ 
 final class OreHighlightResourceCompatibilityLoader {
     static final int MAX_RESOURCE_ENTRIES = 512;
     private static final FileToIdConverter FINDER = FileToIdConverter.json("chisetweaks/ore_compat");

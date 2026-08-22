@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.core.policy;
 import java.util.EnumSet;
 import java.util.Set;
 
-/** Selection rules for the retained scan-based visibility modes. */
+ 
 public final class WorksiteVisibilitySelectionPolicy {
     private WorksiteVisibilitySelectionPolicy() {}
 
@@ -30,9 +30,9 @@ public final class WorksiteVisibilitySelectionPolicy {
 
     public static Set<Mode> normalize(Set<Mode> current, boolean exclusiveMode) {
         EnumSet<Mode> result = copy(current);
-        // Express the boundary as the first cardinality that actually requires normalization.
-        // This is equivalent to <= 1 for valid sets, but makes a boundary mutation observable at
-        // size 2 instead of producing an equivalent one-element Set implementation.
+        
+        
+        
         if (!exclusiveMode || result.size() < 2) return Set.copyOf(result);
         return Set.of(result.iterator().next());
     }

@@ -1,12 +1,12 @@
 package dev.chise.chisetweaks.core.performance;
 
-/**
- * Bounds per-frame line-geometry cost for distant worksite markers.
- *
- * <p>Near targets keep the full category-specific geometry. Distant targets use a compact
- * representation so the maximum overlay count cannot multiply the most expensive lattice or
- * bracket geometry across the whole scan radius.</p>
- */
+ 
+
+
+
+
+
+
 public final class WorksiteOverlayDetailPolicy {
     public static final double FULL_DETAIL_DISTANCE_SQUARED = 49.0;
 

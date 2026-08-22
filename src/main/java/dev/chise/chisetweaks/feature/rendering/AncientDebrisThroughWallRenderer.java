@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
-/** Retained through-terrain GPU renderer for Ancient Debris Analyzer markers. */
+ 
 final class AncientDebrisThroughWallRenderer implements AutoCloseable {
     private static final RenderPipeline THROUGH_WALL_PIPELINE = RenderPipelines.register(
             RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)

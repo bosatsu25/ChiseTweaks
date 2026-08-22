@@ -15,7 +15,7 @@ import net.minecraft.network.chat.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Owns config/domain mapping for the focused standalone Chise settings UI. */
+ 
 final class ChiseTweaksSettingsController {
     enum Surface {
         MAIN,
@@ -23,7 +23,7 @@ final class ChiseTweaksSettingsController {
         LAVA_DETAILS
     }
 
-    /** Only currently released members participate in the hidden bulk-highlight state machine. */
+     
     private static final List<ChiseBooleanSetting> HIGHLIGHT_FEATURES = List.of(
             FeatureSwitches.MATERIAL_HIGHLIGHTS,
             FeatureSwitches.GLASS_INSPECTION,

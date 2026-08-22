@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
 
-/** Schema gate for the retained local JSON settings before Gson materializes them. */
+ 
 final class LocalFeatureConfigDocumentPolicy {
     private static final Set<String> BOOLEAN_KEYS = Set.of(
             "lavaHighlightEnabled",
@@ -45,7 +45,7 @@ final class LocalFeatureConfigDocumentPolicy {
                 if (!isExactInt(value)) throw new IllegalArgumentException("invalid integer config field: " + key);
                 merged.add(key, value.deepCopy());
             }
-            // Removed and unknown keys are ignored so old config files degrade safely.
+            // 削除済みまたは未知の設定キーは無視し、古い設定ファイルでも安全に縮退させる。
         }
         return merged;
     }

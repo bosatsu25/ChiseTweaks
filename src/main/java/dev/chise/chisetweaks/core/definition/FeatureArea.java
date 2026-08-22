@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.core.definition;
 
-/** User-facing groups used by the configuration and help screens. */
+ 
 public enum FeatureArea {
     BUILDING("Building", "建築支援", "Small, bounded helpers for deliberate block placement"),
     RENDERING("Rendering", "視認改善", "Visual inspection for large builds and technical facilities");

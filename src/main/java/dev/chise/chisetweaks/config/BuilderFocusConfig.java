@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.config;
 
 import java.util.List;
 
-/** Configuration owned by Scene Filter block/entity visibility. */
+ 
 public final class BuilderFocusConfig {
     public static final SimpleBooleanSetting REFRESH_RENDERER = new SimpleBooleanSetting(
             "refreshBuilderFocusRenderer",

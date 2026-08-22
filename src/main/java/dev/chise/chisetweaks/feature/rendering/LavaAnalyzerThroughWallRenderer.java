@@ -30,15 +30,15 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
-/**
- * Retained GPU path for Lava Source Highlight cubes that remain visible through terrain.
- *
- * <p>Geometry is rebuilt and uploaded only when the scanner publishes a new render revision. The
- * vertex buffer is anchored near the highlighted sources, keeping local float coordinates precise
- * even at large world coordinates. Per-frame work is reduced to a camera-relative model-view
- * transform plus draw submission; no world reads, geometry creation, colour distance calculation,
- * mesh build, or vertex upload occurs on an unchanged frame.</p>
- */
+ 
+
+
+
+
+
+
+
+
 final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
     private static final RenderPipeline THROUGH_WALL_PIPELINE = RenderPipelines.register(
             RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
@@ -147,8 +147,8 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
                 true)) {
             MemoryUtil.memCopy(builtBuffer.vertexBuffer(), mappedView.data());
         }
-        // Rotate only after retaining the buffer that owns this revision. The next rebuild writes to
-        // another ring slot while unchanged frames keep drawing the retained buffer.
+        // このリビジョンを保持するバッファを確定してからリングを進める。変化のないフレームは保持済みバッファを再利用する。
+        
         vertexBuffer.rotate();
         return uploadTarget;
     }
@@ -183,7 +183,9 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
         }
     }
 
-    /** Drops all transient CPU/GPU workspace so a later session never inherits a failed frame. */
+    /**
+ * 一時的なCPU/GPU作業領域をすべて破棄し、後続セッションへ失敗フレームの状態を持ち越さない。
+ */
     void resetAfterFailure() {
         if (closed) return;
         drawVertexBuffer = null;

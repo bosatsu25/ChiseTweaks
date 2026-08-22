@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.core.vision;
 
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 
-/** Group-level target mask operations used by the retained compact bulk UI actions. */
+ 
 public final class VisualTargetGroupPolicy {
     public enum Group {
         MATERIAL,

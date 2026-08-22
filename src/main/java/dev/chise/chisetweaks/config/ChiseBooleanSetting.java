@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-/** Chise-owned boolean setting contract with independent change listeners. */
+ 
 public abstract class ChiseBooleanSetting {
     private final String name;
     private final boolean defaultValue;

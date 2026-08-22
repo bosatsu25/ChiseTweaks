@@ -16,7 +16,7 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import java.util.Optional;
 
-/** Local persistence for the retained bounded client-side visual settings. */
+ 
 public final class LocalFeatureConfig {
     private static final LocalFeatureConfig INSTANCE = new LocalFeatureConfig();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -27,7 +27,7 @@ public final class LocalFeatureConfig {
     public boolean fireVisibilityEnabled = false;
     public boolean oreHighlightAnimationEnabled = false;
 
-    /** Shared bounded scan budget for the highlight-family worksite overlays. */
+     
     public int worksiteVisibilityHorizontalRadius = 5;
     public int worksiteVisibilityVerticalRadius = 3;
     public int worksiteVisibilityIntervalTicks = 10;
@@ -36,13 +36,13 @@ public final class LocalFeatureConfig {
     public boolean worksiteVisibilityWorldOverlay = true;
     public boolean worksiteVisibilityExclusiveMode = false;
 
-    /** Lava Analyzer owns an independent scan budget so tuning it cannot change highlight behavior. */
+     
     public int lavaAnalyzerHorizontalRadius = 5;
     public int lavaAnalyzerVerticalRadius = 3;
     public int lavaAnalyzerIntervalTicks = 10;
     public int lavaAnalyzerMaxOverlayResults = 12;
 
-    /** Ancient Debris Analyzer scans loaded chunks once and only filters cached positions at runtime. */
+     
     public int ancientDebrisAnalyzerRangeBlocks = AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS;
     public int ancientDebrisAnalyzerMaxMarkers = AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS;
 

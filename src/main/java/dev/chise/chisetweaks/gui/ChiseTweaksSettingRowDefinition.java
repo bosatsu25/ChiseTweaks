@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.gui;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 
-/** Immutable row description kept separate from Minecraft widget state. */
+ 
 record ChiseTweaksSettingRowDefinition(
         Kind kind,
         String id,

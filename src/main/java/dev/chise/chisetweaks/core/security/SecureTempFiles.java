@@ -12,7 +12,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
 import java.util.Set;
 
-/** Cross-platform temporary-file helper with owner-only POSIX permissions when supported. */
+ 
 public final class SecureTempFiles {
     private static final Set<PosixFilePermission> OWNER_ONLY = EnumSet.of(
             PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
@@ -55,7 +55,7 @@ public final class SecureTempFiles {
         try (FileChannel channel = FileChannel.open(directory, StandardOpenOption.READ)) {
             channel.force(true);
         } catch (IOException | UnsupportedOperationException ignored) {
-            // Directory fsync is not supported on every Java/filesystem combination.
+            // ディレクトリのfsyncはすべてのJavaとファイルシステムの組み合わせで利用できるとは限らない。
         }
     }
 

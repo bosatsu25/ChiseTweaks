@@ -15,7 +15,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-/** Converts Minecraft block state into stable Chise inspection data. */
+ 
 final class WorksiteBlockInspector {
     private static final int EXPECTED_PROPERTY_CAPACITY = 8;
 
@@ -28,8 +28,8 @@ final class WorksiteBlockInspector {
 
         Identifier registryId = BuiltInRegistries.BLOCK.getKey(block);
         String id = registryId == null ? "" : registryId.toString();
-        // A broken/late external registration must not quarantine Chise's entire worksite engine.
-        // Unknown blocks simply have no Chise inspection categories and therefore fail open.
+        // 外部登録の不正や遅延だけでChiseの作業支援エンジン全体を隔離しない。
+        // 未知のブロックはChiseの検査カテゴリを持たないものとして扱い、機能全体を停止させずフェイルオープンする。
         Set<BlockInspectionCategory> categories = id.isEmpty()
                 ? Set.of()
                 : BlockInspectionPolicy.categories(id);

@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-/** UI/runtime adapter for a boolean stored in ChiseTweaks' local configuration. */
+ 
 public final class LocalFeatureSwitch extends ChiseBooleanSetting {
     private static final boolean DEFAULT_ENABLED = false;
 

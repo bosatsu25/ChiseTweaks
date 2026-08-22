@@ -5,17 +5,17 @@ import net.minecraft.client.Minecraft;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Coalesces rare compatibility changes into a model/resource reload.
- *
- * <p>Ore target discovery is intentionally a cold-path operation. Normal feature toggles still use
- * {@link OreHighlightRenderInvalidation}; only changes that can alter which block models need a
- * Chise wrapper request this reload.</p>
- *
- * <p>If another compatibility change arrives while a reload is already in flight, Chise remembers
- * that the current reload may have captured stale membership and performs one follow-up reload after
- * completion. Repeated requests remain coalesced; no polling or unbounded reload loop is used.</p>
- */
+ 
+
+
+
+
+
+
+
+
+
+
 public final class OreHighlightModelReload {
     private static final AtomicBoolean REQUESTED = new AtomicBoolean();
     private static final AtomicBoolean PENDING = new AtomicBoolean();
@@ -23,8 +23,8 @@ public final class OreHighlightModelReload {
     private OreHighlightModelReload() {}
 
     public static void request() {
-        // Registrations performed during client initialization are naturally included in the first
-        // model bake and must not cause a redundant startup reload.
+        
+        
         if (!ChiseVisualModelPlugin.isModelPipelineReady()) return;
         if (!REQUESTED.compareAndSet(false, true)) {
             PENDING.set(true);
