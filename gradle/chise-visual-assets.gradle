@@ -255,7 +255,7 @@ def generateChiseVisualAssets = tasks.register('generateChiseVisualAssets') {
     outputs.dir(generatedVisualAssetsDir)
     doLast {
         File root = generatedVisualAssetsDir.get().asFile
-        project.delete(root)
+        if (root.exists()) root.deleteDir()
         File textureDir = new File(root, 'assets/chisetweaks/textures/block/visual/material')
         File modelDir = new File(root, 'assets/chisetweaks/models/block/visual/overlay')
 
