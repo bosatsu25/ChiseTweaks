@@ -276,13 +276,14 @@ tasks.register('qualityGate') {
 
 tasks.register('verifyRuntimeArtifactBudget') {
     group = 'verification'
-    description = 'Verifies the remapped runtime JAR stays below the distribution budget and contains the optimized icon.'
-    dependsOn tasks.named('remapJar')
+    description = 'Verifies the installable runtime JAR stays below the distribution budget and contains the optimized icon.'
+    dependsOn tasks.named('jar')
 
     doLast {
-        File runtimeJar = tasks.named('remapJar').get().archiveFile.get().asFile
+        File runtimeJar = layout.buildDirectory.file(
+                "libs/${project.archives_base_name}-${version}.jar").get().asFile
         if (!runtimeJar.isFile()) {
-            throw new GradleException("Remapped runtime JAR is missing: ${runtimeJar}")
+            throw new GradleException("Runtime JAR is missing: ${runtimeJar}")
         }
         if (runtimeJar.length() >= runtimeJarMaxBytes) {
             throw new GradleException(
