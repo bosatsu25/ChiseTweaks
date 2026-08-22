@@ -8,7 +8,7 @@ def CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'
 
 tasks.register('verifyRuntimeJarBudget') {
     group = 'verification'
-    description = '実行JARが700KB未満で、配布用アイコンが規定解像度であることを検証します。'
+    description = '実行JARが400KB未満で、配布用アイコンが規定解像度であることを検証します。'
     dependsOn 'jar'
 
     doLast {
