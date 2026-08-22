@@ -36,6 +36,7 @@ final class SourceCommentPolicyContractTest {
                     if (body.isEmpty()) continue;
 
                     String normalized = normalizeJavadoc(body);
+                    if (normalized.isEmpty()) continue;
                     if (COMMENTED_OUT_JAVA.matcher(normalized).matches()) {
                         violations.add(new Violation(path, comment.line(), "コメントアウトされたJavaコード", normalized));
                         continue;
@@ -58,8 +59,13 @@ final class SourceCommentPolicyContractTest {
 
     private static String normalizeJavadoc(String body) {
         return body.replaceAll("(?m)^\\s*\\*\\s?", "")
-                .replaceAll("\\{@(?:link|code|literal)\\s+[^}]+}", "技術参照")
-                .replaceAll("(?m)^\\s*@(?:param|return|throws|see|since|deprecated)\\b.*$", "")
+                .replaceAll("\\{@(?:link|code|literal)\\s+[^}]+}", "")
+                .replaceAll("(?m)^\\s*@param\\s+\\S+\\s*", "")
+                .replaceAll("(?m)^\\s*@throws\\s+\\S+\\s*", "")
+                .replaceAll("(?m)^\\s*@(return|since|deprecated)\\s*", "")
+                .replaceAll("(?m)^\\s*@see\\b.*$", "")
+                .replaceAll("(?m)^\\s*<p>\\s*", "")
+                .replaceAll("</p>", "")
                 .trim();
     }
 
