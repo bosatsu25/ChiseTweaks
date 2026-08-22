@@ -1,100 +1,111 @@
 name: Official Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_type:
-        description: SemVer increment represented by gradle.properties
-        required: true
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
-        default: patch
-      confirm_release:
-        description: Confirm that manual Prism gameplay smoke testing has passed for this exact main-branch commit
-        required: true
-        type: boolean
-        default: false
-      cleanup_legacy_verified_tags:
-        description: Remove obsolete CI-generated verified-v* tags/releases after the new official release succeeds
-        required: true
-        type: boolean
-        default: true
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
 
 permissions:
   contents: write
 
 concurrency:
-  group: chisetweaks-official-release
-  cancel-in-progress: false
+  group: chisetweaks-official-release-main
+  cancel-in-progress: true
 
 jobs:
   release:
-    name: Verify and publish one runtime JAR
+    name: Publish verified runtime JAR
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-24.04
     timeout-minutes: 50
 
     steps:
-      - name: Require main branch and manual runtime confirmation
-        env:
-          CONFIRMED: ${{ inputs.confirm_release }}
-        run: |
-          if [[ "$GITHUB_REF" != 'refs/heads/main' ]]; then
-            echo 'Releases may only be started from the main branch.' >&2
-            exit 1
-          fi
-          if [[ "$CONFIRMED" != 'true' ]]; then
-            echo 'Release blocked: confirm the manual Prism gameplay smoke test first.' >&2
-            exit 1
-          fi
-
-      - name: Checkout exact main commit with tags
+      - name: Checkout the exact CI-verified commit
         uses: actions/checkout@v7.0.1
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
+      - name: Reject stale or mismatched CI results
+        id: target
+        env:
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          if [[ "$actual_sha" != "$TARGET_SHA" ]]; then
+            echo "Checked out '$actual_sha' instead of CI-verified '$TARGET_SHA'." >&2
+            exit 1
+          fi
+
+          latest_main_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ "$latest_main_sha" != "$TARGET_SHA" ]]; then
+            echo "Skipping stale CI result '$TARGET_SHA'; current main is '$latest_main_sha'."
+            echo 'should_release=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo 'should_release=true' >> "$GITHUB_OUTPUT"
+          echo "Validated release target: $TARGET_SHA"
+
       - name: Set up Java 25
+        if: ${{ steps.target.outputs.should_release == 'true' }}
         uses: actions/setup-java@v5.7.0
         with:
           distribution: temurin
           java-version: '25'
 
       - name: Set up Python 3.13
+        if: ${{ steps.target.outputs.should_release == 'true' }}
         uses: actions/setup-python@v6.0.0
         with:
           python-version: '3.13'
 
       - name: Set up Gradle
+        if: ${{ steps.target.outputs.should_release == 'true' }}
         uses: gradle/actions/setup-gradle@v6.3.0
 
       - name: Make Gradle wrapper executable
+        if: ${{ steps.target.outputs.should_release == 'true' }}
         run: chmod +x gradlew
 
-      - name: Validate version syntax and repository inputs
-        run: |
-          python scripts/version_policy.py
-          python scripts/repository_audit.py
-          python scripts/source_usage_audit.py
-
-      - name: Run full release quality gate
-        run: ./gradlew --no-daemon --stacktrace clean ciGate
-
-      - name: Generate and audit release candidate
-        id: artifact-audit
-        run: |
-          python scripts/quality_summary.py
-          python scripts/artifact_audit.py
-          python scripts/visual_asset_audit.py
-          python scripts/release_residue_audit.py
-
-      - name: Validate requested SemVer increment
+      - name: Resolve version and prevent duplicate releases
+        if: ${{ steps.target.outputs.should_release == 'true' }}
         id: version
         env:
-          RELEASE_TYPE: ${{ inputs.release_type }}
-          CURRENT_VERSION: ${{ steps.artifact-audit.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
+          python scripts/version_policy.py
+
+          current_version="$(sed -n 's/^mod_version=//p' gradle.properties | head -n 1)"
+          if [[ -z "$current_version" ]]; then
+            echo 'mod_version is missing from gradle.properties.' >&2
+            exit 1
+          fi
+
+          tag="v${current_version}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$current_version" >> "$GITHUB_OUTPUT"
+
+          if gh release view "$tag" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release '$tag' already exists; nothing new will be published."
+            echo 'should_publish=false' >> "$GITHUB_OUTPUT"
+            echo 'skip_reason=release_exists' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "Tag '$tag' exists without a matching GitHub Release. Refusing to overwrite or reuse it." >&2
+            exit 1
+          fi
+
           previous_version=''
           previous_tag="$(git tag --list 'v[0-9]*' --sort=-version:refname | head -n 1)"
           if [[ -n "$previous_tag" ]]; then
@@ -107,30 +118,66 @@ jobs:
             fi
           fi
 
+          release_type='initial'
           if [[ -n "$previous_version" ]]; then
+            current_core="${current_version%%+mc*}"
+            previous_core="${previous_version%%+mc*}"
+            IFS='.' read -r current_major current_minor current_patch <<< "$current_core"
+            IFS='.' read -r previous_major previous_minor previous_patch <<< "$previous_core"
+
+            if (( current_major == previous_major && current_minor == previous_minor && current_patch == previous_patch + 1 )); then
+              release_type='patch'
+            elif (( current_major == previous_major && current_minor == previous_minor + 1 && current_patch == 0 )); then
+              release_type='minor'
+            elif (( current_major == previous_major + 1 && current_minor == 0 && current_patch == 0 )); then
+              release_type='major'
+            else
+              echo "Current SemVer '$current_core' is not an exact patch/minor/major increment from '$previous_core'." >&2
+              exit 1
+            fi
+
             python scripts/version_policy.py \
               --previous "$previous_version" \
-              --release-type "$RELEASE_TYPE"
-          else
-            echo 'No previous Chise release tag found; syntax validation is the initial release gate.'
+              --release-type "$release_type"
           fi
 
-          tag="v${CURRENT_VERSION}"
-          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
-            echo "Release tag '${tag}' already exists. Increment mod_version before releasing." >&2
-            exit 1
-          fi
-
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "previous_version=$previous_version" >> "$GITHUB_OUTPUT"
+          echo "release_type=$release_type" >> "$GITHUB_OUTPUT"
+          echo 'should_publish=true' >> "$GITHUB_OUTPUT"
 
-      - name: Verify runtime metadata
+      - name: Validate repository inputs and production source usage
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.version.outputs.should_publish == 'true' }}
+        run: |
+          python scripts/repository_audit.py
+          python scripts/source_usage_audit.py
+
+      - name: Run full release quality gate
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.version.outputs.should_publish == 'true' }}
+        run: ./gradlew --no-daemon --stacktrace clean ciGate
+
+      - name: Generate and audit release candidate
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.version.outputs.should_publish == 'true' }}
+        id: artifact-audit
+        run: |
+          python scripts/quality_summary.py
+          python scripts/artifact_audit.py
+          python scripts/visual_asset_audit.py
+          python scripts/release_residue_audit.py
+
+      - name: Verify local runtime metadata
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.version.outputs.should_publish == 'true' }}
         id: metadata
         env:
           VERSION: ${{ steps.artifact-audit.outputs.version }}
+          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
           RUNTIME_JAR: ${{ steps.artifact-audit.outputs.runtime_jar }}
           RUNTIME_SHA256: ${{ steps.artifact-audit.outputs.runtime_sha256 }}
         run: |
+          if [[ "$VERSION" != "$EXPECTED_VERSION" ]]; then
+            echo "Artifact version '$VERSION' does not match release version '$EXPECTED_VERSION'." >&2
+            exit 1
+          fi
+
           runtime="build/libs/$RUNTIME_JAR"
           if [[ ! -f "$runtime" ]]; then
             echo "Runtime JAR is missing: $runtime" >&2
@@ -161,95 +208,146 @@ jobs:
             exit 1
           fi
 
-          display_version="${VERSION%%+mc*}"
           echo "minecraft_version=$mc_version" >> "$GITHUB_OUTPUT"
           echo "loader_constraint=$loader_constraint" >> "$GITHUB_OUTPUT"
           echo "fabric_api_constraint=$fabric_api_constraint" >> "$GITHUB_OUTPUT"
           echo "java_constraint=$java_constraint" >> "$GITHUB_OUTPUT"
-          echo "display_version=$display_version" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare release notes
+      - name: Prepare concise release notes
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.version.outputs.should_publish == 'true' }}
         env:
           VERSION: ${{ steps.artifact-audit.outputs.version }}
-          DISPLAY_VERSION: ${{ steps.metadata.outputs.display_version }}
           MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
           LOADER_CONSTRAINT: ${{ steps.metadata.outputs.loader_constraint }}
           FABRIC_API_CONSTRAINT: ${{ steps.metadata.outputs.fabric_api_constraint }}
           JAVA_CONSTRAINT: ${{ steps.metadata.outputs.java_constraint }}
           RUNTIME_JAR: ${{ steps.artifact-audit.outputs.runtime_jar }}
           RUNTIME_SHA256: ${{ steps.artifact-audit.outputs.runtime_sha256 }}
-          RELEASE_TYPE: ${{ inputs.release_type }}
         run: |
           cat > release-notes.md <<EOF
-          ## 📦 Install this file / 導入するファイル
+          ## Install / 導入
 
-          **Prism Launcher の Mods には次の1ファイルだけを追加してください。**
+          Prism Launcher の Mods には **\`${RUNTIME_JAR}\`** だけを追加してください。
 
-          **\`${RUNTIME_JAR}\`**
-
-          ## ChiseTweaks ${DISPLAY_VERSION}
-
-          - Release type: \`${RELEASE_TYPE}\`
-          - Full version: \`${VERSION}\`
+          - Version: \`${VERSION}\`
           - Minecraft: \`${MC_VERSION}\`
           - Fabric Loader: \`${LOADER_CONSTRAINT}\`
           - Fabric API: \`${FABRIC_API_CONSTRAINT}\`
           - Java: \`${JAVA_CONSTRAINT}\`
           - SHA-256: \`${RUNTIME_SHA256}\`
-          - Server installation required: \`false\`
-          - Uploaded mod assets: \`1 runtime JAR\`
-
-          CI does not publish builds. This Release was produced only after the full release quality gate and manual Prism smoke-test confirmation.
           EOF
 
-      - name: Create version tag and GitHub Release
+      - name: Create GitHub Release with one runtime JAR
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.version.outputs.should_publish == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
           TAG: ${{ steps.version.outputs.tag }}
-          DISPLAY_VERSION: ${{ steps.metadata.outputs.display_version }}
-          MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
+          VERSION: ${{ steps.artifact-audit.outputs.version }}
           RUNTIME_JAR: ${{ steps.artifact-audit.outputs.runtime_jar }}
-          RUNTIME_SHA256: ${{ steps.artifact-audit.outputs.runtime_sha256 }}
         run: |
           gh release create "$TAG" \
             "build/libs/$RUNTIME_JAR" \
-            --target "$GITHUB_SHA" \
-            --title "ChiseTweaks ${DISPLAY_VERSION} — Minecraft ${MC_VERSION}" \
+            --repo "$GH_REPO" \
+            --target "$TARGET_SHA" \
+            --title "ChiseTweaks ${VERSION}" \
             --notes-file release-notes.md
 
+      - name: Verify published Release and downloaded JAR
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.version.outputs.should_publish == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.artifact-audit.outputs.version }}
+          RUNTIME_JAR: ${{ steps.artifact-audit.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.artifact-audit.outputs.runtime_sha256 }}
+          MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
+          LOADER_CONSTRAINT: ${{ steps.metadata.outputs.loader_constraint }}
+          FABRIC_API_CONSTRAINT: ${{ steps.metadata.outputs.fabric_api_constraint }}
+          JAVA_CONSTRAINT: ${{ steps.metadata.outputs.java_constraint }}
+        run: |
           gh api "repos/${GH_REPO}/releases/tags/${TAG}" > /tmp/official-release.json
+
           asset_count="$(jq '[.assets[]?] | length' /tmp/official-release.json)"
           if [[ "$asset_count" != '1' ]]; then
-            echo "Official release must expose exactly one uploaded mod asset, found ${asset_count}." >&2
+            echo "Official Release must expose exactly one uploaded mod asset, found ${asset_count}." >&2
             exit 1
           fi
+
           if ! jq -e --arg name "$RUNTIME_JAR" '.assets[]? | select(.name == $name)' /tmp/official-release.json >/dev/null; then
-            echo "Official release is missing runtime JAR '$RUNTIME_JAR'." >&2
+            echo "Official Release is missing runtime JAR '$RUNTIME_JAR'." >&2
             exit 1
           fi
+
           remote_runtime_digest="$(jq -r --arg name "$RUNTIME_JAR" '.assets[]? | select(.name == $name) | .digest // empty' /tmp/official-release.json)"
           if [[ "$remote_runtime_digest" != "sha256:${RUNTIME_SHA256}" ]]; then
             echo "Published runtime JAR digest mismatch: '$remote_runtime_digest'." >&2
             exit 1
           fi
 
-          printf '\n### Official Release\n- Tag: `%s`\n- Uploaded mod assets: `1`\n- Install: `%s`\n' \
-            "$TAG" "$RUNTIME_JAR" >> "$GITHUB_STEP_SUMMARY"
+          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          published_tag_sha="$(git rev-list -n 1 "$TAG")"
+          if [[ "$published_tag_sha" != "$TARGET_SHA" ]]; then
+            echo "Release tag points to '$published_tag_sha' instead of CI-verified '$TARGET_SHA'." >&2
+            exit 1
+          fi
 
-      - name: Remove legacy CI-generated verified tags after successful release
-        if: ${{ inputs.cleanup_legacy_verified_tags }}
+          rm -rf /tmp/chisetweaks-published
+          mkdir -p /tmp/chisetweaks-published
+          gh release download "$TAG" \
+            --repo "$GH_REPO" \
+            --pattern "$RUNTIME_JAR" \
+            --dir /tmp/chisetweaks-published
+
+          published_runtime="/tmp/chisetweaks-published/$RUNTIME_JAR"
+          published_file_count="$(find /tmp/chisetweaks-published -maxdepth 1 -type f | wc -l | tr -d ' ')"
+          if [[ "$published_file_count" != '1' || ! -f "$published_runtime" ]]; then
+            echo 'Published Release download did not contain exactly one runtime JAR.' >&2
+            exit 1
+          fi
+
+          published_sha256="$(sha256sum "$published_runtime" | cut -d' ' -f1)"
+          if [[ "$published_sha256" != "$RUNTIME_SHA256" ]]; then
+            echo "Downloaded Release JAR SHA-256 mismatch: '$published_sha256'." >&2
+            exit 1
+          fi
+
+          published_metadata="$(unzip -p "$published_runtime" fabric.mod.json)"
+          published_version="$(jq -r '.version // empty' <<<"$published_metadata")"
+          published_mc="$(jq -r '.depends.minecraft // empty' <<<"$published_metadata")"
+          published_loader="$(jq -r '.depends.fabricloader // empty' <<<"$published_metadata")"
+          published_fabric_api="$(jq -r '.depends["fabric-api"] // empty' <<<"$published_metadata")"
+          published_java="$(jq -r '.depends.java // empty' <<<"$published_metadata")"
+          published_environment="$(jq -r '.environment // empty' <<<"$published_metadata")"
+          published_server_required="$(jq -r 'if (.custom.chisetweaks | has("serverInstallationRequired")) then .custom.chisetweaks.serverInstallationRequired else empty end' <<<"$published_metadata")"
+
+          if [[ "$published_version" != "$VERSION" || \
+                "$published_mc" != "$MC_VERSION" || \
+                "$published_loader" != "$LOADER_CONSTRAINT" || \
+                "$published_fabric_api" != "$FABRIC_API_CONSTRAINT" || \
+                "$published_java" != "$JAVA_CONSTRAINT" || \
+                "$published_environment" != 'client' || \
+                "$published_server_required" != 'false' ]]; then
+            echo 'Downloaded Release JAR metadata does not match the verified release candidate.' >&2
+            exit 1
+          fi
+
+          printf '\n### Official Release\n- Tag: `%s`\n- Commit: `%s`\n- Uploaded mod assets: `1`\n- Runtime JAR: `%s`\n- SHA-256: `%s`\n- Published JAR self-verification: `PASS`\n' \
+            "$TAG" "$TARGET_SHA" "$RUNTIME_JAR" "$RUNTIME_SHA256" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarize skipped stale build
+        if: ${{ steps.target.outputs.should_release == 'false' }}
         env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          mapfile -t legacy_tags < <(git tag --list 'verified-v*')
-          for legacy_tag in "${legacy_tags[@]}"; do
-            [[ -z "$legacy_tag" ]] && continue
-            if gh release view "$legacy_tag" --repo "$GH_REPO" >/dev/null 2>&1; then
-              gh release delete "$legacy_tag" --repo "$GH_REPO" --yes
-            fi
-            git push origin ":refs/tags/$legacy_tag"
-            git tag -d "$legacy_tag" >/dev/null 2>&1 || true
-            echo "Removed legacy CI tag: $legacy_tag"
-          done
+          printf '### Official Release\n- Skipped stale verified commit: `%s`\n' "$TARGET_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarize existing release
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.version.outputs.should_publish == 'false' }}
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          printf '### Official Release\n- `%s` already exists. No duplicate Release was created.\n' "$TAG" >> "$GITHUB_STEP_SUMMARY"
