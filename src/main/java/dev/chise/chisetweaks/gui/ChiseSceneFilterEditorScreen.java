@@ -33,7 +33,6 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
 
     private final Screen parent;
     private final Target target;
-    private final boolean japanese;
     private final ArrayList<Button> removeButtons = new ArrayList<>();
 
     private EditBox idBox;
@@ -49,11 +48,10 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
     private int page;
     private String feedback = "";
 
-    public ChiseSceneFilterEditorScreen(Screen parent, Target target, boolean japanese) {
-        super(Component.literal("Scene Filter"));
+    public ChiseSceneFilterEditorScreen(Screen parent, Target target) {
+        super(Component.translatable("screen.chisetweaks.scene_filter.title"));
         this.parent = parent;
         this.target = target == null ? Target.BLOCKS : target;
-        this.japanese = japanese;
     }
 
     @Override
@@ -77,14 +75,14 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
                 70,
                 inputWidth,
                 20,
-                Component.literal(japanese ? "対象ID" : "Target ID")));
+                Component.translatable("screen.chisetweaks.scene_filter.target_id")));
         idBox.setHint(Component.literal(target == Target.BLOCKS
                 ? "minecraft:stone"
                 : "minecraft:item"));
         idBox.setResponder(ignored -> refreshControls());
 
         addButton = addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "追加" : "Add"), ignored -> addEntry())
+                Component.translatable("screen.chisetweaks.scene_filter.add"), ignored -> addEntry())
                 .bounds(panelX + 16 + inputWidth, 70, addWidth, 20)
                 .build());
 
@@ -92,7 +90,7 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         for (int slot = 0; slot < pageSize; slot++) {
             final int visibleSlot = slot;
             Button remove = addRenderableWidget(Button.builder(
-                    Component.literal(japanese ? "削除" : "Remove"),
+                    Component.translatable("screen.chisetweaks.scene_filter.remove"),
                     ignored -> removeEntry(visibleSlot))
                     .bounds(
                             panelX + panelWidth - REMOVE_WIDTH - 10,
@@ -105,17 +103,17 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
 
         int footerY = height - 28;
         previousButton = addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "前へ" : "Previous"), ignored -> movePage(-1))
+                Component.translatable("screen.chisetweaks.scene_filter.previous"), ignored -> movePage(-1))
                 .bounds(panelX + 8, footerY, 58, 20).build());
         nextButton = addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "次へ" : "Next"), ignored -> movePage(1))
+                Component.translatable("screen.chisetweaks.scene_filter.next"), ignored -> movePage(1))
                 .bounds(panelX + 70, footerY, 58, 20).build());
         clearButton = addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "リストを空にする" : "Clear list"),
+                Component.translatable("screen.chisetweaks.scene_filter.clear"),
                 ignored -> clearEntries())
                 .bounds(panelX + 132, footerY, 104, 20).build());
         addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "戻る" : "Back"), ignored -> onClose())
+                Component.translatable("screen.chisetweaks.common.back"), ignored -> onClose())
                 .bounds(panelX + panelWidth - 88, footerY, 80, 20).build());
 
         refreshControls();
@@ -132,7 +130,7 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         setting.setValue(next);
         if (!FeatureConfig.saveToFile()) {
             setting.setValue(previous);
-            feedback = saveFailureMessage();
+            feedback = text("screen.chisetweaks.scene_filter.feedback.save_failed");
         } else {
             page = 0;
             feedback = "";
@@ -147,21 +145,19 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         String raw = idBox.getValue() == null ? "" : idBox.getValue().trim().toLowerCase(Locale.ROOT);
         Identifier id = Identifier.tryParse(raw);
         if (id == null) {
-            feedback = japanese ? "IDの形式が正しくありません。" : "Invalid identifier format.";
+            feedback = text("screen.chisetweaks.scene_filter.feedback.invalid_id");
             refreshControls();
             return;
         }
         if (!isRegisteredTarget(id)) {
-            feedback = japanese
-                    ? "現在のクライアントに存在しないIDです。"
-                    : "That ID is not registered in this client.";
+            feedback = text("screen.chisetweaks.scene_filter.feedback.unregistered");
             refreshControls();
             return;
         }
 
         String normalized = id.toString();
         if (setting.getStrings().contains(normalized)) {
-            feedback = japanese ? "そのIDはすでに登録されています。" : "That ID is already registered.";
+            feedback = text("screen.chisetweaks.scene_filter.feedback.duplicate");
             refreshControls();
             return;
         }
@@ -171,7 +167,7 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         updated.add(normalized);
         List<String> sanitized = ConfigListPolicy.sanitize(updated);
         if (!sanitized.contains(normalized)) {
-            feedback = japanese ? "安全な設定値として登録できません。" : "The ID was rejected by config validation.";
+            feedback = text("screen.chisetweaks.scene_filter.feedback.rejected");
             refreshControls();
             return;
         }
@@ -179,13 +175,13 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         setting.setStrings(sanitized);
         if (!FeatureConfig.saveToFile()) {
             setting.setStrings(previous);
-            feedback = saveFailureMessage();
+            feedback = text("screen.chisetweaks.scene_filter.feedback.save_failed");
             refreshControls();
             return;
         }
         idBox.setValue("");
         page = Math.max(0, (sanitized.size() - 1) / pageSize);
-        feedback = japanese ? "追加しました。" : "Added.";
+        feedback = text("screen.chisetweaks.scene_filter.feedback.added");
         refreshControls();
     }
 
@@ -214,9 +210,9 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         setting.setStrings(updated);
         if (!FeatureConfig.saveToFile()) {
             setting.setStrings(previous);
-            feedback = saveFailureMessage();
+            feedback = text("screen.chisetweaks.scene_filter.feedback.save_failed");
         } else {
-            feedback = japanese ? "削除しました。" : "Removed.";
+            feedback = text("screen.chisetweaks.scene_filter.feedback.removed");
         }
         clampPage();
         refreshControls();
@@ -229,18 +225,12 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         setting.setStrings(List.of());
         if (!FeatureConfig.saveToFile()) {
             setting.setStrings(previous);
-            feedback = saveFailureMessage();
+            feedback = text("screen.chisetweaks.scene_filter.feedback.save_failed");
         } else {
             page = 0;
-            feedback = japanese ? "現在のリストを空にしました。" : "Current list cleared.";
+            feedback = text("screen.chisetweaks.scene_filter.feedback.cleared");
         }
         refreshControls();
-    }
-
-    private String saveFailureMessage() {
-        return japanese
-                ? "設定を保存できませんでした。変更は元に戻しました。"
-                : "Could not save the config. The change was reverted.";
     }
 
     private void movePage(int delta) {
@@ -283,29 +273,23 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
     }
 
     private Component modeMessage() {
-        String targetName = target == Target.BLOCKS
-                ? (japanese ? "ブロック" : "Blocks")
-                : (japanese ? "エンティティ" : "Entities");
-        String modeName = switch (modeSetting().getValue()) {
-            case NONE -> japanese ? "無効" : "Disabled";
-            case WHITELIST -> japanese ? "表示リスト" : "Allow list";
-            case BLACKLIST -> japanese ? "非表示リスト" : "Hide list";
-        };
-        return Component.literal(targetName + "：" + modeName);
+        Component targetName = Component.translatable(target == Target.BLOCKS
+                ? "screen.chisetweaks.scene_filter.target.blocks"
+                : "screen.chisetweaks.scene_filter.target.entities");
+        Component modeName = Component.translatable(switch (modeSetting().getValue()) {
+            case NONE -> "screen.chisetweaks.scene_filter.mode.disabled";
+            case WHITELIST -> "screen.chisetweaks.scene_filter.mode.allow";
+            case BLACKLIST -> "screen.chisetweaks.scene_filter.mode.hide";
+        });
+        return Component.translatable("screen.chisetweaks.scene_filter.mode.label", targetName, modeName);
     }
 
     private String modeDescription() {
-        return switch (modeSetting().getValue()) {
-            case NONE -> japanese
-                    ? "方式を選ぶまでScene Filterは対象リストを使用しません。"
-                    : "Choose a rule mode before Scene Filter uses a target list.";
-            case WHITELIST -> japanese
-                    ? "登録したIDだけを表示に残します。"
-                    : "Only registered IDs remain visible.";
-            case BLACKLIST -> japanese
-                    ? "登録したIDを非表示にします。"
-                    : "Registered IDs are hidden.";
-        };
+        return text(switch (modeSetting().getValue()) {
+            case NONE -> "screen.chisetweaks.scene_filter.mode.description.disabled";
+            case WHITELIST -> "screen.chisetweaks.scene_filter.mode.description.allow";
+            case BLACKLIST -> "screen.chisetweaks.scene_filter.mode.description.hide";
+        });
     }
 
     private ChiseRuleModeSetting modeSetting() {
@@ -344,7 +328,7 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         super.extractRenderState(extractor, mouseX, mouseY, delta);
         extractor.centeredText(
                 font,
-                Component.literal(japanese ? "Scene Filter 対象編集" : "Scene Filter target editor"),
+                Component.translatable("screen.chisetweaks.scene_filter.title"),
                 width / 2,
                 10,
                 0xFFFFFFFF);
@@ -381,6 +365,10 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         int end = value.length();
         while (end > 0 && font.width(value.substring(0, end) + ellipsis) > maxWidth) end--;
         return value.substring(0, end) + ellipsis;
+    }
+
+    private static String text(String key) {
+        return Component.translatable(key).getString();
     }
 
     @Override
