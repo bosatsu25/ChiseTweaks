@@ -2,13 +2,12 @@ package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
-import dev.chise.chisetweaks.feature.Feature;
-import dev.chise.chisetweaks.runtime.FeatureManager;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
+/** ローカル描画機能のUIスイッチ。永続化は設定画面のApply境界でまとめて行う。 */
 public final class LocalFeatureSwitch extends ChiseBooleanSetting {
     private static final boolean DEFAULT_ENABLED = false;
 
@@ -46,13 +45,6 @@ public final class LocalFeatureSwitch extends ChiseBooleanSetting {
     @Override
     protected void writeValue(boolean value) {
         boolean effectiveValue = PreReleaseFeaturePolicy.isAvailable(definition) && value;
-        Feature runtimeFeature = FeatureManager.getInstance().getFeature(definition.id());
-        if (runtimeFeature != null) {
-            runtimeFeature.setEnabled(effectiveValue);
-            return;
-        }
-        LocalFeatureConfig config = LocalFeatureConfig.getInstance();
-        setter.accept(config, effectiveValue);
-        config.save();
+        setter.accept(LocalFeatureConfig.getInstance(), effectiveValue);
     }
 }
