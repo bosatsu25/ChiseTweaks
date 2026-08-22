@@ -4,9 +4,6 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
-import dev.chise.chisetweaks.feature.Feature;
-import dev.chise.chisetweaks.feature.SessionAwareFeature;
-import dev.chise.chisetweaks.feature.TickingFeature;
 import dev.chise.chisetweaks.feature.rendering.AncientDebrisAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.LavaHighlightFeature;
 import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine;
@@ -14,7 +11,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,11 +22,7 @@ public final class FeatureManager {
     private static final SessionAwareRuntimeComponent[] NO_SESSION_COMPONENTS =
             new SessionAwareRuntimeComponent[0];
 
-    private final Map<String, Feature> features = new LinkedHashMap<>();
-    private final Map<String, Feature> readOnlyFeatures = Collections.unmodifiableMap(features);
-    private final Map<String, RuntimeComponent> runtimeComponents = new LinkedHashMap<>();
-    private final Map<String, RuntimeComponent> readOnlyRuntimeComponents =
-            Collections.unmodifiableMap(runtimeComponents);
+    private final Map<String, RuntimeComponent> components = new LinkedHashMap<>();
     private final List<TickSlot> mutableTickSlots = new ArrayList<>();
     private final List<SessionAwareRuntimeComponent> mutableSessionComponents = new ArrayList<>();
     private volatile TickSlot[] tickSchedule = NO_TICK_SLOTS;
@@ -45,61 +37,36 @@ public final class FeatureManager {
         if (initialized) return;
 
         if (PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
-            registerFeature(new LavaHighlightFeature());
+            registerComponent(new LavaHighlightFeature());
         }
         if (PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
-            registerFeature(new AncientDebrisAnalyzerFeature());
+            registerComponent(new AncientDebrisAnalyzerFeature());
         }
         if (hasAvailableWorksiteVisibilityFeature()) {
-            registerRuntimeComponent(new WorksiteVisibilityEngine());
+            registerComponent(new WorksiteVisibilityEngine());
         }
 
-        for (Feature feature : features.values()) initFeature(feature);
-        for (RuntimeComponent component : runtimeComponents.values()) initRuntimeComponent(component);
+        for (RuntimeComponent component : components.values()) initializeComponent(component);
 
         tickSchedule = mutableTickSlots.toArray(TickSlot[]::new);
         sessionSchedule = mutableSessionComponents.toArray(SessionAwareRuntimeComponent[]::new);
 
         if (tickSchedule.length != 0) {
             ClientTickEvents.END_CLIENT_TICK.register(client -> {
-                TickSlot[] schedule = tickSchedule;
-                for (TickSlot slot : schedule) slot.runForTick(client);
+                for (TickSlot slot : tickSchedule) slot.runForTick(client);
             });
         }
         initialized = true;
     }
 
-    public synchronized void registerFeature(Feature feature) {
-        requireMutableRegistration();
-        Objects.requireNonNull(feature, "feature");
-        String id = requireId(feature.getId(), "feature id");
-        requireUniqueId(id);
-        features.put(id, feature);
-        if (feature instanceof TickingFeature ticking) mutableTickSlots.add(new TickSlot(ticking));
-        if (feature instanceof SessionAwareFeature sessionAware) mutableSessionComponents.add(sessionAware);
-    }
-
-    public synchronized void registerRuntimeComponent(RuntimeComponent component) {
+    public synchronized void registerComponent(RuntimeComponent component) {
         requireMutableRegistration();
         Objects.requireNonNull(component, "component");
-        String id = requireId(component.getId(), "component id");
-        requireUniqueId(id);
-        runtimeComponents.put(id, component);
-        if (component instanceof TickingRuntimeComponent ticking) mutableTickSlots.add(new TickSlot(ticking));
-        if (component instanceof SessionAwareRuntimeComponent sessionAware) {
-            mutableSessionComponents.add(sessionAware);
+        String id = requireId(component.getId());
+        if (components.putIfAbsent(id, component) != null) {
+            throw new IllegalStateException("Duplicate component id: " + id);
         }
-    }
-
-    public Feature getFeature(String id) { return features.get(id); }
-    public Map<String, Feature> getFeatures() { return readOnlyFeatures; }
-    public RuntimeComponent getRuntimeComponent(String id) { return runtimeComponents.get(id); }
-    public Map<String, RuntimeComponent> getRuntimeComponents() { return readOnlyRuntimeComponents; }
-    public int getTickingComponentCount() {
-        return tickSchedule.length == 0 ? mutableTickSlots.size() : tickSchedule.length;
-    }
-    public int getSessionAwareComponentCount() {
-        return sessionSchedule.length == 0 ? mutableSessionComponents.size() : sessionSchedule.length;
+        registerSchedules(component);
     }
 
     public void resetSessionState(Minecraft client) {
@@ -124,27 +91,20 @@ public final class FeatureManager {
         return false;
     }
 
-    private void initFeature(Feature feature) {
-        try {
-            feature.init();
-        } catch (RuntimeException | LinkageError failure) {
-            quarantineTickSlot(feature.getId());
-            if (feature instanceof TickingRuntimeComponent ticking) {
-                notifyInitializationQuarantine(feature.getId(), ticking);
-            }
-            safeDisable(feature);
-            ChiseTweaksClient.LOGGER.error(
-                    "Feature '{}' was disabled during initialization after {}",
-                    feature.getId(),
-                    failure.getClass().getSimpleName());
+    private void registerSchedules(RuntimeComponent component) {
+        if (component instanceof TickingRuntimeComponent ticking) {
+            mutableTickSlots.add(new TickSlot(ticking));
+        }
+        if (component instanceof SessionAwareRuntimeComponent sessionAware) {
+            mutableSessionComponents.add(sessionAware);
         }
     }
 
-    private void initRuntimeComponent(RuntimeComponent component) {
+    private void initializeComponent(RuntimeComponent component) {
         try {
             component.init();
         } catch (RuntimeException | LinkageError failure) {
-            quarantineTickSlot(component.getId());
+            removeFromSchedules(component);
             if (component instanceof TickingRuntimeComponent ticking) {
                 notifyInitializationQuarantine(component.getId(), ticking);
             }
@@ -153,6 +113,11 @@ public final class FeatureManager {
                     component.getId(),
                     failure.getClass().getSimpleName());
         }
+    }
+
+    private void removeFromSchedules(RuntimeComponent component) {
+        mutableTickSlots.removeIf(slot -> slot.component == component);
+        mutableSessionComponents.removeIf(sessionAware -> sessionAware == (Object) component);
     }
 
     private static void notifyInitializationQuarantine(String id, TickingRuntimeComponent component) {
@@ -166,41 +131,18 @@ public final class FeatureManager {
         }
     }
 
-    private void quarantineTickSlot(String id) {
-        for (TickSlot slot : mutableTickSlots) {
-            if (slot.component.getId().equals(id)) slot.quarantined = true;
-        }
-    }
-
     private void requireMutableRegistration() {
         if (initialized) throw new IllegalStateException("Components cannot be registered after initialization");
     }
 
-    private void requireUniqueId(String id) {
-        if (features.containsKey(id) || runtimeComponents.containsKey(id)) {
-            throw new IllegalStateException("Duplicate component id: " + id);
-        }
-    }
-
-    private static String requireId(String id, String label) {
-        String value = Objects.requireNonNull(id, label);
+    private static String requireId(String id) {
+        String value = Objects.requireNonNull(id, "component id");
         String normalized = value.trim();
-        if (normalized.isEmpty()) throw new IllegalArgumentException(label + " must not be blank");
+        if (normalized.isEmpty()) throw new IllegalArgumentException("component id must not be blank");
         if (!value.equals(normalized)) {
-            throw new IllegalArgumentException(label + " must not contain surrounding whitespace");
+            throw new IllegalArgumentException("component id must not contain surrounding whitespace");
         }
         return value;
-    }
-
-    private static void safeDisable(Feature feature) {
-        try {
-            feature.setEnabled(false);
-        } catch (RuntimeException | LinkageError failure) {
-            ChiseTweaksClient.LOGGER.warn(
-                    "Feature '{}' could not be disabled after {}",
-                    feature.getId(),
-                    failure.getClass().getSimpleName());
-        }
     }
 
     static final class TickSlot {
@@ -221,7 +163,6 @@ public final class FeatureManager {
                 if (!FailureIsolationPolicy.shouldQuarantine(recoverableFailures)) return;
                 quarantined = true;
                 quarantineComponent(client);
-                if (component instanceof Feature feature) safeDisable(feature);
                 ChiseTweaksClient.LOGGER.error(
                         "Runtime component '{}' was quarantined after {}",
                         component.getId(),
