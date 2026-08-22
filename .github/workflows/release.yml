@@ -3,21 +3,38 @@ name: Official Release
 on:
   workflow_dispatch:
     inputs:
+      release_type:
+        description: SemVer increment represented by gradle.properties
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
       confirm_release:
         description: Confirm that manual Prism gameplay smoke testing has passed for this exact main-branch commit
         required: true
         type: boolean
         default: false
+      cleanup_legacy_verified_tags:
+        description: Remove obsolete CI-generated verified-v* tags/releases from the old pipeline
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: write
-  actions: read
+
+concurrency:
+  group: chisetweaks-official-release
+  cancel-in-progress: false
 
 jobs:
   release:
-    name: Publish verified main runtime JAR
+    name: Verify and publish one runtime JAR
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 50
 
     steps:
       - name: Require main branch and manual runtime confirmation
@@ -33,163 +50,152 @@ jobs:
             exit 1
           fi
 
-      - name: Resolve successful CI for this exact commit
-        id: ci
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+      - name: Checkout exact main commit with tags
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6.0.0
+        with:
+          python-version: '3.13'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6.3.0
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Validate version syntax and repository inputs
         run: |
-          run_id="$(gh run list \
-            --repo "$GH_REPO" \
-            --workflow ci.yml \
-            --branch main \
-            --commit "$GITHUB_SHA" \
-            --status success \
-            --limit 1 \
-            --json databaseId \
-            --jq '.[0].databaseId // empty')"
-          if [[ -z "$run_id" ]]; then
-            echo "Release blocked: no successful CI run exists for exact main SHA $GITHUB_SHA." >&2
-            echo 'Run or re-run CI on this exact main commit first.' >&2
+          python scripts/version_policy.py
+          python scripts/repository_audit.py
+          python scripts/source_usage_audit.py
+
+      - name: Run full release quality gate
+        run: ./gradlew --no-daemon --stacktrace clean ciGate
+
+      - name: Generate and audit release candidate
+        id: artifact-audit
+        run: |
+          python scripts/quality_summary.py
+          python scripts/artifact_audit.py
+          python scripts/visual_asset_audit.py
+          python scripts/release_residue_audit.py
+
+      - name: Validate requested SemVer increment
+        id: version
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+          CURRENT_VERSION: ${{ steps.artifact-audit.outputs.version }}
+        run: |
+          previous_version=''
+          previous_tag="$(git tag --list 'v[0-9]*' --sort=-version:refname | head -n 1)"
+          if [[ -n "$previous_tag" ]]; then
+            previous_version="${previous_tag#v}"
+          else
+            legacy_tag="$(git tag --list 'verified-v*' --sort=-creatordate | head -n 1)"
+            if [[ -n "$legacy_tag" ]]; then
+              previous_version="${legacy_tag#verified-v}"
+              previous_version="${previous_version%-java25-*}"
+            fi
+          fi
+
+          if [[ -n "$previous_version" ]]; then
+            python scripts/version_policy.py \
+              --previous "$previous_version" \
+              --release-type "$RELEASE_TYPE"
+          else
+            echo 'No previous Chise release tag found; syntax validation is the initial release gate.'
+          fi
+
+          tag="v${CURRENT_VERSION}"
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "Release tag '${tag}' already exists. Increment mod_version before releasing." >&2
             exit 1
           fi
 
-          artifact_name="$(gh api "repos/${GH_REPO}/actions/runs/${run_id}/artifacts" \
-            --jq '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verification-evidence"))) | .name' \
-            | head -n 1)"
-          if [[ -z "$artifact_name" ]]; then
-            echo "Release blocked: successful CI run $run_id has no unexpired verification evidence artifact." >&2
-            echo 'Re-run CI on this exact main commit to regenerate the release candidate.' >&2
-            exit 1
-          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "previous_version=$previous_version" >> "$GITHUB_OUTPUT"
 
-          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
-          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
-
-      - name: Download exact verification evidence
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RUN_ID: ${{ steps.ci.outputs.run_id }}
-          ARTIFACT_NAME: ${{ steps.ci.outputs.artifact_name }}
-        run: |
-          mkdir -p release
-          gh run download "$RUN_ID" \
-            --repo "$GH_REPO" \
-            --name "$ARTIFACT_NAME" \
-            --dir release
-
-      - name: Verify artifact integrity and metadata
+      - name: Verify runtime metadata
         id: metadata
         env:
-          CI_RUN_ID: ${{ steps.ci.outputs.run_id }}
+          VERSION: ${{ steps.artifact-audit.outputs.version }}
+          RUNTIME_JAR: ${{ steps.artifact-audit.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.artifact-audit.outputs.runtime_sha256 }}
         run: |
-          cd release
-          sha256sum --check SHA256SUMS.txt
-
-          version="$(jq -r '.version // empty' artifact-audit.json)"
-          mc_version="$(jq -r '.minecraft_version // empty' artifact-audit.json)"
-          runtime_jar="$(jq -r '.runtime_jar // empty' artifact-audit.json)"
-          sources_jar="$(jq -r '.sources_jar // empty' artifact-audit.json)"
-          runtime_sha256="$(jq -r '.runtime_sha256 // empty' artifact-audit.json)"
-
-          for value in "$version" "$mc_version" "$runtime_jar" "$sources_jar" "$runtime_sha256"; do
-            if [[ -z "$value" ]]; then
-              echo 'Verification metadata is incomplete.' >&2
-              exit 1
-            fi
-          done
-
-          # Keep the complete audit package in Actions, but never publish it as user-facing assets.
-          if [[ ! -f "$runtime_jar" || ! -f "$sources_jar" ]]; then
-            echo 'Verified runtime or sources JAR is missing from Actions evidence.' >&2
-            exit 1
-          fi
-          for evidence in visual-asset-audit.json quality-summary.md artifact-audit.json SHA256SUMS.txt; do
-            if [[ ! -f "$evidence" ]]; then
-              echo "Required QA evidence is missing: $evidence" >&2
-              exit 1
-            fi
-          done
-
-          actual_runtime_sha256="$(sha256sum "$runtime_jar" | cut -d' ' -f1)"
-          if [[ "$actual_runtime_sha256" != "$runtime_sha256" ]]; then
-            echo 'artifact-audit.json runtime SHA-256 does not match the downloaded JAR.' >&2
+          runtime="build/libs/$RUNTIME_JAR"
+          if [[ ! -f "$runtime" ]]; then
+            echo "Runtime JAR is missing: $runtime" >&2
             exit 1
           fi
 
-          expected_suffix="+mc${mc_version}"
-          if [[ "$version" != *"$expected_suffix" ]]; then
-            echo "Version '$version' must end with '$expected_suffix'." >&2
+          actual_sha256="$(sha256sum "$runtime" | cut -d' ' -f1)"
+          if [[ "$actual_sha256" != "$RUNTIME_SHA256" ]]; then
+            echo 'Runtime JAR SHA-256 does not match the artifact audit.' >&2
             exit 1
           fi
 
-          fabric_metadata="$(unzip -p "$runtime_jar" fabric.mod.json)"
-          if [[ -z "$fabric_metadata" ]]; then
-            echo 'Verified runtime JAR does not contain fabric.mod.json.' >&2
-            exit 1
-          fi
+          fabric_metadata="$(unzip -p "$runtime" fabric.mod.json)"
           fabric_version="$(jq -r '.version // empty' <<<"$fabric_metadata")"
-          fabric_mc="$(jq -r '.depends.minecraft // empty' <<<"$fabric_metadata")"
+          mc_version="$(jq -r '.depends.minecraft // empty' <<<"$fabric_metadata")"
           loader_constraint="$(jq -r '.depends.fabricloader // empty' <<<"$fabric_metadata")"
           fabric_api_constraint="$(jq -r '.depends["fabric-api"] // empty' <<<"$fabric_metadata")"
           java_constraint="$(jq -r '.depends.java // empty' <<<"$fabric_metadata")"
           environment="$(jq -r '.environment // empty' <<<"$fabric_metadata")"
           server_required="$(jq -r 'if (.custom.chisetweaks | has("serverInstallationRequired")) then .custom.chisetweaks.serverInstallationRequired else empty end' <<<"$fabric_metadata")"
 
-          for value in "$fabric_version" "$fabric_mc" "$loader_constraint" "$fabric_api_constraint" "$java_constraint" "$environment" "$server_required"; do
-            if [[ -z "$value" ]]; then
-              echo 'fabric.mod.json release metadata is incomplete.' >&2
-              exit 1
-            fi
-          done
-          if [[ "$fabric_version" != "$version" ]]; then
-            echo "fabric.mod.json version '$fabric_version' does not match artifact version '$version'." >&2
-            exit 1
-          fi
-          if [[ "$fabric_mc" != "$mc_version" ]]; then
-            echo "fabric.mod.json Minecraft dependency '$fabric_mc' does not match audited '$mc_version'." >&2
+          if [[ "$fabric_version" != "$VERSION" ]]; then
+            echo "fabric.mod.json version '$fabric_version' does not match '$VERSION'." >&2
             exit 1
           fi
           if [[ "$environment" != 'client' || "$server_required" != 'false' ]]; then
-            echo 'Verified runtime no longer satisfies the client-only release contract.' >&2
+            echo 'Runtime no longer satisfies the client-only release contract.' >&2
             exit 1
           fi
 
-          display_version="${version%%+mc*}"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          display_version="${VERSION%%+mc*}"
           echo "minecraft_version=$mc_version" >> "$GITHUB_OUTPUT"
           echo "loader_constraint=$loader_constraint" >> "$GITHUB_OUTPUT"
           echo "fabric_api_constraint=$fabric_api_constraint" >> "$GITHUB_OUTPUT"
           echo "java_constraint=$java_constraint" >> "$GITHUB_OUTPUT"
-          echo "runtime_jar=$runtime_jar" >> "$GITHUB_OUTPUT"
-          echo "runtime_sha256=$runtime_sha256" >> "$GITHUB_OUTPUT"
-          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
           echo "display_version=$display_version" >> "$GITHUB_OUTPUT"
-          echo "ci_run_id=$CI_RUN_ID" >> "$GITHUB_OUTPUT"
 
-      - name: Refuse duplicate release tag
+      - name: Remove legacy CI-generated verified tags
+        if: ${{ inputs.cleanup_legacy_verified_tags }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: ${{ steps.metadata.outputs.tag }}
         run: |
-          if gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
-            echo "Release tag '${TAG}' already exists." >&2
-            exit 1
-          fi
+          mapfile -t legacy_tags < <(git tag --list 'verified-v*')
+          for legacy_tag in "${legacy_tags[@]}"; do
+            [[ -z "$legacy_tag" ]] && continue
+            if gh release view "$legacy_tag" --repo "$GH_REPO" >/dev/null 2>&1; then
+              gh release delete "$legacy_tag" --repo "$GH_REPO" --yes
+            fi
+            git push origin ":refs/tags/$legacy_tag"
+            git tag -d "$legacy_tag" >/dev/null 2>&1 || true
+            echo "Removed legacy CI tag: $legacy_tag"
+          done
 
       - name: Prepare release notes
         env:
-          VERSION: ${{ steps.metadata.outputs.version }}
+          VERSION: ${{ steps.artifact-audit.outputs.version }}
+          DISPLAY_VERSION: ${{ steps.metadata.outputs.display_version }}
           MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
           LOADER_CONSTRAINT: ${{ steps.metadata.outputs.loader_constraint }}
           FABRIC_API_CONSTRAINT: ${{ steps.metadata.outputs.fabric_api_constraint }}
           JAVA_CONSTRAINT: ${{ steps.metadata.outputs.java_constraint }}
-          RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
-          RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
-          CI_RUN_ID: ${{ steps.metadata.outputs.ci_run_id }}
-          EVIDENCE_ARTIFACT: ${{ steps.ci.outputs.artifact_name }}
+          RUNTIME_JAR: ${{ steps.artifact-audit.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.artifact-audit.outputs.runtime_sha256 }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
         run: |
           cat > release-notes.md <<EOF
           ## 📦 Install this file / 導入するファイル
@@ -198,36 +204,33 @@ jobs:
 
           **\`${RUNTIME_JAR}\`**
 
-          Source code archives and QA evidence files are not Minecraft mods and must not be added to Prism. The complete verification package remains available in GitHub Actions as \`${EVIDENCE_ARTIFACT}\`.
+          ## ChiseTweaks ${DISPLAY_VERSION}
 
-          ## ChiseTweaks ${VERSION}
-
-          Stable release for **Minecraft ${MC_VERSION}**, **Fabric Loader ${LOADER_CONSTRAINT}**, **Fabric API ${FABRIC_API_CONSTRAINT}** and **Java ${JAVA_CONSTRAINT}**.
-
-          This release reuses the exact artifact produced by successful main-branch CI run **${CI_RUN_ID}** for commit \`${GITHUB_SHA}\` after manual Prism gameplay smoke testing.
-
+          - Release type: \`${RELEASE_TYPE}\`
+          - Full version: \`${VERSION}\`
           - Minecraft: \`${MC_VERSION}\`
           - Fabric Loader: \`${LOADER_CONSTRAINT}\`
           - Fabric API: \`${FABRIC_API_CONSTRAINT}\`
           - Java: \`${JAVA_CONSTRAINT}\`
           - SHA-256: \`${RUNTIME_SHA256}\`
-          - Visual asset audit: \`PASS\`
           - Server installation required: \`false\`
-          - User-facing release assets: \`1 runtime JAR\`
+          - Uploaded mod assets: \`1 runtime JAR\`
+
+          CI does not publish builds. This Release was produced only after the full release quality gate and manual Prism smoke-test confirmation.
           EOF
 
       - name: Create version tag and GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: ${{ steps.metadata.outputs.tag }}
+          TAG: ${{ steps.version.outputs.tag }}
           DISPLAY_VERSION: ${{ steps.metadata.outputs.display_version }}
           MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
-          RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
-          RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
+          RUNTIME_JAR: ${{ steps.artifact-audit.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.artifact-audit.outputs.runtime_sha256 }}
         run: |
           gh release create "$TAG" \
-            "release/$RUNTIME_JAR" \
+            "build/libs/$RUNTIME_JAR" \
             --target "$GITHUB_SHA" \
             --title "ChiseTweaks ${DISPLAY_VERSION} — Minecraft ${MC_VERSION}" \
             --notes-file release-notes.md
@@ -235,7 +238,7 @@ jobs:
           gh api "repos/${GH_REPO}/releases/tags/${TAG}" > /tmp/official-release.json
           asset_count="$(jq '[.assets[]?] | length' /tmp/official-release.json)"
           if [[ "$asset_count" != '1' ]]; then
-            echo "Official release must expose exactly one user asset, found ${asset_count}." >&2
+            echo "Official release must expose exactly one uploaded mod asset, found ${asset_count}." >&2
             exit 1
           fi
           if ! jq -e --arg name "$RUNTIME_JAR" '.assets[]? | select(.name == $name)' /tmp/official-release.json >/dev/null; then
@@ -247,3 +250,6 @@ jobs:
             echo "Published runtime JAR digest mismatch: '$remote_runtime_digest'." >&2
             exit 1
           fi
+
+          printf '\n### Official Release\n- Tag: `%s`\n- Uploaded mod assets: `1`\n- Install: `%s`\n' \
+            "$TAG" "$RUNTIME_JAR" >> "$GITHUB_STEP_SUMMARY"
