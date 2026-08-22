@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 
-/** Performs the bounded, loaded-chunk-only scan for retained visible worksite targets. */
 final class WorksiteScanner {
     private static final double[][] SOLID_SAMPLES = {{0.50, 0.50, 0.50}};
     private static final double[][] THIN_TECHNICAL_SAMPLES = {

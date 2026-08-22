@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Safe editor for explicit modded ore block IDs and Chise-owned visual styles. */
 public final class ChiseOreCompatibilityScreen extends Screen {
     private static final int ROW_HEIGHT = 24;
 

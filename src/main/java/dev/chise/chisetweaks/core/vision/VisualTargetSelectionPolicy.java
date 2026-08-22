@@ -2,12 +2,9 @@ package dev.chise.chisetweaks.core.vision;
 
 import java.util.Locale;
 
-/** Fine-grained persisted selection policy for the retained visual target families. */
 public final class VisualTargetSelectionPolicy {
     /**
-     * Retained targets keep their historical bit positions so existing Ore Highlights and Hidden
-     * Surface Trace selections survive the scope reset. Removed Placement Guide bits 0-10 are never
-     * accepted by the new mask.
+     * 既存設定との互換性を守るため、保持対象のビット位置は過去の割り当てを維持する。
      */
     public enum Target {
         MATERIAL_OBSIDIAN(11),

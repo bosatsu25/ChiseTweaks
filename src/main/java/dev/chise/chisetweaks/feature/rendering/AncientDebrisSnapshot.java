@@ -2,7 +2,9 @@ package dev.chise.chisetweaks.feature.rendering;
 
 import java.util.Arrays;
 
-/** Allocation-bounded handoff from cached debris positions to the retained renderer. */
+/**
+ * 古代の残骸キャッシュから保持型レンダラーへの受け渡しは、割り当て量を固定上限内に抑える。
+ */
 final class AncientDebrisSnapshot {
     private final long[][] positions;
     private final int[] counts = new int[2];

@@ -6,7 +6,6 @@ import net.minecraft.core.BlockPos;
 
 import java.util.List;
 
-/** Category-level surface-line composition for retained worksite overlays. */
 public final class SurfaceLineVisualGeometry {
     private SurfaceLineVisualGeometry() {}
 
@@ -81,7 +80,6 @@ public final class SurfaceLineVisualGeometry {
                 Math.max(1.0f, lineWidth * 0.42f));
     }
 
-    /** Compact far-distance marker used to bound GPU vertex work. */
     public static void drawCompactFrame(
             VertexConsumer vertices,
             PoseStack.Pose pose,

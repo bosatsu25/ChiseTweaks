@@ -4,7 +4,6 @@ import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 
 import java.util.function.Consumer;
 
-/** Chise-owned UI adapters for retained bounded client-side visibility settings. */
 public final class LocalFeatureSettings {
     public static final SimpleBooleanSetting ORE_HIGHLIGHT_ANIMATION = bool(
             "localOreHighlightAnimation", false,

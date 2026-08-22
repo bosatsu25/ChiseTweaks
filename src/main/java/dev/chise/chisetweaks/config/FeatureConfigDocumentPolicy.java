@@ -6,11 +6,6 @@ import com.google.gson.JsonObject;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Narrows persisted feature-toggle data to known boolean keys before Chise applies it.
- * Unknown or mistyped entries are ignored so one stale setting cannot invalidate the
- * remaining Chise configuration.
- */
 final class FeatureConfigDocumentPolicy {
     private FeatureConfigDocumentPolicy() {}
 

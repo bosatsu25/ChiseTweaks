@@ -4,13 +4,6 @@ import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * Mutable pooled candidate used only while one bounded worksite scan is being assembled.
- *
- * <p>Instances are never exposed outside the scanner and are not mutated while present in the
- * priority queue. Reusing them removes candidate churn from repeated visibility scans without
- * leaking mutable state into render snapshots.</p>
- */
 final class WorksiteScanCandidate {
     private int x;
     private int y;

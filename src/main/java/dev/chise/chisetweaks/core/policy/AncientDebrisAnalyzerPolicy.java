@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.core.policy;
 
-/** Pure bounds, loaded-chunk neighborhood and visual LOD policy for the Nether-only Ancient Debris Analyzer. */
 public final class AncientDebrisAnalyzerPolicy {
     public static final int DEFAULT_RANGE_BLOCKS = 64;
     public static final int MIN_RANGE_BLOCKS = 16;
@@ -25,16 +24,11 @@ public final class AncientDebrisAnalyzerPolicy {
         return Math.max(MIN_MAX_MARKERS, Math.min(MAX_MAX_MARKERS, value));
     }
 
-    /**
-     * Returns the bounded chunk neighborhood needed to cover the configured block range plus one
-     * edge chunk. The extra chunk keeps range-edge markers stable while never loading a chunk.
-     */
     public static int chunkRadiusForRangeBlocks(int rangeBlocks) {
         int range = clampRangeBlocks(rangeBlocks);
         return Math.min(MAX_BOOTSTRAP_CHUNK_RADIUS, (range + 15) / 16 + 1);
     }
 
-    /** True only when the candidate chunk belongs to the bounded analyzer neighborhood. */
     public static boolean isChunkRelevant(
             int centerChunkX,
             int centerChunkZ,

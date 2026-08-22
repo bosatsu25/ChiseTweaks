@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.gui;
 
 import net.minecraft.client.gui.components.Button;
 
-/** Mutable widget/render state for one immutable settings row definition. */
 final class ChiseTweaksSettingRowView {
     final ChiseTweaksSettingRowDefinition definition;
     final Button primary;

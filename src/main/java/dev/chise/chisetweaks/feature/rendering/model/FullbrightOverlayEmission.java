@@ -11,7 +11,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-/** Executes one optional fullbright overlay emission without leaking transform-stack failures. */
 final class FullbrightOverlayEmission {
     private FullbrightOverlayEmission() {}
 

@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.core.performance;
 
-/** Pure bounded-queue admission rule used by the worksite scanner. */
 public final class WorksiteCandidateRetentionPolicy {
     private WorksiteCandidateRetentionPolicy() {}
 

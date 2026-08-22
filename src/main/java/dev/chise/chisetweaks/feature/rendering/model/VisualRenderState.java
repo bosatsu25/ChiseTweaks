@@ -7,13 +7,6 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Immutable hot-path snapshot for model-backed highlights.
- *
- * <p>UI/config callbacks refresh this object only when relevant state changes. Chunk geometry
- * emission therefore reads one volatile reference instead of traversing configuration singletons
- * and policy objects for every wrapped block state.</p>
- */
 public final class VisualRenderState {
     private static volatile Snapshot current = Snapshot.disabled();
 

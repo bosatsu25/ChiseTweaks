@@ -18,13 +18,6 @@ import org.jspecify.annotations.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
-/**
- * Preserves the final base model and appends only Chise-owned ore overlay geometry.
- *
- * <p>Target classification is intentionally completed during model wrapping. Runtime emission does
- * not resolve block IDs, tags, compatibility maps, or ore heuristics. Compatibility edits that can
- * change the set of wrapped models request a coalesced resource-model reload instead.</p>
- */
 final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
     private static final int MAX_LOOKUP_ATTEMPTS = 3;
     private static final AtomicBoolean LOOKUP_FAILURE_LOGGED = new AtomicBoolean();

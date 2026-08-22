@@ -1,8 +1,7 @@
 package dev.chise.chisetweaks.core.vision;
 
-/** Pure policy for the first-person fire overlay. No texture or resource-pack assets are replaced. */
 public final class FireVisibilityPolicy {
-    /** Moderate downward shift that keeps fire feedback visible while opening the center of the view. */
+
     public static final float LOWERED_OVERLAY_Y = -0.30F;
 
     private FireVisibilityPolicy() {}

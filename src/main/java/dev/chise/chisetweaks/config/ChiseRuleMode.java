@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.config;
 
 import java.util.Locale;
 
-/** Rule semantics used by Chise-owned block/entity scene filters. */
 public enum ChiseRuleMode {
     NONE,
     BLACKLIST,

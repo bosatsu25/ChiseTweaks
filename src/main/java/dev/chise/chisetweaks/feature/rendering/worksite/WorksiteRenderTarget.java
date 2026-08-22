@@ -8,7 +8,9 @@ import net.minecraft.core.BlockPos;
 
 import java.util.List;
 
-/** Precomputed render-only view so per-frame drawing avoids repeated string/state inspection. */
+/**
+ * 毎フレームの描画で文字列や状態を再判定しないよう、描画専用情報を事前計算して保持する。
+ */
 record WorksiteRenderTarget(
         BlockPos position,
         BlockInspectionPolicy.InspectionPresentation presentation,

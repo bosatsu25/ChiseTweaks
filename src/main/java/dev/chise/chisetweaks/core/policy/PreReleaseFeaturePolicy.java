@@ -4,7 +4,6 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.Objects;
 
-/** Release gate for the current public pre-release. */
 public final class PreReleaseFeaturePolicy {
     private PreReleaseFeaturePolicy() {}
 

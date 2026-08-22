@@ -17,11 +17,6 @@ import org.jspecify.annotations.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
-/**
- * Preserves the final glass/resource-pack model and appends a sparse Chise-owned fullbright marker.
- * Glass blocks and panes use different geometry so the shape remains distinguishable without
- * recoloring stained glass.
- */
 final class FullbrightGlassHighlightModel extends WrapperBlockStateModel {
     private static final int MAX_LOOKUP_ATTEMPTS = 3;
     private static final AtomicBoolean LOOKUP_FAILURE_LOGGED = new AtomicBoolean();

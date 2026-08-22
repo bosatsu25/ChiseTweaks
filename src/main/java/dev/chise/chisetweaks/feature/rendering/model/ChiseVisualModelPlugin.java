@@ -17,7 +17,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Non-destructive Chise model composition for Ore, Kelp and Glass Highlights. */
 public final class ChiseVisualModelPlugin {
     public static final String REVISION = "visual-model-overlay-10-classification-cache";
 
@@ -53,9 +52,8 @@ public final class ChiseVisualModelPlugin {
                             GlassHighlightOverlayCatalog.PANE_KEY,
                             SimpleUnbakedExtraModel.blockStateModel(GlassHighlightOverlayCatalog.PANE_MODEL));
 
-                    // Classification is block-stable for the duration of one resource-model reload.
-                    // Keep the cache scoped to this reload so resource compatibility changes can never
-                    // leak stale classifications into a later bake.
+                    // 1回のリソースモデル再読み込み中は分類結果を固定し、再読み込みをまたいで古い分類を持ち越さない。
+
                     ConcurrentHashMap<Block, VisualModelClassification> classificationCache =
                             new ConcurrentHashMap<>();
                     pluginContext.modifyBlockModelAfterBake().register(

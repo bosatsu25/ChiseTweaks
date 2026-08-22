@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.gui;
 
-/** Pure responsive geometry for the currently user-operable modded-ore compatibility editor. */
 public final class ChiseOreCompatibilityLayout {
     private static final int MAX_PANEL_WIDTH = 760;
     private static final int MIN_STANDARD_PANEL_WIDTH = 342;

@@ -9,14 +9,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Canonical Chise-owned scope for vanilla ore/resource blocks rendered by Ore Highlights.
- *
- * <p>The catalog deliberately contains only vanilla ore families plus Ancient Debris. Normal and
- * deepslate variants share one user-facing target. Obsidian and Crying Obsidian remain supported
- * special materials, but are intentionally outside this catalog so "all vanilla ores" has one
- * precise meaning throughout runtime code, UI and regression tests.</p>
- */
 public final class VanillaOreVisualCatalog {
     private static final List<Family> FAMILIES = List.of(
             family(Target.MATERIAL_COAL_ORE, "coal",

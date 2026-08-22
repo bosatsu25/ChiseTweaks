@@ -6,9 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Strict pre-parser for local JSON configuration files.
- * Rejects duplicate keys, malformed JSON values, invalid surrogate pairs,
- * oversized collections and non-object documents before Gson sees them.
+ * ローカルJSON設定を厳格に事前検証し、重複キーや不正な構造を本処理へ渡さない。
  */
 public final class StrictJsonSecurityPolicy {
     public static final int MAX_OBJECT_MEMBERS = 2_048;

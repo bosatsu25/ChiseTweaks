@@ -3,12 +3,7 @@ package dev.chise.chisetweaks.feature.rendering;
 import java.util.Arrays;
 
 /**
- * Allocation-bounded handoff between the lava scanner and retained renderer.
- *
- * <p>Positions are stored as packed longs in sorted order. The scanner writes into the inactive
- * slot and publishes it with a volatile slot flip; the renderer copies a stable view only when the
- * render revision changes. A scan may advance the render revision without changing positions so
- * distance-based colour can refresh at scan cadence without rebuilding geometry every frame.</p>
+ * 溶岩走査結果から保持型レンダラーへの受け渡しは、割り当て量を固定上限内に抑える。
  */
 final class LavaSourceSnapshot {
     private final long[][] positions;
@@ -37,11 +32,6 @@ final class LavaSourceSnapshot {
         return renderRevision;
     }
 
-    /**
-     * Publishes a sorted primitive position set and the eye position used for colour calculation.
-     *
-     * @return {@code true} when the set of highlighted source positions changed.
-     */
     boolean publish(long[] sortedPositions, int count, double eyeX, double eyeY, double eyeZ) {
         validateInput(sortedPositions, count);
         int currentSlot = activeSlot;

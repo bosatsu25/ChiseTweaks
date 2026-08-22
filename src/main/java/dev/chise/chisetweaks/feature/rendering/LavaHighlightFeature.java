@@ -22,15 +22,6 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Arrays;
 
-/**
- * Bounded, client-only highlighter for nearby lava source blocks.
- *
- * <p>The feature never recolors lava, loads chunks, mutates the world, or sends packets. It scans
- * only already-loaded nearby blocks on an adaptive Chise tick cadence, publishes a fixed-capacity
- * primitive snapshot, and lets a retained GPU renderer draw the selected sources through nearby
- * terrain. Stable stationary scenes back off automatically while movement and config edits restore
- * the normal scan cadence.</p>
- */
 public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature {
     private static final int MAX_CANDIDATES = WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS;
     private static final int MAX_STABLE_BACKOFF_SHIFT = 2;
@@ -100,8 +91,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
             lastObservedPlayerBlock = currentPlayerBlock;
             movementSinceLastScan = true;
             stableScanCount = 0;
-            // Returning from a stationary backoff must never make moving users wait longer than the
-            // configured base cadence, but movement also must not scan more often than that cadence.
+
             ticksUntilScan = Math.min(ticksUntilScan, baseInterval - 1);
         }
         if (fingerprint != lastScanFingerprint) {
@@ -147,7 +137,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
         int chunkIndex = 0;
         for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
             for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-                // getChunkNow() is explicitly non-loading; never replace this with getChunk(..., true).
+                // getChunkNow() はチャンクを新規ロードしない。getChunk(..., true) へ置き換えてはならない。
                 loadedChunkBuffer[chunkIndex++] = client.level.getChunkSource().getChunkNow(chunkX, chunkZ);
             }
         }
@@ -190,9 +180,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     }
 
     /**
-     * Treats an unloaded horizontal neighbor as unknown rather than as air/non-source.
-     * This keeps the boundary decision inside chunks the client already owns and prevents a
-     * chunk-edge false positive from violating the loaded-chunk-only contract.
+     * 未ロードの水平方向隣接チャンクは空気や非源泉とみなさず、不明として扱う。これによりチャンク境界でもロード済み情報だけで判定できる。
      */
     private boolean hasKnownSourceBoundary(
             Minecraft client,
@@ -365,8 +353,8 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     @Override
     public void resetSession(Minecraft client) {
         resetScanState();
-        // Render-path failures may be transient across world/session setup. Manager-owned runtime
-        // quarantine is process-lifetime and therefore intentionally does not reset here.
+        // 描画経路の失敗はワールドやセッション初期化中だけの一過性である場合がある。Manager側の隔離状態はプロセス全体で保持するため、ここではリセットしない。
+
         renderQuarantined = false;
     }
 

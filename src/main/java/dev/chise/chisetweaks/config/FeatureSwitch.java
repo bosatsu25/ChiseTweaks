@@ -5,13 +5,6 @@ import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 
 import java.util.Objects;
 
-/**
- * Chise-owned persistent feature switch.
- *
- * <p>Feature toggles are intentionally plain booleans now. Opening the settings UI will use a
- * future Chise-owned input surface; individual feature hotkeys are no longer part of the feature
- * model.</p>
- */
 public final class FeatureSwitch extends ChiseBooleanSetting {
     private static final boolean DEFAULT_ENABLED = false;
 

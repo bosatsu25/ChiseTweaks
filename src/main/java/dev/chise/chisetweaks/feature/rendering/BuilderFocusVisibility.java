@@ -17,7 +17,9 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-/** Runtime snapshots for Chise-owned block/entity visibility rules. */
+/**
+ * ブロックとエンティティの可視性判定はランタイム用スナップショットとして保持し、描画中の設定再解釈を避ける。
+ */
 public final class BuilderFocusVisibility {
     private static volatile BlockConfigFingerprint blockFingerprint = BlockConfigFingerprint.empty();
     private static volatile BlockRules blockRules = BlockRules.none();

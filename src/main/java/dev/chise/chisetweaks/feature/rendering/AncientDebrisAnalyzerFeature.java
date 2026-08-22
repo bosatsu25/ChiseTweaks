@@ -27,13 +27,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Nether-only, client-only analyzer for Ancient Debris already present in loaded client chunks.
- *
- * <p>Chunk contents are scanned once when they become relevant: on client chunk load, on one-shot
- * bootstrap when the feature is enabled, or when the player crosses a chunk boundary and an
- * already-loaded chunk enters the configured analyzer neighborhood. Steady-state ticks only filter
- * cached packed positions by player distance and occasionally validate already-known markers. No
- * unloaded chunk is requested or generated.</p>
+ * 古代の残骸アナライザーはクライアント専用・ネザー専用とし、すでにロード済みのクライアントチャンクだけを対象にする。
  */
 public final class AncientDebrisAnalyzerFeature implements TickingFeature, SessionAwareFeature {
     private static final long[] EMPTY_POSITIONS = new long[0];

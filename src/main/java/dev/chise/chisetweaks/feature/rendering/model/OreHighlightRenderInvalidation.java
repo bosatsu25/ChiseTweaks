@@ -6,13 +6,6 @@ import net.minecraft.client.Minecraft;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Coalesces model-highlight setting changes into an on-demand client renderer rebuild.
- *
- * <p>No permanent tick callback is registered. A setting change schedules at most one client-thread
- * refresh. Transient renderer-transition failures are retried only a small bounded number of times
- * and are then abandoned rather than throwing into the client.</p>
- */
 public final class OreHighlightRenderInvalidation {
     static final int MAX_FAILURE_RETRIES = 3;
 
@@ -21,7 +14,9 @@ public final class OreHighlightRenderInvalidation {
 
     private OreHighlightRenderInvalidation() {}
 
-    /** Requests a chunk-geometry refresh without starting a resource reload or permanent polling. */
+    /**
+     * リソース全体の再読み込みや常時ポーリングを開始せず、必要なチャンク形状だけの再構築を要求する。
+     */
     public static void request() {
         FAILURE_RETRIES.set(0);
         schedule();

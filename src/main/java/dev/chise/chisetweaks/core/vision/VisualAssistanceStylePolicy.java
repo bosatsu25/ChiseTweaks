@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.core.vision;
 
 import java.util.Locale;
 
-/** Pure style selection for the retained scan-based visual-assistance overlays. */
 public final class VisualAssistanceStylePolicy {
     private VisualAssistanceStylePolicy() {}
 

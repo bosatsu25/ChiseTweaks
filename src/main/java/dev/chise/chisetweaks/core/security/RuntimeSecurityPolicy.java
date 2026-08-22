@@ -5,7 +5,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-/** Pure, bounded security rules used by local diagnostics and file-facing UI. */
 public final class RuntimeSecurityPolicy {
     public static final int MAX_DIAGNOSTIC_VALUE_CHARS = 160;
     public static final long MAX_CONFIG_BYTES = 256L * 1024L;
