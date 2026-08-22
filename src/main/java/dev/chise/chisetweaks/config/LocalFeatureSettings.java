@@ -1,5 +1,7 @@
 package dev.chise.chisetweaks.config;
 
+import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
+
 import java.util.function.Consumer;
 
 /** Chise-owned UI adapters for retained bounded client-side visibility settings. */
@@ -33,7 +35,6 @@ public final class LocalFeatureSettings {
             "Keep at most one scan-based highlight mode active at a time.",
             "スキャン型ハイライトを同時に1つまでに制限します。");
 
-    // Serialized field/key names retain the historical "Analyzer" wording for config compatibility.
     public static final ChiseIntegerSetting LAVA_ANALYZER_HORIZONTAL_RADIUS = integer(
             "localLavaAnalyzerHorizontalRadius", 5, 1, 8,
             "Lava source highlight range", "溶岩源ハイライト範囲");
@@ -46,6 +47,19 @@ public final class LocalFeatureSettings {
     public static final ChiseIntegerSetting LAVA_ANALYZER_MAX_OVERLAYS = integer(
             "localLavaAnalyzerMaxOverlays", 12, 1, 24,
             "Maximum lava source markers", "溶岩源最大表示数");
+
+    public static final ChiseIntegerSetting ANCIENT_DEBRIS_ANALYZER_RANGE = integer(
+            "localAncientDebrisAnalyzerRange",
+            AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS,
+            AncientDebrisAnalyzerPolicy.MIN_RANGE_BLOCKS,
+            AncientDebrisAnalyzerPolicy.MAX_RANGE_BLOCKS,
+            "Ancient Debris detection range", "古代の残骸の検出範囲");
+    public static final ChiseIntegerSetting ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS = integer(
+            "localAncientDebrisAnalyzerMaxMarkers",
+            AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS,
+            AncientDebrisAnalyzerPolicy.MIN_MAX_MARKERS,
+            AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS,
+            "Maximum Ancient Debris markers", "古代の残骸の最大表示数");
 
     private static boolean initialized;
     private static boolean syncing;
@@ -76,6 +90,8 @@ public final class LocalFeatureSettings {
             LAVA_ANALYZER_VERTICAL_RADIUS.setIntegerValueSilently(c.lavaAnalyzerVerticalRadius);
             LAVA_ANALYZER_INTERVAL.setIntegerValueSilently(c.lavaAnalyzerIntervalTicks);
             LAVA_ANALYZER_MAX_OVERLAYS.setIntegerValueSilently(c.lavaAnalyzerMaxOverlayResults);
+            ANCIENT_DEBRIS_ANALYZER_RANGE.setIntegerValueSilently(c.ancientDebrisAnalyzerRangeBlocks);
+            ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.setIntegerValueSilently(c.ancientDebrisAnalyzerMaxMarkers);
         } finally {
             syncing = false;
         }
@@ -109,6 +125,10 @@ public final class LocalFeatureSettings {
                 c -> c.lavaAnalyzerIntervalTicks = LAVA_ANALYZER_INTERVAL.getIntegerValue()));
         LAVA_ANALYZER_MAX_OVERLAYS.setValueChangeCallback(ignored -> save(
                 c -> c.lavaAnalyzerMaxOverlayResults = LAVA_ANALYZER_MAX_OVERLAYS.getIntegerValue()));
+        ANCIENT_DEBRIS_ANALYZER_RANGE.setValueChangeCallback(ignored -> save(
+                c -> c.ancientDebrisAnalyzerRangeBlocks = ANCIENT_DEBRIS_ANALYZER_RANGE.getIntegerValue()));
+        ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.setValueChangeCallback(ignored -> save(
+                c -> c.ancientDebrisAnalyzerMaxMarkers = ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.getIntegerValue()));
     }
 
     public static void setWorksiteVisibilityModeChangedCallback(Runnable callback) {
