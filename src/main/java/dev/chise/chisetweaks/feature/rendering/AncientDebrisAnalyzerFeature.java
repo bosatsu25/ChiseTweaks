@@ -163,7 +163,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         int baseZ = chunk.getPos().getMinBlockZ();
         for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
             LevelChunkSection section = sections[sectionIndex];
-            if (section == null || section.isEmpty() || !section.maybeHas(state -> state.is(Blocks.ANCIENT_DEBRIS))) {
+            if (section == null || !section.maybeHas(state -> state.is(Blocks.ANCIENT_DEBRIS))) {
                 continue;
             }
             int sectionY = level.getSectionYFromSectionIndex(sectionIndex);
@@ -302,7 +302,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     }
 
     private static long chunkKey(LevelChunk chunk) {
-        return chunk.getPos().toLong();
+        return packChunk(chunk.getPos().x, chunk.getPos().z);
     }
 
     private static long packChunk(int chunkX, int chunkZ) {
