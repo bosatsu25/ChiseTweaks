@@ -6,45 +6,38 @@ import com.google.gson.JsonPrimitive;
 
 import java.math.BigDecimal;
 import java.util.Map;
-import java.util.Set;
 
+/** 現行のデフォルト設定を唯一のスキーマとして、安全な既知フィールドだけを読み込む。 */
 final class LocalFeatureConfigDocumentPolicy {
-    private static final Set<String> BOOLEAN_KEYS = Set.of(
-            "lavaHighlightEnabled",
-            "fireVisibilityEnabled",
-            "oreHighlightAnimationEnabled",
-            "worksiteVisibilityWorldOverlay",
-            "worksiteVisibilityExclusiveMode");
-    private static final Set<String> INTEGER_KEYS = Set.of(
-            "worksiteVisibilityHorizontalRadius",
-            "worksiteVisibilityVerticalRadius",
-            "worksiteVisibilityIntervalTicks",
-            "worksiteVisibilityMaxResults",
-            "worksiteVisibilityMaxOverlayResults",
-            "lavaAnalyzerHorizontalRadius",
-            "lavaAnalyzerVerticalRadius",
-            "lavaAnalyzerIntervalTicks",
-            "lavaAnalyzerMaxOverlayResults",
-            "visualTargetMask",
-            "visualTargetSchemaVersion");
-
     private LocalFeatureConfigDocumentPolicy() {}
 
     static JsonObject overlayKnownValues(JsonObject defaults, JsonObject source) {
+        if (defaults == null) throw new IllegalArgumentException("defaults must not be null");
         JsonObject merged = defaults.deepCopy();
         if (source == null) return merged;
 
         for (Map.Entry<String, JsonElement> entry : source.entrySet()) {
             String key = entry.getKey();
+            JsonElement expected = defaults.get(key);
+            if (expected == null) continue;
+
             JsonElement value = entry.getValue();
-            if (BOOLEAN_KEYS.contains(key)) {
-                if (!isBoolean(value)) throw new IllegalArgumentException("invalid boolean config field: " + key);
-                merged.add(key, value.deepCopy());
-            } else if (INTEGER_KEYS.contains(key)) {
-                if (!isExactInt(value)) throw new IllegalArgumentException("invalid integer config field: " + key);
-                merged.add(key, value.deepCopy());
+            if (!expected.isJsonPrimitive()) {
+                throw new IllegalArgumentException("unsupported config field type: " + key);
             }
-            // 削除済みまたは未知の設定キーは無視し、古い設定ファイルでも安全に縮退させる。
+            JsonPrimitive expectedPrimitive = expected.getAsJsonPrimitive();
+            if (expectedPrimitive.isBoolean()) {
+                if (!isBoolean(value)) {
+                    throw new IllegalArgumentException("invalid boolean config field: " + key);
+                }
+            } else if (expectedPrimitive.isNumber()) {
+                if (!isExactInt(value)) {
+                    throw new IllegalArgumentException("invalid integer config field: " + key);
+                }
+            } else {
+                throw new IllegalArgumentException("unsupported config field type: " + key);
+            }
+            merged.add(key, value.deepCopy());
         }
         return merged;
     }

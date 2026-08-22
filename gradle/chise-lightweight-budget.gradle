@@ -1,16 +1,15 @@
 import java.util.zip.ZipFile
 
-// ChiseTweaksの配布用実行JARに対する容量上限。
-//
-// 実行時性能と機能等価性を優先しつつ、巨大な依存物や配布不要の高解像度素材が
-// 誤って実行JARへ混入することを防ぐ。容量削減のために機能やデバッグ情報は削らない。
+// ChiseTweaksの配布用実行JAR容量を検証する。
+// 400KBは改善目標として可視化し、機能を削らず維持できる回帰上限だけをCIで強制する。
+def CHISE_RUNTIME_JAR_TARGET_BYTES = Long.parseLong(project.property('runtime_jar_target_bytes').toString())
 def CHISE_RUNTIME_JAR_MAX_BYTES = Long.parseLong(project.property('runtime_jar_max_bytes').toString())
 def CHISE_RUNTIME_ICON_PIXELS = Integer.parseInt(project.property('runtime_icon_target_pixels').toString())
 def CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'
 
 tasks.register('verifyRuntimeJarBudget') {
     group = 'verification'
-    description = '実行JARが容量予算未満で、配布用アイコンが規定解像度であることを検証します。'
+    description = '実行JARの容量回帰と配布用アイコン解像度を検証します。'
     dependsOn 'jar'
 
     doLast {
@@ -19,8 +18,9 @@ tasks.register('verifyRuntimeJarBudget') {
         long size = runtimeJar.length()
 
         logger.lifecycle(
-                'Chise lightweight budget: {} bytes (limit < {} bytes)',
+                'Chise lightweight budget: {} bytes (target < {}, hard limit < {})',
                 size,
+                CHISE_RUNTIME_JAR_TARGET_BYTES,
                 CHISE_RUNTIME_JAR_MAX_BYTES)
 
         def archive = new ZipFile(runtimeJar)
@@ -41,18 +41,33 @@ tasks.register('verifyRuntimeJarBudget') {
                         "Runtime JAR icon must be ${CHISE_RUNTIME_ICON_PIXELS}x${CHISE_RUNTIME_ICON_PIXELS}, " +
                         "got ${iconImage.width}x${iconImage.height}")
             }
+
+            if (size >= CHISE_RUNTIME_JAR_TARGET_BYTES) {
+                logger.lifecycle('400KB target not reached yet; largest compressed runtime JAR entries:')
+                archive.entries().toList()
+                        .findAll { entry -> !entry.directory }
+                        .sort { left, right -> Long.compare(right.compressedSize, left.compressedSize) }
+                        .take(12)
+                        .each { entry ->
+                            logger.lifecycle(
+                                    '  {} bytes compressed / {} bytes raw  {}',
+                                    entry.compressedSize,
+                                    entry.size,
+                                    entry.name)
+                        }
+            }
         } finally {
             archive.close()
         }
 
         if (size >= CHISE_RUNTIME_JAR_MAX_BYTES) {
             throw new GradleException(
-                    "Runtime JAR is ${size} bytes; ChiseTweaks must remain below " +
+                    "Runtime JAR is ${size} bytes; hard regression limit is " +
                     "${CHISE_RUNTIME_JAR_MAX_BYTES} bytes.")
         }
 
         logger.lifecycle(
-                'Runtime distribution budget PASS: {} bytes (< {}), icon={}x{}',
+                'Runtime distribution budget PASS: {} bytes (< {} hard limit), icon={}x{}',
                 size,
                 CHISE_RUNTIME_JAR_MAX_BYTES,
                 CHISE_RUNTIME_ICON_PIXELS,

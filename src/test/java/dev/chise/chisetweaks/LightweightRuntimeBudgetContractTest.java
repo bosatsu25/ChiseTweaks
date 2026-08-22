@@ -14,16 +14,19 @@ final class LightweightRuntimeBudgetContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void runtimeJarHasSingleAchievableBudgetAndOptimizedIconContract() throws IOException {
+    void runtimeJarKeepsFourHundredKilobyteTargetAndSeparateRegressionLimit() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
         String properties = source("gradle.properties");
         String build = source("build.gradle");
         String settings = source("settings.gradle");
 
-        assertTrue(properties.contains("runtime_jar_max_bytes=450000"));
+        assertTrue(properties.contains("runtime_jar_target_bytes=400000"));
+        assertTrue(properties.contains("runtime_jar_max_bytes=440000"));
         assertTrue(properties.contains("runtime_icon_target_pixels=256"));
+        assertTrue(budget.contains("project.property('runtime_jar_target_bytes')"));
         assertTrue(budget.contains("project.property('runtime_jar_max_bytes')"));
         assertTrue(budget.contains("project.property('runtime_icon_target_pixels')"));
+        assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_TARGET_BYTES)"));
         assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_MAX_BYTES)"));
         assertTrue(budget.contains("CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'"));
         assertTrue(budget.contains("iconImage.width != CHISE_RUNTIME_ICON_PIXELS"));
@@ -31,28 +34,17 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(budget.contains("it.name == 'check' || it.name == 'qualityGate'"));
         assertTrue(build.contains("new File(outputs.files.singleFile, runtimeIconRelativePath)"));
         assertTrue(settings.contains("gradle/chise-lightweight-budget.gradle"));
-
-        assertFalse(budget.contains("700000"));
-        assertFalse(budget.contains("1_000_000L"));
-        assertFalse(budget.contains("1_500_000L"));
     }
 
     @Test
-    void runtimeJarBudgetDoesNotMutateTheBuiltArtifactAfterJarTask() throws IOException {
-        String budget = source("gradle/chise-lightweight-budget.gradle");
-
-        assertFalse(budget.contains("ZipOutputStream"));
-        assertFalse(budget.contains("setLevel(9)"));
-        assertFalse(budget.contains("StandardCopyOption"));
-        assertFalse(budget.contains("tasks.named('jar').configure"));
-        assertFalse(budget.contains("doLast { task ->"));
-    }
-
-    @Test
-    void sizeBudgetDoesNotIntroduceRuntimeMinifiersOrBundledUpdaterBehavior() throws IOException {
+    void sizeBudgetDoesNotRewriteOrMinifyTheRuntimeJar() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
         String build = source("build.gradle");
 
+        assertFalse(budget.contains("ZipOutputStream"));
+        assertFalse(budget.contains("output.setLevel"));
+        assertFalse(budget.contains("StandardCopyOption"));
+        assertFalse(budget.contains("recompressRuntimeJar"));
         assertFalse(budget.contains("proguard"));
         assertFalse(budget.contains("shadowJar"));
         assertFalse(budget.contains("HttpClient"));

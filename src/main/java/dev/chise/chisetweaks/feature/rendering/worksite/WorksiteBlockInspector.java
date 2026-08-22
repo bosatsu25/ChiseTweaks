@@ -59,13 +59,6 @@ final class WorksiteBlockInspector {
         return selected;
     }
 
-    BlockInspectionPolicy.InspectionPresentation presentation(
-            BlockState state,
-            String blockId,
-            BlockInspectionCategory category) {
-        return BlockInspectionPolicy.inspect(blockId, properties(state), category);
-    }
-
     WorksiteMaterializedInspection materialize(
             BlockState state,
             String blockId,
