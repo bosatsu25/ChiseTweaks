@@ -60,7 +60,7 @@ final class ChiseTweaksSettingsController {
         switch (surface == null ? Surface.MAIN : surface) {
             case MAIN -> addMainRows(rows);
             case HIGHLIGHT_DETAILS -> addHighlightDetailRows(rows);
-            case LAVA_DETAILS -> addLavaDetailRows(rows);
+            case LAVA_DETAILS -> addAnalyzerDetailRows(rows);
         }
         return List.copyOf(rows);
     }
@@ -69,7 +69,8 @@ final class ChiseTweaksSettingsController {
         return switch (surface == null ? Surface.MAIN : surface) {
             case MAIN -> "";
             case HIGHLIGHT_DETAILS -> japanese ? "ハイライト設定" : "Highlight Settings";
-            case LAVA_DETAILS -> japanese ? "溶岩源ハイライト設定" : "Lava Source Highlight Settings";
+            // Internal enum name is retained to avoid needless screen-routing churn; this surface now owns both analyzers.
+            case LAVA_DETAILS -> japanese ? "アナライザー設定" : "Analyzer Settings";
         };
     }
 
@@ -91,7 +92,7 @@ final class ChiseTweaksSettingsController {
         switch (surface == null ? Surface.MAIN : surface) {
             case MAIN -> resetAll();
             case HIGHLIGHT_DETAILS -> resetHighlightDetails();
-            case LAVA_DETAILS -> resetLavaDetails();
+            case LAVA_DETAILS -> resetAnalyzerDetails();
         }
         return true;
     }
@@ -110,9 +111,7 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSwitches.FIRE_VISIBILITY.resetToDefault();
 
         resetHighlightDetails();
-        resetLavaDetails();
-        LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE.resetToDefault();
-        LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.resetToDefault();
+        resetAnalyzerDetails();
 
         BuilderFocusConfig.REFRESH_RENDERER.resetToDefault();
         BuilderFocusConfig.BLOCK_RULE_MODE.resetToDefault();
@@ -157,20 +156,15 @@ final class ChiseTweaksSettingsController {
                 "エンティティフィルター", "Entity Filter",
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
 
-        header(rows, "header.visibilityImprovement", "視認改善", "Visibility Improvements");
-        compactBoolAction(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
-                "溶岩源ハイライト", "Lava Source Highlight",
-                ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS);
+        rows.add(ChiseTweaksSettingRowDefinition.headerAction(
+                "header.visibilityImprovement",
+                japanese ? "視認改善" : "Visibility Improvements",
+                ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS,
+                japanese ? "設定" : "Settings"));
+        compactBool(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
+                "溶岩源ハイライト", "Lava Source Highlight");
         compactBool(rows, "ancientDebrisAnalyzer", LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
                 "古代の残骸アナライザー", "Ancient Debris Analyzer");
-        integer(rows, "ancientDebrisRange", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE,
-                "検出範囲", "Detection Range",
-                "ロード済みチャンク内で古代の残骸を表示する最大距離（最大256ブロック）",
-                "Maximum distance for Ancient Debris markers in already-loaded chunks (up to 256 blocks).", 16);
-        integer(rows, "ancientDebrisMaxMarkers", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS,
-                "最大表示数", "Maximum Markers",
-                "同時に保持する古代の残骸マーカー数",
-                "Maximum retained Ancient Debris markers.", 8);
         compactBool(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
                 "火炎表示を低くする", "Lower Fire Overlay");
     }
@@ -220,20 +214,31 @@ final class ChiseTweaksSettingsController {
         }
     }
 
-    private void addLavaDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        header(rows, "detail.lava.scan", "溶岩源の検出設定", "Lava Source Detection");
+    private void addAnalyzerDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        header(rows, "detail.analyzer.lava", "溶岩源", "Lava Source");
         integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 "検出範囲", "Source Range",
-                "溶岩源を確認する水平範囲", "Horizontal radius used for lava source detection.", 1);
+                "読み込み済みチャンク内で溶岩源を確認する水平範囲",
+                "Horizontal radius used for lava source detection in already-loaded chunks.", 1);
         integer(rows, "lavaVerticalRange", LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
                 "垂直範囲", "Vertical Range",
                 "溶岩源を確認する垂直範囲", "Vertical radius used for lava source detection.", 1);
         integer(rows, "lavaInterval", LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
                 "更新間隔", "Update Interval",
-                "溶岩源を再確認するtick間隔", "Ticks between lava source detection updates.", 5);
+                "動的な溶岩源を再確認するtick間隔", "Ticks between dynamic lava source detection updates.", 5);
         integer(rows, "lavaMaxOverlays", LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
                 "最大表示数", "Maximum Markers",
                 "同時に保持する溶岩源マーカー数", "Maximum retained lava source markers.", 1);
+
+        header(rows, "detail.analyzer.ancientDebris", "古代の残骸", "Ancient Debris");
+        integer(rows, "ancientDebrisRange", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE,
+                "検出範囲", "Detection Range",
+                "ネザーのロード済みチャンク内で古代の残骸を表示する最大距離（最大256ブロック）",
+                "Maximum Ancient Debris marker distance in already-loaded Nether chunks (up to 256 blocks).", 16);
+        integer(rows, "ancientDebrisMaxMarkers", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS,
+                "最大表示数", "Maximum Markers",
+                "同時に保持する古代の残骸マーカー数",
+                "Maximum retained Ancient Debris markers.", 8);
     }
 
     private void resetHighlightDetails() {
@@ -248,11 +253,13 @@ final class ChiseTweaksSettingsController {
         resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
     }
 
-    private void resetLavaDetails() {
+    private void resetAnalyzerDetails() {
         LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS.resetToDefault();
         LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS.resetToDefault();
         LocalFeatureSettings.LAVA_ANALYZER_INTERVAL.resetToDefault();
         LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS.resetToDefault();
+        LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE.resetToDefault();
+        LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.resetToDefault();
     }
 
     private void header(
@@ -349,7 +356,7 @@ final class ChiseTweaksSettingsController {
     private static String englishActionName(ChiseTweaksSettingRowDefinition.Action action) {
         return switch (action) {
             case OPEN_HIGHLIGHT_DETAILS -> "Highlight settings";
-            case OPEN_LAVA_DETAILS -> "Lava source highlight settings";
+            case OPEN_LAVA_DETAILS -> "Analyzer settings";
             case EDIT_BLOCK_FILTER -> "Block targets";
             case EDIT_ENTITY_FILTER -> "Entity targets";
             case EDIT_ORE_COMPAT -> "Modded ore targets";
@@ -359,7 +366,7 @@ final class ChiseTweaksSettingsController {
     private static String englishActionDescription(ChiseTweaksSettingRowDefinition.Action action) {
         return switch (action) {
             case OPEN_HIGHLIGHT_DETAILS -> "Open highlight target and scan settings.";
-            case OPEN_LAVA_DETAILS -> "Open Lava Source Highlight scan settings.";
+            case OPEN_LAVA_DETAILS -> "Open Lava Source and Ancient Debris analyzer settings.";
             case EDIT_BLOCK_FILTER -> "Edit the block include/exclude mode and block IDs.";
             case EDIT_ENTITY_FILTER -> "Edit the entity include/exclude mode and entity IDs.";
             case EDIT_ORE_COMPAT -> "Edit modded block IDs and their Chise highlight styles.";

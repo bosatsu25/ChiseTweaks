@@ -104,6 +104,7 @@ jacoco {
 def qualityGateClasses = [
         'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
+        'dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy*.class',
         'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
         'dev/chise/chisetweaks/core/policy/LavaVisionPalettePolicy*.class',
         'dev/chise/chisetweaks/core/policy/PreReleaseFeaturePolicy*.class',
@@ -152,6 +153,7 @@ pitest {
     targetClasses = [
         'dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy',
         'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
+        'dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy',
         'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
         'dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy',
         'dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy',

@@ -29,6 +29,30 @@ final class AncientDebrisAnalyzerPolicyTest {
     }
 
     @Test
+    void chunkNeighborhoodIsBoundedAndCoversTheRangeEdge() {
+        assertEquals(2, AncientDebrisAnalyzerPolicy.chunkRadiusForRangeBlocks(16));
+        assertEquals(5, AncientDebrisAnalyzerPolicy.chunkRadiusForRangeBlocks(64));
+        assertEquals(17, AncientDebrisAnalyzerPolicy.chunkRadiusForRangeBlocks(256));
+        assertEquals(17, AncientDebrisAnalyzerPolicy.chunkRadiusForRangeBlocks(Integer.MAX_VALUE));
+    }
+
+    @Test
+    void chunkRelevanceUsesSymmetricBoundariesIncludingNegativeCoordinates() {
+        assertTrue(AncientDebrisAnalyzerPolicy.isChunkRelevant(10, -10, 15, -15, 64));
+        assertTrue(AncientDebrisAnalyzerPolicy.isChunkRelevant(-10, 10, -15, 15, 64));
+        assertFalse(AncientDebrisAnalyzerPolicy.isChunkRelevant(10, -10, 16, -15, 64));
+        assertFalse(AncientDebrisAnalyzerPolicy.isChunkRelevant(-10, 10, -15, 16, 64));
+    }
+
+    @Test
+    void chunkRelevanceCannotOverflowAtExtremeCoordinates() {
+        assertFalse(AncientDebrisAnalyzerPolicy.isChunkRelevant(
+                Integer.MIN_VALUE, 0, Integer.MAX_VALUE, 0, 256));
+        assertFalse(AncientDebrisAnalyzerPolicy.isChunkRelevant(
+                0, Integer.MAX_VALUE, 0, Integer.MIN_VALUE, 256));
+    }
+
+    @Test
     void lodGetsFainterAndThinnerAtDistance() {
         int nearAlpha = AncientDebrisAnalyzerPolicy.colorForDistance(8.0) >>> 24;
         int farAlpha = AncientDebrisAnalyzerPolicy.colorForDistance(200.0) >>> 24;
