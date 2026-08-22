@@ -1,6 +1,12 @@
 package dev.chise.chisetweaks.config;
 
+import java.util.Objects;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+
 public final class SimpleBooleanSetting extends ChiseBooleanSetting {
+    private final BooleanSupplier reader;
+    private final Consumer<Boolean> writer;
     private boolean value;
 
     public SimpleBooleanSetting(
@@ -10,17 +16,67 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
             String japaneseName,
             String englishComment,
             String japaneseComment) {
+        this(
+                name,
+                defaultValue,
+                englishName,
+                japaneseName,
+                englishComment,
+                japaneseComment,
+                null,
+                null,
+                false);
+    }
+
+    SimpleBooleanSetting(
+            String name,
+            boolean defaultValue,
+            String englishName,
+            String japaneseName,
+            String englishComment,
+            String japaneseComment,
+            BooleanSupplier reader,
+            Consumer<Boolean> writer) {
+        this(
+                name,
+                defaultValue,
+                englishName,
+                japaneseName,
+                englishComment,
+                japaneseComment,
+                reader,
+                writer,
+                true);
+    }
+
+    private SimpleBooleanSetting(
+            String name,
+            boolean defaultValue,
+            String englishName,
+            String japaneseName,
+            String englishComment,
+            String japaneseComment,
+            BooleanSupplier reader,
+            Consumer<Boolean> writer,
+            boolean bound) {
         super(name, defaultValue, englishName, japaneseName, englishComment, japaneseComment);
         this.value = defaultValue;
+        if (bound) {
+            this.reader = Objects.requireNonNull(reader, "reader");
+            this.writer = Objects.requireNonNull(writer, "writer");
+        } else {
+            this.reader = () -> value;
+            this.writer = next -> value = next;
+        }
     }
 
     @Override
     protected boolean readValue() {
-        return value;
+        return reader.getAsBoolean();
     }
 
     @Override
     protected void writeValue(boolean value) {
-        this.value = value;
+        writer.accept(value);
     }
 }
