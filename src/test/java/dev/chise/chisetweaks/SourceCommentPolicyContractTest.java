@@ -48,8 +48,11 @@ final class SourceCommentPolicyContractTest {
             }
         }
 
-        assertTrue(violations.isEmpty(), () -> "本番ソースのコメント規約違反:\n"
-                + String.join("\n", violations));
+        if (!violations.isEmpty()) {
+            System.err.println("本番ソースのコメント規約違反:");
+            violations.forEach(System.err::println);
+        }
+        assertTrue(violations.isEmpty(), () -> "本番ソースのコメント規約違反: " + violations.size() + "件");
     }
 
     private static String normalizeJavadoc(String body) {
