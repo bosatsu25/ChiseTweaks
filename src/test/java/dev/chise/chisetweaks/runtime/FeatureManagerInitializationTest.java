@@ -46,7 +46,6 @@ final class FeatureManagerInitializationTest {
             implements RuntimeComponent, SessionAwareRuntimeComponent {
         @Override public String getId() { return "failing-session"; }
         @Override public void init() { throw new IllegalStateException("boom"); }
-        @Override public boolean isActive() { return false; }
         @Override public void resetSession(Minecraft client) {}
     }
 }
