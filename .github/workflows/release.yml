@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   release:
-    name: Publish verified main artifact
+    name: Publish verified main runtime JAR
     runs-on: ubuntu-24.04
     timeout-minutes: 15
 
@@ -55,10 +55,10 @@ jobs:
           fi
 
           artifact_name="$(gh api "repos/${GH_REPO}/actions/runs/${run_id}/artifacts" \
-            --jq '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verified-JAR"))) | .name' \
+            --jq '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verification-evidence"))) | .name' \
             | head -n 1)"
           if [[ -z "$artifact_name" ]]; then
-            echo "Release blocked: successful CI run $run_id has no unexpired verified JAR artifact." >&2
+            echo "Release blocked: successful CI run $run_id has no unexpired verification evidence artifact." >&2
             echo 'Re-run CI on this exact main commit to regenerate the release candidate.' >&2
             exit 1
           fi
@@ -66,7 +66,7 @@ jobs:
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
           echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
 
-      - name: Download exact verified CI artifact
+      - name: Download exact verification evidence
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -95,18 +95,22 @@ jobs:
 
           for value in "$version" "$mc_version" "$runtime_jar" "$sources_jar" "$runtime_sha256"; do
             if [[ -z "$value" ]]; then
-              echo 'Verified artifact metadata is incomplete.' >&2
+              echo 'Verification metadata is incomplete.' >&2
               exit 1
             fi
           done
+
+          # Keep the complete audit package in Actions, but never publish it as user-facing assets.
           if [[ ! -f "$runtime_jar" || ! -f "$sources_jar" ]]; then
-            echo 'Verified runtime or sources JAR is missing from the downloaded artifact.' >&2
+            echo 'Verified runtime or sources JAR is missing from Actions evidence.' >&2
             exit 1
           fi
-          if [[ ! -f visual-asset-audit.json ]]; then
-            echo 'Verified visual asset audit evidence is missing from the downloaded artifact.' >&2
-            exit 1
-          fi
+          for evidence in visual-asset-audit.json quality-summary.md artifact-audit.json SHA256SUMS.txt; do
+            if [[ ! -f "$evidence" ]]; then
+              echo "Required QA evidence is missing: $evidence" >&2
+              exit 1
+            fi
+          done
 
           actual_runtime_sha256="$(sha256sum "$runtime_jar" | cut -d' ' -f1)"
           if [[ "$actual_runtime_sha256" != "$runtime_sha256" ]]; then
@@ -159,7 +163,6 @@ jobs:
           echo "fabric_api_constraint=$fabric_api_constraint" >> "$GITHUB_OUTPUT"
           echo "java_constraint=$java_constraint" >> "$GITHUB_OUTPUT"
           echo "runtime_jar=$runtime_jar" >> "$GITHUB_OUTPUT"
-          echo "sources_jar=$sources_jar" >> "$GITHUB_OUTPUT"
           echo "runtime_sha256=$runtime_sha256" >> "$GITHUB_OUTPUT"
           echo "tag=v${version}" >> "$GITHUB_OUTPUT"
           echo "display_version=$display_version" >> "$GITHUB_OUTPUT"
@@ -186,25 +189,31 @@ jobs:
           RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
           RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
           CI_RUN_ID: ${{ steps.metadata.outputs.ci_run_id }}
+          EVIDENCE_ARTIFACT: ${{ steps.ci.outputs.artifact_name }}
         run: |
           cat > release-notes.md <<EOF
+          ## 📦 Install this file / 導入するファイル
+
+          **Prism Launcher の Mods には次の1ファイルだけを追加してください。**
+
+          **\`${RUNTIME_JAR}\`**
+
+          Source code archives and QA evidence files are not Minecraft mods and must not be added to Prism. The complete verification package remains available in GitHub Actions as \`${EVIDENCE_ARTIFACT}\`.
+
           ## ChiseTweaks ${VERSION}
 
-          Verified release for **Minecraft ${MC_VERSION}**, **Fabric Loader ${LOADER_CONSTRAINT}**, **Fabric API ${FABRIC_API_CONSTRAINT}** and **Java ${JAVA_CONSTRAINT}**.
+          Stable release for **Minecraft ${MC_VERSION}**, **Fabric Loader ${LOADER_CONSTRAINT}**, **Fabric API ${FABRIC_API_CONSTRAINT}** and **Java ${JAVA_CONSTRAINT}**.
 
-          This release reuses the exact artifact produced by successful main-branch CI run **${CI_RUN_ID}** for commit \`${GITHUB_SHA}\`.
-          CI is not executed a second time during release. A manual Prism gameplay smoke test is required before publishing.
+          This release reuses the exact artifact produced by successful main-branch CI run **${CI_RUN_ID}** for commit \`${GITHUB_SHA}\` after manual Prism gameplay smoke testing.
 
           - Minecraft: \`${MC_VERSION}\`
           - Fabric Loader: \`${LOADER_CONSTRAINT}\`
           - Fabric API: \`${FABRIC_API_CONSTRAINT}\`
           - Java: \`${JAVA_CONSTRAINT}\`
-          - Runtime JAR: \`${RUNTIME_JAR}\`
           - SHA-256: \`${RUNTIME_SHA256}\`
           - Visual asset audit: \`PASS\`
           - Server installation required: \`false\`
-
-          The sources JAR, checksums, artifact audit, visual asset audit and quality summary are attached.
+          - User-facing release assets: \`1 runtime JAR\`
           EOF
 
       - name: Create version tag and GitHub Release
@@ -215,15 +224,26 @@ jobs:
           DISPLAY_VERSION: ${{ steps.metadata.outputs.display_version }}
           MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
           RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
-          SOURCES_JAR: ${{ steps.metadata.outputs.sources_jar }}
+          RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
         run: |
           gh release create "$TAG" \
             "release/$RUNTIME_JAR" \
-            "release/$SOURCES_JAR" \
-            "release/SHA256SUMS.txt" \
-            "release/artifact-audit.json" \
-            "release/visual-asset-audit.json" \
-            "release/quality-summary.md" \
             --target "$GITHUB_SHA" \
             --title "ChiseTweaks ${DISPLAY_VERSION} — Minecraft ${MC_VERSION}" \
             --notes-file release-notes.md
+
+          gh api "repos/${GH_REPO}/releases/tags/${TAG}" > /tmp/official-release.json
+          asset_count="$(jq '[.assets[]?] | length' /tmp/official-release.json)"
+          if [[ "$asset_count" != '1' ]]; then
+            echo "Official release must expose exactly one user asset, found ${asset_count}." >&2
+            exit 1
+          fi
+          if ! jq -e --arg name "$RUNTIME_JAR" '.assets[]? | select(.name == $name)' /tmp/official-release.json >/dev/null; then
+            echo "Official release is missing runtime JAR '$RUNTIME_JAR'." >&2
+            exit 1
+          fi
+          remote_runtime_digest="$(jq -r --arg name "$RUNTIME_JAR" '.assets[]? | select(.name == $name) | .digest // empty' /tmp/official-release.json)"
+          if [[ "$remote_runtime_digest" != "sha256:${RUNTIME_SHA256}" ]]; then
+            echo "Published runtime JAR digest mismatch: '$remote_runtime_digest'." >&2
+            exit 1
+          fi
