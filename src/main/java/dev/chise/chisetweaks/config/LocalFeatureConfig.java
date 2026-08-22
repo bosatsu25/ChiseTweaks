@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
+import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
@@ -22,6 +23,7 @@ public final class LocalFeatureConfig {
     private static final String CONFIG_FILE_NAME = "chisetweaks-visual.json";
 
     public boolean lavaHighlightEnabled = false;
+    public boolean ancientDebrisAnalyzerEnabled = false;
     public boolean fireVisibilityEnabled = false;
     public boolean oreHighlightAnimationEnabled = false;
 
@@ -39,6 +41,10 @@ public final class LocalFeatureConfig {
     public int lavaAnalyzerVerticalRadius = 3;
     public int lavaAnalyzerIntervalTicks = 10;
     public int lavaAnalyzerMaxOverlayResults = 12;
+
+    /** Ancient Debris Analyzer scans loaded chunks once and only filters cached positions at runtime. */
+    public int ancientDebrisAnalyzerRangeBlocks = AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS;
+    public int ancientDebrisAnalyzerMaxMarkers = AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS;
 
     public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
     public int visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
@@ -82,8 +88,6 @@ public final class LocalFeatureConfig {
             LocalFeatureConfig loaded = GSON.fromJson(merged, LocalFeatureConfig.class);
             if (loaded == null) return false;
 
-            // Before the dedicated lava fields existed, Lava Analyzer reused the worksite scan budget.
-            // Seed the new fields from those stored values once so existing user tuning is preserved.
             if (!source.has("lavaAnalyzerHorizontalRadius")) {
                 loaded.lavaAnalyzerHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
             }
@@ -130,6 +134,7 @@ public final class LocalFeatureConfig {
 
     void resetToDefaults() {
         lavaHighlightEnabled = false;
+        ancientDebrisAnalyzerEnabled = false;
         fireVisibilityEnabled = false;
         oreHighlightAnimationEnabled = false;
         worksiteVisibilityHorizontalRadius = 5;
@@ -143,6 +148,8 @@ public final class LocalFeatureConfig {
         lavaAnalyzerVerticalRadius = 3;
         lavaAnalyzerIntervalTicks = 10;
         lavaAnalyzerMaxOverlayResults = 12;
+        ancientDebrisAnalyzerRangeBlocks = AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS;
+        ancientDebrisAnalyzerMaxMarkers = AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS;
         visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
     }
@@ -150,6 +157,9 @@ public final class LocalFeatureConfig {
     void sanitize() {
         if (!PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
             lavaHighlightEnabled = false;
+        }
+        if (!PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
+            ancientDebrisAnalyzerEnabled = false;
         }
         if (!PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.FIRE_VISIBILITY)) {
             fireVisibilityEnabled = false;
@@ -172,12 +182,17 @@ public final class LocalFeatureConfig {
                 WorksiteVisibilityBudgetPolicy.clampIntervalTicks(lavaAnalyzerIntervalTicks);
         lavaAnalyzerMaxOverlayResults =
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(lavaAnalyzerMaxOverlayResults);
+        ancientDebrisAnalyzerRangeBlocks =
+                AncientDebrisAnalyzerPolicy.clampRangeBlocks(ancientDebrisAnalyzerRangeBlocks);
+        ancientDebrisAnalyzerMaxMarkers =
+                AncientDebrisAnalyzerPolicy.clampMaxMarkers(ancientDebrisAnalyzerMaxMarkers);
         visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
     }
 
     private void copyFrom(LocalFeatureConfig loaded) {
         lavaHighlightEnabled = loaded.lavaHighlightEnabled;
+        ancientDebrisAnalyzerEnabled = loaded.ancientDebrisAnalyzerEnabled;
         fireVisibilityEnabled = loaded.fireVisibilityEnabled;
         oreHighlightAnimationEnabled = loaded.oreHighlightAnimationEnabled;
         worksiteVisibilityHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
@@ -191,6 +206,8 @@ public final class LocalFeatureConfig {
         lavaAnalyzerVerticalRadius = loaded.lavaAnalyzerVerticalRadius;
         lavaAnalyzerIntervalTicks = loaded.lavaAnalyzerIntervalTicks;
         lavaAnalyzerMaxOverlayResults = loaded.lavaAnalyzerMaxOverlayResults;
+        ancientDebrisAnalyzerRangeBlocks = loaded.ancientDebrisAnalyzerRangeBlocks;
+        ancientDebrisAnalyzerMaxMarkers = loaded.ancientDebrisAnalyzerMaxMarkers;
         visualTargetMask = loaded.visualTargetMask;
         visualTargetSchemaVersion = loaded.visualTargetSchemaVersion;
     }
