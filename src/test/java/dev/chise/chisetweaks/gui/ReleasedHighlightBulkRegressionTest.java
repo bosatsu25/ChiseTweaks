@@ -20,7 +20,7 @@ final class ReleasedHighlightBulkRegressionTest {
         FeatureSwitches.NETHER_PALETTE.setBooleanValueSilently(false);
         FeatureSwitches.FINE_THREAD_TRACE.setBooleanValueSilently(false);
         FeatureSwitches.HIDDEN_SURFACE_TRACE.setBooleanValueSilently(false);
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
 
         assertTrue(controller.shouldTurnHighlightBulkOn());
         controller.toggleHighlightBulk();
