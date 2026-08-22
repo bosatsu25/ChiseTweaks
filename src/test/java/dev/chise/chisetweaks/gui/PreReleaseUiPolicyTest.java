@@ -15,7 +15,7 @@ final class PreReleaseUiPolicyTest {
 
         for (ChiseTweaksSettingRowDefinition row : rows) {
             boolean expected = switch (row.id()) {
-                case "header.highlight", "header.visualFilter", "header.visibilityImprovement",
+                case "header.highlight", "header.visualFilter", "header.analyzer", "header.visibilityImprovement",
                         "materials", "kelp", "glass", "lava", "ancientDebrisAnalyzer" -> true;
                 default -> false;
             };
@@ -49,6 +49,26 @@ final class PreReleaseUiPolicyTest {
         assertTrue(PreReleaseUiPolicy.isRowInteractive(
                 ChiseTweaksSettingsController.Surface.MAIN,
                 ancient));
+    }
+
+    @Test
+    void analyzerActionLivesOnAnalyzerHeaderInsteadOfGeneralVisibilityHeader() {
+        var controller = new ChiseTweaksSettingsController(true);
+        ChiseTweaksSettingRowDefinition analyzer = controller.rows().stream()
+                .filter(row -> "header.analyzer".equals(row.id()))
+                .findFirst()
+                .orElseThrow();
+        ChiseTweaksSettingRowDefinition visibility = controller.rows().stream()
+                .filter(row -> "header.visibilityImprovement".equals(row.id()))
+                .findFirst()
+                .orElseThrow();
+
+        assertTrue(PreReleaseUiPolicy.isRowInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN, analyzer));
+        assertTrue(PreReleaseUiPolicy.isRowInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN, visibility));
+        assertTrue(analyzer.action() == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS);
+        assertTrue(visibility.action() == null);
     }
 
     @Test
