@@ -51,8 +51,9 @@ final class PerformanceArchitectureContractTest {
     }
 
     @Test
-    void ciUsesOneGradleGateAndReleaseReusesExactCiEvidence() throws IOException {
+    void ciAndOfficialReleaseUseTheSameSingleGradleQualityGateWithoutArtifactHandoff() throws IOException {
         String build = Files.readString(ROOT.resolve("build.gradle"));
+        String ci = Files.readString(ROOT.resolve(".github/workflows/ci.yml"));
         String verify = Files.readString(ROOT.resolve(".github/workflows/verify-build.yml"));
         String release = Files.readString(ROOT.resolve(".github/workflows/release.yml"));
 
@@ -61,24 +62,32 @@ final class PerformanceArchitectureContractTest {
         assertFalse(build.contains("tasks.register('performanceGate', Test)"));
 
         assertTrue(verify.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
-        assertFalse(verify.contains("clean qualityGate build"));
-        assertFalse(verify.contains("Wait before retrying"));
+        assertFalse(verify.contains("actions/upload-artifact"));
+        assertFalse(verify.contains("gh release"));
+        assertFalse(ci.contains("gh release"));
+        assertFalse(ci.contains("git tag"));
 
-        assertFalse(release.contains("uses: ./.github/workflows/verify-build.yml"));
-        assertTrue(release.contains("--commit \"$GITHUB_SHA\""));
-        assertTrue(release.contains("gh run download \"$RUN_ID\""));
+        assertTrue(release.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
+        assertTrue(release.contains("python scripts/artifact_audit.py"));
+        assertTrue(release.contains("python scripts/visual_asset_audit.py"));
+        assertTrue(release.contains("python scripts/release_residue_audit.py"));
+        assertFalse(release.contains("gh run download"));
+        assertFalse(release.contains("actions/download-artifact"));
+        assertFalse(release.contains("verification-evidence"));
     }
 
     @Test
-    void releaseDependencyNotesComeFromTheVerifiedRuntimeJar() throws IOException {
+    void releaseDependencyNotesComeFromTheRuntimeJarBuiltByTheReleaseGate() throws IOException {
         String release = Files.readString(ROOT.resolve(".github/workflows/release.yml"));
 
-        assertTrue(release.contains("unzip -p \"$runtime_jar\" fabric.mod.json"));
+        assertTrue(release.contains("runtime=\"build/libs/$RUNTIME_JAR\""));
+        assertTrue(release.contains("unzip -p \"$runtime\" fabric.mod.json"));
         assertTrue(release.contains(".depends.fabricloader"));
         assertTrue(release.contains(".depends[\"fabric-api\"]"));
         assertTrue(release.contains(".depends.java"));
         assertTrue(release.contains("serverInstallationRequired"));
         assertTrue(release.contains("server_required\" != 'false'"));
+        assertTrue(release.contains("\"build/libs/$RUNTIME_JAR\""));
         assertFalse(release.contains("Fabric Loader 0.19.3"));
         assertFalse(release.contains("- Java: \\`25\\`"));
     }

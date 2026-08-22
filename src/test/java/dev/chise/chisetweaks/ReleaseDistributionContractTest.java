@@ -5,71 +5,104 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Guards the separation between internal QA evidence and the one JAR users install in Prism. */
+/** Guards the separation between CI verification, SemVer policy and the one JAR users install. */
 final class ReleaseDistributionContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void verificationEvidenceStaysCompleteInsideActionsArtifact() throws IOException {
+    void normalCiVerifiesOnlyAndNeverCreatesTagsOrReleases() throws IOException {
+        String ci = source(".github/workflows/ci.yml");
+
+        assertTrue(ci.contains("uses: ./.github/workflows/verify-build.yml"));
+        assertTrue(ci.contains("cancel-in-progress: true"));
+        assertFalse(ci.contains("contents: write"));
+        assertFalse(ci.contains("gh release"));
+        assertFalse(ci.contains("git tag"));
+        assertFalse(ci.contains("verified-v"));
+        assertFalse(ci.contains("Publish verified runtime JAR"));
+    }
+
+    @Test
+    void verificationDoesNotUploadZipArchivesOrPublishQaEvidence() throws IOException {
         String verify = source(".github/workflows/verify-build.yml");
 
-        assertTrue(verify.contains("-verification-evidence"));
-        assertTrue(verify.contains("Stage verification evidence"));
-        assertTrue(verify.contains("outputs.runtime_jar"));
-        assertTrue(verify.contains("outputs.sources_jar"));
-        assertTrue(verify.contains("SHA256SUMS.txt"));
-        assertTrue(verify.contains("artifact-audit.json"));
-        assertTrue(verify.contains("visual-asset-audit.json"));
-        assertTrue(verify.contains("quality-summary.md"));
-        assertTrue(verify.contains("actions/upload-artifact@v7.0.1"));
-        assertFalse(verify.contains("-verified-JAR"));
+        assertTrue(verify.contains("python scripts/version_policy.py"));
+        assertTrue(verify.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
+        assertTrue(verify.contains("python scripts/artifact_audit.py"));
+        assertTrue(verify.contains("python scripts/visual_asset_audit.py"));
+        assertTrue(verify.contains("python scripts/release_residue_audit.py"));
+        assertFalse(verify.contains("actions/upload-artifact"));
+        assertFalse(verify.contains("verification-evidence"));
+        assertFalse(verify.contains("build/verified"));
     }
 
     @Test
-    void verifiedPreReleaseExposesExactlyOneRuntimeJar() throws IOException {
-        String ci = source(".github/workflows/ci.yml");
-
-        assertTrue(ci.contains("endswith(\"-verification-evidence\")"));
-        assertTrue(ci.contains("ensure_runtime_asset"));
-        assertTrue(ci.contains("local file=\"release/$RUNTIME_JAR\""));
-        assertTrue(ci.contains("asset_count=\"$(jq '[.assets[]?] | length'"));
-        assertTrue(ci.contains("Verified release must expose exactly one user asset"));
-        assertFalse(ci.contains("ensure_asset \"release/$SOURCES_JAR\""));
-        assertFalse(ci.contains("ensure_asset 'release/SHA256SUMS.txt'"));
-        assertFalse(ci.contains("ensure_asset 'release/artifact-audit.json'"));
-        assertFalse(ci.contains("ensure_asset 'release/visual-asset-audit.json'"));
-        assertFalse(ci.contains("ensure_asset 'release/quality-summary.md'"));
-    }
-
-    @Test
-    void officialReleaseExposesExactlyOneRuntimeJar() throws IOException {
+    void officialReleaseRunsItsOwnGateAndUploadsExactlyOneRuntimeJar() throws IOException {
         String release = source(".github/workflows/release.yml");
 
-        assertTrue(release.contains("endswith(\"-verification-evidence\")"));
+        assertTrue(release.contains("release_type:"));
+        assertTrue(release.contains("type: choice"));
+        assertTrue(release.contains("- patch"));
+        assertTrue(release.contains("- minor"));
+        assertTrue(release.contains("- major"));
+        assertTrue(release.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
+        assertTrue(release.contains("python scripts/version_policy.py"));
         assertTrue(release.contains("gh release create \"$TAG\""));
-        assertTrue(release.contains("\"release/$RUNTIME_JAR\""));
-        assertTrue(release.contains("Official release must expose exactly one user asset"));
-        assertFalse(release.contains("\"release/$SOURCES_JAR\""));
-        assertFalse(release.contains("\"release/SHA256SUMS.txt\""));
-        assertFalse(release.contains("\"release/artifact-audit.json\""));
-        assertFalse(release.contains("\"release/visual-asset-audit.json\""));
-        assertFalse(release.contains("\"release/quality-summary.md\""));
+        assertTrue(release.contains("\"build/libs/$RUNTIME_JAR\""));
+        assertTrue(release.contains("Official release must expose exactly one uploaded mod asset"));
+        assertFalse(release.contains("actions/upload-artifact"));
+        assertFalse(release.contains("\"build/libs/$SOURCES_JAR\""));
+        assertFalse(release.contains("\"build/ci/SHA256SUMS.txt\""));
+        assertFalse(release.contains("\"build/ci/artifact-audit.json\""));
+        assertFalse(release.contains("\"build/ci/visual-asset-audit.json\""));
+        assertFalse(release.contains("\"build/ci/quality-summary.md\""));
     }
 
     @Test
-    void bothReleaseSurfacesTellPrismUsersToInstallOnlyTheRuntimeJar() throws IOException {
-        String ci = source(".github/workflows/ci.yml");
+    void legacyPerCommitVerifiedTagsAreCleanupOnlyNotCreationTargets() throws IOException {
         String release = source(".github/workflows/release.yml");
 
-        for (String workflow : new String[] {ci, release}) {
-            assertTrue(workflow.contains("Install this file / 導入するファイル"));
-            assertTrue(workflow.contains("Prism Launcher の Mods には次の1ファイルだけを追加してください"));
-            assertTrue(workflow.contains("RUNTIME_JAR"));
+        assertTrue(release.contains("git tag --list 'verified-v*'"));
+        assertTrue(release.contains("gh release delete \"$legacy_tag\""));
+        assertTrue(release.contains("git push origin \":refs/tags/$legacy_tag\""));
+        assertFalse(release.contains("tag=\"verified-v"));
+    }
+
+    @Test
+    void versionFormatKeepsSemverCoreAndMinecraftMetadataTogether() throws IOException {
+        Properties properties = new Properties();
+        try (var reader = Files.newBufferedReader(ROOT.resolve("gradle.properties"))) {
+            properties.load(reader);
         }
+        String version = properties.getProperty("mod_version");
+        String minecraft = properties.getProperty("minecraft_version");
+        assertTrue(version.matches("(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\+mc"
+                + Pattern.quote(minecraft)));
+
+        String policy = source("VERSIONING.md");
+        String script = source("scripts/version_policy.py");
+        assertTrue(policy.contains("PATCH"));
+        assertTrue(policy.contains("MINOR"));
+        assertTrue(policy.contains("MAJOR"));
+        assertTrue(policy.contains("Every official release must increase the SemVer core"));
+        assertTrue(script.contains("expected_bump"));
+        assertTrue(script.contains("--release-type"));
+        assertTrue(script.contains("current_minecraft != minecraft"));
+    }
+
+    @Test
+    void releaseNotesTellPrismUsersToInstallOnlyRuntimeJar() throws IOException {
+        String release = source(".github/workflows/release.yml");
+
+        assertTrue(release.contains("Install this file / 導入するファイル"));
+        assertTrue(release.contains("Prism Launcher の Mods には次の1ファイルだけを追加してください"));
+        assertTrue(release.contains("Uploaded mod assets: \\`1 runtime JAR\\`"));
     }
 
     private static String source(String relativePath) throws IOException {
