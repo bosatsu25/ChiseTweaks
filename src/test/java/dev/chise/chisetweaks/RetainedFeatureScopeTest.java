@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class RetainedFeatureScopeTest {
     @Test
-    void canonicalScopeContainsExactlyTheTenRetainedFeatures() {
+    void canonicalScopeContainsExactlyTheElevenRetainedFeatures() {
         assertEquals(List.of(
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
@@ -30,18 +30,19 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.MATERIAL_HIGHLIGHTS,
                 FeatureDefinition.NETHER_PALETTE,
                 FeatureDefinition.KELP_HIGHLIGHT,
+                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
                 FeatureDefinition.FIRE_VISIBILITY,
                 FeatureDefinition.LAVA_HIGHLIGHT), FeatureDefinition.VALUES);
-        assertEquals(10, FeatureDefinition.VALUES.size());
+        assertEquals(11, FeatureDefinition.VALUES.size());
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.area() == FeatureArea.RENDERING));
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.dependency().isEmpty()));
     }
 
     @Test
-    void qualitySummaryAlsoReportsTenRetainedFeatures() throws IOException {
+    void qualitySummaryAlsoReportsElevenRetainedFeatures() throws IOException {
         String summaryScript = Files.readString(Path.of("scripts/quality_summary.py"));
-        assertTrue(summaryScript.contains("ten retained features"));
-        assertFalse(summaryScript.contains("nine retained features"));
+        assertTrue(summaryScript.contains("eleven retained features"));
+        assertFalse(summaryScript.contains("ten retained features"));
     }
 
     @Test
@@ -64,12 +65,13 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void modelHighlightsSceneFiltersFireAndLavaStayOutsideWorksiteModeCoupling() {
+    void modelHighlightsSceneFiltersFireLavaAndAncientDebrisStayOutsideWorksiteModeCoupling() {
         assertFalse(FeatureDefinition.BUILDER_FOCUS_BLOCKS.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.BUILDER_FOCUS_ENTITIES.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.GLASS_INSPECTION.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.MATERIAL_HIGHLIGHTS.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.KELP_HIGHLIGHT.isWorksiteVisibilityMode());
+        assertFalse(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.FIRE_VISIBILITY.isWorksiteVisibilityMode());
         assertFalse(FeatureDefinition.LAVA_HIGHLIGHT.isWorksiteVisibilityMode());
         assertEquals(null, FeatureDefinition.BUILDER_FOCUS_BLOCKS.inspectionCategory());
@@ -77,6 +79,7 @@ final class RetainedFeatureScopeTest {
         assertEquals(null, FeatureDefinition.GLASS_INSPECTION.inspectionCategory());
         assertEquals(null, FeatureDefinition.MATERIAL_HIGHLIGHTS.inspectionCategory());
         assertEquals(null, FeatureDefinition.KELP_HIGHLIGHT.inspectionCategory());
+        assertEquals(null, FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.inspectionCategory());
         assertEquals(null, FeatureDefinition.FIRE_VISIBILITY.inspectionCategory());
         assertEquals(null, FeatureDefinition.LAVA_HIGHLIGHT.inspectionCategory());
     }
@@ -116,6 +119,7 @@ final class RetainedFeatureScopeTest {
         assertEquals("Ore Highlights", FeatureDefinition.MATERIAL_HIGHLIGHTS.englishName());
         assertEquals("Nether Palette", FeatureDefinition.NETHER_PALETTE.englishName());
         assertEquals("Kelp Highlight", FeatureDefinition.KELP_HIGHLIGHT.englishName());
+        assertEquals("Ancient Debris Analyzer", FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.englishName());
         assertEquals("Fire Visibility", FeatureDefinition.FIRE_VISIBILITY.englishName());
         assertEquals("Lava Source Highlight", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
     }

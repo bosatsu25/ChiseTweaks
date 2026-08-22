@@ -80,6 +80,15 @@ public enum FeatureDefinition {
             FeatureHelpLevel.DIAGNOSTIC,
             null,
             null),
+    ANCIENT_DEBRIS_ANALYZER(
+            "ancient_debris_analyzer",
+            FeatureArea.RENDERING,
+            "config.name.localancientdebrisanalyzer",
+            "Ancient Debris Analyzer",
+            "",
+            FeatureHelpLevel.DIAGNOSTIC,
+            null,
+            null),
     FIRE_VISIBILITY(
             "fire_visibility",
             FeatureArea.RENDERING,

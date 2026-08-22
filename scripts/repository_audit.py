@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-fast repository audit for the retained ten-feature ChiseTweaks scope."""
+"""Fail-fast repository audit for the retained eleven-feature ChiseTweaks scope."""
 from __future__ import annotations
 
 import json
@@ -19,6 +19,7 @@ RETAINED_ENGLISH_NAMES = (
     "Ore Highlights",
     "Nether Palette",
     "Kelp Highlight",
+    "Ancient Debris Analyzer",
     "Fire Visibility",
     "Lava Source Highlight",
 )
@@ -174,8 +175,8 @@ def audit() -> list[str]:
         for name in RETAINED_ENGLISH_NAMES:
             if f'"{name}"' not in feature_source:
                 fail(f"FeatureDefinition is missing retained name: {name}", failures)
-        if feature_source.count("FeatureArea.RENDERING") != 10:
-            fail("FeatureDefinition must contain exactly ten retained rendering definitions", failures)
+        if feature_source.count("FeatureArea.RENDERING") != 11:
+            fail("FeatureDefinition must contain exactly eleven retained rendering definitions", failures)
 
     fabric_path = ROOT / "src/main/resources/fabric.mod.json"
     if fabric_path.is_file():
@@ -236,7 +237,7 @@ def main() -> int:
             print(f"- {failure}", file=sys.stderr)
         return 1
     print("REPOSITORY AUDIT: PASS")
-    print("scope=10 retained rendering features")
+    print("scope=11 retained rendering features")
     print("client_only=true")
     print("removed_feature_residue=false")
     print("local_machine_paths=false")

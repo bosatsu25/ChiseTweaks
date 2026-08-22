@@ -9,12 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PreReleaseFeaturePolicyTest {
     @Test
-    void oreKelpGlassAndLavaSourceHighlightsAreAvailableInCurrentPrerelease() {
+    void releasedVisualFeaturesAreAvailableInCurrentPrerelease() {
         for (FeatureDefinition definition : FeatureDefinition.VALUES) {
             if (definition == FeatureDefinition.MATERIAL_HIGHLIGHTS
                     || definition == FeatureDefinition.KELP_HIGHLIGHT
                     || definition == FeatureDefinition.GLASS_INSPECTION
-                    || definition == FeatureDefinition.LAVA_HIGHLIGHT) {
+                    || definition == FeatureDefinition.LAVA_HIGHLIGHT
+                    || definition == FeatureDefinition.ANCIENT_DEBRIS_ANALYZER) {
                 assertTrue(PreReleaseFeaturePolicy.isAvailable(definition), definition.id());
             } else {
                 assertFalse(PreReleaseFeaturePolicy.isAvailable(definition), definition.id());

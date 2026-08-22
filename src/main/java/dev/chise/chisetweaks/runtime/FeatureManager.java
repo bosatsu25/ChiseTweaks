@@ -7,6 +7,7 @@ import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
 import dev.chise.chisetweaks.feature.Feature;
 import dev.chise.chisetweaks.feature.SessionAwareFeature;
 import dev.chise.chisetweaks.feature.TickingFeature;
+import dev.chise.chisetweaks.feature.rendering.AncientDebrisAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.LavaHighlightFeature;
 import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -46,6 +47,9 @@ public final class FeatureManager {
 
         if (PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
             registerFeature(new LavaHighlightFeature());
+        }
+        if (PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
+            registerFeature(new AncientDebrisAnalyzerFeature());
         }
         if (hasAvailableWorksiteVisibilityFeature()) {
             registerRuntimeComponent(new WorksiteVisibilityEngine());
