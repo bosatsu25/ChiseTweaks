@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Isolates optional initialization phases. It never catches VM-fatal errors,
- * but a normal runtime/linkage failure disables only the affected phase.
+ * 任意の初期化フェーズを個別に隔離する。
+ * VM致命障害は捕捉せず、通常の実行時障害やリンク障害だけを対象フェーズ内に封じ込める。
  */
 public final class SafeStartup {
     private static final List<String> FAILURES = new ArrayList<>(StartupPhasePolicy.MAX_RECORDED_FAILURES);
