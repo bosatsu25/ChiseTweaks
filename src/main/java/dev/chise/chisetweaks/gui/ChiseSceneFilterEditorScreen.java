@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
- 
 public final class ChiseSceneFilterEditorScreen extends Screen {
     private static final int OUTER_MARGIN = 12;
     private static final int ROW_HEIGHT = 24;

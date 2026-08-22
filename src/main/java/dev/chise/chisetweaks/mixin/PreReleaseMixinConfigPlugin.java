@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
- 
 public final class PreReleaseMixinConfigPlugin implements IMixinConfigPlugin {
     private static final Map<String, FeatureDefinition> MIXIN_FEATURES = Map.of(
             "dev.chise.chisetweaks.mixin.rendering.BuilderFocusBlockMixin",

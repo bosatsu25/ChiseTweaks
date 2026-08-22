@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
 
- 
 final class LocalFeatureConfigDocumentPolicy {
     private static final Set<String> BOOLEAN_KEYS = Set.of(
             "lavaHighlightEnabled",

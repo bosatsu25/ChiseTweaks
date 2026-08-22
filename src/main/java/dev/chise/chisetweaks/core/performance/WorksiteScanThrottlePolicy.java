@@ -1,12 +1,5 @@
 package dev.chise.chisetweaks.core.performance;
 
- 
-
-
-
-
-
-
 public final class WorksiteScanThrottlePolicy {
     public static final int IDLE_INTERVAL_MULTIPLIER = 4;
     public static final int MIN_IDLE_INTERVAL_TICKS = 20;

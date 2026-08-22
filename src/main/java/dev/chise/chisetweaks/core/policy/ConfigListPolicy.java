@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
- 
 public final class ConfigListPolicy {
     public static final int MAX_ENTRIES = 512;
     public static final int MAX_ENTRY_CHARS = 256;

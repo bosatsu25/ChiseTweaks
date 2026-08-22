@@ -5,17 +5,6 @@ import net.minecraft.client.Minecraft;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
- 
-
-
-
-
-
-
-
-
-
-
 public final class OreHighlightModelReload {
     private static final AtomicBoolean REQUESTED = new AtomicBoolean();
     private static final AtomicBoolean PENDING = new AtomicBoolean();
@@ -23,8 +12,7 @@ public final class OreHighlightModelReload {
     private OreHighlightModelReload() {}
 
     public static void request() {
-        
-        
+
         if (!ChiseVisualModelPlugin.isModelPipelineReady()) return;
         if (!REQUESTED.compareAndSet(false, true)) {
             PENDING.set(true);

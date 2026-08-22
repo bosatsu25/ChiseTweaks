@@ -5,7 +5,6 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
- 
 public final class FeatureHelpCatalog {
     private static final List<FeatureHelpEntry> ENTRIES = FeatureDefinition.VALUES.stream()
             .map(definition -> new FeatureHelpEntry(

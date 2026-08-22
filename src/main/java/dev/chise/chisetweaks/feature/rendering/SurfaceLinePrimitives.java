@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.core.BlockPos;
 
- 
 final class SurfaceLinePrimitives {
     static final float INSET = 0.018f;
 

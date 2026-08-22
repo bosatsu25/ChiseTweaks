@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.core.performance;
 
- 
 public final class WorksiteCandidateRetentionPolicy {
     private WorksiteCandidateRetentionPolicy() {}
 

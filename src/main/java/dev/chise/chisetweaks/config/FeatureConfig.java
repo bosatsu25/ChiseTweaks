@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
- 
 public final class FeatureConfig {
     private static final String CONFIG_FILE_NAME = ChiseTweaksMetadata.MOD_ID + ".json";
     private static boolean sanitizingStringLists;

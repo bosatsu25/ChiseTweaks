@@ -5,13 +5,6 @@ import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 
 import java.util.Objects;
 
- 
-
-
-
-
-
-
 public final class FeatureSwitch extends ChiseBooleanSetting {
     private static final boolean DEFAULT_ENABLED = false;
 

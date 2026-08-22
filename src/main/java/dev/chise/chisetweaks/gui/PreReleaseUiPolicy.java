@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.gui;
 
- 
 final class PreReleaseUiPolicy {
     private PreReleaseUiPolicy() {}
 

@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.gui;
 
- 
 public final class ChiseOreCompatibilityLayout {
     private static final int MAX_PANEL_WIDTH = 760;
     private static final int MIN_STANDARD_PANEL_WIDTH = 342;

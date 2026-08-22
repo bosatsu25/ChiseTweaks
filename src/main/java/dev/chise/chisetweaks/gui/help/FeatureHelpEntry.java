@@ -5,7 +5,6 @@ import dev.chise.chisetweaks.core.definition.FeatureHelpLevel;
 
 import java.util.Objects;
 
- 
 public record FeatureHelpEntry(
         String id,
         FeatureArea area,

@@ -22,15 +22,6 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Arrays;
 
- 
-
-
-
-
-
-
-
-
 public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature {
     private static final int MAX_CANDIDATES = WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS;
     private static final int MAX_STABLE_BACKOFF_SHIFT = 2;
@@ -100,8 +91,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
             lastObservedPlayerBlock = currentPlayerBlock;
             movementSinceLastScan = true;
             stableScanCount = 0;
-            
-            
+
             ticksUntilScan = Math.min(ticksUntilScan, baseInterval - 1);
         }
         if (fingerprint != lastScanFingerprint) {
@@ -190,8 +180,8 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     }
 
     /**
- * 未ロードの水平方向隣接チャンクは空気や非源泉とみなさず、不明として扱う。これによりチャンク境界でもロード済み情報だけで判定できる。
- */
+     * 未ロードの水平方向隣接チャンクは空気や非源泉とみなさず、不明として扱う。これによりチャンク境界でもロード済み情報だけで判定できる。
+     */
     private boolean hasKnownSourceBoundary(
             Minecraft client,
             LevelChunk sourceChunk,
@@ -364,7 +354,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareFeature
     public void resetSession(Minecraft client) {
         resetScanState();
         // 描画経路の失敗はワールドやセッション初期化中だけの一過性である場合がある。Manager側の隔離状態はプロセス全体で保持するため、ここではリセットしない。
-        
+
         renderQuarantined = false;
     }
 

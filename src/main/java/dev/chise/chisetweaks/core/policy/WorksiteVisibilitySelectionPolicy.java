@@ -3,7 +3,6 @@ package dev.chise.chisetweaks.core.policy;
 import java.util.EnumSet;
 import java.util.Set;
 
- 
 public final class WorksiteVisibilitySelectionPolicy {
     private WorksiteVisibilitySelectionPolicy() {}
 
@@ -30,9 +29,7 @@ public final class WorksiteVisibilitySelectionPolicy {
 
     public static Set<Mode> normalize(Set<Mode> current, boolean exclusiveMode) {
         EnumSet<Mode> result = copy(current);
-        
-        
-        
+
         if (!exclusiveMode || result.size() < 2) return Set.copyOf(result);
         return Set.of(result.iterator().next());
     }

@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.core.vision;
 
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 
- 
 public final class OreHighlightRuntimePolicy {
     public enum Motion {
         STATIC,
@@ -11,7 +10,6 @@ public final class OreHighlightRuntimePolicy {
 
     private OreHighlightRuntimePolicy() {}
 
-     
     public static boolean shouldRender(boolean masterEnabled, int targetMask, Target target) {
         return masterEnabled
                 && target != null
@@ -19,7 +17,6 @@ public final class OreHighlightRuntimePolicy {
                 && VisualTargetSelectionPolicy.isEnabled(targetMask, target);
     }
 
-     
     public static Motion motion(boolean animationEnabled) {
         return animationEnabled ? Motion.ANIMATED : Motion.STATIC;
     }

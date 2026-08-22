@@ -5,7 +5,6 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 
 import java.util.List;
 
- 
 public final class VisualTargetSettings {
     private static final List<Entry> ENTRIES = List.of(
             entry(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre",

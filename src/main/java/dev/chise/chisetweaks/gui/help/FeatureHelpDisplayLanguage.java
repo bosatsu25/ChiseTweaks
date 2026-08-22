@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.gui.help;
 
- 
 public enum FeatureHelpDisplayLanguage {
     JAPANESE("ja_jp"),
     ENGLISH("en_us");

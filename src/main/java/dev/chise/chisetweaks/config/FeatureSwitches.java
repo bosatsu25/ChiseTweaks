@@ -4,7 +4,6 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
- 
 public final class FeatureSwitches {
     public static final FeatureSwitch BUILDER_FOCUS_BLOCKS = create(
             FeatureDefinition.BUILDER_FOCUS_BLOCKS,

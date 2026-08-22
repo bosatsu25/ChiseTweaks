@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.config;
 
- 
 public final class SimpleBooleanSetting extends ChiseBooleanSetting {
     private boolean value;
 

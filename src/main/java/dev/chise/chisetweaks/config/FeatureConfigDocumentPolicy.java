@@ -6,11 +6,6 @@ import com.google.gson.JsonObject;
 import java.util.HashSet;
 import java.util.Set;
 
- 
-
-
-
-
 final class FeatureConfigDocumentPolicy {
     private FeatureConfigDocumentPolicy() {}
 

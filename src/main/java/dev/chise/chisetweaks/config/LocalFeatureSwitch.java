@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
- 
 public final class LocalFeatureSwitch extends ChiseBooleanSetting {
     private static final boolean DEFAULT_ENABLED = false;
 

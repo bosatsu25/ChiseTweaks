@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.core.performance;
 
- 
 public final class WorksiteVisibilityBudgetPolicy {
     public static final int MIN_HORIZONTAL_RADIUS = 1;
     public static final int MAX_HORIZONTAL_RADIUS = 8;
@@ -11,15 +10,11 @@ public final class WorksiteVisibilityBudgetPolicy {
     public static final int MAX_SCAN_CANDIDATES = 128;
     public static final int MAX_OVERLAY_RESULTS = 24;
 
-     
-
-
-
     public static final int LEGACY_MAX_RESULTS = 8;
 
     /**
- * 1回の走査で行う視線判定にはCPU処理量と一時割り当ての上限を設ける。
- */
+     * 1回の走査で行う視線判定にはCPU処理量と一時割り当ての上限を設ける。
+     */
     public static final int MAX_LINE_OF_SIGHT_RAYS_PER_SCAN = 192;
 
     public static final int MAX_LOADED_CHUNK_PROBES = maximumLoadedChunkProbesFor(MAX_HORIZONTAL_RADIUS);
@@ -43,7 +38,6 @@ public final class WorksiteVisibilityBudgetPolicy {
         return clamp(requested, 1, MAX_OVERLAY_RESULTS);
     }
 
-     
     public static int clampLegacyResults(int requested) {
         return clamp(requested, 1, LEGACY_MAX_RESULTS);
     }
@@ -53,13 +47,6 @@ public final class WorksiteVisibilityBudgetPolicy {
         int vertical = clampVerticalRadius(verticalRadius);
         return (horizontal * 2 + 1) * (horizontal * 2 + 1) * (vertical * 2 + 1);
     }
-
-     
-
-
-
-
-
 
     public static int maximumLoadedChunkProbesFor(int horizontalRadius) {
         int horizontal = clampHorizontalRadius(horizontalRadius);

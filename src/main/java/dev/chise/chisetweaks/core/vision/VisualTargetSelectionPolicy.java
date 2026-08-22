@@ -2,11 +2,10 @@ package dev.chise.chisetweaks.core.vision;
 
 import java.util.Locale;
 
- 
 public final class VisualTargetSelectionPolicy {
     /**
- * 既存設定との互換性を守るため、保持対象のビット位置は過去の割り当てを維持する。
- */
+     * 既存設定との互換性を守るため、保持対象のビット位置は過去の割り当てを維持する。
+     */
     public enum Target {
         MATERIAL_OBSIDIAN(11),
         MATERIAL_ANCIENT_DEBRIS(12),

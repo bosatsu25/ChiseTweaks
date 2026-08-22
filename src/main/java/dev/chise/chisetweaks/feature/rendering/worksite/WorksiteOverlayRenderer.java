@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
- 
 final class WorksiteOverlayRenderer {
     private static final String RENDERER_REVISION = "surface-line-v8-worksite-no-glass";
     private static final int ACCENT_DARK = 0xFF4E3A8C;

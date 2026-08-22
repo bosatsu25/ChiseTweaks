@@ -7,13 +7,6 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import org.jspecify.annotations.Nullable;
 
- 
-
-
-
-
-
-
 public final class VisualRenderState {
     private static volatile Snapshot current = Snapshot.disabled();
 

@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
- 
 public final class OreHighlightCompatibilityConfig {
     public static final int SCHEMA_VERSION = 1;
     public static final int MAX_ENTRIES = 256;

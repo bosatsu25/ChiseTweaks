@@ -1,8 +1,7 @@
 package dev.chise.chisetweaks.core.vision;
 
- 
 public final class FireVisibilityPolicy {
-     
+
     public static final float LOWERED_OVERLAY_Y = -0.30F;
 
     private FireVisibilityPolicy() {}

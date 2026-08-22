@@ -16,7 +16,6 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import java.util.Optional;
 
- 
 public final class LocalFeatureConfig {
     private static final LocalFeatureConfig INSTANCE = new LocalFeatureConfig();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -27,7 +26,6 @@ public final class LocalFeatureConfig {
     public boolean fireVisibilityEnabled = false;
     public boolean oreHighlightAnimationEnabled = false;
 
-     
     public int worksiteVisibilityHorizontalRadius = 5;
     public int worksiteVisibilityVerticalRadius = 3;
     public int worksiteVisibilityIntervalTicks = 10;
@@ -36,13 +34,11 @@ public final class LocalFeatureConfig {
     public boolean worksiteVisibilityWorldOverlay = true;
     public boolean worksiteVisibilityExclusiveMode = false;
 
-     
     public int lavaAnalyzerHorizontalRadius = 5;
     public int lavaAnalyzerVerticalRadius = 3;
     public int lavaAnalyzerIntervalTicks = 10;
     public int lavaAnalyzerMaxOverlayResults = 12;
 
-     
     public int ancientDebrisAnalyzerRangeBlocks = AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS;
     public int ancientDebrisAnalyzerMaxMarkers = AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS;
 

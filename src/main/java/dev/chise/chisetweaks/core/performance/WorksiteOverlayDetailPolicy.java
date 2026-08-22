@@ -1,12 +1,5 @@
 package dev.chise.chisetweaks.core.performance;
 
- 
-
-
-
-
-
-
 public final class WorksiteOverlayDetailPolicy {
     public static final double FULL_DETAIL_DISTANCE_SQUARED = 49.0;
 

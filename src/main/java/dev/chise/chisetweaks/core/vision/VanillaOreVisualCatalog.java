@@ -9,14 +9,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
- 
-
-
-
-
-
-
-
 public final class VanillaOreVisualCatalog {
     private static final List<Family> FAMILIES = List.of(
             family(Target.MATERIAL_COAL_ORE, "coal",

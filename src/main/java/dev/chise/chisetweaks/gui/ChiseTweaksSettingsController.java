@@ -15,7 +15,6 @@ import net.minecraft.network.chat.Component;
 import java.util.ArrayList;
 import java.util.List;
 
- 
 final class ChiseTweaksSettingsController {
     enum Surface {
         MAIN,
@@ -23,7 +22,6 @@ final class ChiseTweaksSettingsController {
         LAVA_DETAILS
     }
 
-     
     private static final List<ChiseBooleanSetting> HIGHLIGHT_FEATURES = List.of(
             FeatureSwitches.MATERIAL_HIGHLIGHTS,
             FeatureSwitches.GLASS_INSPECTION,

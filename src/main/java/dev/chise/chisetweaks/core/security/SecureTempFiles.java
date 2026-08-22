@@ -12,7 +12,6 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
 import java.util.Set;
 
- 
 public final class SecureTempFiles {
     private static final Set<PosixFilePermission> OWNER_ONLY = EnumSet.of(
             PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);

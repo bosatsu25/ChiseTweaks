@@ -30,15 +30,6 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
- 
-
-
-
-
-
-
-
-
 final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
     private static final RenderPipeline THROUGH_WALL_PIPELINE = RenderPipelines.register(
             RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
@@ -148,7 +139,7 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
             MemoryUtil.memCopy(builtBuffer.vertexBuffer(), mappedView.data());
         }
         // このリビジョンを保持するバッファを確定してからリングを進める。変化のないフレームは保持済みバッファを再利用する。
-        
+
         vertexBuffer.rotate();
         return uploadTarget;
     }
@@ -184,8 +175,8 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
     }
 
     /**
- * 一時的なCPU/GPU作業領域をすべて破棄し、後続セッションへ失敗フレームの状態を持ち越さない。
- */
+     * 一時的なCPU/GPU作業領域をすべて破棄し、後続セッションへ失敗フレームの状態を持ち越さない。
+     */
     void resetAfterFailure() {
         if (closed) return;
         drawVertexBuffer = null;

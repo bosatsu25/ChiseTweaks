@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.core.policy;
 
- 
 public final class AncientDebrisAnalyzerPolicy {
     public static final int DEFAULT_RANGE_BLOCKS = 64;
     public static final int MIN_RANGE_BLOCKS = 16;
@@ -25,16 +24,11 @@ public final class AncientDebrisAnalyzerPolicy {
         return Math.max(MIN_MAX_MARKERS, Math.min(MAX_MAX_MARKERS, value));
     }
 
-     
-
-
-
     public static int chunkRadiusForRangeBlocks(int rangeBlocks) {
         int range = clampRangeBlocks(rangeBlocks);
         return Math.min(MAX_BOOTSTRAP_CHUNK_RADIUS, (range + 15) / 16 + 1);
     }
 
-     
     public static boolean isChunkRelevant(
             int centerChunkX,
             int centerChunkZ,

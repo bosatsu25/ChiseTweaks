@@ -4,13 +4,6 @@ import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
 import net.minecraft.world.level.block.state.BlockState;
 
- 
-
-
-
-
-
-
 final class WorksiteScanCandidate {
     private int x;
     private int y;

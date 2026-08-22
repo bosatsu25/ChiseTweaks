@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.core.vision;
 
 import java.util.Locale;
 
- 
 public final class VisualAssistanceStylePolicy {
     private VisualAssistanceStylePolicy() {}
 

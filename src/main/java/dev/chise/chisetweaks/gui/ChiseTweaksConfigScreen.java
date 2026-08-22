@@ -11,7 +11,6 @@ import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 
- 
 public final class ChiseTweaksConfigScreen extends Screen {
     private final ChiseTweaksSettingsController controller;
     private final ChiseTweaksSettingsController.Surface surface;

@@ -32,11 +32,6 @@ final class LavaSourceSnapshot {
         return renderRevision;
     }
 
-     
-
-
-
-
     boolean publish(long[] sortedPositions, int count, double eyeX, double eyeY, double eyeZ) {
         validateInput(sortedPositions, count);
         int currentSlot = activeSlot;

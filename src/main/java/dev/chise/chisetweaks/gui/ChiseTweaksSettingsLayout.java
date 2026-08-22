@@ -1,12 +1,5 @@
 package dev.chise.chisetweaks.gui;
 
- 
-
-
-
-
-
-
 public final class ChiseTweaksSettingsLayout {
     private static final int OUTER_MARGIN = 12;
     private static final int MAX_CONTENT_WIDTH = 960;

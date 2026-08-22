@@ -11,7 +11,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Predicate;
 
- 
 final class FullbrightOverlayEmission {
     private FullbrightOverlayEmission() {}
 

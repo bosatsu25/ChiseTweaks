@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
- 
 public final class ChiseStringListSetting {
     private final String name;
     private final List<String> defaultValue;

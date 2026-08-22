@@ -4,12 +4,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
- 
-
-
-
-
-
 public enum OreHighlightStyle {
     GENERIC("generic"),
     COAL("coal"),

@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.config;
 
 import java.util.Locale;
 
- 
 public enum ChiseRuleMode {
     NONE,
     BLACKLIST,

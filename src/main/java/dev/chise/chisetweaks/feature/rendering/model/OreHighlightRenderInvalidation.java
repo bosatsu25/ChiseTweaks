@@ -6,13 +6,6 @@ import net.minecraft.client.Minecraft;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
- 
-
-
-
-
-
-
 public final class OreHighlightRenderInvalidation {
     static final int MAX_FAILURE_RETRIES = 3;
 
@@ -22,8 +15,8 @@ public final class OreHighlightRenderInvalidation {
     private OreHighlightRenderInvalidation() {}
 
     /**
- * リソース全体の再読み込みや常時ポーリングを開始せず、必要なチャンク形状だけの再構築を要求する。
- */
+     * リソース全体の再読み込みや常時ポーリングを開始せず、必要なチャンク形状だけの再構築を要求する。
+     */
     public static void request() {
         FAILURE_RETRIES.set(0);
         schedule();

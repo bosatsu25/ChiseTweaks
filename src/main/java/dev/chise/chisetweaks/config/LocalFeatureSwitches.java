@@ -4,7 +4,6 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
- 
 public final class LocalFeatureSwitches {
     public static final LocalFeatureSwitch FIRE_VISIBILITY = new LocalFeatureSwitch(
             FeatureDefinition.FIRE_VISIBILITY,

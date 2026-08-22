@@ -6,7 +6,6 @@ import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import java.util.List;
 import java.util.Objects;
 
- 
 public enum FeatureDefinition {
     BUILDER_FOCUS_BLOCKS(
             "builder_focus_blocks",

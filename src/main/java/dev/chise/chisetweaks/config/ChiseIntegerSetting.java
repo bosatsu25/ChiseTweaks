@@ -3,7 +3,6 @@ package dev.chise.chisetweaks.config;
 import java.util.Objects;
 import java.util.function.Consumer;
 
- 
 public final class ChiseIntegerSetting {
     private final String name;
     private final int defaultValue;

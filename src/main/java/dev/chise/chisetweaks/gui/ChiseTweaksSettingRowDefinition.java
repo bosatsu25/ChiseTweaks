@@ -3,7 +3,6 @@ package dev.chise.chisetweaks.gui;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 
- 
 record ChiseTweaksSettingRowDefinition(
         Kind kind,
         String id,

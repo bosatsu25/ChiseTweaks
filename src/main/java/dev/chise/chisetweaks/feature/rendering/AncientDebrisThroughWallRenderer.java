@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
- 
 final class AncientDebrisThroughWallRenderer implements AutoCloseable {
     private static final RenderPipeline THROUGH_WALL_PIPELINE = RenderPipelines.register(
             RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)

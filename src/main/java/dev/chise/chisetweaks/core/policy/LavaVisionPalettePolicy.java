@@ -1,26 +1,23 @@
 package dev.chise.chisetweaks.core.policy;
 
- 
 public final class LavaVisionPalettePolicy {
-     
+
     public static final int SOURCE_OUTLINE_ARGB = 0xFF075B32;
-     
+
     public static final int FAR_OUTLINE_ARGB = 0xFF021A0E;
-     
+
     public static final double NEAR_DISTANCE_BLOCKS = 2.0;
-     
+
     public static final double FAR_DISTANCE_BLOCKS = 8.0;
-     
+
     public static final float ANALYZER_EDGE_THICKNESS = 0.026f;
 
     private LavaVisionPalettePolicy() {}
 
-     
     public static boolean shouldHighlight(boolean enabled, boolean source, boolean boundary) {
         return enabled && source && boundary;
     }
 
-     
     public static int colorForDistance(double distanceBlocks) {
         if (!Double.isFinite(distanceBlocks)) return FAR_OUTLINE_ARGB;
         double distance = Math.max(0.0, distanceBlocks);

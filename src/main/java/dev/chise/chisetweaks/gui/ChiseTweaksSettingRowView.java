@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.gui;
 
 import net.minecraft.client.gui.components.Button;
 
- 
 final class ChiseTweaksSettingRowView {
     final ChiseTweaksSettingRowDefinition definition;
     final Button primary;

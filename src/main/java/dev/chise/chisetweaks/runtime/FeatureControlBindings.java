@@ -19,7 +19,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
- 
 public final class FeatureControlBindings {
     private static final List<FeatureSwitch> WORKSITE_VISIBILITY_TOGGLES =
             FeatureSwitches.VALUES.stream()

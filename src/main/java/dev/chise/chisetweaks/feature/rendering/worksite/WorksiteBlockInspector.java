@@ -15,7 +15,6 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
- 
 final class WorksiteBlockInspector {
     private static final int EXPECTED_PROPERTY_CAPACITY = 8;
 

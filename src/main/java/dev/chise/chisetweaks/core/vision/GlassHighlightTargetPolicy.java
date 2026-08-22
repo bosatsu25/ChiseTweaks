@@ -4,7 +4,6 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 
- 
 public final class GlassHighlightTargetPolicy {
     private static final Set<String> DYE_COLORS = Set.of(
             "white", "orange", "magenta", "light_blue",

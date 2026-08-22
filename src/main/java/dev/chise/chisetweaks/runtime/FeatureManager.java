@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
- 
 public final class FeatureManager {
     private static final FeatureManager INSTANCE = new FeatureManager();
     private static final TickSlot[] NO_TICK_SLOTS = new TickSlot[0];

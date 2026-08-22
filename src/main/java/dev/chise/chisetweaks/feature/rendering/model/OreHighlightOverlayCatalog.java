@@ -9,7 +9,6 @@ import net.minecraft.resources.Identifier;
 import java.util.EnumMap;
 import java.util.Map;
 
- 
 final class OreHighlightOverlayCatalog {
     private static final Map<OreHighlightStyle, OverlayModels> MODELS = build();
 

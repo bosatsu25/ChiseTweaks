@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy;
 
- 
 public final class WorldLineGeometry {
     private WorldLineGeometry() {}
 

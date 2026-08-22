@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
- 
 public final class ChiseTweaksHelpScreen extends Screen {
     private static final int SEARCH_Y = 28;
     private static final int TOP = 58;

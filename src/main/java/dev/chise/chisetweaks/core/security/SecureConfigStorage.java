@@ -14,14 +14,6 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
 
- 
-
-
-
-
-
-
-
 public final class SecureConfigStorage {
     private static final int READ_BUFFER_BYTES = 8 * 1024;
     private static final long MAX_ALLOWED_BUDGET_BYTES = 16L * 1024L * 1024L;

@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.core.vision;
 
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 
- 
 public final class VisualTargetGroupPolicy {
     public enum Group {
         MATERIAL,

@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.client.model.loading.v1.ExtraModelKey;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.resources.Identifier;
 
- 
 final class GlassHighlightOverlayCatalog {
     static final int BLOCK_CYAN_ARGB = 0xFF5EEBFF;
     static final int PANE_AMBER_ARGB = 0xFFFFD166;

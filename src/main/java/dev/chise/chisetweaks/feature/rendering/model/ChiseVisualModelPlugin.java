@@ -17,7 +17,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
- 
 public final class ChiseVisualModelPlugin {
     public static final String REVISION = "visual-model-overlay-10-classification-cache";
 
@@ -54,8 +53,7 @@ public final class ChiseVisualModelPlugin {
                             SimpleUnbakedExtraModel.blockStateModel(GlassHighlightOverlayCatalog.PANE_MODEL));
 
                     // 1回のリソースモデル再読み込み中は分類結果を固定し、再読み込みをまたいで古い分類を持ち越さない。
-                    
-                    
+
                     ConcurrentHashMap<Block, VisualModelClassification> classificationCache =
                             new ConcurrentHashMap<>();
                     pluginContext.modifyBlockModelAfterBake().register(

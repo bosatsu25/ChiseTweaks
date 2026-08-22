@@ -18,13 +18,6 @@ import org.jspecify.annotations.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
- 
-
-
-
-
-
-
 final class FullbrightOreHighlightModel extends WrapperBlockStateModel {
     private static final int MAX_LOOKUP_ATTEMPTS = 3;
     private static final AtomicBoolean LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
