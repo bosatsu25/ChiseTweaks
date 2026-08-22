@@ -69,7 +69,6 @@ final class ChiseTweaksSettingsController {
         return switch (surface == null ? Surface.MAIN : surface) {
             case MAIN -> "";
             case HIGHLIGHT_DETAILS -> japanese ? "ハイライト設定" : "Highlight Settings";
-            // Internal enum name is retained to avoid needless screen-routing churn; this surface now owns both analyzers.
             case LAVA_DETAILS -> japanese ? "アナライザー設定" : "Analyzer Settings";
         };
     }
@@ -157,14 +156,16 @@ final class ChiseTweaksSettingsController {
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
 
         rows.add(ChiseTweaksSettingRowDefinition.headerAction(
-                "header.visibilityImprovement",
-                japanese ? "視認改善" : "Visibility Improvements",
+                "header.analyzer",
+                japanese ? "アナライザー" : "Analyzer",
                 ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS,
                 japanese ? "設定" : "Settings"));
         compactBool(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
                 "溶岩源ハイライト", "Lava Source Highlight");
         compactBool(rows, "ancientDebrisAnalyzer", LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
                 "古代の残骸アナライザー", "Ancient Debris Analyzer");
+
+        header(rows, "header.visibilityImprovement", "見やすさ", "Visibility");
         compactBool(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
                 "火炎表示を低くする", "Lower Fire Overlay");
     }
@@ -175,9 +176,7 @@ final class ChiseTweaksSettingsController {
                 "ハイライトを動かす", "Animate Ore Highlight",
                 "OFFでは静止表示、ONで控えめにアニメーションする",
                 "Keep highlights static when OFF or use subtle motion when ON.");
-        action(rows,
-                "moddedOreTargets",
-                "MOD鉱石の対象",
+        action(rows, "moddedOreTargets", "MOD鉱石の対象",
                 "MOD鉱石のRegistry IDとChiseの発光スタイルを編集する",
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT);
         integer(rows, "highlightRange", LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS,
@@ -262,95 +261,55 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.resetToDefault();
     }
 
-    private void header(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            String japaneseName,
-            String englishName) {
+    private void header(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+                        String japaneseName, String englishName) {
         rows.add(ChiseTweaksSettingRowDefinition.header(id, japanese ? japaneseName : englishName));
     }
 
-    private void compactBool(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseBooleanSetting config,
-            String japaneseName,
-            String englishName) {
+    private void compactBool(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+                             ChiseBooleanSetting config, String japaneseName, String englishName) {
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 id, japanese ? japaneseName : englishName, "", config));
     }
 
-    private void compactBoolAction(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseBooleanSetting config,
-            String japaneseName,
-            String englishName,
-            ChiseTweaksSettingRowDefinition.Action action) {
+    private void compactBoolAction(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+                                   ChiseBooleanSetting config, String japaneseName, String englishName,
+                                   ChiseTweaksSettingRowDefinition.Action action) {
         rows.add(ChiseTweaksSettingRowDefinition.boolAction(
-                id,
-                japanese ? japaneseName : englishName,
-                "",
-                config,
-                action,
+                id, japanese ? japaneseName : englishName, "", config, action,
                 japanese ? "設定" : "Settings"));
     }
 
-    private void bool(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseBooleanSetting config,
-            String japaneseName,
-            String englishName,
-            String japaneseDescription,
-            String englishDescription) {
+    private void bool(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+                      ChiseBooleanSetting config, String japaneseName, String englishName,
+                      String japaneseDescription, String englishDescription) {
         rows.add(ChiseTweaksSettingRowDefinition.bool(
-                id,
-                japanese ? japaneseName : englishName,
-                japanese ? japaneseDescription : englishDescription,
-                config));
+                id, japanese ? japaneseName : englishName,
+                japanese ? japaneseDescription : englishDescription, config));
     }
 
-    private void boolTarget(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            ChiseBooleanSetting config,
-            String japaneseDescription) {
+    private void boolTarget(ArrayList<ChiseTweaksSettingRowDefinition> rows,
+                            ChiseBooleanSetting config, String japaneseDescription) {
         rows.add(ChiseTweaksSettingRowDefinition.bool(
-                config.getName(),
-                compactTargetName(config.getDisplayName(japanese)),
-                japanese ? japaneseDescription : config.getComment(false),
-                config));
+                config.getName(), compactTargetName(config.getDisplayName(japanese)),
+                japanese ? japaneseDescription : config.getComment(false), config));
     }
 
-    private void integer(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseIntegerSetting config,
-            String japaneseName,
-            String englishName,
-            String japaneseDescription,
-            String englishDescription,
-            int step) {
+    private void integer(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+                         ChiseIntegerSetting config, String japaneseName, String englishName,
+                         String japaneseDescription, String englishDescription, int step) {
         rows.add(ChiseTweaksSettingRowDefinition.integer(
-                id,
-                japanese ? japaneseName : englishName,
-                japanese ? japaneseDescription : englishDescription,
-                config,
-                step));
+                id, japanese ? japaneseName : englishName,
+                japanese ? japaneseDescription : englishDescription, config, step));
     }
 
-    private void action(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            String japaneseName,
-            String japaneseDescription,
-            ChiseTweaksSettingRowDefinition.Action action) {
+    private void action(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+                        String japaneseName, String japaneseDescription,
+                        ChiseTweaksSettingRowDefinition.Action action) {
         rows.add(ChiseTweaksSettingRowDefinition.action(
-                id,
-                japanese ? japaneseName : englishActionName(action),
+                id, japanese ? japaneseName : englishActionName(action),
                 japanese ? japaneseDescription : englishActionDescription(action),
-                action,
-                japanese ? "設定" : "Settings"));
+                action, japanese ? "設定" : "Settings"));
     }
 
     private static String englishActionName(ChiseTweaksSettingRowDefinition.Action action) {
@@ -379,10 +338,7 @@ final class ChiseTweaksSettingsController {
             return;
         }
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
-        config.visualTargetMask = VisualTargetGroupPolicy.withAll(
-                config.visualTargetMask,
-                group,
-                true);
+        config.visualTargetMask = VisualTargetGroupPolicy.withAll(config.visualTargetMask, group, true);
         VisualTargetSettings.init();
     }
 
