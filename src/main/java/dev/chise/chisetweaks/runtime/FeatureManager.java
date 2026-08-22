@@ -63,9 +63,7 @@ public final class FeatureManager {
         if (tickSchedule.length != 0) {
             ClientTickEvents.END_CLIENT_TICK.register(client -> {
                 TickSlot[] schedule = tickSchedule;
-                for (int index = 0; index < schedule.length; index++) {
-                    schedule[index].runForTick(client);
-                }
+                for (TickSlot slot : schedule) slot.runForTick(client);
             });
         }
         initialized = true;
@@ -75,9 +73,8 @@ public final class FeatureManager {
         requireMutableRegistration();
         Objects.requireNonNull(feature, "feature");
         String id = requireId(feature.getId(), "feature id");
-        if (features.putIfAbsent(id, feature) != null) {
-            throw new IllegalStateException("Duplicate feature id: " + id);
-        }
+        requireUniqueId(id);
+        features.put(id, feature);
         if (feature instanceof TickingFeature ticking) mutableTickSlots.add(new TickSlot(ticking));
         if (feature instanceof SessionAwareFeature sessionAware) mutableSessionComponents.add(sessionAware);
     }
@@ -86,9 +83,8 @@ public final class FeatureManager {
         requireMutableRegistration();
         Objects.requireNonNull(component, "component");
         String id = requireId(component.getId(), "component id");
-        if (runtimeComponents.putIfAbsent(id, component) != null) {
-            throw new IllegalStateException("Duplicate runtime component id: " + id);
-        }
+        requireUniqueId(id);
+        runtimeComponents.put(id, component);
         if (component instanceof TickingRuntimeComponent ticking) mutableTickSlots.add(new TickSlot(ticking));
         if (component instanceof SessionAwareRuntimeComponent sessionAware) {
             mutableSessionComponents.add(sessionAware);
@@ -107,10 +103,9 @@ public final class FeatureManager {
     }
 
     public void resetSessionState(Minecraft client) {
-        SessionAwareRuntimeComponent[] schedule = sessionSchedule;
-        for (int index = 0; index < schedule.length; index++) {
+        for (SessionAwareRuntimeComponent component : sessionSchedule) {
             try {
-                schedule[index].resetSession(client);
+                component.resetSession(client);
             } catch (RuntimeException | LinkageError failure) {
                 ChiseTweaksClient.LOGGER.error(
                         "Client session reset skipped after {}",
@@ -181,10 +176,20 @@ public final class FeatureManager {
         if (initialized) throw new IllegalStateException("Components cannot be registered after initialization");
     }
 
+    private void requireUniqueId(String id) {
+        if (features.containsKey(id) || runtimeComponents.containsKey(id)) {
+            throw new IllegalStateException("Duplicate component id: " + id);
+        }
+    }
+
     private static String requireId(String id, String label) {
-        String normalized = Objects.requireNonNull(id, label).trim();
+        String value = Objects.requireNonNull(id, label);
+        String normalized = value.trim();
         if (normalized.isEmpty()) throw new IllegalArgumentException(label + " must not be blank");
-        return normalized;
+        if (!value.equals(normalized)) {
+            throw new IllegalArgumentException(label + " must not contain surrounding whitespace");
+        }
+        return value;
     }
 
     private static void safeDisable(Feature feature) {
