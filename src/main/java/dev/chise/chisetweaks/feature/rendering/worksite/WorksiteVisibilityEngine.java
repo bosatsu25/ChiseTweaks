@@ -40,7 +40,6 @@ public final class WorksiteVisibilityEngine
         overlayRenderer.init();
     }
 
-    @Override
     public boolean isActive() {
         return active;
     }

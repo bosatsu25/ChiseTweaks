@@ -24,7 +24,7 @@ final class ChiseTexturePackContractTest {
     @Test
     void registersAsAUserControllableDefaultEnabledBuiltinPack() throws IOException {
         String source = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackFeature.java"));
+                "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackRegistrar.java"));
         String client = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/ChiseTweaksClient.java"));
         String metadata = Files.readString(PACK_ROOT.resolve("pack.mcmeta"));
@@ -32,7 +32,7 @@ final class ChiseTexturePackContractTest {
         assertTrue(source.contains("ResourceLoader.registerBuiltinPack"));
         assertTrue(source.contains("PackActivationType.DEFAULT_ENABLED"));
         assertTrue(source.contains("Identifier.fromNamespaceAndPath"));
-        assertTrue(client.contains("SafeStartup.run(\"chise-texture-pack\", ChiseTexturePackFeature::register)"));
+        assertTrue(client.contains("SafeStartup.run(\"chise-texture-pack\", ChiseTexturePackRegistrar::register)"));
         assertTrue(metadata.contains("\"min_format\": 84"));
         assertTrue(metadata.contains("\"max_format\": 84"));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/minecraft")));

@@ -91,12 +91,14 @@ final class RepositoryScopeContractTest {
         assertTrue(feature.contains("hasKnownSourceBoundary"));
         assertTrue(feature.contains("getChunkNow(neighborChunkX, neighborChunkZ)"));
         assertTrue(feature.contains("neighborChunk == null"));
-        assertTrue(feature.contains("local.lavaHighlightEnabled = false"));
+        assertFalse(feature.contains("local.lavaHighlightEnabled = false"));
+        assertFalse(feature.contains(".save()"));
         assertTrue(feature.contains("runtimeQuarantined"));
         assertTrue(feature.contains("!isSessionQuarantined()"));
         assertTrue(feature.contains("public void onQuarantined(Minecraft client)"));
         assertTrue(feature.contains("MAX_STABLE_BACKOFF_SHIFT = 2"));
-        assertTrue(manager.contains("notifyInitializationQuarantine(feature.getId(), ticking)"));
+        assertTrue(manager.contains("notifyInitializationQuarantine(component.getId(), ticking)"));
+        assertTrue(manager.contains("removeFromSchedules(component)"));
         assertTrue(renderer.contains("resetAfterFailure()"));
         assertTrue(renderer.contains("uploadedRevision = Long.MIN_VALUE"));
         assertTrue(retained.contains("drawVertexBuffer = null"));

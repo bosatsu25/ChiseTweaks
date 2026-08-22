@@ -5,8 +5,8 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
-import dev.chise.chisetweaks.feature.SessionAwareFeature;
 import dev.chise.chisetweaks.feature.TickingFeature;
+import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * 古代の残骸アナライザーはクライアント専用・ネザー専用とし、すでにロード済みのクライアントチャンクだけを対象にする。
  */
-public final class AncientDebrisAnalyzerFeature implements TickingFeature, SessionAwareFeature {
+public final class AncientDebrisAnalyzerFeature implements TickingFeature, SessionAwareRuntimeComponent {
     private static final long[] EMPTY_POSITIONS = new long[0];
 
     private final AncientDebrisThroughWallRenderer renderer = new AncientDebrisThroughWallRenderer();
@@ -292,7 +292,6 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
                         "Ancient Debris Analyzer renderer cleanup failed after {}",
                         cleanupFailure.getClass().getSimpleName());
             }
-            disableAfterQuarantine();
             ChiseTweaksClient.LOGGER.error(
                     "Ancient Debris Analyzer rendering was quarantined after {}",
                     failure.getClass().getSimpleName());
@@ -321,16 +320,6 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         lastMaxMarkers = Integer.MIN_VALUE;
         ticksUntilValidation = 0;
         selectionDirty = false;
-    }
-
-    private void disableAfterQuarantine() {
-        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
-        if (!local.ancientDebrisAnalyzerEnabled) return;
-        local.ancientDebrisAnalyzerEnabled = false;
-        if (!local.save()) {
-            ChiseTweaksClient.LOGGER.warn(
-                    "Ancient Debris Analyzer quarantine could not be persisted; it remains disabled for this client process");
-        }
     }
 
     private static boolean isNether(ClientLevel level) {
@@ -368,7 +357,6 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
                     "Ancient Debris Analyzer renderer close failed after {}",
                     cleanupFailure.getClass().getSimpleName());
         }
-        disableAfterQuarantine();
     }
 
     @Override
@@ -382,30 +370,5 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)
                 && !isSessionQuarantined()
                 && LocalFeatureConfig.getInstance().ancientDebrisAnalyzerEnabled;
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
-        boolean effective = PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)
-                && enabled
-                && !isSessionQuarantined();
-        local.ancientDebrisAnalyzerEnabled = effective;
-        local.save();
-        clearSessionData();
-        if (effective) {
-            Minecraft client = Minecraft.getInstance();
-            if (client.level != null && client.player != null && isNether(client.level)) {
-                resetForLevel(client.level);
-                BlockPos playerPosition = client.player.blockPosition();
-                int rangeBlocks = AncientDebrisAnalyzerPolicy.clampRangeBlocks(
-                        local.ancientDebrisAnalyzerRangeBlocks);
-                bootstrapLoadedChunks(
-                        client,
-                        rangeBlocks,
-                        playerPosition.getX() >> 4,
-                        playerPosition.getZ() >> 4);
-            }
-        }
     }
 }

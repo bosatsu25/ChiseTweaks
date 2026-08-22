@@ -9,12 +9,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
 /** Chise TextureをFabric組み込みリソースパックとして登録する。 */
-public final class ChiseTexturePackFeature {
+public final class ChiseTexturePackRegistrar {
     private static final String PACK_PATH = "chise_texture";
     private static final Identifier PACK_ID =
             Identifier.fromNamespaceAndPath(ChiseTweaksClient.MOD_ID, PACK_PATH);
 
-    private ChiseTexturePackFeature() {}
+    private ChiseTexturePackRegistrar() {}
 
     public static void register() {
         ModContainer container = FabricLoader.getInstance()
