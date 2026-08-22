@@ -2,7 +2,7 @@ package dev.chise.chisetweaks;
 
 import net.fabricmc.loader.api.FabricLoader;
 
-/** Stable ChiseTweaks product metadata and optional rendering compatibility identifiers. */
+/** ChiseTweaks本体の安定した製品メタデータと任意描画互換用の識別子。 */
 public final class ChiseTweaksMetadata {
     public static final String MOD_ID = "chisetweaks";
     public static final String MOD_NAME = "ChiseTweaks";
