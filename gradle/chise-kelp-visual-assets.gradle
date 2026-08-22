@@ -125,7 +125,7 @@ def generateChiseKelpVisualAssets = tasks.register('generateChiseKelpVisualAsset
     outputs.dir(generatedKelpVisualAssetsDir)
     doLast {
         File root = generatedKelpVisualAssetsDir.get().asFile
-        project.delete(root)
+        if (root.exists()) root.deleteDir()
         File textureDir = new File(root, 'assets/chisetweaks/textures/block/visual/kelp')
         File modelDir = new File(root, 'assets/chisetweaks/models/block/visual/kelp')
 
