@@ -13,7 +13,7 @@ def CHISE_RUNTIME_ICON_PIXELS = Integer.parseInt(project.property('runtime_icon_
 def CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'
 def CHISE_MANIFEST_PATH = 'META-INF/MANIFEST.MF'
 
-def recompressRuntimeJar = { File runtimeJar ->
+def recompressRuntimeJar = { File runtimeJar, org.gradle.api.logging.Logger taskLogger ->
     def sourceEntries = []
     ZipFile sourceArchive = new ZipFile(runtimeJar)
     try {
@@ -62,13 +62,13 @@ def recompressRuntimeJar = { File runtimeJar ->
             } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
                 Files.move(temporaryPath, runtimeJar.toPath(), StandardCopyOption.REPLACE_EXISTING)
             }
-            logger.lifecycle(
+            taskLogger.lifecycle(
                     'Runtime JAR max-deflate: {} -> {} bytes (saved {} bytes)',
                     originalSize,
                     recompressedSize,
                     originalSize - recompressedSize)
         } else {
-            logger.lifecycle(
+            taskLogger.lifecycle(
                     'Runtime JAR max-deflate kept original: {} bytes (candidate {} bytes)',
                     originalSize,
                     recompressedSize)
@@ -79,8 +79,8 @@ def recompressRuntimeJar = { File runtimeJar ->
 }
 
 tasks.named('jar').configure {
-    doLast {
-        recompressRuntimeJar(archiveFile.get().asFile)
+    doLast { task ->
+        recompressRuntimeJar(task.archiveFile.get().asFile, task.logger)
     }
 }
 
