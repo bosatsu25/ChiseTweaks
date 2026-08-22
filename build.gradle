@@ -59,7 +59,7 @@ processResources {
     filesMatching('fabric.mod.json') { expand(fabricMetadata) }
 
     doLast {
-        File iconFile = new File(destinationDir, runtimeIconRelativePath)
+        File iconFile = destinationDirectory.file(runtimeIconRelativePath).get().asFile
         if (!iconFile.isFile()) {
             throw new GradleException("Runtime icon is missing: ${iconFile}")
         }
