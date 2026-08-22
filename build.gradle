@@ -50,9 +50,53 @@ def fabricMetadata = [
         sodium_compat_version: project.sodium_compat_version
 ]
 
+def runtimeIconRelativePath = 'assets/chisetweaks/icon.png'
+def runtimeIconTargetPixels = Integer.parseInt(project.runtime_icon_target_pixels)
+
 processResources {
     inputs.properties fabricMetadata
+    inputs.property('runtimeIconTargetPixels', runtimeIconTargetPixels)
     filesMatching('fabric.mod.json') { expand(fabricMetadata) }
+
+    doLast {
+        File iconFile = new File(destinationDir, runtimeIconRelativePath)
+        if (!iconFile.isFile()) {
+            throw new GradleException("Runtime icon is missing: ${iconFile}")
+        }
+
+        def sourceImage = javax.imageio.ImageIO.read(iconFile)
+        if (sourceImage == null) {
+            throw new GradleException("Runtime icon is not a readable PNG: ${iconFile}")
+        }
+
+        if (sourceImage.width != runtimeIconTargetPixels || sourceImage.height != runtimeIconTargetPixels) {
+            def targetImage = new java.awt.image.BufferedImage(
+                    runtimeIconTargetPixels,
+                    runtimeIconTargetPixels,
+                    java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            def graphics = targetImage.createGraphics()
+            try {
+                graphics.setRenderingHint(
+                        java.awt.RenderingHints.KEY_INTERPOLATION,
+                        java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+                graphics.setRenderingHint(
+                        java.awt.RenderingHints.KEY_RENDERING,
+                        java.awt.RenderingHints.VALUE_RENDER_QUALITY)
+                graphics.drawImage(
+                        sourceImage,
+                        0,
+                        0,
+                        runtimeIconTargetPixels,
+                        runtimeIconTargetPixels,
+                        null)
+            } finally {
+                graphics.dispose()
+            }
+            if (!javax.imageio.ImageIO.write(targetImage, 'png', iconFile)) {
+                throw new GradleException("Runtime icon PNG writer is unavailable")
+            }
+        }
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {

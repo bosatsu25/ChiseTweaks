@@ -1,13 +1,14 @@
-// ChiseTweaks distribution-size budget.
+// ChiseTweaksの配布用実行JARに対する容量上限。
 //
-// Runtime performance remains the primary goal. This gate exists to prevent accidental bundling of
-// large libraries/assets while preserving enough headroom for pre-baked visual data that saves CPU.
-def CHISE_RUNTIME_JAR_TARGET_BYTES = 1_000_000L
-def CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES = 1_500_000L
+// 実行時性能と機能等価性を優先しつつ、巨大な依存物や配布不要の高解像度素材が
+// 誤って実行JARへ混入することを防ぐ。容量削減のために機能やデバッグ情報は削らない。
+def CHISE_RUNTIME_JAR_MAX_BYTES = Long.parseLong(project.property('runtime_jar_max_bytes').toString())
+def CHISE_RUNTIME_ICON_PIXELS = Integer.parseInt(project.property('runtime_icon_target_pixels').toString())
+def CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'
 
 tasks.register('verifyRuntimeJarBudget') {
     group = 'verification'
-    description = 'Fails when the runtime JAR reaches the 1,500 KB hard limit.'
+    description = '実行JARが700KB未満で、配布用アイコンが規定解像度であることを検証します。'
     dependsOn 'jar'
 
     doLast {
@@ -16,20 +17,44 @@ tasks.register('verifyRuntimeJarBudget') {
         long size = runtimeJar.length()
 
         logger.lifecycle(
-                'Chise lightweight budget: {} bytes (target < {} bytes, hard limit < {} bytes)',
+                'Chise lightweight budget: {} bytes (limit < {} bytes)',
                 size,
-                CHISE_RUNTIME_JAR_TARGET_BYTES,
-                CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES)
+                CHISE_RUNTIME_JAR_MAX_BYTES)
 
-        if (size >= CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES) {
+        if (size >= CHISE_RUNTIME_JAR_MAX_BYTES) {
             throw new GradleException(
                     "Runtime JAR is ${size} bytes; ChiseTweaks must remain below " +
-                    "${CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES} bytes (1500 KB).")
+                    "${CHISE_RUNTIME_JAR_MAX_BYTES} bytes.")
         }
-        if (size >= CHISE_RUNTIME_JAR_TARGET_BYTES) {
-            logger.warn(
-                    'Runtime JAR is above the preferred 1,000 KB target but remains inside the hard budget.')
+
+        def archive = new java.util.zip.ZipFile(runtimeJar)
+        try {
+            def iconEntry = archive.getEntry(CHISE_RUNTIME_ICON_PATH)
+            if (iconEntry == null) {
+                throw new GradleException("Runtime JAR is missing ${CHISE_RUNTIME_ICON_PATH}")
+            }
+            def iconImage
+            archive.getInputStream(iconEntry).withCloseable { input ->
+                iconImage = javax.imageio.ImageIO.read(input)
+            }
+            if (iconImage == null) {
+                throw new GradleException('Runtime JAR icon is not a readable PNG')
+            }
+            if (iconImage.width != CHISE_RUNTIME_ICON_PIXELS || iconImage.height != CHISE_RUNTIME_ICON_PIXELS) {
+                throw new GradleException(
+                        "Runtime JAR icon must be ${CHISE_RUNTIME_ICON_PIXELS}x${CHISE_RUNTIME_ICON_PIXELS}, " +
+                        "got ${iconImage.width}x${iconImage.height}")
+            }
+        } finally {
+            archive.close()
         }
+
+        logger.lifecycle(
+                'Runtime distribution budget PASS: {} bytes (< {}), icon={}x{}',
+                size,
+                CHISE_RUNTIME_JAR_MAX_BYTES,
+                CHISE_RUNTIME_ICON_PIXELS,
+                CHISE_RUNTIME_ICON_PIXELS)
     }
 }
 
