@@ -5,7 +5,7 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.feature.rendering.model.ChiseVisualModelPlugin;
-import dev.chise.chisetweaks.feature.resource.ChiseTexturePackFeature;
+import dev.chise.chisetweaks.feature.resource.ChiseTexturePackRegistrar;
 import dev.chise.chisetweaks.runtime.ClientSessionState;
 import dev.chise.chisetweaks.runtime.FeatureControlBindings;
 import dev.chise.chisetweaks.runtime.FeatureManager;
@@ -27,7 +27,7 @@ public final class ChiseTweaksClient implements ClientModInitializer {
     public void onInitializeClient() {
         SafeStartup.run("local-config", () -> LocalFeatureConfig.getInstance().load());
         SafeStartup.run("feature-config", FeatureConfig::loadFromFile);
-        SafeStartup.run("chise-texture-pack", ChiseTexturePackFeature::register);
+        SafeStartup.run("chise-texture-pack", ChiseTexturePackRegistrar::register);
         SafeStartup.run("local-settings", LocalFeatureSettings::init);
         SafeStartup.run("visual-target-settings", VisualTargetSettings::init);
         SafeStartup.run("feature-bindings", FeatureControlBindings::init);
