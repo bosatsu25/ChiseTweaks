@@ -18,8 +18,16 @@ public final class LocalFeatureSwitches {
             config -> config.lavaHighlightEnabled,
             (config, value) -> config.lavaHighlightEnabled = value);
 
-    public static final List<LocalFeatureSwitch> VALUES = List.of(FIRE_VISIBILITY, LAVA_HIGHLIGHT);
+    public static final LocalFeatureSwitch ANCIENT_DEBRIS_ANALYZER = new LocalFeatureSwitch(
+            FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
+            "localAncientDebrisAnalyzer",
+            config -> config.ancientDebrisAnalyzerEnabled,
+            (config, value) -> config.ancientDebrisAnalyzerEnabled = value);
+
+    public static final List<LocalFeatureSwitch> VALUES = List.of(
+            FIRE_VISIBILITY,
+            LAVA_HIGHLIGHT,
+            ANCIENT_DEBRIS_ANALYZER);
 
     private LocalFeatureSwitches() {}
-
 }
