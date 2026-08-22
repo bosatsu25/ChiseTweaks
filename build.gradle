@@ -50,9 +50,54 @@ def fabricMetadata = [
         sodium_compat_version: project.sodium_compat_version
 ]
 
+def runtimeIconRelativePath = 'assets/chisetweaks/icon.png'
+def runtimeIconTargetPixels = Integer.parseInt(project.runtime_icon_target_pixels)
+def runtimeJarMaxBytes = Long.parseLong(project.runtime_jar_max_bytes)
+
 processResources {
     inputs.properties fabricMetadata
+    inputs.property('runtimeIconTargetPixels', runtimeIconTargetPixels)
     filesMatching('fabric.mod.json') { expand(fabricMetadata) }
+
+    doLast {
+        File iconFile = new File(destinationDir, runtimeIconRelativePath)
+        if (!iconFile.isFile()) {
+            throw new GradleException("Runtime icon is missing: ${iconFile}")
+        }
+
+        def sourceImage = javax.imageio.ImageIO.read(iconFile)
+        if (sourceImage == null) {
+            throw new GradleException("Runtime icon is not a readable PNG: ${iconFile}")
+        }
+
+        if (sourceImage.width != runtimeIconTargetPixels || sourceImage.height != runtimeIconTargetPixels) {
+            def targetImage = new java.awt.image.BufferedImage(
+                    runtimeIconTargetPixels,
+                    runtimeIconTargetPixels,
+                    java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            def graphics = targetImage.createGraphics()
+            try {
+                graphics.setRenderingHint(
+                        java.awt.RenderingHints.KEY_INTERPOLATION,
+                        java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+                graphics.setRenderingHint(
+                        java.awt.RenderingHints.KEY_RENDERING,
+                        java.awt.RenderingHints.VALUE_RENDER_QUALITY)
+                graphics.drawImage(
+                        sourceImage,
+                        0,
+                        0,
+                        runtimeIconTargetPixels,
+                        runtimeIconTargetPixels,
+                        null)
+            } finally {
+                graphics.dispose()
+            }
+            if (!javax.imageio.ImageIO.write(targetImage, 'png', iconFile)) {
+                throw new GradleException("Runtime icon PNG writer is unavailable")
+            }
+        }
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -229,9 +274,56 @@ tasks.register('qualityGate') {
     dependsOn tasks.named('pitest')
 }
 
+tasks.register('verifyRuntimeArtifactBudget') {
+    group = 'verification'
+    description = 'Verifies the remapped runtime JAR stays below the distribution budget and contains the optimized icon.'
+    dependsOn tasks.named('remapJar')
+
+    doLast {
+        File runtimeJar = tasks.named('remapJar').get().archiveFile.get().asFile
+        if (!runtimeJar.isFile()) {
+            throw new GradleException("Remapped runtime JAR is missing: ${runtimeJar}")
+        }
+        if (runtimeJar.length() >= runtimeJarMaxBytes) {
+            throw new GradleException(
+                    "Runtime JAR exceeds ${runtimeJarMaxBytes} bytes: ${runtimeJar.length()} bytes")
+        }
+
+        def archive = new java.util.zip.ZipFile(runtimeJar)
+        try {
+            def iconEntry = archive.getEntry(runtimeIconRelativePath)
+            if (iconEntry == null) {
+                throw new GradleException("Runtime JAR is missing ${runtimeIconRelativePath}")
+            }
+            def iconImage
+            archive.getInputStream(iconEntry).withCloseable { input ->
+                iconImage = javax.imageio.ImageIO.read(input)
+            }
+            if (iconImage == null) {
+                throw new GradleException("Runtime JAR icon is not a readable PNG")
+            }
+            if (iconImage.width != runtimeIconTargetPixels || iconImage.height != runtimeIconTargetPixels) {
+                throw new GradleException(
+                        "Runtime JAR icon must be ${runtimeIconTargetPixels}x${runtimeIconTargetPixels}, "
+                                + "got ${iconImage.width}x${iconImage.height}")
+            }
+        } finally {
+            archive.close()
+        }
+
+        logger.lifecycle(
+                "Runtime distribution budget PASS: {} bytes (< {}), icon={}x{}",
+                runtimeJar.length(),
+                runtimeJarMaxBytes,
+                runtimeIconTargetPixels,
+                runtimeIconTargetPixels)
+    }
+}
+
 tasks.register('ciGate') {
     group = 'verification'
     description = 'Single CI entry point: quality gates plus reproducible runtime and sources artifacts.'
     dependsOn tasks.named('qualityGate')
     dependsOn tasks.named('build')
+    dependsOn tasks.named('verifyRuntimeArtifactBudget')
 }
