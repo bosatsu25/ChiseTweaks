@@ -16,7 +16,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Client entry point for standalone building-assistance and visual ChiseTweaks features. */
+/** 建築支援と視認改善機能を初期化するクライアント側エントリーポイント。 */
 @Environment(EnvType.CLIENT)
 public final class ChiseTweaksClient implements ClientModInitializer {
     public static final String MOD_ID = "chisetweaks";
