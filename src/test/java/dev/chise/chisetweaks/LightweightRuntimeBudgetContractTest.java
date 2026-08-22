@@ -9,21 +9,31 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Guards the lightweight distribution budget without encouraging runtime-cost regressions. */
+/** 実行時性能を犠牲にせず、配布用JARの軽量性を固定する契約テスト。 */
 final class LightweightRuntimeBudgetContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void runtimeJarHasOneMegabyteTargetAndFifteenHundredKilobyteHardLimit() throws IOException {
+    void runtimeJarHasSingleSevenHundredKilobyteLimitAndOptimizedIconContract() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
+        String properties = source("gradle.properties");
+        String build = source("build.gradle");
         String settings = source("settings.gradle");
 
-        assertTrue(budget.contains("CHISE_RUNTIME_JAR_TARGET_BYTES = 1_000_000L"));
-        assertTrue(budget.contains("CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES = 1_500_000L"));
-        assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_HARD_LIMIT_BYTES)"));
+        assertTrue(properties.contains("runtime_jar_max_bytes=700000"));
+        assertTrue(properties.contains("runtime_icon_target_pixels=512"));
+        assertTrue(budget.contains("project.property('runtime_jar_max_bytes')"));
+        assertTrue(budget.contains("project.property('runtime_icon_target_pixels')"));
+        assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_MAX_BYTES)"));
+        assertTrue(budget.contains("CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'"));
+        assertTrue(budget.contains("iconImage.width != CHISE_RUNTIME_ICON_PIXELS"));
         assertTrue(budget.contains("dependsOn 'jar'"));
         assertTrue(budget.contains("it.name == 'check' || it.name == 'qualityGate'"));
+        assertTrue(build.contains("new File(destinationDir, runtimeIconRelativePath)"));
         assertTrue(settings.contains("gradle/chise-lightweight-budget.gradle"));
+
+        assertFalse(budget.contains("1_000_000L"));
+        assertFalse(budget.contains("1_500_000L"));
     }
 
     @Test
