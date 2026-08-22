@@ -37,6 +37,9 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
+      - name: Validate version policy
+        run: python scripts/version_policy.py
+
       - name: Audit repository inputs and production source usage
         run: |
           python scripts/repository_audit.py
@@ -62,37 +65,4 @@ jobs:
           cat build/ci/artifact-summary.md >> "$GITHUB_STEP_SUMMARY"
           printf '\n- Visual asset audit: `PASS`\n' >> "$GITHUB_STEP_SUMMARY"
           printf '\n- Verified runtime: `%s`\n' "${{ steps.artifact-audit.outputs.runtime_jar }}" >> "$GITHUB_STEP_SUMMARY"
-          printf '\n- Distribution policy: GitHub Releases expose only the runtime JAR; QA evidence remains in this Actions artifact.\n' >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Stage verification evidence
-        run: |
-          mkdir -p build/verified
-          cp "build/libs/${{ steps.artifact-audit.outputs.runtime_jar }}" build/verified/
-          cp "build/libs/${{ steps.artifact-audit.outputs.sources_jar }}" build/verified/
-          cp build/ci/SHA256SUMS.txt build/verified/
-          cp build/ci/artifact-audit.json build/verified/
-          cp build/ci/visual-asset-audit.json build/verified/
-          cp build/ci/quality-summary.md build/verified/
-
-      - name: Upload verification evidence
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: ChiseTweaks-${{ steps.artifact-audit.outputs.version }}-verification-evidence
-          path: build/verified/
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload diagnostics on failure
-        if: failure()
-        continue-on-error: true
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: chisetweaks-ci-failure-${{ github.run_id }}
-          path: |
-            build/reports/tests/
-            build/reports/jacoco/
-            build/reports/pitest/
-            build/test-results/
-            build/ci/
-          if-no-files-found: ignore
-          retention-days: 7
+          printf '\n- Distribution policy: CI verifies only. It creates no tag, no GitHub Release, and uploads no ZIP artifact.\n' >> "$GITHUB_STEP_SUMMARY"
