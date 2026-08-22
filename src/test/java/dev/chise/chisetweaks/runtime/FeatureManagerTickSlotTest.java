@@ -47,7 +47,7 @@ final class FeatureManagerTickSlotTest {
     }
 
     @Test
-    void failingFeatureIsNotifiedOfQuarantineAndDisabled() {
+    void failingFeatureIsQuarantinedWithoutMutatingUserConfiguration() {
         FailingFeature feature = new FailingFeature();
         FeatureManager.TickSlot slot = new FeatureManager.TickSlot(feature);
 
@@ -55,7 +55,7 @@ final class FeatureManagerTickSlotTest {
 
         assertTrue(slot.isQuarantined());
         assertEquals(1, feature.quarantineCalls);
-        assertFalse(feature.enabled);
+        assertTrue(feature.isEnabled());
     }
 
     private static final class FakeRuntimeComponent implements TickingRuntimeComponent {
@@ -90,13 +90,11 @@ final class FeatureManagerTickSlotTest {
     }
 
     private static final class FailingFeature implements TickingFeature {
-        private boolean enabled = true;
         private int quarantineCalls;
 
         @Override public String getId() { return "failing-feature"; }
         @Override public String getName() { return "Failing feature"; }
-        @Override public boolean isEnabled() { return enabled; }
-        @Override public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        @Override public boolean isEnabled() { return true; }
         @Override public void tick(Minecraft client) { throw new IllegalStateException("boom"); }
         @Override public void onQuarantined(Minecraft client) { quarantineCalls++; }
     }
