@@ -38,12 +38,27 @@ final class LightweightRuntimeBudgetContractTest {
     }
 
     @Test
+    void runtimeJarUsesDeterministicMaximumDeflateWithoutRemovingRuntimeContents() throws IOException {
+        String budget = source("gradle/chise-lightweight-budget.gradle");
+
+        assertTrue(budget.contains("output.setLevel(9)"));
+        assertTrue(budget.contains("targetEntry.setTime(0L)"));
+        assertTrue(budget.contains("targetEntry.setMethod(ZipEntry.DEFLATED)"));
+        assertTrue(budget.contains("sourceArchive.getInputStream(entry).bytes"));
+        assertTrue(budget.contains("recompressedSize < originalSize"));
+        assertTrue(budget.contains("StandardCopyOption.ATOMIC_MOVE"));
+    }
+
+    @Test
     void sizeBudgetDoesNotIntroduceRuntimeMinifiersOrBundledUpdaterBehavior() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
+        String build = source("build.gradle");
+
         assertFalse(budget.contains("proguard"));
         assertFalse(budget.contains("shadowJar"));
         assertFalse(budget.contains("HttpClient"));
         assertFalse(budget.contains("URL("));
+        assertFalse(build.contains("-g:none"));
     }
 
     private static String source(String relativePath) throws IOException {
