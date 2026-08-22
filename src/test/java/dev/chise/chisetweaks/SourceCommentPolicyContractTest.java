@@ -1,6 +1,7 @@
 package dev.chise.chisetweaks;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,8 +9,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 final class SourceCommentPolicyContractTest {
     private static final Path MAIN_JAVA = Path.of("src/main/java");
@@ -19,9 +21,9 @@ final class SourceCommentPolicyContractTest {
             "(?s)^\\s*(?:public|private|protected|static|final|abstract|class|interface|enum|record|"
                     + "if|else|for|while|do|switch|case|return|throw|try|catch|finally|import|package|new)\\b.*");
 
-    @Test
-    void productionCommentsAreJapaneseAndContainNoCommentedOutJava() throws IOException {
-        List<String> violations = new ArrayList<>();
+    @TestFactory
+    Stream<DynamicTest> productionCommentsAreJapaneseAndContainNoCommentedOutJava() throws IOException {
+        List<Violation> violations = new ArrayList<>();
 
         try (var paths = Files.walk(MAIN_JAVA)) {
             for (Path path : paths.filter(Files::isRegularFile)
@@ -35,24 +37,23 @@ final class SourceCommentPolicyContractTest {
 
                     String normalized = normalizeJavadoc(body);
                     if (COMMENTED_OUT_JAVA.matcher(normalized).matches()) {
-                        violations.add(path + ":" + comment.line()
-                                + " コメントアウトされたJavaコード: " + oneLine(normalized));
+                        violations.add(new Violation(path, comment.line(), "コメントアウトされたJavaコード", normalized));
                         continue;
                     }
                     if (LATIN_WORD.matcher(normalized).find()
                             && !JAPANESE.matcher(normalized).find()) {
-                        violations.add(path + ":" + comment.line()
-                                + " 日本語を含まないコメント: " + oneLine(normalized));
+                        violations.add(new Violation(path, comment.line(), "日本語を含まないコメント", normalized));
                     }
                 }
             }
         }
 
-        if (!violations.isEmpty()) {
-            System.err.println("本番ソースのコメント規約違反:");
-            violations.forEach(System.err::println);
+        if (violations.isEmpty()) {
+            return Stream.of(DynamicTest.dynamicTest("本番ソースのコメント規約に違反なし", () -> { }));
         }
-        assertTrue(violations.isEmpty(), () -> "本番ソースのコメント規約違反: " + violations.size() + "件");
+        return violations.stream().map(violation -> DynamicTest.dynamicTest(
+                violation.displayName(),
+                () -> fail(violation.displayName())));
     }
 
     private static String normalizeJavadoc(String body) {
@@ -64,7 +65,7 @@ final class SourceCommentPolicyContractTest {
 
     private static String oneLine(String text) {
         String compact = text.replaceAll("\\s+", " ").trim();
-        return compact.length() <= 160 ? compact : compact.substring(0, 157) + "...";
+        return compact.length() <= 120 ? compact : compact.substring(0, 117) + "...";
     }
 
     private static List<Comment> comments(String source) {
@@ -72,7 +73,6 @@ final class SourceCommentPolicyContractTest {
         int line = 1;
         int index = 0;
         State state = State.NORMAL;
-        int commentStart = -1;
         int commentLine = -1;
         StringBuilder body = new StringBuilder();
 
@@ -102,7 +102,6 @@ final class SourceCommentPolicyContractTest {
                     }
                     if (current == '/' && next == '/') {
                         state = State.LINE_COMMENT;
-                        commentStart = index;
                         commentLine = line;
                         body.setLength(0);
                         index += 2;
@@ -110,7 +109,6 @@ final class SourceCommentPolicyContractTest {
                     }
                     if (current == '/' && next == '*') {
                         state = State.BLOCK_COMMENT;
-                        commentStart = index;
                         commentLine = line;
                         body.setLength(0);
                         index += 2;
@@ -149,7 +147,7 @@ final class SourceCommentPolicyContractTest {
                 }
                 case LINE_COMMENT -> {
                     if (current == '\n') {
-                        comments.add(new Comment(commentStart, commentLine, body.toString()));
+                        comments.add(new Comment(commentLine, body.toString()));
                         state = State.NORMAL;
                         line++;
                         index++;
@@ -160,7 +158,7 @@ final class SourceCommentPolicyContractTest {
                 }
                 case BLOCK_COMMENT -> {
                     if (current == '*' && next == '/') {
-                        comments.add(new Comment(commentStart, commentLine, body.toString()));
+                        comments.add(new Comment(commentLine, body.toString()));
                         state = State.NORMAL;
                         index += 2;
                     } else {
@@ -173,7 +171,7 @@ final class SourceCommentPolicyContractTest {
         }
 
         if (state == State.LINE_COMMENT) {
-            comments.add(new Comment(commentStart, commentLine, body.toString()));
+            comments.add(new Comment(commentLine, body.toString()));
         }
         return comments;
     }
@@ -187,6 +185,12 @@ final class SourceCommentPolicyContractTest {
         BLOCK_COMMENT
     }
 
-    private record Comment(int offset, int line, String body) {
+    private record Comment(int line, String body) {
+    }
+
+    private record Violation(Path path, int line, String reason, String body) {
+        String displayName() {
+            return path + ":" + line + " " + reason + " — " + oneLine(body);
+        }
     }
 }
