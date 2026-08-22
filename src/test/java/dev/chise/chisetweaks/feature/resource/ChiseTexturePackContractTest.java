@@ -67,6 +67,22 @@ final class ChiseTexturePackContractTest {
         assertEquals(64, packIcon.getHeight());
     }
 
+    @Test
+    void artifactAuditAllowsOnlyTheSingleKnownBuiltinPack() throws IOException {
+        String audit = Files.readString(ROOT.resolve("scripts/artifact_audit.py"));
+        String core = Files.readString(ROOT.resolve("scripts/artifact_audit_core.py"));
+
+        assertTrue(audit.contains("CHISE_TEXTURE_PACK_ROOT = \"resourcepacks/chise_texture/\""));
+        assertTrue(audit.contains("resource_pack_files != CHISE_TEXTURE_PACK_FILES"));
+        assertTrue(audit.contains("name.startswith(\"shaderpacks/\")"));
+        assertTrue(audit.contains("names_without_builtin_pack"));
+        assertTrue(audit.contains("_ORIGINAL_AUDIT_ORE_HIGHLIGHTS"));
+        assertTrue(audit.contains("unexpected_shader_or_resource_packs_bundled"));
+        assertFalse(audit.contains("resource_pack_files.issubset"));
+        assertTrue(core.contains("runtime JAR unexpectedly bundles shader/resource packs"));
+        assertTrue(core.contains("legacy Ore Highlights replacement models returned"));
+    }
+
     private static void assertPng(String relativePath, int width, int height, String expectedSha256)
             throws IOException, NoSuchAlgorithmException {
         Path path = PACK_ROOT.resolve(relativePath);
