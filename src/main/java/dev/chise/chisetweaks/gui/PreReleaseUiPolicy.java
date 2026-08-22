@@ -19,7 +19,7 @@ final class PreReleaseUiPolicy {
         if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
             return row.action() == null || (resolved == ChiseTweaksSettingsController.Surface.MAIN
                     && ("header.highlight".equals(row.id())
-                    || "header.visibilityImprovement".equals(row.id())));
+                    || "header.analyzer".equals(row.id())));
         }
 
         return switch (resolved) {
