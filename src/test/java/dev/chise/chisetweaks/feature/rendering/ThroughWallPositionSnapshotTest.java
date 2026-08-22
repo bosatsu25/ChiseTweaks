@@ -5,13 +5,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-final class AncientDebrisSnapshotTest {
+final class ThroughWallPositionSnapshotTest {
     @Test
     void publishesPackedPositionsAndRefreshesDistanceReferenceWithoutChangingTheSet() {
-        AncientDebrisSnapshot snapshot = new AncientDebrisSnapshot(4);
-        AncientDebrisSnapshot.Capture capture = new AncientDebrisSnapshot.Capture(4);
+        ThroughWallPositionSnapshot snapshot = new ThroughWallPositionSnapshot(4);
+        ThroughWallPositionSnapshot.Capture capture = new ThroughWallPositionSnapshot.Capture(4);
         long first = BlockPos.asLong(1, 15, 2);
         long second = BlockPos.asLong(4, 14, 6);
         long[] positions = {Math.min(first, second), Math.max(first, second)};
@@ -37,8 +38,8 @@ final class AncientDebrisSnapshotTest {
 
     @Test
     void changedSetAndClearPublishBoundedStateChanges() {
-        AncientDebrisSnapshot snapshot = new AncientDebrisSnapshot(3);
-        AncientDebrisSnapshot.Capture capture = new AncientDebrisSnapshot.Capture(3);
+        ThroughWallPositionSnapshot snapshot = new ThroughWallPositionSnapshot(3);
+        ThroughWallPositionSnapshot.Capture capture = new ThroughWallPositionSnapshot.Capture(3);
         long one = BlockPos.asLong(0, 15, 0);
         long two = BlockPos.asLong(1, 15, 0);
 
@@ -52,5 +53,17 @@ final class AncientDebrisSnapshotTest {
         snapshot.captureInto(capture);
         assertEquals(0, capture.count());
         assertFalse(snapshot.clear());
+    }
+
+    @Test
+    void rejectsInvalidCapacitiesAndCaptureRanges() {
+        assertThrows(IllegalArgumentException.class, () -> new ThroughWallPositionSnapshot(0));
+        assertThrows(IllegalArgumentException.class, () -> new ThroughWallPositionSnapshot.Capture(0));
+
+        ThroughWallPositionSnapshot snapshot = new ThroughWallPositionSnapshot(2);
+        assertThrows(IllegalArgumentException.class, () -> snapshot.publish(null, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> snapshot.publish(new long[1], 2, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> snapshot.captureInto(new ThroughWallPositionSnapshot.Capture(1)));
     }
 }

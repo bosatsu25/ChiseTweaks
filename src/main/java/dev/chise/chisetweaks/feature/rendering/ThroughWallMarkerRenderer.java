@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.feature.rendering;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
-import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
+import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
@@ -14,25 +14,40 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Optional;
 
-final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
+/** Retained through-terrain wire-box renderer shared by bounded analyzer features. */
+final class ThroughWallMarkerRenderer implements AutoCloseable {
+    enum Style {
+        LAVA_SOURCE,
+        ANCIENT_DEBRIS
+    }
+
     private static final RenderPipeline THROUGH_WALL_PIPELINE = RenderPipelines.register(
             RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
                     .withLocation(Identifier.fromNamespaceAndPath(
-                            "chisetweaks", "pipeline/lava_analyzer_through_walls"))
+                            "chisetweaks", "pipeline/analyzer_through_walls"))
                     .withDepthStencilState(Optional.empty())
                     .build());
-    private static final float BOX_INSET = 0.018f;
+    private static final float LAVA_BOX_INSET = 0.018f;
 
-    private final LavaSourceSnapshot.Capture capture = new LavaSourceSnapshot.Capture(
-            WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS);
-    private final RetainedThroughWallBuffer retainedBuffer = new RetainedThroughWallBuffer(
-            "ChiseTweaks Lava Source Highlight retained buffer",
-            "ChiseTweaks Lava Source Highlight retained rendering");
+    private final Style style;
+    private final ThroughWallPositionSnapshot.Capture capture;
+    private final RetainedThroughWallBuffer retainedBuffer;
 
     private long uploadedRevision = Long.MIN_VALUE;
     private boolean closed;
 
-    void render(LevelRenderContext context, LavaSourceSnapshot sources) {
+    ThroughWallMarkerRenderer(
+            Style style,
+            int capacity,
+            String bufferLabel,
+            String renderLabel) {
+        if (style == null) throw new IllegalArgumentException("style must not be null");
+        this.style = style;
+        this.capture = new ThroughWallPositionSnapshot.Capture(capacity);
+        this.retainedBuffer = new RetainedThroughWallBuffer(bufferLabel, renderLabel);
+    }
+
+    void render(LevelRenderContext context, ThroughWallPositionSnapshot sources) {
         if (closed || context == null || sources == null || sources.isEmpty()) return;
         Vec3 camera = context.levelState().cameraRenderState.pos;
         if (camera == null) return;
@@ -51,7 +66,7 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
         retainedBuffer.draw(Minecraft.getInstance(), THROUGH_WALL_PIPELINE, camera);
     }
 
-    private void rebuildAndUpload(LavaSourceSnapshot.Capture state) {
+    private void rebuildAndUpload(ThroughWallPositionSnapshot.Capture state) {
         long anchor = state.positionAt(0);
         int anchorX = BlockPos.getX(anchor);
         int anchorY = BlockPos.getY(anchor);
@@ -66,16 +81,15 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
             double dx = x + 0.5 - state.eyeX();
             double dy = y + 0.5 - state.eyeY();
             double dz = z + 0.5 - state.eyeZ();
-            int argb = LavaVisionPalettePolicy.colorForDistance(
-                    Math.sqrt(dx * dx + dy * dy + dz * dz));
+            double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
             ThroughWallWireBoxGeometry.drawWireBox(
                     buffer,
                     x - anchorX,
                     y - anchorY,
                     z - anchorZ,
-                    argb,
-                    LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS,
-                    BOX_INSET);
+                    colorForDistance(distance),
+                    edgeThicknessForDistance(distance),
+                    boxInsetForDistance(distance));
         }
 
         MeshData builtBuffer = buffer.buildOrThrow();
@@ -86,7 +100,27 @@ final class LavaAnalyzerThroughWallRenderer implements AutoCloseable {
         }
     }
 
-    /** 一時的なCPU/GPU作業領域を破棄し、後続セッションへ失敗フレームの状態を持ち越さない。 */
+    private int colorForDistance(double distance) {
+        return switch (style) {
+            case LAVA_SOURCE -> LavaVisionPalettePolicy.colorForDistance(distance);
+            case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.colorForDistance(distance);
+        };
+    }
+
+    private float edgeThicknessForDistance(double distance) {
+        return switch (style) {
+            case LAVA_SOURCE -> LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS;
+            case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.edgeThicknessForDistance(distance);
+        };
+    }
+
+    private float boxInsetForDistance(double distance) {
+        return switch (style) {
+            case LAVA_SOURCE -> LAVA_BOX_INSET;
+            case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.boxInsetForDistance(distance);
+        };
+    }
+
     void resetAfterFailure() {
         if (closed) return;
         uploadedRevision = Long.MIN_VALUE;

@@ -21,7 +21,6 @@ public final class ChiseOreCompatibilityScreen extends Screen {
     private static final int ROW_HEIGHT = 24;
 
     private final Screen parent;
-    private final boolean japanese;
     private final ArrayList<Button> removeButtons = new ArrayList<>();
     private EditBox idBox;
     private Button styleButton;
@@ -39,10 +38,9 @@ public final class ChiseOreCompatibilityScreen extends Screen {
     private int page;
     private String feedback = "";
 
-    public ChiseOreCompatibilityScreen(Screen parent, boolean japanese) {
-        super(Component.literal("Ore Compatibility"));
+    public ChiseOreCompatibilityScreen(Screen parent) {
+        super(Component.translatable("screen.chisetweaks.ore_compat.title"));
         this.parent = parent;
-        this.japanese = japanese;
     }
 
     @Override
@@ -60,7 +58,7 @@ public final class ChiseOreCompatibilityScreen extends Screen {
         var idRect = layout.idInput();
         idBox = addRenderableWidget(new EditBox(
                 font, idRect.x(), idRect.y(), idRect.width(), idRect.height(),
-                Component.literal(japanese ? "MODブロックID" : "Mod block ID")));
+                Component.translatable("screen.chisetweaks.ore_compat.block_id")));
         idBox.setHint(Component.literal("examplemod:copper_ore"));
         idBox.setResponder(ignored -> refreshControls());
 
@@ -72,9 +70,9 @@ public final class ChiseOreCompatibilityScreen extends Screen {
 
         var addRect = layout.add();
         addButton = addRenderableWidget(Button.builder(
-                Component.literal(compactLayout
-                        ? (japanese ? "追加" : "Add")
-                        : (japanese ? "追加/更新" : "Add/Update")),
+                Component.translatable(compactLayout
+                        ? "screen.chisetweaks.ore_compat.add"
+                        : "screen.chisetweaks.ore_compat.add_update"),
                 ignored -> addEntry())
                 .bounds(addRect.x(), addRect.y(), addRect.width(), addRect.height())
                 .build());
@@ -83,7 +81,7 @@ public final class ChiseOreCompatibilityScreen extends Screen {
         for (int slot = 0; slot < pageSize; slot++) {
             final int visibleSlot = slot;
             removeButtons.add(addRenderableWidget(Button.builder(
-                    Component.literal(japanese ? "削除" : "Remove"), ignored -> removeEntry(visibleSlot))
+                    Component.translatable("screen.chisetweaks.ore_compat.remove"), ignored -> removeEntry(visibleSlot))
                     .bounds(panelX + panelWidth - removeWidth - 10,
                             listTop + slot * ROW_HEIGHT, removeWidth, 20)
                     .build()));
@@ -91,24 +89,28 @@ public final class ChiseOreCompatibilityScreen extends Screen {
 
         var previous = layout.previous();
         previousButton = addRenderableWidget(Button.builder(
-                Component.literal(compactLayout ? "‹" : (japanese ? "前へ" : "Previous")),
+                compactLayout
+                        ? Component.literal("‹")
+                        : Component.translatable("screen.chisetweaks.ore_compat.previous"),
                 ignored -> movePage(-1))
                 .bounds(previous.x(), previous.y(), previous.width(), previous.height()).build());
         var next = layout.next();
         nextButton = addRenderableWidget(Button.builder(
-                Component.literal(compactLayout ? "›" : (japanese ? "次へ" : "Next")),
+                compactLayout
+                        ? Component.literal("›")
+                        : Component.translatable("screen.chisetweaks.ore_compat.next"),
                 ignored -> movePage(1))
                 .bounds(next.x(), next.y(), next.width(), next.height()).build());
         var clear = layout.clear();
         clearButton = addRenderableWidget(Button.builder(
-                Component.literal(compactLayout
-                        ? (japanese ? "全削除" : "Clear")
-                        : (japanese ? "個別設定を空にする" : "Clear overrides")),
+                Component.translatable(compactLayout
+                        ? "screen.chisetweaks.ore_compat.clear"
+                        : "screen.chisetweaks.ore_compat.clear_overrides"),
                 ignored -> clearEntries())
                 .bounds(clear.x(), clear.y(), clear.width(), clear.height()).build());
         var back = layout.back();
         addRenderableWidget(Button.builder(
-                Component.literal(japanese ? "戻る" : "Back"), ignored -> onClose())
+                Component.translatable("screen.chisetweaks.common.back"), ignored -> onClose())
                 .bounds(back.x(), back.y(), back.width(), back.height()).build());
         refreshControls();
     }
@@ -118,26 +120,24 @@ public final class ChiseOreCompatibilityScreen extends Screen {
         String raw = idBox.getValue() == null ? "" : idBox.getValue().trim().toLowerCase(Locale.ROOT);
         Identifier id = Identifier.tryParse(raw);
         if (id == null || "minecraft".equals(id.getNamespace())) {
-            feedback = japanese ? "非バニラMODのBlock IDを入力してください。" : "Enter a non-vanilla mod block ID.";
+            feedback = text("screen.chisetweaks.ore_compat.feedback.invalid");
             refreshControls();
             return;
         }
         if (!isRegisteredBlock(id)) {
-            feedback = japanese ? "現在のクライアントに存在しないBlock IDです。" : "That block is not registered in this client.";
+            feedback = text("screen.chisetweaks.ore_compat.feedback.unregistered");
             refreshControls();
             return;
         }
         if (!OreHighlightCompatibilityConfig.put(id.toString(), selectedStyle)) {
-            feedback = japanese
-                    ? "登録できません。入力・件数上限・設定ファイルの保存先を確認してください。"
-                    : "Could not save the override. Check the ID, entry limit, and config storage.";
+            feedback = text("screen.chisetweaks.ore_compat.feedback.save_failed");
             refreshControls();
             return;
         }
         OreHighlightModelReload.request();
         idBox.setValue("");
         page = Math.max(0, (entries().size() - 1) / pageSize);
-        feedback = japanese ? "追加/更新しました。描画モデルを再構築します。" : "Added/updated. Rebuilding visual models.";
+        feedback = text("screen.chisetweaks.ore_compat.feedback.saved");
         refreshControls();
     }
 
@@ -154,9 +154,9 @@ public final class ChiseOreCompatibilityScreen extends Screen {
         if (index < 0 || index >= entries.size()) return;
         if (OreHighlightCompatibilityConfig.remove(entries.get(index).blockId())) {
             OreHighlightModelReload.request();
-            feedback = japanese ? "削除しました。描画モデルを再構築します。" : "Removed. Rebuilding visual models.";
+            feedback = text("screen.chisetweaks.ore_compat.feedback.removed");
         } else {
-            feedback = japanese ? "削除内容を保存できませんでした。" : "Could not persist the removal.";
+            feedback = text("screen.chisetweaks.ore_compat.feedback.remove_failed");
         }
         clampPage();
         refreshControls();
@@ -165,13 +165,13 @@ public final class ChiseOreCompatibilityScreen extends Screen {
     private void clearEntries() {
         if (entries().isEmpty()) return;
         if (!OreHighlightCompatibilityConfig.clear()) {
-            feedback = japanese ? "設定を空にした内容を保存できませんでした。" : "Could not persist the cleared overrides.";
+            feedback = text("screen.chisetweaks.ore_compat.feedback.clear_failed");
             refreshControls();
             return;
         }
         OreHighlightModelReload.request();
         page = 0;
-        feedback = japanese ? "個別設定を空にしました。描画モデルを再構築します。" : "Overrides cleared. Rebuilding visual models.";
+        feedback = text("screen.chisetweaks.ore_compat.feedback.cleared");
         refreshControls();
     }
 
@@ -222,7 +222,7 @@ public final class ChiseOreCompatibilityScreen extends Screen {
     }
 
     private Component styleMessage() {
-        return Component.literal((japanese ? "模様: " : "Style: ") + selectedStyle.key());
+        return Component.translatable("screen.chisetweaks.ore_compat.style", selectedStyle.key());
     }
 
     private static List<OreHighlightCompatibilityConfig.Entry> entries() {
@@ -247,12 +247,10 @@ public final class ChiseOreCompatibilityScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float delta) {
         super.extractRenderState(extractor, mouseX, mouseY, delta);
         extractor.centeredText(font,
-                Component.literal(japanese ? "MOD鉱石の対象" : "Modded Ore Targets"),
+                Component.translatable("screen.chisetweaks.ore_compat.title"),
                 width / 2, 10, 0xFFFFFFFF);
         extractor.centeredText(font,
-                Component.literal(japanese
-                        ? "c:ores自動判定を補完する個別指定。元のMODテクスチャは変更しません。"
-                        : "Explicit overrides complement c:ores detection; source mod textures remain unchanged."),
+                Component.translatable("screen.chisetweaks.ore_compat.subtitle"),
                 width / 2, 24, 0xFFB8B8B8);
 
         List<OreHighlightCompatibilityConfig.Entry> entries = entries();
@@ -281,6 +279,10 @@ public final class ChiseOreCompatibilityScreen extends Screen {
         int end = value.length();
         while (end > 0 && font.width(value.substring(0, end) + "…") > maxWidth) end--;
         return value.substring(0, end) + "…";
+    }
+
+    private static String text(String key) {
+        return Component.translatable(key).getString();
     }
 
     @Override

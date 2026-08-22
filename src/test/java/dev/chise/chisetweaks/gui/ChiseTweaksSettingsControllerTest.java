@@ -19,21 +19,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseTweaksSettingsControllerTest {
     @Test
-    void japaneseAndEnglishUseTheSameStableMainStructure() {
-        var japanese = new ChiseTweaksSettingsController(true);
-        var english = new ChiseTweaksSettingsController(false);
-        List<ChiseTweaksSettingRowDefinition> japaneseRows = japanese.rows();
-        List<ChiseTweaksSettingRowDefinition> englishRows = english.rows();
+    void repeatedControllersUseTheSameStableMainStructure() {
+        var first = new ChiseTweaksSettingsController();
+        var second = new ChiseTweaksSettingsController();
 
-        assertEquals(ids(englishRows), ids(japaneseRows));
-        assertEquals(kinds(englishRows), kinds(japaneseRows));
-        assertRowContracts(japaneseRows);
-        assertRowContracts(englishRows);
+        assertEquals(ids(first.rows()), ids(second.rows()));
+        assertEquals(kinds(first.rows()), kinds(second.rows()));
+        assertRowContracts(first.rows());
+        assertRowContracts(second.rows());
     }
 
     @Test
     void mainSurfaceKeepsSemanticGroupsAndAnalyzerTogglesCompact() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
         assertEquals(List.of(
@@ -53,45 +51,50 @@ final class ChiseTweaksSettingsControllerTest {
                 "header.visibilityImprovement",
                 "fireVisibility"), ids(rows));
 
-        assertEquals(List.of("ハイライト", "Visual Filter", "アナライザー", "見やすさ"),
+        assertEquals(List.of(
+                        "header.highlight",
+                        "header.visualFilter",
+                        "header.analyzer",
+                        "header.visibilityImprovement"),
                 rows.stream()
                         .filter(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER)
-                        .map(ChiseTweaksSettingRowDefinition::name)
+                        .map(ChiseTweaksSettingRowDefinition::id)
                         .toList());
         assertFalse(rows.stream().anyMatch(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.INTEGER));
         assertRowContracts(rows);
     }
 
     @Test
-    void mainFeatureNamesUseTheFinalUserFacingTerminology() {
-        var controller = new ChiseTweaksSettingsController(true);
+    void mainRowsRemainBoundToTheExpectedFeatureSettings() {
+        var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
-        assertEquals("鉱石ハイライト", row(rows, "materials").name());
-        assertEquals("ネザーハイライト", row(rows, "nether").name());
-        assertEquals("細線ハイライト", row(rows, "thread").name());
-        assertEquals("隠れブロックハイライト", row(rows, "hidden").name());
-        assertEquals("ガラスハイライト", row(rows, "glass").name());
-        assertEquals("昆布ハイライト", row(rows, "kelp").name());
-        assertEquals("ブロックフィルター", row(rows, "focusBlocks").name());
-        assertEquals("エンティティフィルター", row(rows, "focusEntities").name());
-        assertEquals("溶岩源ハイライト", row(rows, "lava").name());
-        assertEquals("古代の残骸アナライザー", row(rows, "ancientDebrisAnalyzer").name());
-        assertEquals("火炎表示を低くする", row(rows, "fireVisibility").name());
+        assertSame(FeatureSwitches.MATERIAL_HIGHLIGHTS, row(rows, "materials").booleanConfig());
+        assertSame(FeatureSwitches.NETHER_PALETTE, row(rows, "nether").booleanConfig());
+        assertSame(FeatureSwitches.FINE_THREAD_TRACE, row(rows, "thread").booleanConfig());
+        assertSame(FeatureSwitches.HIDDEN_SURFACE_TRACE, row(rows, "hidden").booleanConfig());
+        assertSame(FeatureSwitches.GLASS_INSPECTION, row(rows, "glass").booleanConfig());
+        assertSame(FeatureSwitches.KELP_HIGHLIGHT, row(rows, "kelp").booleanConfig());
+        assertSame(FeatureSwitches.BUILDER_FOCUS_BLOCKS, row(rows, "focusBlocks").booleanConfig());
+        assertSame(FeatureSwitches.BUILDER_FOCUS_ENTITIES, row(rows, "focusEntities").booleanConfig());
+        assertSame(LocalFeatureSwitches.LAVA_HIGHLIGHT, row(rows, "lava").booleanConfig());
+        assertSame(LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
+                row(rows, "ancientDebrisAnalyzer").booleanConfig());
+        assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, row(rows, "fireVisibility").booleanConfig());
     }
 
     @Test
     void settingsActionsAreAttachedOnlyToTheGroupsTheyActuallyConfigure() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
         ChiseTweaksSettingRowDefinition highlightHeader = row(rows, "header.highlight");
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS, highlightHeader.action());
-        assertEquals("設定", highlightHeader.actionLabel());
+        assertFalse(highlightHeader.actionLabel().isBlank());
 
         ChiseTweaksSettingRowDefinition analyzerHeader = row(rows, "header.analyzer");
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS, analyzerHeader.action());
-        assertEquals("設定", analyzerHeader.actionLabel());
+        assertFalse(analyzerHeader.actionLabel().isBlank());
 
         ChiseTweaksSettingRowDefinition visibilityHeader = row(rows, "header.visibilityImprovement");
         assertNull(visibilityHeader.action());
@@ -111,7 +114,7 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void ancientDebrisAnalyzerIsOptInAndUsesIndependentBoundedSettings() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         ChiseTweaksSettingRowDefinition analyzer = row(controller.rows(), "ancientDebrisAnalyzer");
         List<ChiseTweaksSettingRowDefinition> details = controller.rows(
                 ChiseTweaksSettingsController.Surface.LAVA_DETAILS);
@@ -129,7 +132,7 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void highlightDetailSurfaceKeepsPreviouslyReachableAdvancedSettings() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
 
@@ -155,11 +158,11 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void analyzerDetailSurfaceKeepsDynamicLavaAndStaticDebrisSettingsSeparate() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
                 ChiseTweaksSettingsController.Surface.LAVA_DETAILS);
 
-        assertEquals("アナライザー設定", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.LAVA_DETAILS));
+        assertFalse(controller.surfaceTitle(ChiseTweaksSettingsController.Surface.LAVA_DETAILS).isBlank());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 row(rows, "lavaRange").integerConfig());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
@@ -184,7 +187,7 @@ final class ChiseTweaksSettingsControllerTest {
         List<ChiseBooleanSetting> highlights = highlightFeatures();
         try {
             for (ChiseBooleanSetting highlight : highlights) highlight.setBooleanValueSilently(false);
-            var controller = new ChiseTweaksSettingsController(true);
+            var controller = new ChiseTweaksSettingsController();
 
             controller.toggleHighlightBulk();
 
@@ -202,7 +205,7 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void lavaSourceHighlightIsOptInAndSharesTheAnalyzerSettingsSurface() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         ChiseTweaksSettingRowDefinition lava = row(controller.rows(), "lava");
         ChiseTweaksSettingRowDefinition header = row(controller.rows(), "header.analyzer");
 
@@ -214,7 +217,7 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void fireVisibilityRemainsOptInAndOutsideAnalyzerSettings() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         ChiseTweaksSettingRowDefinition fire = row(controller.rows(), "fireVisibility");
         ChiseTweaksSettingRowDefinition visibility = row(controller.rows(), "header.visibilityImprovement");
 
@@ -227,7 +230,7 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void kelpHighlightIsOptInAndUsesTheSharedHighlightSurface() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         ChiseTweaksSettingRowDefinition kelp = row(controller.rows(), "kelp");
 
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, kelp.kind());
@@ -238,7 +241,7 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void glassHighlightIsOptInAndUsesTheSharedHighlightSurface() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         ChiseTweaksSettingRowDefinition glass = row(controller.rows(), "glass");
 
         assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, glass.kind());
@@ -249,7 +252,7 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void rowIdsAreUniqueAndRemovedFeaturesDoNotReturnOnAnySurface() {
-        var controller = new ChiseTweaksSettingsController(false);
+        var controller = new ChiseTweaksSettingsController();
         Set<String> removedTokens = Set.of("pumpkin", "placement", "lavaSourceColor", "sodium");
         for (ChiseTweaksSettingsController.Surface surface : ChiseTweaksSettingsController.Surface.values()) {
             Set<String> unique = new HashSet<>();

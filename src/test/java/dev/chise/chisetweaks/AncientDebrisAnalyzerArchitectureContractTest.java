@@ -70,18 +70,28 @@ final class AncientDebrisAnalyzerArchitectureContractTest {
     }
 
     @Test
-    void rendererUsesRetainedRevisionDrivenGeometry() throws IOException {
-        String renderer = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisThroughWallRenderer.java");
+    void analyzersShareRetentionSnapshotAndRevisionDrivenRenderer() throws IOException {
+        String feature = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
+        String renderer = source("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
+        String nearest = source("src/main/java/dev/chise/chisetweaks/feature/rendering/NearestPositionBuffer.java");
         String retained = source("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
 
+        assertTrue(feature.contains("new ThroughWallPositionSnapshot("));
+        assertTrue(feature.contains("new NearestPositionBuffer("));
+        assertTrue(feature.contains("ThroughWallMarkerRenderer.Style.ANCIENT_DEBRIS"));
         assertTrue(renderer.contains("sources.renderRevision() != uploadedRevision"));
         assertTrue(renderer.contains("RetainedThroughWallBuffer"));
         assertTrue(renderer.contains("rebuildAndUpload(capture)"));
+        assertTrue(nearest.contains("double[] distanceSquared"));
         assertTrue(retained.contains("MappableRingBuffer"));
         assertTrue(retained.contains("anchorX - camera.x"));
         assertTrue(retained.contains("vertexBuffer.rotate()"));
         assertFalse(renderer.contains("getBlockState("));
         assertFalse(renderer.contains("getFluidState("));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisThroughWallRenderer.java")));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisSnapshot.java")));
     }
 
     @Test

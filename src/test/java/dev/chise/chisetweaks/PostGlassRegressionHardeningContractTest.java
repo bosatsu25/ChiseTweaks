@@ -27,15 +27,16 @@ final class PostGlassRegressionHardeningContractTest {
     }
 
     @Test
-    void lockedBuilderFocusDoesNotCompileRegistryRulesOrWireCallbacksAtStartup() throws IOException {
+    void lockedBuilderFocusIsGatedInRuntimeBindingsWithoutConfigDependingOnRendering() throws IOException {
         String config = source("src/main/java/dev/chise/chisetweaks/config/FeatureConfig.java");
         String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
-        for (String source : new String[] {config, bindings}) {
-            assertTrue(source.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)"));
-            assertTrue(source.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES)"));
-        }
-        assertTrue(config.contains("if (builderFocusAvailable()) BuilderFocusVisibility.applyConfig();"));
+
+        assertFalse(config.contains("BuilderFocusVisibility"));
+        assertFalse(config.contains("PreReleaseFeaturePolicy"));
+        assertTrue(bindings.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)"));
+        assertTrue(bindings.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES)"));
         assertTrue(bindings.contains("if (builderFocusAvailable())"));
+        assertTrue(bindings.contains("BuilderFocusVisibility.applyConfig();"));
     }
 
     @Test

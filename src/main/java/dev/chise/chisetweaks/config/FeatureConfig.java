@@ -7,12 +7,9 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
-import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
-import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
-import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -27,7 +24,6 @@ public final class FeatureConfig {
 
     public static void onConfigLoaded() {
         sanitizeStringLists();
-        if (builderFocusAvailable()) BuilderFocusVisibility.applyConfig();
     }
 
     public static void sanitizeStringLists() {
@@ -121,11 +117,6 @@ public final class FeatureConfig {
                     "ChiseTweaks feature config was not saved because the target was invalid or unsafe");
             return false;
         }
-    }
-
-    private static boolean builderFocusAvailable() {
-        return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)
-                || PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES);
     }
 
     private static void resetForLoad() {

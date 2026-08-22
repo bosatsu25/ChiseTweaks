@@ -32,12 +32,16 @@ import java.util.Map;
 public final class AncientDebrisAnalyzerFeature implements TickingFeature, SessionAwareRuntimeComponent {
     private static final long[] EMPTY_POSITIONS = new long[0];
 
-    private final AncientDebrisThroughWallRenderer renderer = new AncientDebrisThroughWallRenderer();
-    private final AncientDebrisSnapshot visibleMarkers = new AncientDebrisSnapshot(
+    private final ThroughWallMarkerRenderer renderer = new ThroughWallMarkerRenderer(
+            ThroughWallMarkerRenderer.Style.ANCIENT_DEBRIS,
+            AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS,
+            "ChiseTweaks Ancient Debris Analyzer retained buffer",
+            "ChiseTweaks Ancient Debris Analyzer retained rendering");
+    private final ThroughWallPositionSnapshot visibleMarkers = new ThroughWallPositionSnapshot(
+            AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS);
+    private final NearestPositionBuffer nearestMarkers = new NearestPositionBuffer(
             AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS);
     private final Map<Long, long[]> positionsByChunk = new HashMap<>();
-    private final long[] selectedPositions = new long[AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS];
-    private final double[] selectedDistanceSquared = new double[AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS];
 
     private ClientLevel lastLevel;
     private long lastPlayerBlock = Long.MIN_VALUE;
@@ -241,7 +245,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
 
     private void publishVisibleMarkers(Minecraft client, int rangeBlocks, int maxMarkers) {
         Vec3 eye = client.player.getEyePosition();
-        int count = 0;
+        nearestMarkers.clear();
         for (long[] chunkPositions : positionsByChunk.values()) {
             for (long packed : chunkPositions) {
                 double dx = BlockPos.getX(packed) + 0.5 - eye.x;
@@ -249,31 +253,16 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
                 double dz = BlockPos.getZ(packed) + 0.5 - eye.z;
                 double distanceSquared = dx * dx + dy * dy + dz * dz;
                 if (!AncientDebrisAnalyzerPolicy.withinRangeSquared(distanceSquared, rangeBlocks)) continue;
-                count = retainNearest(packed, distanceSquared, count, maxMarkers);
+                nearestMarkers.offer(packed, distanceSquared, maxMarkers);
             }
         }
-        Arrays.sort(selectedPositions, 0, count);
-        visibleMarkers.publish(selectedPositions, count, eye.x, eye.y, eye.z);
-    }
-
-    private int retainNearest(long packed, double distanceSquared, int count, int limit) {
-        if (count < limit) {
-            selectedPositions[count] = packed;
-            selectedDistanceSquared[count] = distanceSquared;
-            return count + 1;
-        }
-        int farthestIndex = 0;
-        double farthestDistance = selectedDistanceSquared[0];
-        for (int index = 1; index < count; index++) {
-            if (selectedDistanceSquared[index] > farthestDistance) {
-                farthestDistance = selectedDistanceSquared[index];
-                farthestIndex = index;
-            }
-        }
-        if (distanceSquared >= farthestDistance) return count;
-        selectedPositions[farthestIndex] = packed;
-        selectedDistanceSquared[farthestIndex] = distanceSquared;
-        return count;
+        nearestMarkers.sortPositions();
+        visibleMarkers.publish(
+                nearestMarkers.positions(),
+                nearestMarkers.count(),
+                eye.x,
+                eye.y,
+                eye.z);
     }
 
     private void render(LevelRenderContext context) {
@@ -301,6 +290,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     private void resetForLevel(ClientLevel level) {
         positionsByChunk.clear();
         visibleMarkers.clear();
+        nearestMarkers.clear();
         lastLevel = level;
         lastPlayerBlock = Long.MIN_VALUE;
         lastPlayerChunk = Long.MIN_VALUE;
@@ -313,6 +303,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     private void clearSessionData() {
         positionsByChunk.clear();
         visibleMarkers.clear();
+        nearestMarkers.clear();
         lastLevel = null;
         lastPlayerBlock = Long.MIN_VALUE;
         lastPlayerChunk = Long.MIN_VALUE;

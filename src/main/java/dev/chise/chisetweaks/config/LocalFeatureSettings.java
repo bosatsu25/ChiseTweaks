@@ -1,134 +1,127 @@
 package dev.chise.chisetweaks.config;
 
+import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
 
+/**
+ * UI-facing settings bound directly to {@link LocalFeatureConfig}.
+ * The config instance is the single in-memory source of truth; these objects add metadata and callbacks only.
+ */
 public final class LocalFeatureSettings {
+    private static Runnable worksiteVisibilityModeChangedCallback = () -> {};
+    private static Runnable oreHighlightChangedCallback = () -> {};
+
     public static final SimpleBooleanSetting ORE_HIGHLIGHT_ANIMATION = bool(
             "localOreHighlightAnimation", false,
             "Ore highlight motion", "鉱石ハイライトの動き",
             "Animate Ore Highlights. Off keeps the same pattern static for reduced motion.",
-            "鉱石ハイライトを動かします。OFFでは同じ模様を静止表示し、動きを抑えます。");
+            "鉱石ハイライトを動かします。OFFでは同じ模様を静止表示し、動きを抑えます。",
+            () -> config().oreHighlightAnimationEnabled,
+            value -> config().oreHighlightAnimationEnabled = value);
 
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_HORIZONTAL_RADIUS = integer(
-            "localWorksiteVisibilityHorizontalRadius", 5, 1, 8,
-            "Highlight scan radius", "ハイライト範囲");
+            "localWorksiteVisibilityHorizontalRadius", 5,
+            WorksiteVisibilityBudgetPolicy.MIN_HORIZONTAL_RADIUS,
+            WorksiteVisibilityBudgetPolicy.MAX_HORIZONTAL_RADIUS,
+            "Highlight scan radius", "ハイライト範囲",
+            () -> config().worksiteVisibilityHorizontalRadius,
+            value -> config().worksiteVisibilityHorizontalRadius = value);
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_VERTICAL_RADIUS = integer(
-            "localWorksiteVisibilityVerticalRadius", 3, 1, 5,
-            "Highlight vertical radius", "ハイライト垂直範囲");
+            "localWorksiteVisibilityVerticalRadius", 3,
+            WorksiteVisibilityBudgetPolicy.MIN_VERTICAL_RADIUS,
+            WorksiteVisibilityBudgetPolicy.MAX_VERTICAL_RADIUS,
+            "Highlight vertical radius", "ハイライト垂直範囲",
+            () -> config().worksiteVisibilityVerticalRadius,
+            value -> config().worksiteVisibilityVerticalRadius = value);
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_INTERVAL = integer(
-            "localWorksiteVisibilityIntervalTicks", 10, 5, 100,
-            "Highlight scan interval", "ハイライト更新間隔");
+            "localWorksiteVisibilityIntervalTicks", 10,
+            WorksiteVisibilityBudgetPolicy.MIN_INTERVAL_TICKS,
+            WorksiteVisibilityBudgetPolicy.MAX_INTERVAL_TICKS,
+            "Highlight scan interval", "ハイライト更新間隔",
+            () -> config().worksiteVisibilityIntervalTicks,
+            value -> config().worksiteVisibilityIntervalTicks = value);
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_MAX_OVERLAYS = integer(
-            "localWorksiteVisibilityMaxOverlays", 12, 1, 24,
-            "Maximum highlight overlays", "ハイライト最大表示数");
+            "localWorksiteVisibilityMaxOverlays", 12, 1,
+            WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS,
+            "Maximum highlight overlays", "ハイライト最大表示数",
+            () -> config().worksiteVisibilityMaxOverlayResults,
+            value -> config().worksiteVisibilityMaxOverlayResults = value);
     public static final SimpleBooleanSetting WORKSITE_VISIBILITY_WORLD_OVERLAY = bool(
             "localWorksiteVisibilityWorldOverlay", true,
             "World overlay", "ワールド表示",
             "Draw Chise-owned line markers for visible classified blocks.",
-            "見えている対象ブロックにChise独自の補助線を描画します。");
+            "見えている対象ブロックにChise独自の補助線を描画します。",
+            () -> config().worksiteVisibilityWorldOverlay,
+            value -> config().worksiteVisibilityWorldOverlay = value);
     public static final SimpleBooleanSetting WORKSITE_VISIBILITY_EXCLUSIVE_MODE = bool(
             "localWorksiteVisibilityExclusiveMode", false,
             "Exclusive highlight mode", "ハイライト排他モード",
             "Keep at most one scan-based highlight mode active at a time.",
-            "スキャン型ハイライトを同時に1つまでに制限します。");
+            "スキャン型ハイライトを同時に1つまでに制限します。",
+            () -> config().worksiteVisibilityExclusiveMode,
+            value -> config().worksiteVisibilityExclusiveMode = value);
 
     public static final ChiseIntegerSetting LAVA_ANALYZER_HORIZONTAL_RADIUS = integer(
-            "localLavaAnalyzerHorizontalRadius", 5, 1, 8,
-            "Lava source highlight range", "溶岩源ハイライト範囲");
+            "localLavaAnalyzerHorizontalRadius", 5,
+            WorksiteVisibilityBudgetPolicy.MIN_HORIZONTAL_RADIUS,
+            WorksiteVisibilityBudgetPolicy.MAX_HORIZONTAL_RADIUS,
+            "Lava source highlight range", "溶岩源ハイライト範囲",
+            () -> config().lavaAnalyzerHorizontalRadius,
+            value -> config().lavaAnalyzerHorizontalRadius = value);
     public static final ChiseIntegerSetting LAVA_ANALYZER_VERTICAL_RADIUS = integer(
-            "localLavaAnalyzerVerticalRadius", 3, 1, 5,
-            "Lava source vertical range", "溶岩源垂直範囲");
+            "localLavaAnalyzerVerticalRadius", 3,
+            WorksiteVisibilityBudgetPolicy.MIN_VERTICAL_RADIUS,
+            WorksiteVisibilityBudgetPolicy.MAX_VERTICAL_RADIUS,
+            "Lava source vertical range", "溶岩源垂直範囲",
+            () -> config().lavaAnalyzerVerticalRadius,
+            value -> config().lavaAnalyzerVerticalRadius = value);
     public static final ChiseIntegerSetting LAVA_ANALYZER_INTERVAL = integer(
-            "localLavaAnalyzerIntervalTicks", 10, 5, 100,
-            "Lava source update interval", "溶岩源更新間隔");
+            "localLavaAnalyzerIntervalTicks", 10,
+            WorksiteVisibilityBudgetPolicy.MIN_INTERVAL_TICKS,
+            WorksiteVisibilityBudgetPolicy.MAX_INTERVAL_TICKS,
+            "Lava source update interval", "溶岩源更新間隔",
+            () -> config().lavaAnalyzerIntervalTicks,
+            value -> config().lavaAnalyzerIntervalTicks = value);
     public static final ChiseIntegerSetting LAVA_ANALYZER_MAX_OVERLAYS = integer(
-            "localLavaAnalyzerMaxOverlays", 12, 1, 24,
-            "Maximum lava source markers", "溶岩源最大表示数");
+            "localLavaAnalyzerMaxOverlays", 12, 1,
+            WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS,
+            "Maximum lava source markers", "溶岩源最大表示数",
+            () -> config().lavaAnalyzerMaxOverlayResults,
+            value -> config().lavaAnalyzerMaxOverlayResults = value);
 
     public static final ChiseIntegerSetting ANCIENT_DEBRIS_ANALYZER_RANGE = integer(
             "localAncientDebrisAnalyzerRange",
             AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS,
             AncientDebrisAnalyzerPolicy.MIN_RANGE_BLOCKS,
             AncientDebrisAnalyzerPolicy.MAX_RANGE_BLOCKS,
-            "Ancient Debris detection range", "古代の残骸の検出範囲");
+            "Ancient Debris detection range", "古代の残骸の検出範囲",
+            () -> config().ancientDebrisAnalyzerRangeBlocks,
+            value -> config().ancientDebrisAnalyzerRangeBlocks = value);
     public static final ChiseIntegerSetting ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS = integer(
             "localAncientDebrisAnalyzerMaxMarkers",
             AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS,
             AncientDebrisAnalyzerPolicy.MIN_MAX_MARKERS,
             AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS,
-            "Maximum Ancient Debris markers", "古代の残骸の最大表示数");
+            "Maximum Ancient Debris markers", "古代の残骸の最大表示数",
+            () -> config().ancientDebrisAnalyzerMaxMarkers,
+            value -> config().ancientDebrisAnalyzerMaxMarkers = value);
 
-    private static boolean initialized;
-    private static boolean syncing;
-    private static Runnable worksiteVisibilityModeChangedCallback = () -> {};
-    private static Runnable oreHighlightChangedCallback = () -> {};
+    static {
+        ORE_HIGHLIGHT_ANIMATION.setValueChangeCallback(
+                ignored -> oreHighlightChangedCallback.run());
+        WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setValueChangeCallback(
+                ignored -> worksiteVisibilityModeChangedCallback.run());
+    }
 
     private LocalFeatureSettings() {}
 
-    public static synchronized void init() {
-        syncFromStorage();
-        if (initialized) return;
-        bindCallbacks();
-        initialized = true;
-    }
-
-    private static void syncFromStorage() {
-        syncing = true;
-        try {
-            LocalFeatureConfig c = LocalFeatureConfig.getInstance();
-            ORE_HIGHLIGHT_ANIMATION.setBooleanValueSilently(c.oreHighlightAnimationEnabled);
-            WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setIntegerValueSilently(c.worksiteVisibilityHorizontalRadius);
-            WORKSITE_VISIBILITY_VERTICAL_RADIUS.setIntegerValueSilently(c.worksiteVisibilityVerticalRadius);
-            WORKSITE_VISIBILITY_INTERVAL.setIntegerValueSilently(c.worksiteVisibilityIntervalTicks);
-            WORKSITE_VISIBILITY_MAX_OVERLAYS.setIntegerValueSilently(c.worksiteVisibilityMaxOverlayResults);
-            WORKSITE_VISIBILITY_WORLD_OVERLAY.setBooleanValueSilently(c.worksiteVisibilityWorldOverlay);
-            WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setBooleanValueSilently(c.worksiteVisibilityExclusiveMode);
-            LAVA_ANALYZER_HORIZONTAL_RADIUS.setIntegerValueSilently(c.lavaAnalyzerHorizontalRadius);
-            LAVA_ANALYZER_VERTICAL_RADIUS.setIntegerValueSilently(c.lavaAnalyzerVerticalRadius);
-            LAVA_ANALYZER_INTERVAL.setIntegerValueSilently(c.lavaAnalyzerIntervalTicks);
-            LAVA_ANALYZER_MAX_OVERLAYS.setIntegerValueSilently(c.lavaAnalyzerMaxOverlayResults);
-            ANCIENT_DEBRIS_ANALYZER_RANGE.setIntegerValueSilently(c.ancientDebrisAnalyzerRangeBlocks);
-            ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.setIntegerValueSilently(c.ancientDebrisAnalyzerMaxMarkers);
-        } finally {
-            syncing = false;
-        }
-    }
-
-    private static void bindCallbacks() {
-        ORE_HIGHLIGHT_ANIMATION.setValueChangeCallback(ignored -> {
-            apply(c -> c.oreHighlightAnimationEnabled = ORE_HIGHLIGHT_ANIMATION.getBooleanValue());
-            oreHighlightChangedCallback.run();
-        });
-        WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> apply(
-                c -> c.worksiteVisibilityHorizontalRadius = WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.getIntegerValue()));
-        WORKSITE_VISIBILITY_VERTICAL_RADIUS.setValueChangeCallback(ignored -> apply(
-                c -> c.worksiteVisibilityVerticalRadius = WORKSITE_VISIBILITY_VERTICAL_RADIUS.getIntegerValue()));
-        WORKSITE_VISIBILITY_INTERVAL.setValueChangeCallback(ignored -> apply(
-                c -> c.worksiteVisibilityIntervalTicks = WORKSITE_VISIBILITY_INTERVAL.getIntegerValue()));
-        WORKSITE_VISIBILITY_MAX_OVERLAYS.setValueChangeCallback(ignored -> apply(
-                c -> c.worksiteVisibilityMaxOverlayResults = WORKSITE_VISIBILITY_MAX_OVERLAYS.getIntegerValue()));
-        WORKSITE_VISIBILITY_WORLD_OVERLAY.setValueChangeCallback(ignored -> apply(
-                c -> c.worksiteVisibilityWorldOverlay = WORKSITE_VISIBILITY_WORLD_OVERLAY.getBooleanValue()));
-        WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setValueChangeCallback(ignored -> {
-            if (syncing) return;
-            apply(c -> c.worksiteVisibilityExclusiveMode = WORKSITE_VISIBILITY_EXCLUSIVE_MODE.getBooleanValue());
-            worksiteVisibilityModeChangedCallback.run();
-        });
-        LAVA_ANALYZER_HORIZONTAL_RADIUS.setValueChangeCallback(ignored -> apply(
-                c -> c.lavaAnalyzerHorizontalRadius = LAVA_ANALYZER_HORIZONTAL_RADIUS.getIntegerValue()));
-        LAVA_ANALYZER_VERTICAL_RADIUS.setValueChangeCallback(ignored -> apply(
-                c -> c.lavaAnalyzerVerticalRadius = LAVA_ANALYZER_VERTICAL_RADIUS.getIntegerValue()));
-        LAVA_ANALYZER_INTERVAL.setValueChangeCallback(ignored -> apply(
-                c -> c.lavaAnalyzerIntervalTicks = LAVA_ANALYZER_INTERVAL.getIntegerValue()));
-        LAVA_ANALYZER_MAX_OVERLAYS.setValueChangeCallback(ignored -> apply(
-                c -> c.lavaAnalyzerMaxOverlayResults = LAVA_ANALYZER_MAX_OVERLAYS.getIntegerValue()));
-        ANCIENT_DEBRIS_ANALYZER_RANGE.setValueChangeCallback(ignored -> apply(
-                c -> c.ancientDebrisAnalyzerRangeBlocks = ANCIENT_DEBRIS_ANALYZER_RANGE.getIntegerValue()));
-        ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.setValueChangeCallback(ignored -> apply(
-                c -> c.ancientDebrisAnalyzerMaxMarkers = ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.getIntegerValue()));
-    }
+    /** Kept as an explicit bootstrap boundary; direct bindings require no state synchronization. */
+    public static void init() {}
 
     public static void setWorksiteVisibilityModeChangedCallback(Runnable callback) {
         worksiteVisibilityModeChangedCallback = callback == null ? () -> {} : callback;
@@ -138,9 +131,8 @@ public final class LocalFeatureSettings {
         oreHighlightChangedCallback = callback == null ? () -> {} : callback;
     }
 
-    private static void apply(Consumer<LocalFeatureConfig> update) {
-        if (syncing) return;
-        update.accept(LocalFeatureConfig.getInstance());
+    private static LocalFeatureConfig config() {
+        return LocalFeatureConfig.getInstance();
     }
 
     private static SimpleBooleanSetting bool(
@@ -149,9 +141,18 @@ public final class LocalFeatureSettings {
             String englishName,
             String japaneseName,
             String englishComment,
-            String japaneseComment) {
+            String japaneseComment,
+            BooleanSupplier reader,
+            Consumer<Boolean> writer) {
         return new SimpleBooleanSetting(
-                name, defaultValue, englishName, japaneseName, englishComment, japaneseComment);
+                name,
+                defaultValue,
+                englishName,
+                japaneseName,
+                englishComment,
+                japaneseComment,
+                reader,
+                writer);
     }
 
     private static ChiseIntegerSetting integer(
@@ -160,7 +161,9 @@ public final class LocalFeatureSettings {
             int minValue,
             int maxValue,
             String englishName,
-            String japaneseName) {
+            String japaneseName,
+            IntSupplier reader,
+            IntConsumer writer) {
         return new ChiseIntegerSetting(
                 name,
                 defaultValue,
@@ -169,6 +172,8 @@ public final class LocalFeatureSettings {
                 englishName,
                 japaneseName,
                 englishName,
-                japaneseName);
+                japaneseName,
+                reader,
+                writer);
     }
 }

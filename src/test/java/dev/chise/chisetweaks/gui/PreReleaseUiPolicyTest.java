@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class PreReleaseUiPolicyTest {
     @Test
     void mainSurfaceAllowsReleasedVisualFeaturesAndKeepsUnreleasedFeaturesLocked() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
         for (ChiseTweaksSettingRowDefinition row : rows) {
@@ -40,7 +40,7 @@ final class PreReleaseUiPolicyTest {
 
     @Test
     void releasedAncientDebrisAnalyzerCannotRegressToADisabledMainToggle() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         ChiseTweaksSettingRowDefinition ancient = controller.rows().stream()
                 .filter(row -> "ancientDebrisAnalyzer".equals(row.id()))
                 .findFirst()
@@ -53,7 +53,7 @@ final class PreReleaseUiPolicyTest {
 
     @Test
     void analyzerActionLivesOnAnalyzerHeaderInsteadOfGeneralVisibilityHeader() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         ChiseTweaksSettingRowDefinition analyzer = controller.rows().stream()
                 .filter(row -> "header.analyzer".equals(row.id()))
                 .findFirst()
@@ -73,7 +73,7 @@ final class PreReleaseUiPolicyTest {
 
     @Test
     void highlightDetailsOnlyAllowOreSpecificControls() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         for (ChiseTweaksSettingRowDefinition row : controller.rows(
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS)) {
             boolean expected = row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER
@@ -93,7 +93,7 @@ final class PreReleaseUiPolicyTest {
 
     @Test
     void analyzerDetailControlsAreInteractiveForBothReleasedAnalyzers() {
-        var controller = new ChiseTweaksSettingsController(true);
+        var controller = new ChiseTweaksSettingsController();
         for (ChiseTweaksSettingRowDefinition row : controller.rows(
                 ChiseTweaksSettingsController.Surface.LAVA_DETAILS)) {
             assertTrue(PreReleaseUiPolicy.isRowInteractive(
