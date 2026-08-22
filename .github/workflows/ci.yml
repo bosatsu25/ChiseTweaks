@@ -22,7 +22,7 @@ jobs:
     uses: ./.github/workflows/verify-build.yml
 
   publish-verified-release:
-    name: Publish verified JAR to Releases
+    name: Publish verified runtime JAR
     needs: verify
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
@@ -37,7 +37,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download verified artifact from this CI run
+      - name: Download verification evidence from this CI run
         id: artifact
         env:
           GH_TOKEN: ${{ github.token }}
@@ -60,10 +60,10 @@ jobs:
           }
 
           retry gh api "repos/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}/artifacts" > /tmp/artifacts.json
-          artifact_name="$(jq -r '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verified-JAR"))) | .name' /tmp/artifacts.json | head -n 1)"
+          artifact_name="$(jq -r '.artifacts[] | select(.expired == false and (.name | startswith("ChiseTweaks-")) and (.name | endswith("-verification-evidence"))) | .name' /tmp/artifacts.json | head -n 1)"
 
           if [[ -z "$artifact_name" ]]; then
-            echo "Verified JAR artifact was not produced by CI run ${GITHUB_RUN_ID}." >&2
+            echo "Verification evidence was not produced by CI run ${GITHUB_RUN_ID}." >&2
             exit 1
           fi
 
@@ -80,7 +80,7 @@ jobs:
               break
             fi
             if (( attempt >= max_attempts )); then
-              echo "Verified artifact download failed after ${max_attempts} attempts." >&2
+              echo "Verification evidence download failed after ${max_attempts} attempts." >&2
               exit 1
             fi
             echo "Artifact download was not confirmed; retrying in ${delay}s (attempt $((attempt + 1))/${max_attempts})..." >&2
@@ -105,19 +105,22 @@ jobs:
 
           for value in "$version" "$mc_version" "$runtime_jar" "$sources_jar" "$runtime_sha256"; do
             if [[ -z "$value" ]]; then
-              echo 'Verified artifact metadata is incomplete.' >&2
+              echo 'Verification metadata is incomplete.' >&2
               exit 1
             fi
           done
 
+          # QA evidence remains complete internally even though only the runtime JAR is distributed.
           if [[ ! -f "$runtime_jar" || ! -f "$sources_jar" ]]; then
-            echo 'Verified runtime or sources JAR is missing.' >&2
+            echo 'Verified runtime or sources JAR is missing from Actions evidence.' >&2
             exit 1
           fi
-          if [[ ! -f visual-asset-audit.json ]]; then
-            echo 'Verified visual asset audit evidence is missing.' >&2
-            exit 1
-          fi
+          for evidence in visual-asset-audit.json quality-summary.md artifact-audit.json SHA256SUMS.txt; do
+            if [[ ! -f "$evidence" ]]; then
+              echo "Required QA evidence is missing: $evidence" >&2
+              exit 1
+            fi
+          done
 
           actual_runtime_sha256="$(sha256sum "$runtime_jar" | cut -d' ' -f1)"
           if [[ "$actual_runtime_sha256" != "$runtime_sha256" ]]; then
@@ -138,7 +141,6 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "minecraft_version=$mc_version" >> "$GITHUB_OUTPUT"
           echo "runtime_jar=$runtime_jar" >> "$GITHUB_OUTPUT"
-          echo "sources_jar=$sources_jar" >> "$GITHUB_OUTPUT"
           echo "runtime_sha256=$runtime_sha256" >> "$GITHUB_OUTPUT"
           echo "display_version=$display_version" >> "$GITHUB_OUTPUT"
           echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
@@ -150,21 +152,29 @@ jobs:
           MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
           RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
           RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
+          EVIDENCE_ARTIFACT: ${{ steps.artifact.outputs.artifact_name }}
         run: |
           {
+            printf '%s\n' '## 📦 Install this file / 導入するファイル'
+            printf '\n'
+            printf '**Prism Launcher の Mods には次の1ファイルだけを追加してください。**\n\n'
+            printf '**`%s`**\n' "$RUNTIME_JAR"
+            printf '\n'
+            printf '%s\n' 'Do not install source archives or QA evidence files into Prism. Verification evidence is retained separately in GitHub Actions.'
+            printf '\n'
             printf '%s\n' '## Verified ChiseTweaks build'
             printf '\n'
             printf '%s\n' 'This **pre-release** is created automatically only after the full `main` CI quality gate succeeds.'
-            printf 'The attached runtime JAR is the exact verified artifact produced by CI run **%s** for commit `%s`.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA"
+            printf 'The runtime JAR above is the exact verified artifact produced by CI run **%s** for commit `%s`.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA"
             printf '\n'
             printf -- '- Mod version: `%s`\n' "$VERSION"
             printf -- '- Minecraft: `%s`\n' "$MC_VERSION"
             printf -- '- Java: `25`\n'
             printf -- '- Fabric Loader: `0.19.3`\n'
-            printf -- '- Runtime JAR: `%s`\n' "$RUNTIME_JAR"
-            printf -- '- Runtime SHA-256: `%s`\n' "$RUNTIME_SHA256"
+            printf -- '- SHA-256: `%s`\n' "$RUNTIME_SHA256"
             printf -- '- Visual asset audit: `PASS`\n'
             printf -- '- Server installation required: `false`\n'
+            printf -- '- QA evidence artifact: `%s`\n' "$EVIDENCE_ARTIFACT"
             printf '\n'
             printf '%s\n' 'This verified build is immutable and is **not the manually approved stable release**. Stable releases still require Prism gameplay smoke testing through the separate Official Release workflow.'
           } > release-notes.md
@@ -178,7 +188,6 @@ jobs:
           MC_VERSION: ${{ steps.metadata.outputs.minecraft_version }}
           SHORT_SHA: ${{ steps.metadata.outputs.short_sha }}
           RUNTIME_JAR: ${{ steps.metadata.outputs.runtime_jar }}
-          SOURCES_JAR: ${{ steps.metadata.outputs.sources_jar }}
           RUNTIME_SHA256: ${{ steps.metadata.outputs.runtime_sha256 }}
         run: |
           retry() {
@@ -238,40 +247,14 @@ jobs:
             return 1
           }
 
-          ensure_asset() {
-            local file="$1"
-            local name
-            name="$(basename "$file")"
-            local attempt=1
-            local delay=2
-            local max_attempts=5
-
-            while (( attempt <= max_attempts )); do
-              if gh release view "$TAG" --repo "$GH_REPO" --json assets --jq '.assets[].name' 2>/dev/null \
-                  | grep -Fxq "$name"; then
-                echo "Release asset already present: $name"
-                return 0
-              fi
-
-              if gh release upload "$TAG" "$file" --repo "$GH_REPO"; then
-                return 0
-              fi
-
-              if (( attempt >= max_attempts )); then
-                break
-              fi
-              echo "Asset upload was not confirmed for '$name'; retrying in ${delay}s..." >&2
-              sleep "$delay"
-              attempt=$((attempt + 1))
-              delay=$((delay * 2))
-            done
-
+          ensure_runtime_asset() {
+            local file="release/$RUNTIME_JAR"
             if gh release view "$TAG" --repo "$GH_REPO" --json assets --jq '.assets[].name' 2>/dev/null \
-                | grep -Fxq "$name"; then
+                | grep -Fxq "$RUNTIME_JAR"; then
+              echo "Runtime release asset already present: $RUNTIME_JAR"
               return 0
             fi
-            echo "Unable to upload or confirm release asset '$name'." >&2
-            return 1
+            retry gh release upload "$TAG" "$file" --repo "$GH_REPO"
           }
 
           git config user.name 'github-actions[bot]'
@@ -290,22 +273,19 @@ jobs:
 
           title="Verified ChiseTweaks ${DISPLAY_VERSION} — Minecraft ${MC_VERSION} — ${SHORT_SHA}"
           ensure_release "$title"
-
-          ensure_asset "release/$RUNTIME_JAR"
-          ensure_asset "release/$SOURCES_JAR"
-          ensure_asset 'release/SHA256SUMS.txt'
-          ensure_asset 'release/artifact-audit.json'
-          ensure_asset 'release/visual-asset-audit.json'
-          ensure_asset 'release/quality-summary.md'
+          ensure_runtime_asset
 
           retry gh api "repos/${GH_REPO}/releases/tags/${TAG}" > /tmp/verified-release.json
 
-          for expected in "$RUNTIME_JAR" "$SOURCES_JAR" SHA256SUMS.txt artifact-audit.json visual-asset-audit.json quality-summary.md; do
-            if ! jq -e --arg name "$expected" '.assets[]? | select(.name == $name)' /tmp/verified-release.json >/dev/null; then
-              echo "Verified release is missing expected asset '$expected'." >&2
-              exit 1
-            fi
-          done
+          asset_count="$(jq '[.assets[]?] | length' /tmp/verified-release.json)"
+          if [[ "$asset_count" != '1' ]]; then
+            echo "Verified release must expose exactly one user asset, found ${asset_count}." >&2
+            exit 1
+          fi
+          if ! jq -e --arg name "$RUNTIME_JAR" '.assets[]? | select(.name == $name)' /tmp/verified-release.json >/dev/null; then
+            echo "Verified release is missing runtime JAR '$RUNTIME_JAR'." >&2
+            exit 1
+          fi
 
           remote_runtime_digest="$(jq -r --arg name "$RUNTIME_JAR" '.assets[]? | select(.name == $name) | .digest // empty' /tmp/verified-release.json)"
           if [[ "$remote_runtime_digest" != "sha256:${RUNTIME_SHA256}" ]]; then
@@ -313,5 +293,5 @@ jobs:
             exit 1
           fi
 
-          printf '\n### Verified Release\n- Tag: `%s`\n- Runtime JAR: `%s`\n- SHA-256: `%s`\n' \
-            "$TAG" "$RUNTIME_JAR" "$RUNTIME_SHA256" >> "$GITHUB_STEP_SUMMARY"
+          printf '\n### Verified Release\n- User-facing assets: `1`\n- Install this file: `%s`\n- SHA-256: `%s`\n' \
+            "$RUNTIME_JAR" "$RUNTIME_SHA256" >> "$GITHUB_STEP_SUMMARY"
