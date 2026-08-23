@@ -5,9 +5,10 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 
 import java.util.List;
 
-/** UI metadata bound directly to the visual target mask stored in {@link LocalFeatureConfig}. */
+/** {@link LocalFeatureConfig} のvisual target maskへ直接bindingするUI向けメタデータ。 */
 public final class VisualTargetSettings {
-    private static Runnable materialTargetsChangedCallback = () -> {};
+    private static final Runnable NOOP = () -> {};
+    private static Runnable materialTargetsChangedCallback = NOOP;
 
     private static final List<Entry> ENTRIES = List.of(
             entry(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre",
@@ -60,7 +61,7 @@ public final class VisualTargetSettings {
                     "Allow Hidden Surface Trace to mark visible powder snow.", "隠面トレースで見えている粉雪を表示対象にします。"),
             entry(Target.HIDDEN_SCULK_CATALYST, "visualTargetHiddenSculkCatalyst",
                     "Hidden Surface: Sculk Catalyst", "隠面：スカルクカタリスト",
-                    "Allow Hidden Surface Trace to mark sculk catalysts.", "隠面トレースでスカルクカタリストを表示対象にします."));
+                    "Allow Hidden Surface Trace to mark sculk catalysts.", "隠面トレースでスカルクカタリストを表示対象にします。"));
 
     public static final List<ChiseBooleanSetting> ALL_OPTIONS = ENTRIES.stream()
             .map(entry -> (ChiseBooleanSetting) entry.option())
@@ -68,7 +69,7 @@ public final class VisualTargetSettings {
 
     private VisualTargetSettings() {}
 
-    /** Kept as an explicit bootstrap boundary; direct bindings require no synchronization. */
+    /** 起動処理の境界を明示するため残している。直接bindingのため状態同期処理は不要。 */
     public static void init() {}
 
     public static synchronized void setAllOreHighlightTargets(boolean enabled) {
@@ -81,7 +82,7 @@ public final class VisualTargetSettings {
     }
 
     public static void setMaterialTargetsChangedCallback(Runnable callback) {
-        materialTargetsChangedCallback = callback == null ? () -> {} : callback;
+        materialTargetsChangedCallback = callback == null ? NOOP : callback;
     }
 
     private static boolean isMaterialTarget(Target target) {
@@ -116,8 +117,8 @@ public final class VisualTargetSettings {
         if (isMaterialTarget(target)) {
             option.setValueChangeCallback(ignored -> materialTargetsChangedCallback.run());
         }
-        return new Entry(target, option);
+        return new Entry(option);
     }
 
-    private record Entry(Target target, SimpleBooleanSetting option) {}
+    private record Entry(SimpleBooleanSetting option) {}
 }

@@ -12,7 +12,7 @@ import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
 import java.util.List;
 
-/** Coordinates settings operations; presentation metadata lives in {@link ChiseTweaksSettingsCatalog}. */
+/** 設定操作だけを調整し、表示用メタデータは{@link ChiseTweaksSettingsCatalog}へ分離するcontroller。 */
 final class ChiseTweaksSettingsController {
     enum Surface {
         MAIN,
@@ -72,28 +72,11 @@ final class ChiseTweaksSettingsController {
     }
 
     boolean resetAll() {
-        FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
-        FeatureSwitches.NETHER_PALETTE.resetToDefault();
-        FeatureSwitches.FINE_THREAD_TRACE.resetToDefault();
-        FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
-        FeatureSwitches.GLASS_INSPECTION.resetToDefault();
-        FeatureSwitches.KELP_HIGHLIGHT.resetToDefault();
-        FeatureSwitches.BUILDER_FOCUS_BLOCKS.resetToDefault();
-        FeatureSwitches.BUILDER_FOCUS_ENTITIES.resetToDefault();
-        LocalFeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
-        LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER.resetToDefault();
-        LocalFeatureSwitches.FIRE_VISIBILITY.resetToDefault();
-
+        FeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
+        LocalFeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
         resetHighlightDetails();
         resetAnalyzerDetails();
-
-        BuilderFocusConfig.REFRESH_RENDERER.resetToDefault();
-        BuilderFocusConfig.BLOCK_RULE_MODE.resetToDefault();
-        BuilderFocusConfig.BLOCK_WHITELIST.resetToDefault();
-        BuilderFocusConfig.BLOCK_BLACKLIST.resetToDefault();
-        BuilderFocusConfig.ENTITY_RULE_MODE.resetToDefault();
-        BuilderFocusConfig.ENTITY_WHITELIST.resetToDefault();
-        BuilderFocusConfig.ENTITY_BLACKLIST.resetToDefault();
+        resetBuilderFocusDetails();
         return true;
     }
 
@@ -122,6 +105,16 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS.resetToDefault();
         LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE.resetToDefault();
         LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.resetToDefault();
+    }
+
+    private void resetBuilderFocusDetails() {
+        BuilderFocusConfig.REFRESH_RENDERER.resetToDefault();
+        BuilderFocusConfig.BLOCK_RULE_MODE.resetToDefault();
+        BuilderFocusConfig.BLOCK_WHITELIST.resetToDefault();
+        BuilderFocusConfig.BLOCK_BLACKLIST.resetToDefault();
+        BuilderFocusConfig.ENTITY_RULE_MODE.resetToDefault();
+        BuilderFocusConfig.ENTITY_WHITELIST.resetToDefault();
+        BuilderFocusConfig.ENTITY_BLACKLIST.resetToDefault();
     }
 
     private static void resetTargetGroup(VisualTargetGroupPolicy.Group group) {

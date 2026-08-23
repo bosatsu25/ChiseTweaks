@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Builds localized immutable row definitions for the settings surfaces. */
+/** 設定画面で使うlocalize済みimmutable row定義を構築する。 */
 final class ChiseTweaksSettingsCatalog {
     private static final List<ChiseBooleanSetting> RESOURCE_TARGETS = targets("visualTargetMaterial");
     private static final List<ChiseBooleanSetting> VISIBILITY_TARGETS = targets("visualTargetHidden");

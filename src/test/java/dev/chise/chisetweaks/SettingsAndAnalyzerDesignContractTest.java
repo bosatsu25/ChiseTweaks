@@ -3,102 +3,107 @@ package dev.chise.chisetweaks;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
+import static dev.chise.chisetweaks.SourceContractSupport.assertContainsAll;
+import static dev.chise.chisetweaks.SourceContractSupport.assertContainsNone;
+import static dev.chise.chisetweaks.SourceContractSupport.exists;
+import static dev.chise.chisetweaks.SourceContractSupport.read;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Guards the design boundaries introduced by the settings/rendering cleanup. */
 final class SettingsAndAnalyzerDesignContractTest {
-    private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
-
     @Test
     void localSettingsUseConfigAsSingleInMemorySourceOfTruth() throws IOException {
-        String settings = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
-        String targets = source("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
+        String settings = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
+        String targets = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
 
-        assertTrue(settings.contains("UI-facing settings bound directly to"));
-        assertTrue(settings.contains("() -> config().worksiteVisibilityHorizontalRadius"));
-        assertTrue(settings.contains("value -> config().lavaAnalyzerIntervalTicks = value"));
-        assertFalse(settings.contains("syncFromStorage"));
-        assertFalse(settings.contains("private static boolean syncing"));
-        assertFalse(targets.contains("syncFromConfig"));
-        assertFalse(targets.contains("private static boolean syncing"));
-        assertTrue(targets.contains("VisualTargetSelectionPolicy.withEnabled("));
+        assertContainsAll(settings,
+                "() -> config().worksiteVisibilityHorizontalRadius",
+                "value -> config().worksiteVisibilityHorizontalRadius = value",
+                "() -> config().lavaAnalyzerIntervalTicks",
+                "value -> config().lavaAnalyzerIntervalTicks = value");
+        assertContainsNone(settings,
+                "syncFromStorage",
+                "private static boolean syncing");
+        assertContainsAll(targets,
+                "LocalFeatureConfig.getInstance().visualTargetMask",
+                "VisualTargetSelectionPolicy.withEnabled(");
+        assertContainsNone(targets,
+                "syncFromConfig",
+                "private static boolean syncing");
     }
 
     @Test
     void configLoadingDoesNotReachIntoRenderingState() throws IOException {
-        String config = source("src/main/java/dev/chise/chisetweaks/config/FeatureConfig.java");
-        String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
+        String config = read("src/main/java/dev/chise/chisetweaks/config/FeatureConfig.java");
+        String bindings = read("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
 
-        assertFalse(config.contains("feature.rendering"));
-        assertFalse(config.contains("BuilderFocusVisibility"));
-        assertTrue(bindings.contains("BuilderFocusVisibility.applyConfig()"));
+        assertContainsNone(config,
+                "feature.rendering",
+                "BuilderFocusVisibility");
+        assertContainsAll(bindings, "BuilderFocusVisibility.applyConfig()");
     }
 
     @Test
     void analyzerFeaturesShareOnlyGenericRetentionAndRenderingInfrastructure() throws IOException {
-        String lava = source("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
-        String debris = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
-        String renderer = source("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
+        String lava = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
+        String debris = read("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
+        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
 
-        assertTrue(lava.contains("ThroughWallMarkerRenderer.Style.LAVA_SOURCE"));
-        assertTrue(debris.contains("ThroughWallMarkerRenderer.Style.ANCIENT_DEBRIS"));
-        assertTrue(lava.contains("new NearestPositionBuffer("));
-        assertTrue(debris.contains("new NearestPositionBuffer("));
-        assertTrue(renderer.contains("enum Style"));
-        assertFalse(Files.exists(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java")));
-        assertFalse(Files.exists(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisThroughWallRenderer.java")));
-        assertFalse(Files.exists(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaSourceSnapshot.java")));
-        assertFalse(Files.exists(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisSnapshot.java")));
+        assertContainsAll(lava,
+                "ThroughWallMarkerRenderer.Style.LAVA_SOURCE",
+                "new NearestPositionBuffer(");
+        assertContainsAll(debris,
+                "ThroughWallMarkerRenderer.Style.ANCIENT_DEBRIS",
+                "new NearestPositionBuffer(");
+        assertContainsAll(renderer, "enum Style");
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisThroughWallRenderer.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaSourceSnapshot.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisSnapshot.java"));
     }
 
     @Test
     void analyzerDiscoveryStaysLoadedChunkOnlyAndDebrisBootstrapIsIncremental() throws IOException {
-        String lava = source("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
-        String debris = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
+        String lava = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
+        String debris = read("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
 
-        assertTrue(lava.contains("getChunkNow("));
-        assertTrue(debris.contains("getChunkNow("));
-        assertTrue(debris.contains("scheduleLoadedChunkBootstrap("));
-        assertTrue(debris.contains("processPendingLoadedChunks("));
-        assertTrue(debris.contains("AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNKS_PER_TICK"));
-        assertFalse(debris.contains("private void bootstrapLoadedChunks("));
-        assertFalse(lava.contains("getChunk(chunkX, chunkZ, true)"));
-        assertFalse(debris.contains("getChunk(chunkX, chunkZ, true)"));
+        assertContainsAll(lava, "getChunkNow(");
+        assertContainsAll(debris,
+                "getChunkNow(",
+                "scheduleLoadedChunkBootstrap(",
+                "processPendingLoadedChunks(",
+                "AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNKS_PER_TICK");
+        assertContainsNone(debris,
+                "private void bootstrapLoadedChunks(",
+                "getChunk(chunkX, chunkZ, true)");
+        assertContainsNone(lava, "getChunk(chunkX, chunkZ, true)");
     }
 
     @Test
     void settingsPresentationIsSeparatedAndLocalizedByMinecraftResources() throws IOException {
-        String controller = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
-        String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
-        String screen = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
-        String sceneFilter = source("src/main/java/dev/chise/chisetweaks/gui/ChiseSceneFilterEditorScreen.java");
-        String oreCompat = source("src/main/java/dev/chise/chisetweaks/gui/ChiseOreCompatibilityScreen.java");
-        String english = source("src/main/resources/assets/chisetweaks/lang/en_us.json");
-        String japanese = source("src/main/resources/assets/chisetweaks/lang/ja_jp.json");
+        String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
+        String catalog = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
+        String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+        String sceneFilter = read("src/main/java/dev/chise/chisetweaks/gui/ChiseSceneFilterEditorScreen.java");
+        String oreCompat = read("src/main/java/dev/chise/chisetweaks/gui/ChiseOreCompatibilityScreen.java");
+        String english = read("src/main/resources/assets/chisetweaks/lang/en_us.json");
+        String japanese = read("src/main/resources/assets/chisetweaks/lang/ja_jp.json");
 
-        assertTrue(controller.contains("ChiseTweaksSettingsCatalog"));
-        assertFalse(controller.contains("boolean japanese"));
-        assertFalse(controller.contains("japanese ?"));
-        assertTrue(catalog.contains("Component.translatable("));
-        assertTrue(catalog.contains("definition.nameKey()"));
-        assertFalse(screen.contains("controller.japanese()"));
-        assertFalse(sceneFilter.contains("boolean japanese"));
-        assertFalse(oreCompat.contains("boolean japanese"));
+        assertContainsAll(controller, "ChiseTweaksSettingsCatalog");
+        assertContainsNone(controller,
+                "boolean japanese",
+                "japanese ?");
+        assertContainsAll(catalog,
+                "Component.translatable(",
+                "definition.nameKey()");
+        assertContainsNone(screen, "controller.japanese()");
+        assertContainsNone(sceneFilter, "boolean japanese");
+        assertContainsNone(oreCompat, "boolean japanese");
         assertTrue(english.contains("\"screen.chisetweaks.settings.title.highlight\""));
         assertTrue(japanese.contains("\"screen.chisetweaks.settings.title.highlight\""));
         assertTrue(english.contains("\"screen.chisetweaks.scene_filter.title\""));
         assertTrue(japanese.contains("\"screen.chisetweaks.ore_compat.title\""));
-    }
-
-    private static String source(String relativePath) throws IOException {
-        return Files.readString(ROOT.resolve(relativePath));
     }
 }
