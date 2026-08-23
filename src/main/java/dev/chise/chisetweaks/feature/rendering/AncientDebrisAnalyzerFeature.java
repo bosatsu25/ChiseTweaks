@@ -44,6 +44,10 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     private final Map<Long, long[]> positionsByChunk = new HashMap<>();
     private final long[] pendingBootstrapChunks = new long[
             AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNK_COUNT];
+    private final long[] pendingValidationChunks = new long[
+            AncientDebrisAnalyzerPolicy.MAX_TRACKED_CHUNKS];
+    private final long[] chunkScanBuffer = new long[
+            AncientDebrisAnalyzerPolicy.MAX_DEBRIS_PER_CHUNK];
 
     private ClientLevel lastLevel;
     private long lastPlayerBlock = Long.MIN_VALUE;
@@ -53,6 +57,8 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     private int ticksUntilValidation;
     private int pendingBootstrapIndex;
     private int pendingBootstrapCount;
+    private int pendingValidationIndex;
+    private int pendingValidationCount;
     private boolean selectionDirty;
     private boolean renderQuarantined;
     private boolean runtimeQuarantined;
@@ -74,7 +80,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(this::render);
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> renderer.close());
         ChiseTweaksClient.LOGGER.info(
-                "Ancient Debris Analyzer initialized with loaded-chunk discovery and retained through-terrain rendering");
+                "Ancient Debris Analyzer initialized with bounded loaded-chunk discovery, cache refresh and retained through-terrain rendering");
     }
 
     @Override
@@ -105,7 +111,9 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         boolean playerChunkChanged = playerChunk != lastPlayerChunk;
         if (rangeChanged || playerChunkChanged) {
             scheduleLoadedChunkBootstrap(rangeBlocks, centerChunkX, centerChunkZ);
+            clearPendingValidation();
             lastPlayerChunk = playerChunk;
+            ticksUntilValidation = 0;
         }
         if (playerBlock != lastPlayerBlock || rangeChanged || maxMarkers != lastMaxMarkers) {
             lastPlayerBlock = playerBlock;
@@ -115,13 +123,8 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         }
 
         processPendingLoadedChunks(client);
-
-        if (ticksUntilValidation <= 0) {
-            validateCachedMarkers(client.level);
-            ticksUntilValidation = AncientDebrisAnalyzerPolicy.VALIDATION_INTERVAL_TICKS;
-        } else {
-            ticksUntilValidation--;
-        }
+        scheduleValidationWhenDue();
+        processPendingValidation(client);
 
         if (selectionDirty) {
             publishVisibleMarkers(client, rangeBlocks, maxMarkers);
@@ -197,6 +200,48 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         if (pendingBootstrapIndex >= pendingBootstrapCount) clearPendingBootstrap();
     }
 
+    private void scheduleValidationWhenDue() {
+        if (hasPendingValidation()) return;
+        if (ticksUntilValidation > 0) {
+            ticksUntilValidation--;
+            return;
+        }
+        pendingValidationIndex = 0;
+        pendingValidationCount = 0;
+        for (long key : positionsByChunk.keySet()) {
+            if (pendingValidationCount >= pendingValidationChunks.length) break;
+            pendingValidationChunks[pendingValidationCount++] = key;
+        }
+        ticksUntilValidation = Math.max(0, AncientDebrisAnalyzerPolicy.VALIDATION_INTERVAL_TICKS - 1);
+    }
+
+    /**
+     * 追跡済みチャンクも定期的に再走査する。既存マーカーの消滅だけでなく、ロード後に配置された
+     * Ancient Debrisも検出できるようにしつつ、1 tickの再走査数は固定上限へ抑える。
+     */
+    private void processPendingValidation(Minecraft client) {
+        if (!hasPendingValidation() || client == null || client.level == null) return;
+        int processed = 0;
+        while (pendingValidationIndex < pendingValidationCount
+                && processed < AncientDebrisAnalyzerPolicy.MAX_VALIDATION_CHUNKS_PER_TICK) {
+            long key = pendingValidationChunks[pendingValidationIndex++];
+            long[] cached = positionsByChunk.get(key);
+            if (cached != null) {
+                LevelChunk loaded = client.level.getChunkSource().getChunkNow(
+                        unpackChunkX(key),
+                        unpackChunkZ(key));
+                if (loaded == null) {
+                    positionsByChunk.remove(key);
+                    selectionDirty = true;
+                } else {
+                    refreshTrackedChunk(client.level, loaded, cached);
+                }
+            }
+            processed++;
+        }
+        if (pendingValidationIndex >= pendingValidationCount) clearPendingValidation();
+    }
+
     private void pruneTrackedChunksOutsideNeighborhood(
             int centerChunkX,
             int centerChunkZ,
@@ -218,11 +263,23 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     }
 
     private void scanChunk(ClientLevel level, LevelChunk chunk) {
-        if (positionsByChunk.size() >= AncientDebrisAnalyzerPolicy.MAX_TRACKED_CHUNKS) return;
         long key = chunkKey(chunk);
         if (positionsByChunk.containsKey(key)) return;
+        if (positionsByChunk.size() >= AncientDebrisAnalyzerPolicy.MAX_TRACKED_CHUNKS) return;
 
-        long[] found = new long[AncientDebrisAnalyzerPolicy.MAX_DEBRIS_PER_CHUNK];
+        int count = scanChunkIntoBuffer(level, chunk);
+        positionsByChunk.put(key, copyScanResult(count));
+        if (count != 0) selectionDirty = true;
+    }
+
+    private void refreshTrackedChunk(ClientLevel level, LevelChunk chunk, long[] cached) {
+        int count = scanChunkIntoBuffer(level, chunk);
+        if (matchesScanResult(cached, count)) return;
+        positionsByChunk.put(chunkKey(chunk), copyScanResult(count));
+        selectionDirty = true;
+    }
+
+    private int scanChunkIntoBuffer(ClientLevel level, LevelChunk chunk) {
         int count = 0;
         LevelChunkSection[] sections = chunk.getSections();
         int baseX = chunk.getPos().getMinBlockX();
@@ -234,42 +291,29 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
             }
             int sectionY = level.getSectionYFromSectionIndex(sectionIndex);
             int baseY = SectionPos.sectionToBlockCoord(sectionY);
-            for (int y = 0; y < 16 && count < found.length; y++) {
-                for (int z = 0; z < 16 && count < found.length; z++) {
-                    for (int x = 0; x < 16 && count < found.length; x++) {
+            for (int y = 0; y < 16 && count < chunkScanBuffer.length; y++) {
+                for (int z = 0; z < 16 && count < chunkScanBuffer.length; z++) {
+                    for (int x = 0; x < 16 && count < chunkScanBuffer.length; x++) {
                         if (section.getBlockState(x, y, z).is(Blocks.ANCIENT_DEBRIS)) {
-                            found[count++] = BlockPos.asLong(baseX + x, baseY + y, baseZ + z);
+                            chunkScanBuffer[count++] = BlockPos.asLong(baseX + x, baseY + y, baseZ + z);
                         }
                     }
                 }
             }
         }
-
-        positionsByChunk.put(key, count == 0 ? EMPTY_POSITIONS : Arrays.copyOf(found, count));
-        if (count != 0) selectionDirty = true;
+        return count;
     }
 
-    private void validateCachedMarkers(ClientLevel level) {
-        boolean changed = false;
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        Iterator<Map.Entry<Long, long[]>> iterator = positionsByChunk.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Long, long[]> entry = iterator.next();
-            long[] cached = entry.getValue();
-            if (cached.length == 0) continue;
-            int write = 0;
-            for (long packed : cached) {
-                cursor.set(BlockPos.getX(packed), BlockPos.getY(packed), BlockPos.getZ(packed));
-                LevelChunk loaded = level.getChunkSource().getChunkNow(cursor.getX() >> 4, cursor.getZ() >> 4);
-                if (loaded != null && loaded.getBlockState(cursor).is(Blocks.ANCIENT_DEBRIS)) {
-                    cached[write++] = packed;
-                } else {
-                    changed = true;
-                }
-            }
-            if (write != cached.length) entry.setValue(write == 0 ? EMPTY_POSITIONS : Arrays.copyOf(cached, write));
+    private boolean matchesScanResult(long[] cached, int count) {
+        if (cached.length != count) return false;
+        for (int index = 0; index < count; index++) {
+            if (cached[index] != chunkScanBuffer[index]) return false;
         }
-        if (changed) selectionDirty = true;
+        return true;
+    }
+
+    private long[] copyScanResult(int count) {
+        return count == 0 ? EMPTY_POSITIONS : Arrays.copyOf(chunkScanBuffer, count);
     }
 
     private void publishVisibleMarkers(Minecraft client, int rangeBlocks, int maxMarkers) {
@@ -321,6 +365,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         visibleMarkers.clear();
         nearestMarkers.clear();
         clearPendingBootstrap();
+        clearPendingValidation();
         lastLevel = level;
         lastPlayerBlock = Long.MIN_VALUE;
         lastPlayerChunk = Long.MIN_VALUE;
@@ -335,6 +380,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         visibleMarkers.clear();
         nearestMarkers.clear();
         clearPendingBootstrap();
+        clearPendingValidation();
         lastLevel = null;
         lastPlayerBlock = Long.MIN_VALUE;
         lastPlayerChunk = Long.MIN_VALUE;
@@ -347,6 +393,15 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     private void clearPendingBootstrap() {
         pendingBootstrapIndex = 0;
         pendingBootstrapCount = 0;
+    }
+
+    private boolean hasPendingValidation() {
+        return pendingValidationIndex < pendingValidationCount;
+    }
+
+    private void clearPendingValidation() {
+        pendingValidationIndex = 0;
+        pendingValidationCount = 0;
     }
 
     private static boolean isNether(ClientLevel level) {
