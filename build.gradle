@@ -176,7 +176,7 @@ def mutationGateClasses = [
         'dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy',
         'dev.chise.chisetweaks.core.vision.FireVisibilityPolicy',
         'dev.chise.chisetweaks.core.vision.GlassHighlightTargetPolicy',
-        'dev.chise/chisetweaks/core/vision/OreHighlightRuntimePolicy',
+        'dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy',
         'dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog',
         'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy',
