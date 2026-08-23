@@ -144,8 +144,8 @@ jacoco {
     toolVersion = project.jacoco_version
 }
 
-// 96% gateは決定的なpolicy、描画budget、UI契約、critical tick dispatchを対象にする。
-def qualityGateClasses = [
+// JaCoCoは決定的policy、描画budget、UI geometry/availability、critical tick dispatchを広く監視する。
+def coverageGateClasses = [
         'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
         'dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy*.class',
@@ -165,40 +165,9 @@ def qualityGateClasses = [
         'dev/chise/chisetweaks/runtime/FeatureManager$TickSlot*.class'
 ]
 
-def qualityGateClassDirectories = providers.provider {
-    files(sourceSets.main.output.classesDirs.collect { classesDir ->
-        fileTree(dir: classesDir, include: qualityGateClasses)
-    })
-}
-
-jacocoTestReport {
-    mustRunAfter tasks.named('test')
-    classDirectories.setFrom(qualityGateClassDirectories)
-    reports {
-        xml.required = true
-        html.required = true
-        csv.required = false
-    }
-}
-
-jacocoTestCoverageVerification {
-    dependsOn tasks.named('jacocoTestReport')
-    mustRunAfter tasks.named('test')
-    classDirectories.setFrom(qualityGateClassDirectories)
-    violationRules {
-        rule {
-            element = 'BUNDLE'
-            limit {
-                counter = 'LINE'
-                value = 'COVEREDRATIO'
-                minimum = new BigDecimal(project.quality_line_threshold)
-            }
-        }
-    }
-}
-
-pitest {
-    targetClasses = [
+// PITは意味的な分岐・状態遷移を持つpolicyへ限定する。
+// Geometryの座標算術は境界JUnit＋JaCoCoで検証し、等価な算術mutationで全体scoreを希釈しない。
+def mutationGateClasses = [
         'dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy',
         'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
         'dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy',
@@ -213,10 +182,44 @@ pitest {
         'dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog',
         'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy',
-        'dev.chise.chisetweaks.gui.ChiseTweaksSettingsLayout',
         'dev.chise.chisetweaks.gui.PreReleaseUiPolicy',
         'dev.chise.chisetweaks.runtime.FeatureManager$TickSlot*'
-    ]
+]
+
+def coverageGateClassDirectories = providers.provider {
+    files(sourceSets.main.output.classesDirs.collect { classesDir ->
+        fileTree(dir: classesDir, include: coverageGateClasses)
+    })
+}
+
+jacocoTestReport {
+    mustRunAfter tasks.named('test')
+    classDirectories.setFrom(coverageGateClassDirectories)
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn tasks.named('jacocoTestReport')
+    mustRunAfter tasks.named('test')
+    classDirectories.setFrom(coverageGateClassDirectories)
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = new BigDecimal(project.quality_line_threshold)
+            }
+        }
+    }
+}
+
+pitest {
+    targetClasses = mutationGateClasses
     targetTests = [
         'dev.chise.chisetweaks.*Test',
         'dev.chise.chisetweaks.config.*Test',
@@ -287,7 +290,7 @@ tasks.register('qualityGate') {
 
 tasks.register('ciGate') {
     group = 'verification'
-    description = 'Single strict release entry point: quality gates plus reproducible runtime and sources artifacts.'
+    description = 'Single strict CI quality entry point: tests plus reproducible runtime and sources artifacts.'
     dependsOn tasks.named('qualityGate')
     dependsOn tasks.named('build')
 }
