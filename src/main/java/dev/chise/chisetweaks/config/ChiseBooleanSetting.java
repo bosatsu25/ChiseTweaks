@@ -11,6 +11,7 @@ public abstract class ChiseBooleanSetting {
     private final String japaneseName;
     private final String englishComment;
     private final String japaneseComment;
+    private final SettingPersistence persistence;
     private final CopyOnWriteArrayList<Consumer<ChiseBooleanSetting>> additionalListeners =
             new CopyOnWriteArrayList<>();
     private Consumer<ChiseBooleanSetting> callback = ignored -> {};
@@ -21,13 +22,15 @@ public abstract class ChiseBooleanSetting {
             String englishName,
             String japaneseName,
             String englishComment,
-            String japaneseComment) {
+            String japaneseComment,
+            SettingPersistence persistence) {
         this.name = requireText(name, "name");
         this.defaultValue = defaultValue;
         this.englishName = requireText(englishName, "englishName");
         this.japaneseName = requireText(japaneseName, "japaneseName");
         this.englishComment = Objects.requireNonNullElse(englishComment, "");
         this.japaneseComment = Objects.requireNonNullElse(japaneseComment, this.englishComment);
+        this.persistence = Objects.requireNonNull(persistence, "persistence");
     }
 
     protected abstract boolean readValue();
@@ -53,14 +56,8 @@ public abstract class ChiseBooleanSetting {
         return japanese ? japaneseComment : englishComment;
     }
 
-    /** この設定をどの永続化境界へ書き込むかを返す。 */
-    public SettingPersistence persistence() {
-        return SettingPersistence.FEATURE_CONFIG;
-    }
-
-    /** 後方互換の簡易判定。新規UIは{@link #persistence()}を使う。 */
-    public final boolean requiresApplyPersistence() {
-        return persistence() != SettingPersistence.EXTERNAL;
+    public final SettingPersistence persistence() {
+        return persistence;
     }
 
     public final void setBooleanValue(boolean value) {
