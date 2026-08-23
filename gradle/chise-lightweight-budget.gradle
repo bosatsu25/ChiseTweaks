@@ -22,14 +22,14 @@ tasks.register('verifyRuntimeJarBudget') {
         File runtimeJar = runtimeJarTask.archiveFile.get().asFile
         long size = runtimeJar.length()
         long deltaFromBaseline = size - CHISE_RUNTIME_JAR_BASELINE_BYTES
+        String deltaLabel = deltaFromBaseline >= 0 ? "+${deltaFromBaseline}" : Long.toString(deltaFromBaseline)
 
         logger.lifecycle(
-                'Chise lightweight budget: {} bytes (target < {}, baseline {}, delta {>=0?"+":""}{}, effective hard limit < {})',
+                'Chise lightweight budget: {} bytes (target < {}, baseline {}, delta {}, effective hard limit < {})',
                 size,
                 CHISE_RUNTIME_JAR_TARGET_BYTES,
                 CHISE_RUNTIME_JAR_BASELINE_BYTES,
-                deltaFromBaseline,
-                deltaFromBaseline,
+                deltaLabel,
                 CHISE_RUNTIME_JAR_EFFECTIVE_MAX_BYTES)
 
         def archive = new ZipFile(runtimeJar)
