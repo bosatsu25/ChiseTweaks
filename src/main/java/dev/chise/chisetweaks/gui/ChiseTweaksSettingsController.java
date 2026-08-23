@@ -22,8 +22,6 @@ final class ChiseTweaksSettingsController {
 
     private static final List<ChiseBooleanSetting> HIGHLIGHT_FEATURES = List.of(
             FeatureSwitches.MATERIAL_HIGHLIGHTS,
-            FeatureSwitches.FINE_THREAD_TRACE,
-            FeatureSwitches.HIDDEN_SURFACE_TRACE,
             FeatureSwitches.GLASS_INSPECTION,
             FeatureSwitches.KELP_HIGHLIGHT);
 
