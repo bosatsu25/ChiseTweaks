@@ -20,6 +20,21 @@ ChiseTweaks は、大規模建築・技術施設の確認作業を支援する *
 
 > 配布JARは Minecraft `26.1.2` 専用です。異なるMinecraft / Fabric / Javaバージョンへ流用しないでください。
 
+## 0.9.2 の主な更新
+
+`0.9.2+mc26.1.2` では、0.9.1のVisual Filter / Analyzer公開後の受入・安定化を中心に更新しています。
+
+- Chest VisibilityとWhite Concrete Visibilityを別々のbuilt-in resource packへ分離
+- 2つのvisibility packを独立ON/OFF可能に変更
+- resource reloadを直列化・集約し、高速切替時も最後の要求状態へ収束させるstate machineを追加
+- resource reload失敗時のrollback経路を追加
+- Fine Line / Hidden Block / Nether Highlightなどの独立ON/OFFを回帰テストで固定
+- 11個のruntime featureを同時にONにできることを統合回帰テストで固定
+- Ancient Debris Analyzerで、ロード済みチャンクへ後から追加・削除された古代の残骸を固定予算で再検出
+- Lava Source Highlight / Ancient Debris Analyzerの輪郭表示に半透明面を追加
+- Prism Launcher実機向けのperformance acceptance比較CLIを追加
+- JUnit / JaCoCo / PIT / Artifact Audit / Visual Asset Audit / Release Residue Auditをrelease gateとして維持
+
 ## 現在の機能構成
 
 設定画面上では **Highlight / Visual Filter / Analyzer / Visibility** の4系統に整理されています。
@@ -163,6 +178,33 @@ Mod Menuを導入している場合は、Mod MenuからChiseTweaksの設定画�
 
 Chest / White Concreteの有効状態はMinecraft標準Resource Packs管理を正とするため、ChiseTweaksのJSONへ重複保存しません。
 
+## トラブルシューティング
+
+### `disconnect-*-client.txt` と本当のCrash Reportを分ける
+
+`disconnect-*-client.txt` は、サーバー接続が切れた際にも生成されます。たとえば次のような例外だけでは、ChiseTweaksのクライアントクラッシュとは断定できません。
+
+```text
+java.net.SocketException: Connection reset
+```
+
+これはネットワーク接続が相手側または途中経路でリセットされたことを示す例外です。ChiseTweaksは独自packet送信や独自Play Protocolを持たないため、この例外だけを根拠にChiseTweaksの描画機能を原因扱いしないでください。
+
+Minecraftプロセス自体が終了した、画面が固まった、描画例外が発生した場合は次をセットで確認します。
+
+1. `logs/latest.log`
+2. `crash-reports/crash-*.txt` が存在する場合はそのファイル
+3. `disconnect-*-client.txt` が存在する場合はそのファイル
+4. ChiseTweaksのversion
+5. Minecraft / Fabric Loader / Fabric API / Javaのversion
+6. 再現直前にON/OFFしたChiseTweaks機能
+
+`latest.log` またはCrash Report内に `dev.chise.chisetweaks`、ChiseTweaksのMixin、renderer、resource reloadなどのスタックが存在するかを見て原因を切り分けます。
+
+### Resource Pack切替後に見た目が戻らない場合
+
+Chest Visibility / White Concrete VisibilityはMinecraft標準Resource Packs機構を使用します。切替直後はresource reload完了まで待ち、必要なら **Options → Resource Packs** で2つのChiseTweaks packの選択状態を確認してください。
+
 ## 安全性・障害分離
 
 - サーバーMOD不要
@@ -244,6 +286,36 @@ CIでは次の不変条件も固定しています。
 - join / disconnect / dimension-sensitive featureにsession reset経路が存在する
 - Ancient Debrisの追加・削除を追跡済みチャンクの再走査で反映する
 - `256 blocks / 128 markers` を超えない
+
+## 次の開発タスク
+
+0.9.2公開後は、新機能を増やす前に移行・異常系・実機互換を優先します。
+
+| 優先度 | タスク | 種別 | 完了条件 |
+| --- | --- | --- | --- |
+| P0 | 0.9.1 → 0.9.2 built-in pack移行の明示対応 | 互換性 / 潜在不具合 | 旧 `chisetweaks:chise_texture` 選択状態からChest / White Concreteの2packへ安全に移行でき、既存Resource Packs順序を壊さない |
+| P0 | resource reloadのterminal failure hardening | 潜在不具合 | reload完了後のclient-thread scheduling失敗・終了競合でもcoordinator状態とpack selectionが不整合にならない |
+| P0 | crash / disconnect診断情報の強化 | 保守性 | version、enabled features、selected visibility packs、quarantine状態、dimension/sessionを1つのdiagnostic snapshotとして取得できる |
+| P1 | `PreReleaseFeaturePolicy` / `PreReleaseUiPolicy` のrelease後リファクタリング | 技術負債 | pre-release命名を除去し、feature availabilityとUI availabilityの責務を整理する |
+| P1 | `ChiseTextureVisibilitySetting` をChest固有名へrename | 技術負債 | `ChestVisibilitySetting`など実責務と一致する名前へ変更し、テスト・参照を更新する |
+| P1 | Prism Launcher実機統合リグレッション | QA | 全機能ON、Overworld / Nether / End、再接続、Resource Pack高速切替、Ancient Debris追加・削除を実機で連続確認する |
+| P1 | Rendering MOD互換マトリクス | 互換性 | Sodium / Iris / ImmediatelyFast / EntityCullingなど描画経路に関わる構成でsmoke testを行い、既知の組み合わせを記録する |
+| P1 | 実機performance baselineの固定 | 性能 | 同一Prism環境でbaseline/candidateを各3回以上測定し、`comparePerformanceEvidence`をPASSさせる |
+| P2 | Resource Pack reload中のUI状態表示 | UI/UX | reload中・成功・rollbackをユーザーが判別でき、連打しても状態を誤認しない |
+| P2 | Analyzer最大条件の視認性・stutter stress test | 性能 / UI | Lava + Ancient Debris同時ON、最大range / markers条件でstutter・重なり・視認性を確認する |
+| P2 | config upgrade / downgrade回帰 | 互換性 | 0.7.x / 0.9.1 / 0.9.2間の設定読込で未知field・廃止field・default値が安全に扱われる |
+
+### 次に着手する順序
+
+次の実装は以下の順序を推奨します。
+
+1. **0.9.1 → 0.9.2 Resource Pack migration**
+2. **resource reload異常系のhardening**
+3. **diagnostic snapshot追加**
+4. **PreRelease系とChest設定クラスのrename/refactor**
+5. **Prism実機統合・Rendering MOD互換テスト**
+6. **performance baseline固定**
+7. UI/UX・Analyzer表示の追加調整
 
 ## 品質保証
 
