@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
-/** Current-release UI availability rules, separated from feature runtime availability. */
+/** 現行リリースのUI操作可否をfeature runtimeの利用可否から分離して判定する。 */
 final class UiAvailabilityPolicy {
     private static final String MATERIAL_PREFIX = "visualTargetMaterial";
     private static final String TECHNICAL_PREFIX = "visualTargetTechnical";
@@ -15,9 +15,7 @@ final class UiAvailabilityPolicy {
         ChiseTweaksSettingsController.Surface resolved = surface == null
                 ? ChiseTweaksSettingsController.Surface.MAIN
                 : surface;
-
         if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) return true;
-
         return switch (resolved) {
             case MAIN -> SettingRowIds.MAIN_INTERACTIVE.contains(row.settingId());
             case HIGHLIGHT_DETAILS -> isReleasedHighlightDetail(row.settingId());
