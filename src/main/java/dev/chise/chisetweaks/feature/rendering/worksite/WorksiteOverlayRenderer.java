@@ -5,6 +5,7 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.performance.WorksiteOverlayDetailPolicy;
+import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
 import dev.chise.chisetweaks.feature.rendering.SurfaceLineVisualGeometry;
 import dev.chise.chisetweaks.feature.rendering.WorldLineGeometry;
@@ -13,6 +14,11 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -21,7 +27,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 final class WorksiteOverlayRenderer {
-    private static final String RENDERER_REVISION = "surface-line-v9-worksite-profile-cache";
+    private static final String RENDERER_REVISION = "surface-line-v10-mining-suppression";
     private static final int ACCENT_DARK = 0xFF4E3A8C;
 
     private final BooleanSupplier activeSupplier;
@@ -90,6 +96,9 @@ final class WorksiteOverlayRenderer {
             rendererIdentityLogged = true;
         }
 
+        BlockPos attackedBlock = attackedBlockPosition(client);
+        boolean attackPressed = client.options.keyAttack.isDown();
+
         PoseStack poseStack = context.poseStack();
         poseStack.pushPose();
         try {
@@ -100,12 +109,45 @@ final class WorksiteOverlayRenderer {
                     (pose, vertices) -> {
                         long pulseFrame = System.nanoTime() / 150_000_000L;
                         for (WorksiteRenderTarget target : snapshot) {
+                            Identifier liveBlockId = liveBlockId(client, target.position());
+                            if (!shouldDrawTarget(target, liveBlockId, attackPressed, attackedBlock)) continue;
                             drawTarget(vertices, pose, target, pulseFrame);
                         }
                     });
         } finally {
             poseStack.popPose();
         }
+    }
+
+    static boolean shouldDrawTarget(
+            WorksiteRenderTarget target,
+            Identifier liveBlockId,
+            boolean attackPressed,
+            BlockPos attackedBlock) {
+        if (target == null || liveBlockId == null || target.expectedBlockId() == null
+                || !target.expectedBlockId().equals(liveBlockId)) {
+            return false;
+        }
+        return !attackPressed
+                || attackedBlock == null
+                || target.presentation().category() != BlockInspectionCategory.NETHER_PALETTE
+                || !target.position().equals(attackedBlock);
+    }
+
+    private static Identifier liveBlockId(Minecraft client, BlockPos position) {
+        if (client.level == null
+                || !client.level.getChunkSource().hasChunk(position.getX() >> 4, position.getZ() >> 4)) {
+            return null;
+        }
+        return BuiltInRegistries.BLOCK.getKey(client.level.getBlockState(position).getBlock());
+    }
+
+    private static BlockPos attackedBlockPosition(Minecraft client) {
+        if (!(client.hitResult instanceof BlockHitResult blockHit)
+                || blockHit.getType() != HitResult.Type.BLOCK) {
+            return null;
+        }
+        return blockHit.getBlockPos();
     }
 
     private static void drawTarget(
