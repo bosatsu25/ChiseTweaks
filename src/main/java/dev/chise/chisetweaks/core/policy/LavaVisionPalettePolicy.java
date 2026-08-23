@@ -13,6 +13,7 @@ public final class LavaVisionPalettePolicy {
     public static final double FAR_DISTANCE_BLOCKS = 8.0;
 
     public static final float ANALYZER_EDGE_THICKNESS = 0.026f;
+    public static final float ANALYZER_BOX_INSET = 0.018f;
 
     private LavaVisionPalettePolicy() {}
 
