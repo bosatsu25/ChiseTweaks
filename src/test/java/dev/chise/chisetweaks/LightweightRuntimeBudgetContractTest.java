@@ -55,6 +55,8 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(audit.contains("runtime_jar_max_growth_bytes"));
         assertTrue(audit.contains("effective_max = min(absolute_max, baseline + max_growth)"));
         assertTrue(audit.contains("if size > effective_max:"));
+        assertTrue(audit.contains("info.flag_bits & 0x08"));
+        assertTrue(audit.contains("if info.extra"));
         assertTrue(audit.contains("Remaining to goal"));
         assertTrue(verify.contains("python scripts/artifact_audit.py"));
         assertTrue(release.contains("python scripts/artifact_audit.py"));
@@ -69,7 +71,12 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(jarSize.contains("output.setLevel(9)"));
         assertTrue(jarSize.contains("if (!sourceEntry.directory)"));
         assertTrue(jarSize.contains("stream.readAllBytes()"));
-        assertTrue(jarSize.contains("setTimeLocal(LocalDateTime.of(1980, 1, 1, 0, 0))"));
+        assertTrue(jarSize.contains("new Deflater(9, true)"));
+        assertTrue(jarSize.contains("new CRC32()"));
+        assertTrue(jarSize.contains("setTimeLocal(LocalDateTime.of(1980, 1, 2, 0, 0))"));
+        assertTrue(jarSize.contains("targetEntry.setCompressedSize"));
+        assertTrue(jarSize.contains("targetEntry.setCrc"));
+        assertTrue(jarSize.contains("ZipEntry.STORED : ZipEntry.DEFLATED"));
         assertTrue(jarSize.contains("task.name == 'jar' || task.name == 'remapJar'"));
         assertTrue(jarSize.contains("StandardCopyOption.REPLACE_EXISTING"));
         assertFalse(jarSize.toLowerCase().contains("proguard"));
