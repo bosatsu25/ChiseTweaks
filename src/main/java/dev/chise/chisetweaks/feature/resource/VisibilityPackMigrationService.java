@@ -3,6 +3,9 @@ package dev.chise.chisetweaks.feature.resource;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.policy.VisibilityPackMigrationPolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticEvent;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.PackRepository;
@@ -43,6 +46,10 @@ public final class VisibilityPackMigrationService {
                     || !repository.getAvailableIds().contains(concreteId)) {
                 ChiseTweaksClient.LOGGER.warn(
                         "Visibility pack migration deferred because split built-in packs are unavailable");
+                RuntimeDiagnostics.log(
+                        RuntimeDiagnosticEvent.VISIBILITY_PACK_MIGRATION_DEFERRED,
+                        client,
+                        RuntimeDiagnosticDetail.of("reason", "split-packs-unavailable"));
                 return false;
             }
 
@@ -58,18 +65,35 @@ public final class VisibilityPackMigrationService {
 
             boolean accepted = !plan.selectionChanged()
                     || ChiseTexturePackController.applyMigrationSelection(client, plan.selectedIds());
-            if (!accepted) return false;
+            if (!accepted) {
+                RuntimeDiagnostics.log(
+                        RuntimeDiagnosticEvent.VISIBILITY_PACK_MIGRATION_DEFERRED,
+                        client,
+                        RuntimeDiagnosticDetail.of("reason", "selection-not-accepted"),
+                        RuntimeDiagnosticDetail.of("source", plan.source().name().toLowerCase()));
+                return false;
+            }
 
             SecureConfigStorage.writeUtf8Atomic(configDir, MARKER_FILE, "1\n");
             ChiseTweaksClient.LOGGER.info(
                     "Visibility pack migration completed source={} selectionChanged={}",
                     plan.source(),
                     plan.selectionChanged());
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.VISIBILITY_PACK_MIGRATION,
+                    client,
+                    RuntimeDiagnosticDetail.of("source", plan.source().name().toLowerCase()),
+                    RuntimeDiagnosticDetail.of("selectionChanged", plan.selectionChanged()));
             return true;
         } catch (IOException | RuntimeException | LinkageError failure) {
             ChiseTweaksClient.LOGGER.warn(
                     "Visibility pack migration deferred after {}",
                     failure.getClass().getSimpleName());
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.VISIBILITY_PACK_MIGRATION_DEFERRED,
+                    client,
+                    RuntimeDiagnosticDetail.of("reason", "exception"),
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
             return false;
         }
     }
