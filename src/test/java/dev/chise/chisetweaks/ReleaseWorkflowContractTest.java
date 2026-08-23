@@ -51,6 +51,22 @@ final class ReleaseWorkflowContractTest {
     }
 
     @Test
+    void releaseRebuildsArtifactsWithoutRepeatingCiQualityTests() throws IOException {
+        String release = source(".github/workflows/release.yml");
+
+        assertTrue(release.contains("Rebuild release candidate from verified SHA"));
+        assertTrue(release.contains("./gradlew --no-daemon --stacktrace clean assemble"));
+        assertTrue(release.contains("python scripts/artifact_audit.py"));
+        assertTrue(release.contains("python scripts/visual_asset_audit.py"));
+        assertTrue(release.contains("python scripts/release_residue_audit.py"));
+        assertFalse(release.contains("clean ciGate"));
+        assertFalse(release.contains("--stacktrace test"));
+        assertFalse(release.contains("jacocoTestReport"));
+        assertFalse(release.contains("pitest"));
+        assertFalse(release.contains("python scripts/quality_summary.py"));
+    }
+
+    @Test
     void releaseKeepsSemverStrictAndInfersExactPatchMinorOrMajorBumps() throws IOException {
         String release = source(".github/workflows/release.yml");
 
@@ -94,13 +110,15 @@ final class ReleaseWorkflowContractTest {
     }
 
     @Test
-    void normalCiRemainsReadOnlyAndDoesNotPublish() throws IOException {
+    void normalCiRemainsReadOnlyRetainsRuntimeJarAndDoesNotPublish() throws IOException {
         String ci = source(".github/workflows/ci.yml");
         String verify = source(".github/workflows/verify-build.yml");
 
         assertTrue(ci.contains("permissions:\n  contents: read"));
         assertTrue(verify.contains("permissions:\n  contents: read"));
-        assertTrue(verify.contains("CI verifies only"));
+        assertTrue(verify.contains("actions/upload-artifact@"));
+        assertTrue(verify.contains("path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}"));
+        assertTrue(verify.contains("archive: false"));
         assertFalse(ci.contains("contents: write"));
         assertFalse(verify.contains("gh release create"));
     }
