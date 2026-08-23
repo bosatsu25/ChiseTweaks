@@ -40,8 +40,9 @@ final class ReleaseIntegrationRegressionTest {
                 assertFalse(selected.getBooleanValue(), selected.getName());
                 for (int other = 0; other < switches.size(); other++) {
                     if (other == index) continue;
-                    assertTrue(switches.get(other).getBooleanValue(),
-                            () -> switches.get(other).getName() + " was coupled to " + selected.getName());
+                    ChiseBooleanSetting otherSetting = switches.get(other);
+                    assertTrue(otherSetting.getBooleanValue(),
+                            () -> otherSetting.getName() + " was coupled to " + selected.getName());
                 }
                 selected.setBooleanValueSilently(true);
             }
