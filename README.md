@@ -8,7 +8,7 @@ ChiseTweaks は、大規模建築・技術施設の確認作業を支援する *
 
 | 項目 | 対応 |
 | --- | --- |
-| ChiseTweaks | `0.9.3+mc26.1.2` |
+| ChiseTweaks | `0.9.4+mc26.1.2` |
 | Minecraft | `26.1.2` |
 | Fabric Loader | `0.19.3` 以上 |
 | Fabric API | `0.155.2+26.1.2` 以上 |
@@ -20,27 +20,27 @@ ChiseTweaks は、大規模建築・技術施設の確認作業を支援する *
 
 > 配布JARは Minecraft `26.1.2` 専用です。異なるMinecraft / Fabric / Javaバージョンへ流用しないでください。
 
-## 0.9.3 の主な更新
+## 0.9.4 の主な更新
 
-`0.9.3+mc26.1.2` は、0.9.2で分離したVisibility packsとAnalyzerを中心に、移行・異常系・診断・保守性を強化したリリース候補です。
+`0.9.4+mc26.1.2` は、0.9.3で固めたmigration / reload / diagnostics基盤を、Prism実機受入と性能回帰の切り分けまで扱える形へ拡張します。
 
-- 0.9.1以前の単一 `chisetweaks:chise_texture` packからChest / White Concreteの2packへ安全に移行
-- 旧packのON/OFF、既存pack順序、すでに分割済みの選択状態を保持するmigration policyを追加
-- `options.txt`のpack IDを完全一致で判定し、部分一致による誤migrationを防止
-- resource reload中のdisconnect、client-thread scheduling failure、terminal recovery、rollback失敗を状態機械で処理
-- session join / disconnect、resource reload、migration、feature quarantineを構造化diagnosticsとして記録
-- diagnostic event名を型付きcatalogへ固定し、追加detailを単一行へ安全に正規化
-- `FeatureAvailabilityPolicy` / `UiAvailabilityPolicy` / `ChestVisibilitySetting`へ正式APIを統一
-- `PreReleaseFeaturePolicy` / `PreReleaseUiPolicy` / `ChiseTextureVisibilitySetting`のdeprecated bridgeを削除
-- config migration / future-schema downgrade safety / reload state-machine / session lifecycle / feature isolation / Ancient Debris境界値の回帰テストを強化
-- README・Gradle properties・Fabric metadataの整合性をCIで自動検査
-- optional renderer MODへのhard dependencyと実装namespace直結をCIで監査
-- legacy classや旧assetがruntime / sources JARへ再混入した場合にRelease Residue Auditで失敗させる
-- Java compile warningをCI上のエラーとして扱う
+- 設定画面へ現在のResource Reload状態を表示
+- runtime diagnostic snapshotをClipboardへコピー可能
+- diagnostic snapshotを `config/chisetweaks/diagnostics/` へ保存可能
+- diagnostic fileは最大10件へ自動整理し、サーバーアドレス・ユーザー名・絶対pathを追加収集しない
+- `Connection reset` をChiseTweaks内部failureと混同しないPrism log auditを追加
+- `0.7.7 / 0.9.1 / 0.9.2 / future schema` のconfig fixtureを固定し、migration / downgrade safetyを継続検証
+- Resource Reload Coordinatorへ長時間状態遷移stress regressionを追加
+- Ancient Debris Analyzerへ長時間budget / retained-capacity regressionを追加
+- Sodium / Iris / ImmediatelyFast / EntityCullingについてhard dependency・conflict・implementation namespace直結をCIで禁止
+- resource reloadのblocking wait、Analyzerのforce chunk load、budget逸脱をruntime performance contract auditで検出
+- 5つのPrism性能scenario用baseline/candidate CSV template generatorを追加
+- 0.9.3の検証済みJAR `441198 bytes` をsize baselineとし、40KBを超える増加をArtifact Auditで拒否
+- `RuntimeDiagnosticReport`をJaCoCo / PITの96% retained-scope gateへ追加
 
 ## 現在の機能構成
 
-設定画面は **Highlight / Visual Filter / Analyzer / Visibility** の4系統です。主要な11個のruntime featureは初期状態OFFです。Chest VisibilityとWhite Concrete VisibilityはMinecraft標準Resource Packsとして初期ONです。
+設定画面は **Highlight / Visual Filter / Analyzer / Visibility** の4系統に、診断操作を加えた構成です。主要な11個のruntime featureは初期状態OFFです。Chest VisibilityとWhite Concrete VisibilityはMinecraft標準Resource Packsとして初期ONです。
 
 ### Highlight
 
@@ -70,6 +70,7 @@ Visual Filterはクライアント描画だけを変更し、サーバー側のb
 
 - 検出範囲: `16–256 blocks`
 - 最大表示数: `8–128`
+- 初回探索: 最大 `64 chunks / tick`
 - 再検証: 最大 `16 chunks / tick`
 - 最大追跡数: `4096 chunks`
 - 1チャンクあたり最大保持数: `256`
@@ -136,7 +137,11 @@ ChiseTweaksは異常時の原因切り分け用に、必要最小限のruntime�
 - `reloadState`
 - event固有の `componentId` / `failure` / `source` / `reason` など
 
-対象eventにはjoin / disconnect、component quarantine、resource selection/reload/recovery、Visibility pack migrationがあります。detailは長さと文字種を制限し、改行や制御文字をそのままログへ入れません。サーバーアドレス、ユーザー名、ローカルpathなどはdiagnostic snapshotへ収集しません。
+`reloadState` は `idle / reloading / recovery_pending / reloading_with_recovery` のいずれかです。設定画面でも現在値を確認できます。
+
+設定画面の **Copy Diagnostic Snapshot** では同じsnapshotをClipboardへコピーできます。**Export Diagnostic Snapshot** では `config/chisetweaks/diagnostics/` に保存し、ChiseTweaks生成reportだけを最大10件保持します。
+
+対象eventにはstartup / join / disconnect、component quarantine、resource selection/reload/recovery、Visibility pack migrationがあります。detailは長さと文字種を制限し、改行や制御文字をそのままログへ入れません。サーバーアドレス、ユーザー名、ローカル絶対pathなどはdiagnostic snapshotへ収集しません。
 
 ## トラブルシューティング
 
@@ -153,10 +158,16 @@ Minecraftプロセス自体が終了した、画面が固まった、描画例�
 1. `logs/latest.log`
 2. `crash-reports/crash-*.txt` が存在する場合はそのファイル
 3. `disconnect-*-client.txt` が存在する場合はそのファイル
-4. `Chise diagnostics event=...` の直近行
+4. `Chise diagnostics event=...` の直近行またはExportしたdiagnostic snapshot
 5. Minecraft / Fabric Loader / Fabric API / Java version
 
-`dev.chise.chisetweaks`、ChiseTweaks Mixin、renderer、resource reloadのstackがあるかを確認し、ネットワーク切断とMOD内部例外を分離します。
+Prism logは次でも機械判定できます。
+
+```bash
+python scripts/prism_acceptance_audit.py /path/to/latest.log --require-join --require-disconnect
+```
+
+`Connection reset` はtransport disconnectとして集計し、Mixin failure / component quarantine / resource reload failureとは分けて扱います。
 
 ## 安全性・互換性
 
@@ -172,19 +183,47 @@ Minecraftプロセス自体が終了した、画面が固まった、描画例�
 - Feature障害はquarantineで隔離
 - Analyzerは未ロードチャンクを要求しない
 - Sodiumは任意・推奨でありhard dependencyではない
-- Iris / ImmediatelyFast / EntityCullingを含むrenderer MOD実装namespaceへproduction codeから直接結合しないことをCIで監査
+- Sodium / Iris / ImmediatelyFast / EntityCullingを `depends / breaks / conflicts` に入れない
+- renderer MOD実装namespaceへproduction Java / resource metadataから直接結合しないことをCIで監査
 
 ## パフォーマンス方針
 
 - loaded chunks onlyの探索
 - 固定上限bufferとretained GPU bufferを優先
+- resource reload完了待ちで `.join()` / `.get()` を使用しない
+- Ancient Debris bootstrapは最大 `64 chunks / tick`
 - Ancient Debris validationは最大 `16 chunks / tick`
 - runtime iconは `128x128`
 - built-in pack iconは `64x64`
 - runtime JAR改善目標: `400000 bytes`未満
-- CI上限: `440000 bytes`
+- 0.9.3検証済みsize baseline: `441198 bytes`
+- 1 releaseで許容する増加: `40000 bytes`未満
+- absolute max: `500000 bytes`未満
+- 現在のeffective CI上限: `481198 bytes`未満
 
-Prism Launcherで取得したbaseline / candidate CSV、必要に応じてJFRを `comparePerformanceEvidence` で比較できます。FPS、P50/P95/P99 frametime、heapの基準を自動判定します。
+Prismでの性能比較は次の5 scenarioを固定します。
+
+- `chise-absent`
+- `chise-all-off`
+- `analyzers-on`
+- `highlights-on`
+- `maximum-supported-load`
+
+空のbaseline / candidate CSVは次で生成できます。
+
+```bash
+python scripts/performance_evidence_template.py performance-evidence --environment-id my-prism-pc
+```
+
+同一scenario / 同一環境で最低3回ずつ採取し、必要に応じてJFRとともに比較します。
+
+```bash
+./gradlew comparePerformanceEvidence \
+  -PperformanceBaseline=performance-evidence/chise-all-off-baseline-0.9.3.csv \
+  -PperformanceCandidate=performance-evidence/chise-all-off-candidate-0.9.4.csv
+```
+
+評価対象はstartup、P50/P95/P99 frametime、heap、allocation、render-thread CPU、average FPSです。実測手順は `docs/performance/0.9.4-baseline.md` を正とします。
 
 ## 自動品質ゲート
 
@@ -195,6 +234,7 @@ CIでは次をRelease Candidateの必須条件として扱います。
 - repository / production source audit
 - README / version / Fabric metadata consistency audit
 - optional renderer compatibility contract audit
+- blocking reload / force chunk load / Analyzer budget contract audit
 - Java compile warning = 0
 - JUnit
 - JaCoCo line coverage gate
@@ -202,13 +242,13 @@ CIでは次をRelease Candidateの必須条件として扱います。
 - Artifact Audit
 - Visual Asset Audit
 - Release Residue Audit
-- runtime JAR size / metadata / client-only contract
+- runtime JAR baseline-relative size / metadata / client-only contract
 
 品質閾値はJaCoCo line coverage、PIT coverage、mutation score、test strengthの各 `96%` です。
 
 ## 実機受入について
 
-自動テストではMinecraftの実GPU描画、Prism Launcher固有環境、実際のworld移動時の見た目やframetimeを完全には再現できません。正式配布前の実機受入では、少なくとも次を確認対象とします。
+自動テストではMinecraftの実GPU描画、Prism Launcher固有環境、実際のworld移動時の見た目やframetimeを完全には再現できません。正式配布前の実機受入では `docs/acceptance/0.9.4-prism.md` に従い、少なくとも次を確認対象とします。
 
 - 11 runtime features同時ON
 - Fine Line + Hidden Block + Nether Highlight同時ON
@@ -218,15 +258,16 @@ CIでは次をRelease Candidateの必須条件として扱います。
 - 古代の残骸の追加 / 削除反映
 - Overworld / Nether / End移動
 - disconnect / reconnect
+- diagnostic copy / exportとreload状態表示
 - 大規模建築環境でのFPS / frametime / heap比較
 
-**このREADMEは、実機操作を実施済みと主張するものではありません。** 実機受入結果は自動品質ゲートと分けて扱います。
+**このREADMEは、実機操作や実測Performanceを実施済みと主張するものではありません。** 実機受入結果は自動品質ゲートと分けて扱います。
 
 ## 導入
 
 Prism LauncherではMinecraft `26.1.2` / Fabric / Java `25`のインスタンスを使用し、Fabric APIを導入したうえで、Modsへ次のruntime JARを1個だけ追加します。
 
-`chise-tweaks-0.9.3+mc26.1.2.jar`
+`chise-tweaks-0.9.4+mc26.1.2.jar`
 
 ChiseTweaksはクライアント専用なのでサーバーの`mods`フォルダへ入れる必要はありません。
 
@@ -238,6 +279,7 @@ python scripts/repository_audit.py
 python scripts/source_usage_audit.py
 python scripts/documentation_consistency_audit.py
 python scripts/compatibility_contract_audit.py
+python scripts/runtime_performance_contract_audit.py
 python scripts/artifact_audit.py
 python scripts/visual_asset_audit.py
 python scripts/release_residue_audit.py

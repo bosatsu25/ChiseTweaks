@@ -16,6 +16,9 @@ final class UiAvailabilityPolicy {
                 ? ChiseTweaksSettingsController.Surface.MAIN
                 : surface;
         if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) return true;
+        if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.ACTION) {
+            return isActionInteractive(resolved, row.action());
+        }
         return switch (resolved) {
             case MAIN -> SettingRowIds.MAIN_INTERACTIVE.contains(row.settingId());
             case HIGHLIGHT_DETAILS -> isReleasedHighlightDetail(row.settingId());
@@ -33,7 +36,9 @@ final class UiAvailabilityPolicy {
         return switch (resolved) {
             case MAIN -> action == ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS
                     || action == ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS
-                    || action == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS;
+                    || action == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS
+                    || action == ChiseTweaksSettingRowDefinition.Action.COPY_DIAGNOSTICS
+                    || action == ChiseTweaksSettingRowDefinition.Action.EXPORT_DIAGNOSTICS;
             case HIGHLIGHT_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
             case VISUAL_FILTER_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
                     || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER;

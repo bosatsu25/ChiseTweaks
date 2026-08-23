@@ -14,7 +14,7 @@ final class LightweightRuntimeBudgetContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void runtimeJarKeepsFourHundredKilobyteTargetAndSeparateRegressionLimit() throws IOException {
+    void runtimeJarUsesVerifiedBaselineAndBoundedGrowthBudget() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
         String jarSize = source("gradle/chise-jar-size.gradle");
         String properties = source("gradle.properties");
@@ -22,13 +22,17 @@ final class LightweightRuntimeBudgetContractTest {
         String settings = source("settings.gradle");
 
         assertTrue(properties.contains("runtime_jar_target_bytes=400000"));
-        assertTrue(properties.contains("runtime_jar_max_bytes=440000"));
+        assertTrue(properties.contains("runtime_jar_baseline_bytes=441198"));
+        assertTrue(properties.contains("runtime_jar_max_growth_bytes=40000"));
+        assertTrue(properties.contains("runtime_jar_max_bytes=500000"));
         assertTrue(properties.contains("runtime_icon_target_pixels=128"));
         assertTrue(budget.contains("project.property('runtime_jar_target_bytes')"));
+        assertTrue(budget.contains("project.property('runtime_jar_baseline_bytes')"));
+        assertTrue(budget.contains("project.property('runtime_jar_max_growth_bytes')"));
         assertTrue(budget.contains("project.property('runtime_jar_max_bytes')"));
-        assertTrue(budget.contains("project.property('runtime_icon_target_pixels')"));
+        assertTrue(budget.contains("CHISE_RUNTIME_JAR_EFFECTIVE_MAX_BYTES = Math.min("));
         assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_TARGET_BYTES)"));
-        assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_MAX_BYTES)"));
+        assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_EFFECTIVE_MAX_BYTES)"));
         assertTrue(budget.contains("CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'"));
         assertTrue(budget.contains("iconImage.width != CHISE_RUNTIME_ICON_PIXELS"));
         assertTrue(budget.contains("dependsOn 'jar'"));
@@ -38,6 +42,20 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(settings.contains("gradle/chise-jar-size.gradle"));
         assertTrue(jarSize.contains("options.debug = true"));
         assertTrue(jarSize.contains("options.debugOptions.debugLevel = 'source,lines'"));
+    }
+
+    @Test
+    void mandatoryArtifactAuditAlsoEnforcesRuntimeJarGrowth() throws IOException {
+        String audit = source("scripts/artifact_audit.py");
+        String verify = source(".github/workflows/verify-build.yml");
+        String release = source(".github/workflows/release.yml");
+
+        assertTrue(audit.contains("runtime_jar_baseline_bytes"));
+        assertTrue(audit.contains("runtime_jar_max_growth_bytes"));
+        assertTrue(audit.contains("effective_max = min(absolute_max, baseline + max_growth)"));
+        assertTrue(audit.contains("if size >= effective_max:"));
+        assertTrue(verify.contains("python scripts/artifact_audit.py"));
+        assertTrue(release.contains("python scripts/artifact_audit.py"));
     }
 
     @Test

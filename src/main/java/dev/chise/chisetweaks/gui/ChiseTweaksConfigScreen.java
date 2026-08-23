@@ -2,6 +2,8 @@ package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticExporter;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -9,6 +11,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public final class ChiseTweaksConfigScreen extends Screen {
@@ -184,6 +187,24 @@ public final class ChiseTweaksConfigScreen extends Screen {
             case EDIT_ENTITY_FILTER -> minecraft.setScreen(new ChiseSceneFilterEditorScreen(
                     this, ChiseSceneFilterEditorScreen.Target.ENTITIES));
             case EDIT_ORE_COMPAT -> minecraft.setScreen(new ChiseOreCompatibilityScreen(this));
+            case COPY_DIAGNOSTICS -> copyDiagnostics();
+            case EXPORT_DIAGNOSTICS -> exportDiagnostics();
+        }
+    }
+
+    private void copyDiagnostics() {
+        if (minecraft == null) return;
+        minecraft.keyboardHandler.setClipboard(RuntimeDiagnosticExporter.report(minecraft));
+        persistenceFeedback = "Diagnostic snapshot copied / 診断情報をコピーしました";
+    }
+
+    private void exportDiagnostics() {
+        if (minecraft == null) return;
+        try {
+            String fileName = RuntimeDiagnosticExporter.export(minecraft);
+            persistenceFeedback = "Exported " + fileName + " / 診断情報を保存しました";
+        } catch (IOException | RuntimeException failure) {
+            persistenceFeedback = "Diagnostic export failed / 診断情報の保存に失敗しました";
         }
     }
 
@@ -281,6 +302,15 @@ public final class ChiseTweaksConfigScreen extends Screen {
         String title = ChiseTweaksMetadata.MOD_NAME + " " + ChiseTweaksMetadata.MOD_VERSION
                 + (detailTitle.isEmpty() ? "" : " - " + detailTitle);
         extractor.text(font, title, geometry.content().x(), 14, 0xFFFFFFFF);
+        if (surface == ChiseTweaksSettingsController.Surface.MAIN && minecraft != null) {
+            String reloadState = RuntimeDiagnostics.capture(minecraft).reloadState();
+            extractor.text(
+                    font,
+                    "Resource reload: " + reloadState,
+                    geometry.content().x(),
+                    26,
+                    "idle".equals(reloadState) ? 0xFF9A9A9A : 0xFFFFD166);
+        }
         for (ChiseTweaksSettingRowView row : rows) {
             if (!row.renderVisible) continue;
             if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {

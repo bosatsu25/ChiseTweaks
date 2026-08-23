@@ -1,0 +1,8 @@
+{
+  "worksiteVisibilityHorizontalRadius": 6,
+  "worksiteVisibilityVerticalRadius": 3,
+  "worksiteVisibilityIntervalTicks": 20,
+  "worksiteVisibilityMaxOverlayResults": 18,
+  "visualTargetMask": 8192,
+  "visualTargetSchemaVersion": 2
+}

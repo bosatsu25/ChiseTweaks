@@ -27,9 +27,13 @@ public record RuntimeDiagnosticSnapshot(
     }
 
     public String reloadState() {
-        if (resourceReloadInFlight && resourceRecoveryPending) return "reloading_with_recovery";
-        if (resourceReloadInFlight) return "reloading";
-        if (resourceRecoveryPending) return "recovery_pending";
+        return reloadState(resourceReloadInFlight, resourceRecoveryPending);
+    }
+
+    public static String reloadState(boolean reloadInFlight, boolean recoveryPending) {
+        if (reloadInFlight && recoveryPending) return "reloading_with_recovery";
+        if (reloadInFlight) return "reloading";
+        if (recoveryPending) return "recovery_pending";
         return "idle";
     }
 
