@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.core.policy;
 
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
-/** @deprecated Use {@link FeatureAvailabilityPolicy}. */
+/** @deprecated 正式な判定APIとして{@link FeatureAvailabilityPolicy}を使用する。 */
 @Deprecated(forRemoval = true)
 public final class PreReleaseFeaturePolicy {
     private PreReleaseFeaturePolicy() {}
