@@ -1,0 +1,9 @@
+{
+  "lavaHighlightEnabled": false,
+  "worksiteVisibilityHorizontalRadius": 8,
+  "worksiteVisibilityVerticalRadius": 4,
+  "worksiteVisibilityIntervalTicks": 25,
+  "worksiteVisibilityMaxOverlayResults": 20,
+  "visualTargetMask": 0,
+  "visualTargetSchemaVersion": 1
+}
