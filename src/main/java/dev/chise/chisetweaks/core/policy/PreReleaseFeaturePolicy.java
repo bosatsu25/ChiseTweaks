@@ -12,6 +12,8 @@ public final class PreReleaseFeaturePolicy {
         return checked == FeatureDefinition.MATERIAL_HIGHLIGHTS
                 || checked == FeatureDefinition.KELP_HIGHLIGHT
                 || checked == FeatureDefinition.GLASS_INSPECTION
+                || checked == FeatureDefinition.FINE_THREAD_TRACE
+                || checked == FeatureDefinition.HIDDEN_SURFACE_TRACE
                 || checked == FeatureDefinition.LAVA_HIGHLIGHT
                 || checked == FeatureDefinition.ANCIENT_DEBRIS_ANALYZER;
     }
