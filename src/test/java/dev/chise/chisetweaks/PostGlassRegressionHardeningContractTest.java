@@ -9,12 +9,12 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Guards the startup, zero-scan and release-pipeline hardening added after Glass Highlight. */
+/** Guards startup, visual-feature isolation and release-pipeline hardening. */
 final class PostGlassRegressionHardeningContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void runtimeRegistersOnlyAvailableTickFeaturesAndDoesNotReviveLockedWorksiteStack() throws IOException {
+    void runtimeKeepsWorksiteHighlightsIndependentWhileRetainingBoundedScanning() throws IOException {
         String manager = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
         String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
         assertTrue(manager.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)"));
@@ -22,12 +22,13 @@ final class PostGlassRegressionHardeningContractTest {
         assertTrue(manager.contains("definition.isWorksiteVisibilityMode()"));
         assertTrue(manager.contains("PreReleaseFeaturePolicy.isAvailable(definition)"));
         assertTrue(manager.contains("if (tickSchedule.length != 0)"));
-        assertTrue(bindings.contains(".filter(toggle -> PreReleaseFeaturePolicy.isAvailable(toggle.definition()))"));
-        assertTrue(bindings.contains("if (!WORKSITE_VISIBILITY_TOGGLES.isEmpty()) bindWorksiteVisibilityCallbacks();"));
+        assertFalse(bindings.contains("bindExclusiveWorksiteMode"));
+        assertFalse(bindings.contains("applyWorksiteModesAtomically"));
+        assertFalse(bindings.contains("worksiteVisibilityExclusiveMode"));
     }
 
     @Test
-    void lockedBuilderFocusIsGatedInRuntimeBindingsWithoutConfigDependingOnRendering() throws IOException {
+    void releasedBuilderFocusRemainsIsolatedFromConfigLayer() throws IOException {
         String config = source("src/main/java/dev/chise/chisetweaks/config/FeatureConfig.java");
         String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
 
@@ -40,7 +41,7 @@ final class PostGlassRegressionHardeningContractTest {
     }
 
     @Test
-    void lockedCompatibilitySensitiveMixinsAreFailClosedBeforeApplication() throws IOException {
+    void compatibilitySensitiveMixinsRemainPolicyGatedBeforeApplication() throws IOException {
         String config = source("src/main/resources/chisetweaks.features.mixins.json");
         String plugin = source("src/main/java/dev/chise/chisetweaks/mixin/PreReleaseMixinConfigPlugin.java");
         assertTrue(config.contains("\"plugin\": \"dev.chise.chisetweaks.mixin.PreReleaseMixinConfigPlugin\""));
