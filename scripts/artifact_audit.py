@@ -2,7 +2,7 @@
 """Run the artifact audit with exact visibility-pack and runtime-size contracts."""
 from __future__ import annotations
 
-from pathlib import Path
+import sys
 
 import artifact_audit_core as core
 
@@ -113,7 +113,7 @@ def main() -> int:
     try:
         size, baseline, effective_max = audit_runtime_size()
     except (KeyError, ValueError, OSError, RuntimeError) as failure:
-        print(f"ARTIFACT AUDIT SIZE CONTRACT: FAIL: {failure}", file=core.sys.stderr)
+        print(f"ARTIFACT AUDIT SIZE CONTRACT: FAIL: {failure}", file=sys.stderr)
         return 1
     update_summary(size, baseline, effective_max)
     print(
