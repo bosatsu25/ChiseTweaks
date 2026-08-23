@@ -1,7 +1,7 @@
 package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
+import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -38,13 +38,13 @@ public final class LocalFeatureSwitch extends ChiseBooleanSetting {
 
     @Override
     protected boolean readValue() {
-        return PreReleaseFeaturePolicy.isAvailable(definition)
+        return FeatureAvailabilityPolicy.isAvailable(definition)
                 && getter.test(LocalFeatureConfig.getInstance());
     }
 
     @Override
     protected void writeValue(boolean value) {
-        boolean effectiveValue = PreReleaseFeaturePolicy.isAvailable(definition) && value;
+        boolean effectiveValue = FeatureAvailabilityPolicy.isAvailable(definition) && value;
         setter.accept(LocalFeatureConfig.getInstance(), effectiveValue);
     }
 }
