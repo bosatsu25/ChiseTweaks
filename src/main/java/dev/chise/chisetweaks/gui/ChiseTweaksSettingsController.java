@@ -26,6 +26,12 @@ final class ChiseTweaksSettingsController {
         LAVA_DETAILS
     }
 
+    record SaveResult(boolean featureSaved, boolean localSaved) {
+        boolean successful() {
+            return featureSaved && localSaved;
+        }
+    }
+
     private final ChiseTweaksSettingsCatalog catalog = new ChiseTweaksSettingsCatalog();
 
     static ChiseTweaksSettingsController forCurrentLanguage() {
@@ -72,13 +78,13 @@ final class ChiseTweaksSettingsController {
         };
     }
 
-    boolean saveConfig(Set<SettingPersistence> dirtyDomains) {
+    SaveResult saveConfig(Set<SettingPersistence> dirtyDomains) {
         Set<SettingPersistence> dirty = dirtyDomains == null ? Set.of() : dirtyDomains;
         boolean featureSaved = !dirty.contains(SettingPersistence.FEATURE_CONFIG)
                 || FeatureConfig.saveToFile();
         boolean localSaved = !dirty.contains(SettingPersistence.LOCAL_CONFIG)
                 || LocalFeatureConfig.getInstance().save();
-        return featureSaved && localSaved;
+        return new SaveResult(featureSaved, localSaved);
     }
 
     private void resetAll() {
