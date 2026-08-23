@@ -17,135 +17,87 @@ ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"),
 }
 RELOAD_CALL = re.compile(r"\breloadResourcePacks\s*\(\s*\)")
-RELOAD_CHAIN_WAIT = re.compile(
-    r"\breloadResourcePacks\s*\(\s*\)[^;]*?\.\s*(?:join|get)\s*\(",
-)
-SIMPLE_ASSIGNMENT = re.compile(
-    r"(?P<lhs>(?:this\s*\.\s*)?[A-Za-z_$][\w$]*)\s*(?<![=!<>])=(?!=)\s*(?P<rhs>[^;]+);"
-)
+BLOCKING_WAIT_SYNTAX = re.compile(r"\.\s*(?:join|get)\s*\(")
 PLAIN_GET_CHUNK = re.compile(r"\bgetChunk\s*\(")
 JAVA_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
 JAVA_LINE_COMMENT = re.compile(r"//.*?$", re.MULTILINE)
-JAVA_WHITESPACE = re.compile(r"\s+")
+
+# These controller files intentionally reserve every method literally named get(...) or join(...)
+# as forbidden syntax. This conservative rule avoids pretending a regex is a Java data-flow engine.
+# The one existing synchronous state-holder read is removed exactly before scanning; any other wait
+# on the same line or elsewhere remains visible to the detector.
+ALLOWED_EXACT_SYNCHRONOUS_READS = ("TERMINAL_RECOVERY.get()",)
 
 
 def java_code_only(text: str) -> str:
-    """Remove comments so examples of forbidden APIs do not become audit false positives."""
+    """Remove comments so API names in documentation cannot affect the audit."""
     return JAVA_LINE_COMMENT.sub("", JAVA_BLOCK_COMMENT.sub("", text))
 
 
-def normalized_java(text: str) -> str:
-    """Collapse formatting whitespace so multiline Java calls are inspected as one logical stream."""
-    return JAVA_WHITESPACE.sub(" ", java_code_only(text)).strip()
+def strict_reload_controller_code(text: str) -> str:
+    """Return executable controller text after removing only explicitly approved synchronous reads."""
+    code = java_code_only(text)
+    for allowed in ALLOWED_EXACT_SYNCHRONOUS_READS:
+        code = code.replace(allowed, "")
+    return code
 
 
-def canonical_receiver(receiver: str) -> str:
-    return JAVA_WHITESPACE.sub("", receiver)
-
-
-def strip_outer_parentheses(expression: str) -> str:
-    current = expression.strip()
-    while len(current) >= 2 and current[0] == "(" and current[-1] == ")":
-        current = current[1:-1].strip()
-    return current
-
-
-def reload_future_receivers(code: str) -> set[str]:
-    """Find variables/fields that directly receive the reload Future and follow simple aliases."""
-    assignments = [
-        (canonical_receiver(match.group("lhs")), match.group("rhs").strip())
-        for match in SIMPLE_ASSIGNMENT.finditer(code)
-    ]
-    receivers = {
-        lhs for lhs, rhs in assignments if RELOAD_CALL.search(rhs)
-    }
-
-    changed = True
-    while changed:
-        changed = False
-        for lhs, rhs in assignments:
-            if lhs in receivers:
-                continue
-            alias = canonical_receiver(strip_outer_parentheses(rhs))
-            if alias in receivers:
-                receivers.add(lhs)
-                changed = True
-    return receivers
-
-
-def receiver_wait_pattern(receiver: str) -> re.Pattern[str]:
-    if receiver.startswith("this."):
-        field = re.escape(receiver.removeprefix("this."))
-        receiver_pattern = rf"(?:this\s*\.\s*)?{field}"
-    else:
-        receiver_pattern = re.escape(receiver)
-    return re.compile(rf"(?<![\w$]){receiver_pattern}\s*\.\s*(?:join|get)\s*\(")
-
-
-def blocking_reload_waits(text: str) -> list[str]:
-    """Detect blocking waits only on reloadResourcePacks Futures, including stored/aliased Futures."""
-    code = normalized_java(text)
-    if not code:
-        return []
-
+def blocking_wait_syntax(text: str) -> list[str]:
+    """Reject every remaining .get(...) or .join(...) inside the two reload controllers."""
+    code = strict_reload_controller_code(text)
     findings: list[str] = []
-    for match in RELOAD_CHAIN_WAIT.finditer(code):
-        findings.append(match.group(0))
-
-    for receiver in sorted(reload_future_receivers(code)):
-        pattern = receiver_wait_pattern(receiver)
-        for match in pattern.finditer(code):
-            findings.append(match.group(0))
-
-    return list(dict.fromkeys(findings))
+    for match in BLOCKING_WAIT_SYNTAX.finditer(code):
+        start = max(0, match.start() - 48)
+        end = min(len(code), match.end() + 48)
+        snippet = " ".join(code[start:end].split())
+        findings.append(snippet)
+    return findings
 
 
 def detector_contract_failures() -> list[str]:
-    """Self-test the detector against multiline, stored-Future, alias, masking and false-positive cases."""
+    """Self-test the intentionally conservative syntax contract against prior review regressions."""
     cases = (
-        ("cache.get(key);", False, "ordinary collection get must not be treated as a reload wait"),
-        ("TERMINAL_RECOVERY.get();", False, "unrelated AtomicReference get must remain allowed"),
-        ("future.get();", False, "an unrelated Future name must not be assumed to be a reload Future"),
-        ("// client.reloadResourcePacks().get();", False, "comment-only wait examples must be ignored"),
+        ("TERMINAL_RECOVERY.get();", False, "the one exact AtomicReference read remains allowed"),
         (
-            "client.reloadResourcePacks()\n    .get();",
+            "TERMINAL_RECOVERY.get(); future.join();",
             True,
-            "multiline direct zero-argument reload get must be rejected",
+            "the allowed read must not mask another wait on the same line",
         ),
+        ("// future.get();", False, "comment-only wait examples must be ignored"),
+        ("future.get();", True, "zero-argument get is forbidden in a reload controller"),
+        ("future.get(5, TimeUnit.SECONDS);", True, "timed get is forbidden in a reload controller"),
+        ("future.join();", True, "join is forbidden in a reload controller"),
+        ("(future).join();", True, "parenthesized receiver waits are forbidden"),
         (
-            "client.reloadResourcePacks()\n    .get(5, TimeUnit.SECONDS);",
+            "client.reloadResourcePacks()\n    .thenApply(v -> { record(v); return v; })\n    .join();",
             True,
-            "multiline direct timed reload get must be rejected",
-        ),
-        (
-            "client.reloadResourcePacks()\n    .thenApply(value -> value)\n    .join();",
-            True,
-            "multiline chained reload join must be rejected",
+            "block-bodied completion stages cannot hide a terminal wait",
         ),
         (
             "var reload = client.reloadResourcePacks();\nreload.get(5, TimeUnit.SECONDS);",
             True,
-            "timed get on a stored reload Future must be rejected",
+            "stored reload Future timed waits are forbidden without data-flow analysis",
         ),
         (
-            "var reload = client.reloadResourcePacks();\nvar alias = reload;\nalias.join();",
+            "consume(client.reloadResourcePacks(), cache.get(key));",
             True,
-            "blocking wait through a simple reload Future alias must be rejected",
+            "ordinary get calls are deliberately forbidden in the tiny reload-controller boundary",
         ),
         (
-            "TERMINAL_RECOVERY.get(); client.reloadResourcePacks().join();",
+            "Supplier<CompletableFuture<Void>> reload = () -> client.reloadResourcePacks(); reload.get();",
             True,
-            "an unrelated allowed get must not mask a blocking reload wait",
+            "Supplier.get is deliberately forbidden in the reload-controller boundary",
         ),
         (
-            "var reload = client.reloadResourcePacks(); cache.get(reload);",
-            False,
-            "passing a reload Future to an unrelated collection get is not itself a blocking wait",
+            "void first() { var result = client.reloadResourcePacks(); } "
+            "void second() { other.get(); }",
+            True,
+            "method-scope ambiguity cannot bypass the strict controller syntax rule",
         ),
     )
     failures: list[str] = []
     for sample, expected, label in cases:
-        actual = bool(blocking_reload_waits(sample))
+        actual = bool(blocking_wait_syntax(sample))
         if actual != expected:
             failures.append(f"blocking-wait detector self-test failed: {label}: sample={sample!r}")
     return failures
@@ -174,16 +126,16 @@ def audit() -> list[str]:
     for marker in ("ResourceReloadCoordinator", "whenComplete", "client.execute", "markPending"):
         if marker not in java_code_only(texture_text):
             failures.append(f"{texture.relative_to(ROOT)}: missing non-blocking reload marker {marker}")
-    for wait in blocking_reload_waits(texture_text):
-        failures.append(f"{texture.relative_to(ROOT)}: blocking reload wait detected: {wait}")
+    for wait in blocking_wait_syntax(texture_text):
+        failures.append(f"{texture.relative_to(ROOT)}: forbidden get/join syntax in reload controller: {wait}")
 
     ore = ROOT / next(path for path in RELOAD_CONTROLLERS if "OreHighlightModelReload" in path.name)
     ore_text = ore.read_text(encoding="utf-8")
     for marker in ("AtomicBoolean", "whenComplete", "client.execute", "PENDING"):
         if marker not in java_code_only(ore_text):
             failures.append(f"{ore.relative_to(ROOT)}: missing coalescing reload marker {marker}")
-    for wait in blocking_reload_waits(ore_text):
-        failures.append(f"{ore.relative_to(ROOT)}: blocking reload wait detected: {wait}")
+    for wait in blocking_wait_syntax(ore_text):
+        failures.append(f"{ore.relative_to(ROOT)}: forbidden get/join syntax in reload controller: {wait}")
 
     for relative in ANALYZERS:
         path = ROOT / relative
@@ -217,10 +169,10 @@ def main() -> int:
     print("RUNTIME PERFORMANCE CONTRACT AUDIT: PASS")
     print("blocking_reload_waits=false")
     print("resource_reload_callers=2_coalescing_controllers")
+    print("reload_controllers_get_join_free=true")
     print("analyzers_force_chunk_load=false")
     print("analyzer_budgets=bounded")
     print("detector_self_test=true")
-    print("reload_future_taint_tracking=true")
     return 0
 
 
