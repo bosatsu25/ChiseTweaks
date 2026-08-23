@@ -14,6 +14,8 @@ final class PreReleaseFeaturePolicyTest {
             if (definition == FeatureDefinition.MATERIAL_HIGHLIGHTS
                     || definition == FeatureDefinition.KELP_HIGHLIGHT
                     || definition == FeatureDefinition.GLASS_INSPECTION
+                    || definition == FeatureDefinition.FINE_THREAD_TRACE
+                    || definition == FeatureDefinition.HIDDEN_SURFACE_TRACE
                     || definition == FeatureDefinition.LAVA_HIGHLIGHT
                     || definition == FeatureDefinition.ANCIENT_DEBRIS_ANALYZER) {
                 assertTrue(PreReleaseFeaturePolicy.isAvailable(definition), definition.id());
