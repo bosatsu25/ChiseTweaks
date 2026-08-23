@@ -16,12 +16,17 @@ ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"),
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"),
 }
-BLOCKING_ZERO_ARG_WAIT = re.compile(r"\.(?:join|get)\s*\(\s*\)")
-DIRECT_RELOAD_TIMED_GET = re.compile(r"reloadResourcePacks\s*\(\s*\)\s*\.\s*get\s*\(")
+RELOAD_CALL = re.compile(r"\breloadResourcePacks\s*\(\s*\)")
+RELOAD_CHAIN_WAIT = re.compile(
+    r"\breloadResourcePacks\s*\(\s*\)[^;]*?\.\s*(?:join|get)\s*\(",
+)
+SIMPLE_ASSIGNMENT = re.compile(
+    r"(?P<lhs>(?:this\s*\.\s*)?[A-Za-z_$][\w$]*)\s*(?<![=!<>])=(?!=)\s*(?P<rhs>[^;]+);"
+)
 PLAIN_GET_CHUNK = re.compile(r"\bgetChunk\s*\(")
 JAVA_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
 JAVA_LINE_COMMENT = re.compile(r"//.*?$", re.MULTILINE)
-ALLOWED_SYNCHRONOUS_GETS = ("TERMINAL_RECOVERY.get()",)
+JAVA_WHITESPACE = re.compile(r"\s+")
 
 
 def java_code_only(text: str) -> str:
@@ -29,43 +34,118 @@ def java_code_only(text: str) -> str:
     return JAVA_LINE_COMMENT.sub("", JAVA_BLOCK_COMMENT.sub("", text))
 
 
-def blocking_wait_lines(text: str) -> list[str]:
-    """Return suspicious reload waits without treating ordinary collection/state-holder gets as Future waits."""
-    failures: list[str] = []
-    for raw in java_code_only(text).splitlines():
-        line = raw.strip()
-        if not line:
-            continue
-        candidate = line
-        for allowed in ALLOWED_SYNCHRONOUS_GETS:
-            candidate = candidate.replace(allowed, "")
-        if BLOCKING_ZERO_ARG_WAIT.search(candidate) or DIRECT_RELOAD_TIMED_GET.search(candidate):
-            failures.append(line)
-    return failures
+def normalized_java(text: str) -> str:
+    """Collapse formatting whitespace so multiline Java calls are inspected as one logical stream."""
+    return JAVA_WHITESPACE.sub(" ", java_code_only(text)).strip()
+
+
+def canonical_receiver(receiver: str) -> str:
+    return JAVA_WHITESPACE.sub("", receiver)
+
+
+def strip_outer_parentheses(expression: str) -> str:
+    current = expression.strip()
+    while len(current) >= 2 and current[0] == "(" and current[-1] == ")":
+        current = current[1:-1].strip()
+    return current
+
+
+def reload_future_receivers(code: str) -> set[str]:
+    """Find variables/fields that directly receive the reload Future and follow simple aliases."""
+    assignments = [
+        (canonical_receiver(match.group("lhs")), match.group("rhs").strip())
+        for match in SIMPLE_ASSIGNMENT.finditer(code)
+    ]
+    receivers = {
+        lhs for lhs, rhs in assignments if RELOAD_CALL.search(rhs)
+    }
+
+    changed = True
+    while changed:
+        changed = False
+        for lhs, rhs in assignments:
+            if lhs in receivers:
+                continue
+            alias = canonical_receiver(strip_outer_parentheses(rhs))
+            if alias in receivers:
+                receivers.add(lhs)
+                changed = True
+    return receivers
+
+
+def receiver_wait_pattern(receiver: str) -> re.Pattern[str]:
+    if receiver.startswith("this."):
+        field = re.escape(receiver.removeprefix("this."))
+        receiver_pattern = rf"(?:this\s*\.\s*)?{field}"
+    else:
+        receiver_pattern = re.escape(receiver)
+    return re.compile(rf"(?<![\w$]){receiver_pattern}\s*\.\s*(?:join|get)\s*\(")
+
+
+def blocking_reload_waits(text: str) -> list[str]:
+    """Detect blocking waits only on reloadResourcePacks Futures, including stored/aliased Futures."""
+    code = normalized_java(text)
+    if not code:
+        return []
+
+    findings: list[str] = []
+    for match in RELOAD_CHAIN_WAIT.finditer(code):
+        findings.append(match.group(0))
+
+    for receiver in sorted(reload_future_receivers(code)):
+        pattern = receiver_wait_pattern(receiver)
+        for match in pattern.finditer(code):
+            findings.append(match.group(0))
+
+    return list(dict.fromkeys(findings))
 
 
 def detector_contract_failures() -> list[str]:
-    """Self-test the source detector so CI cannot silently reintroduce known false positives or masking."""
+    """Self-test the detector against multiline, stored-Future, alias, masking and false-positive cases."""
     cases = (
-        ("cache.get(key);", False, "argument-taking collection get must not be treated as a wait"),
-        ("future.get();", True, "zero-argument Future.get must be rejected"),
-        ("future.join();", True, "Future.join must be rejected"),
-        ("TERMINAL_RECOVERY.get();", False, "known AtomicReference read must remain allowed"),
+        ("cache.get(key);", False, "ordinary collection get must not be treated as a reload wait"),
+        ("TERMINAL_RECOVERY.get();", False, "unrelated AtomicReference get must remain allowed"),
+        ("future.get();", False, "an unrelated Future name must not be assumed to be a reload Future"),
+        ("// client.reloadResourcePacks().get();", False, "comment-only wait examples must be ignored"),
         (
-            "TERMINAL_RECOVERY.get(); future.join();",
+            "client.reloadResourcePacks()\n    .get();",
             True,
-            "allowed AtomicReference read must not mask another blocking wait",
+            "multiline direct zero-argument reload get must be rejected",
         ),
-        ("// future.join();", False, "comment-only blocking examples must be ignored"),
         (
-            "client.reloadResourcePacks().get(5, TimeUnit.SECONDS);",
+            "client.reloadResourcePacks()\n    .get(5, TimeUnit.SECONDS);",
             True,
-            "direct timed get on the reload Future must be rejected",
+            "multiline direct timed reload get must be rejected",
+        ),
+        (
+            "client.reloadResourcePacks()\n    .thenApply(value -> value)\n    .join();",
+            True,
+            "multiline chained reload join must be rejected",
+        ),
+        (
+            "var reload = client.reloadResourcePacks();\nreload.get(5, TimeUnit.SECONDS);",
+            True,
+            "timed get on a stored reload Future must be rejected",
+        ),
+        (
+            "var reload = client.reloadResourcePacks();\nvar alias = reload;\nalias.join();",
+            True,
+            "blocking wait through a simple reload Future alias must be rejected",
+        ),
+        (
+            "TERMINAL_RECOVERY.get(); client.reloadResourcePacks().join();",
+            True,
+            "an unrelated allowed get must not mask a blocking reload wait",
+        ),
+        (
+            "var reload = client.reloadResourcePacks(); cache.get(reload);",
+            False,
+            "passing a reload Future to an unrelated collection get is not itself a blocking wait",
         ),
     )
     failures: list[str] = []
     for sample, expected, label in cases:
-        actual = bool(blocking_wait_lines(sample))
+        actual = bool(blocking_reload_waits(sample))
         if actual != expected:
             failures.append(f"blocking-wait detector self-test failed: {label}: sample={sample!r}")
     return failures
@@ -80,7 +160,7 @@ def audit() -> list[str]:
         text = java_code_only(path.read_text(encoding="utf-8"))
         if "Thread.sleep(" in text:
             failures.append(f"{relative}: production thread sleep is forbidden")
-        if "reloadResourcePacks()" in text:
+        if RELOAD_CALL.search(text):
             reload_callers.add(relative)
 
     if reload_callers != RELOAD_CONTROLLERS:
@@ -94,16 +174,16 @@ def audit() -> list[str]:
     for marker in ("ResourceReloadCoordinator", "whenComplete", "client.execute", "markPending"):
         if marker not in java_code_only(texture_text):
             failures.append(f"{texture.relative_to(ROOT)}: missing non-blocking reload marker {marker}")
-    for line in blocking_wait_lines(texture_text):
-        failures.append(f"{texture.relative_to(ROOT)}: blocking reload wait detected: {line}")
+    for wait in blocking_reload_waits(texture_text):
+        failures.append(f"{texture.relative_to(ROOT)}: blocking reload wait detected: {wait}")
 
     ore = ROOT / next(path for path in RELOAD_CONTROLLERS if "OreHighlightModelReload" in path.name)
     ore_text = ore.read_text(encoding="utf-8")
     for marker in ("AtomicBoolean", "whenComplete", "client.execute", "PENDING"):
         if marker not in java_code_only(ore_text):
             failures.append(f"{ore.relative_to(ROOT)}: missing coalescing reload marker {marker}")
-    for line in blocking_wait_lines(ore_text):
-        failures.append(f"{ore.relative_to(ROOT)}: blocking reload wait detected: {line}")
+    for wait in blocking_reload_waits(ore_text):
+        failures.append(f"{ore.relative_to(ROOT)}: blocking reload wait detected: {wait}")
 
     for relative in ANALYZERS:
         path = ROOT / relative
@@ -140,6 +220,7 @@ def main() -> int:
     print("analyzers_force_chunk_load=false")
     print("analyzer_budgets=bounded")
     print("detector_self_test=true")
+    print("reload_future_taint_tracking=true")
     return 0
 
 
