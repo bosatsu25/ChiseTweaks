@@ -93,19 +93,29 @@ final class ChiseTexturePackContractTest {
     }
 
     @Test
-    void brightPackSettingsUseMinecraftOptionsInsteadOfUnrelatedApplyPersistence() throws IOException {
+    void settingsPersistenceIsScopedAndBrightPacksRemainExternal() throws IOException {
         String chest = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java"));
         String concrete = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java"));
+        String localSwitch = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitch.java"));
         String screen = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
-        assertTrue(chest.contains("requiresApplyPersistence()"));
-        assertTrue(chest.contains("return false;"));
-        assertTrue(concrete.contains("requiresApplyPersistence()"));
-        assertTrue(screen.contains("config.requiresApplyPersistence()"));
+        String settingsController = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java"));
+        assertTrue(chest.contains("SettingPersistence.EXTERNAL"));
+        assertTrue(concrete.contains("SettingPersistence.EXTERNAL"));
+        assertTrue(localSwitch.contains("SettingPersistence.LOCAL_CONFIG"));
+        assertTrue(screen.contains("EnumSet<SettingPersistence> dirtyDomains"));
+        assertTrue(screen.contains("config.persistence()"));
+        assertTrue(screen.contains("result.featureSaved()"));
+        assertTrue(screen.contains("result.localSaved()"));
         assertTrue(screen.contains("public void tick()"));
         assertTrue(screen.contains("refreshRowButtons();"));
+        assertTrue(settingsController.contains("record SaveResult"));
+        assertTrue(settingsController.contains("!dirty.contains(SettingPersistence.FEATURE_CONFIG)"));
+        assertTrue(settingsController.contains("!dirty.contains(SettingPersistence.LOCAL_CONFIG)"));
     }
 
     @Test
