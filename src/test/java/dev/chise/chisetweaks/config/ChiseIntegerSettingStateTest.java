@@ -22,6 +22,7 @@ final class ChiseIntegerSettingStateTest {
 
         assertEquals(5, setting.getIntegerValue());
         assertEquals(0, callbacks.get());
+        assertEquals(SettingPersistence.LOCAL_CONFIG, setting.persistence());
     }
 
     @Test
@@ -40,5 +41,14 @@ final class ChiseIntegerSettingStateTest {
 
         assertEquals(8, setting.getIntegerValue());
         assertEquals(1, callbacks.get());
+        assertEquals(SettingPersistence.LOCAL_CONFIG, setting.persistence());
+    }
+
+    @Test
+    void unboundIntegerDefaultsToFeaturePersistence() {
+        ChiseIntegerSetting setting = new ChiseIntegerSetting(
+                "featureInteger", 2, 0, 10,
+                "Feature integer", "機能整数", "Feature integer", "機能整数");
+        assertEquals(SettingPersistence.FEATURE_CONFIG, setting.persistence());
     }
 }
