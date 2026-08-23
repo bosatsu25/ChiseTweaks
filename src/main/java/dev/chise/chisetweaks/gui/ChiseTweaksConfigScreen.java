@@ -168,7 +168,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
             markDirty();
         }).bounds(0, 0, 24, 18).build());
         Button value = addRenderableWidget(Button.builder(
-                Component.literal(Integer.toString(config.getIntegerValue())), ignored -> {})
+                Component.literal(config.getFormattedValue()), ignored -> {})
                 .bounds(0, 0, 54, 18)
                 .build());
         value.active = false;
@@ -438,8 +438,8 @@ public final class ChiseTweaksConfigScreen extends Screen {
             } else if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.INTEGER
                     && row.value != null
                     && row.definition.integerConfig() != null) {
-                row.value.setMessage(Component.literal(Integer.toString(
-                        row.definition.integerConfig().getIntegerValue())));
+                row.value.setMessage(Component.literal(
+                        row.definition.integerConfig().getFormattedValue()));
             }
         }
         if (bulkButton != null) {
