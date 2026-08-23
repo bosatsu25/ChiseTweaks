@@ -12,6 +12,7 @@ import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /** 設定操作だけを調整し、表示用メタデータは{@link ChiseTweaksSettingsCatalog}へ分離するcontroller。 */
@@ -39,7 +40,26 @@ final class ChiseTweaksSettingsController {
     }
 
     List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
-        return catalog.rows(surface);
+        Surface resolved = surface == null ? Surface.MAIN : surface;
+        List<ChiseTweaksSettingRowDefinition> base = catalog.rows(resolved);
+        if (resolved != Surface.MAIN) return base;
+        ArrayList<ChiseTweaksSettingRowDefinition> result = new ArrayList<>(base.size() + 3);
+        result.addAll(base);
+        result.add(ChiseTweaksSettingRowDefinition.header(
+                "header.diagnostics", "Diagnostics / 診断"));
+        result.add(ChiseTweaksSettingRowDefinition.action(
+                "copyDiagnostics",
+                "Copy Diagnostic Snapshot / 診断情報をコピー",
+                "Copy a privacy-minimized runtime snapshot to the clipboard / 個人情報を追加しない実行状態をクリップボードへコピーします",
+                ChiseTweaksSettingRowDefinition.Action.COPY_DIAGNOSTICS,
+                "Copy / コピー"));
+        result.add(ChiseTweaksSettingRowDefinition.action(
+                "exportDiagnostics",
+                "Export Diagnostic Snapshot / 診断情報を書き出す",
+                "Save a bounded local diagnostic report without server address or absolute paths / サーバーアドレスや絶対パスを含めず診断情報を保存します",
+                ChiseTweaksSettingRowDefinition.Action.EXPORT_DIAGNOSTICS,
+                "Export / 保存"));
+        return List.copyOf(result);
     }
 
     String surfaceTitle(Surface surface) {
