@@ -182,7 +182,7 @@ def mutationGateClasses = [
         'dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog',
         'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy',
-        'dev.chise/chisetweaks.gui.UiAvailabilityPolicy',
+        'dev.chise.chisetweaks.gui.UiAvailabilityPolicy',
         'dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail',
         'dev.chise.chisetweaks.runtime.RuntimeDiagnosticSnapshot',
         'dev.chise.chisetweaks.runtime.FeatureManager$TickSlot*'
