@@ -1,7 +1,7 @@
 package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
-import dev.chise.chisetweaks.config.ChiseTextureVisibilitySetting;
+import dev.chise.chisetweaks.config.ChestVisibilitySetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
@@ -67,7 +67,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertSame(LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
                 row(rows, "ancientDebrisAnalyzer").booleanConfig());
         assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, row(rows, "fireVisibility").booleanConfig());
-        assertSame(ChiseTextureVisibilitySetting.INSTANCE, row(rows, "chestVisibility").booleanConfig());
+        assertSame(ChestVisibilitySetting.INSTANCE, row(rows, "chestVisibility").booleanConfig());
         assertSame(WhiteConcreteVisibilitySetting.INSTANCE,
                 row(rows, "whiteConcreteVisibility").booleanConfig());
         assertTrue(row(rows, "chestVisibility").booleanConfig().getDefaultBooleanValue());
@@ -137,7 +137,7 @@ final class ChiseTweaksSettingsControllerTest {
         ChiseTweaksSettingRowDefinition concrete = row(controller.rows(), "whiteConcreteVisibility");
         assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, fire.booleanConfig());
         assertFalse(fire.booleanConfig().getDefaultBooleanValue());
-        assertSame(ChiseTextureVisibilitySetting.INSTANCE, chest.booleanConfig());
+        assertSame(ChestVisibilitySetting.INSTANCE, chest.booleanConfig());
         assertTrue(chest.booleanConfig().getDefaultBooleanValue());
         assertSame(WhiteConcreteVisibilitySetting.INSTANCE, concrete.booleanConfig());
         assertTrue(concrete.booleanConfig().getDefaultBooleanValue());
