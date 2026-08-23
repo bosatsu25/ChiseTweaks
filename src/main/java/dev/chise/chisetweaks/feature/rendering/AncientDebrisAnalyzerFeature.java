@@ -42,6 +42,8 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     private final NearestPositionBuffer nearestMarkers = new NearestPositionBuffer(
             AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS);
     private final Map<Long, long[]> positionsByChunk = new HashMap<>();
+    private final long[] pendingBootstrapChunks = new long[
+            AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNK_COUNT];
 
     private ClientLevel lastLevel;
     private long lastPlayerBlock = Long.MIN_VALUE;
@@ -49,6 +51,8 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     private int lastRangeBlocks = Integer.MIN_VALUE;
     private int lastMaxMarkers = Integer.MIN_VALUE;
     private int ticksUntilValidation;
+    private int pendingBootstrapIndex;
+    private int pendingBootstrapCount;
     private boolean selectionDirty;
     private boolean renderQuarantined;
     private boolean runtimeQuarantined;
@@ -100,7 +104,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         boolean rangeChanged = rangeBlocks != lastRangeBlocks;
         boolean playerChunkChanged = playerChunk != lastPlayerChunk;
         if (rangeChanged || playerChunkChanged) {
-            bootstrapLoadedChunks(client, rangeBlocks, centerChunkX, centerChunkZ);
+            scheduleLoadedChunkBootstrap(rangeBlocks, centerChunkX, centerChunkZ);
             lastPlayerChunk = playerChunk;
         }
         if (playerBlock != lastPlayerBlock || rangeChanged || maxMarkers != lastMaxMarkers) {
@@ -109,6 +113,8 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
             lastMaxMarkers = maxMarkers;
             selectionDirty = true;
         }
+
+        processPendingLoadedChunks(client);
 
         if (ticksUntilValidation <= 0) {
             validateCachedMarkers(client.level);
@@ -150,22 +156,45 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         if (positionsByChunk.remove(chunkKey(chunk)) != null) selectionDirty = true;
     }
 
-    private void bootstrapLoadedChunks(
-            Minecraft client,
+    /**
+     * Schedules already-loaded chunks for bounded bootstrap work. Chunk lookup/scanning is deliberately
+     * spread across client ticks so a large analyzer radius cannot monopolize one render-adjacent tick.
+     */
+    private void scheduleLoadedChunkBootstrap(
             int rangeBlocks,
             int centerChunkX,
             int centerChunkZ) {
-        if (client == null || client.player == null || client.level == null || !isNether(client.level)) return;
         int chunkRadius = AncientDebrisAnalyzerPolicy.chunkRadiusForRangeBlocks(rangeBlocks);
         pruneTrackedChunksOutsideNeighborhood(centerChunkX, centerChunkZ, rangeBlocks);
+        clearPendingBootstrap();
         for (int chunkZ = centerChunkZ - chunkRadius; chunkZ <= centerChunkZ + chunkRadius; chunkZ++) {
             for (int chunkX = centerChunkX - chunkRadius; chunkX <= centerChunkX + chunkRadius; chunkX++) {
-                LevelChunk chunk = client.level.getChunkSource().getChunkNow(chunkX, chunkZ);
-                if (chunk == null) continue;
-                long key = chunkKey(chunk);
-                if (!positionsByChunk.containsKey(key)) scanChunk(client.level, chunk);
+                long key = packChunk(chunkX, chunkZ);
+                if (positionsByChunk.containsKey(key)) continue;
+                if (pendingBootstrapCount >= pendingBootstrapChunks.length) return;
+                pendingBootstrapChunks[pendingBootstrapCount++] = key;
             }
         }
+    }
+
+    private void processPendingLoadedChunks(Minecraft client) {
+        if (client == null || client.level == null) {
+            clearPendingBootstrap();
+            return;
+        }
+        int processed = 0;
+        while (pendingBootstrapIndex < pendingBootstrapCount
+                && processed < AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNKS_PER_TICK) {
+            long key = pendingBootstrapChunks[pendingBootstrapIndex++];
+            if (!positionsByChunk.containsKey(key)) {
+                LevelChunk chunk = client.level.getChunkSource().getChunkNow(
+                        unpackChunkX(key),
+                        unpackChunkZ(key));
+                if (chunk != null) scanChunk(client.level, chunk);
+            }
+            processed++;
+        }
+        if (pendingBootstrapIndex >= pendingBootstrapCount) clearPendingBootstrap();
     }
 
     private void pruneTrackedChunksOutsideNeighborhood(
@@ -291,6 +320,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         positionsByChunk.clear();
         visibleMarkers.clear();
         nearestMarkers.clear();
+        clearPendingBootstrap();
         lastLevel = level;
         lastPlayerBlock = Long.MIN_VALUE;
         lastPlayerChunk = Long.MIN_VALUE;
@@ -304,6 +334,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         positionsByChunk.clear();
         visibleMarkers.clear();
         nearestMarkers.clear();
+        clearPendingBootstrap();
         lastLevel = null;
         lastPlayerBlock = Long.MIN_VALUE;
         lastPlayerChunk = Long.MIN_VALUE;
@@ -311,6 +342,11 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         lastMaxMarkers = Integer.MIN_VALUE;
         ticksUntilValidation = 0;
         selectionDirty = false;
+    }
+
+    private void clearPendingBootstrap() {
+        pendingBootstrapIndex = 0;
+        pendingBootstrapCount = 0;
     }
 
     private static boolean isNether(ClientLevel level) {
