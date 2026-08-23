@@ -71,7 +71,7 @@ final class PostGlassRegressionHardeningContractTest {
     }
 
     @Test
-    void visualAssetsAreAuditedWithoutPublishingQaArchives() throws IOException {
+    void visualAssetsAreAuditedWhileCiRetainsOnlyTheRuntimeJar() throws IOException {
         String audit = source("scripts/visual_asset_audit.py");
         String verify = source(".github/workflows/verify-build.yml");
         String release = source(".github/workflows/release.yml");
@@ -81,7 +81,11 @@ final class PostGlassRegressionHardeningContractTest {
         assertTrue(audit.contains("GLASS_PANE_MODEL"));
         assertTrue(verify.contains("python scripts/visual_asset_audit.py"));
         assertTrue(release.contains("python scripts/visual_asset_audit.py"));
-        assertFalse(verify.contains("actions/upload-artifact"));
+        assertTrue(verify.contains("actions/upload-artifact@"));
+        assertTrue(verify.contains("path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}"));
+        assertTrue(verify.contains("archive: false"));
+        assertFalse(verify.contains("build/ci/visual-asset-audit.json"));
+        assertFalse(verify.contains("steps.artifacts.outputs.sources_jar"));
         assertFalse(release.contains("actions/upload-artifact"));
         assertFalse(release.contains("release/visual-asset-audit.json"));
     }
