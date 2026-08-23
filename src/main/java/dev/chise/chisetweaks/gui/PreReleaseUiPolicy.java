@@ -3,10 +3,6 @@ package dev.chise.chisetweaks.gui;
 final class PreReleaseUiPolicy {
     private PreReleaseUiPolicy() {}
 
-    static boolean isHighlightBulkInteractive() {
-        return false;
-    }
-
     static boolean isRowInteractive(
             ChiseTweaksSettingsController.Surface surface,
             ChiseTweaksSettingRowDefinition row) {
@@ -15,11 +11,7 @@ final class PreReleaseUiPolicy {
                 ? ChiseTweaksSettingsController.Surface.MAIN
                 : surface;
 
-        if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
-            return row.action() == null || (resolved == ChiseTweaksSettingsController.Surface.MAIN
-                    && ("header.highlight".equals(row.id())
-                    || "header.analyzer".equals(row.id())));
-        }
+        if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) return true;
 
         return switch (resolved) {
             case MAIN -> "materials".equals(row.id())
@@ -30,6 +22,7 @@ final class PreReleaseUiPolicy {
                     || "lava".equals(row.id())
                     || "ancientDebrisAnalyzer".equals(row.id());
             case HIGHLIGHT_DETAILS -> isReleasedHighlightDetail(row.id());
+            case VISUAL_FILTER_DETAILS -> false;
             case LAVA_DETAILS -> true;
         };
     }
@@ -45,7 +38,7 @@ final class PreReleaseUiPolicy {
             case MAIN -> action == ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS
                     || action == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS;
             case HIGHLIGHT_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
-            case LAVA_DETAILS -> false;
+            case VISUAL_FILTER_DETAILS, LAVA_DETAILS -> false;
         };
     }
 
