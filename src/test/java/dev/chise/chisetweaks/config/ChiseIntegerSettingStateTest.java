@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseIntegerSettingStateTest {
     @Test
@@ -19,7 +21,7 @@ final class ChiseIntegerSettingStateTest {
                 SettingPersistence.LOCAL_CONFIG);
         setting.setValueChangeCallback(ignored -> callbacks.incrementAndGet());
 
-        setting.setIntegerValue(8);
+        assertFalse(setting.setIntegerValue(8));
 
         assertEquals(5, setting.getIntegerValue());
         assertEquals(0, callbacks.get());
@@ -38,12 +40,29 @@ final class ChiseIntegerSettingStateTest {
                 SettingPersistence.LOCAL_CONFIG);
         setting.setValueChangeCallback(ignored -> callbacks.incrementAndGet());
 
-        setting.setIntegerValue(8);
-        setting.setIntegerValue(8);
+        assertTrue(setting.setIntegerValue(8));
+        assertFalse(setting.setIntegerValue(8));
 
         assertEquals(8, setting.getIntegerValue());
         assertEquals(1, callbacks.get());
         assertEquals(SettingPersistence.LOCAL_CONFIG, setting.persistence());
+    }
+
+    @Test
+    void callbackFailureDoesNotUndoEffectiveIntegerChange() {
+        AtomicInteger stored = new AtomicInteger(5);
+        ChiseIntegerSetting setting = new ChiseIntegerSetting(
+                "bounded", 5, 0, 10,
+                "Bounded", "境界値", "Bounded", "境界値",
+                stored::get,
+                stored::set,
+                SettingPersistence.LOCAL_CONFIG);
+        setting.setValueChangeCallback(ignored -> {
+            throw new IllegalStateException("refresh failed");
+        });
+
+        assertTrue(setting.setIntegerValue(9));
+        assertEquals(9, setting.getIntegerValue());
     }
 
     @Test
