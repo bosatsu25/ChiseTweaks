@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.config;
 import dev.chise.chisetweaks.feature.resource.ChiseTexturePackController;
 import dev.chise.chisetweaks.feature.resource.VisibilityPack;
 
-/** Chest Visibility用の独立built-in resource packと設定UIを接続する。 */
+/** Bright Chest built-in resource packと設定UIを接続する。 */
 public final class ChestVisibilitySetting extends ChiseBooleanSetting {
     public static final ChestVisibilitySetting INSTANCE = new ChestVisibilitySetting();
 
@@ -11,10 +11,10 @@ public final class ChestVisibilitySetting extends ChiseBooleanSetting {
         super(
                 "chestVisibility",
                 true,
-                "Chest Visibility",
-                "チェスト視認性",
-                "Toggle the high-visibility chest textures independently.",
-                "高視認のチェストテクスチャだけを独立して切り替えます。");
+                "Bright Chest",
+                "Bright Chest",
+                "Toggle the Bright Chest built-in resource pack independently.",
+                "Toggle the Bright Chest built-in resource pack independently.");
     }
 
     @Override

@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.config;
 import dev.chise.chisetweaks.feature.resource.ChiseTexturePackController;
 import dev.chise.chisetweaks.feature.resource.VisibilityPack;
 
-/** White Concrete Visibility用の独立built-in resource packと設定UIを接続する。 */
+/** Bright Concrete built-in resource packと設定UIを接続する。 */
 public final class WhiteConcreteVisibilitySetting extends ChiseBooleanSetting {
     public static final WhiteConcreteVisibilitySetting INSTANCE = new WhiteConcreteVisibilitySetting();
 
@@ -11,10 +11,10 @@ public final class WhiteConcreteVisibilitySetting extends ChiseBooleanSetting {
         super(
                 "whiteConcreteVisibility",
                 true,
-                "White Concrete Visibility",
-                "白色コンクリート視認性",
-                "Toggle the high-visibility White Concrete texture independently.",
-                "高視認の白色コンクリートテクスチャだけを独立して切り替えます。");
+                "Bright Concrete",
+                "Bright Concrete",
+                "Toggle the Bright Concrete built-in resource pack independently.",
+                "Toggle the Bright Concrete built-in resource pack independently.");
     }
 
     @Override

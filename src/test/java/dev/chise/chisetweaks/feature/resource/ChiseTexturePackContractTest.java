@@ -24,7 +24,7 @@ final class ChiseTexturePackContractTest {
             ROOT.resolve("src/main/resources/resourcepacks/chise_white_concrete_visibility");
 
     @Test
-    void registersTwoUserControllableDefaultEnabledBuiltinPacks() throws IOException {
+    void registersTwoIndependentDefaultEnabledBuiltinPacks() throws IOException {
         String registrar = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackRegistrar.java"));
         String packType = Files.readString(ROOT.resolve(
@@ -32,8 +32,8 @@ final class ChiseTexturePackContractTest {
         String client = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/ChiseTweaksClient.java"));
 
-        assertTrue(packType.contains("CHEST(\"chise_chest_visibility\""));
-        assertTrue(packType.contains("WHITE_CONCRETE(\"chise_white_concrete_visibility\""));
+        assertTrue(packType.contains("CHEST(\"chise_chest_visibility\", \"Bright Chest\")"));
+        assertTrue(packType.contains("WHITE_CONCRETE(\"chise_white_concrete_visibility\", \"Bright Concrete\")"));
         assertTrue(registrar.contains("for (VisibilityPack pack : VisibilityPack.values())"));
         assertTrue(registrar.contains("ResourceLoader.registerBuiltinPack"));
         assertTrue(registrar.contains("PackActivationType.DEFAULT_ENABLED"));
@@ -71,7 +71,7 @@ final class ChiseTexturePackContractTest {
     }
 
     @Test
-    void controllerUsesOneSerializedReloadPipelineForBothPacks() throws IOException {
+    void controllerUsesOneSerializedDelayedTextureReloadPipelineForBothPacks() throws IOException {
         String controller = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java"));
         String coordinator = Files.readString(ROOT.resolve(
@@ -80,7 +80,8 @@ final class ChiseTexturePackContractTest {
         assertTrue(controller.contains("setEnabled(VisibilityPack pack, boolean enabled)"));
         assertTrue(controller.contains("ResourceReloadCoordinator RELOADS"));
         assertTrue(controller.contains("RELOADS.markPending(selected)"));
-        assertTrue(controller.contains("client.reloadResourcePacks().whenComplete"));
+        assertTrue(controller.contains("client.delayTextureReload().whenComplete"));
+        assertFalse(controller.contains("client.reloadResourcePacks().whenComplete"));
         assertTrue(controller.contains("ResourcePackSelectionPolicy.withPack"));
         assertTrue(controller.contains("restoreSelection"));
         assertTrue(controller.contains("TERMINAL_RECOVERY"));
