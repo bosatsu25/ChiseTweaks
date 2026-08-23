@@ -90,6 +90,14 @@ final class AncientDebrisAnalyzerPolicyTest {
     }
 
     @Test
+    void filledFacePaletteKeepsOutlineRgbAndScalesAlphaByDistance() {
+        assertEquals(0x4DF8D56B, AncientDebrisAnalyzerPolicy.fillColorForDistance(0.0));
+        assertEquals(0x45FFB347, AncientDebrisAnalyzerPolicy.fillColorForDistance(64.0));
+        assertEquals(0x36FF8C42, AncientDebrisAnalyzerPolicy.fillColorForDistance(128.0));
+        assertEquals(0x26FF6B35, AncientDebrisAnalyzerPolicy.fillColorForDistance(200.0));
+    }
+
+    @Test
     void edgeThicknessLodHasExactClosedBoundariesAndNonZeroReturns() {
         assertEquals(0.036f, AncientDebrisAnalyzerPolicy.edgeThicknessForDistance(0.0), 0.000001f);
         assertEquals(0.036f, AncientDebrisAnalyzerPolicy.edgeThicknessForDistance(16.0), 0.000001f);

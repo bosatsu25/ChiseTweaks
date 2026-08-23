@@ -4,11 +4,27 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 
-/** 壁越し解析表示で共通利用する箱枠メッシュを生成する。 */
+/** 壁越し解析表示で共通利用する箱枠と半透明面メッシュを生成する。 */
 final class ThroughWallWireBoxGeometry {
     private static final Matrix4fc IDENTITY_POSE = new Matrix4f();
 
     private ThroughWallWireBoxGeometry() {
+    }
+
+    static void drawFilledBox(
+            BufferBuilder vertices,
+            int blockX,
+            int blockY,
+            int blockZ,
+            int argb,
+            float inset) {
+        float minX = blockX + inset;
+        float minY = blockY + inset;
+        float minZ = blockZ + inset;
+        float maxX = blockX + 1.0f - inset;
+        float maxY = blockY + 1.0f - inset;
+        float maxZ = blockZ + 1.0f - inset;
+        bar(vertices, minX, minY, minZ, maxX, maxY, maxZ, argb);
     }
 
     static void drawWireBox(

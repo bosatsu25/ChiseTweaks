@@ -6,6 +6,8 @@ public final class LavaVisionPalettePolicy {
 
     public static final int FAR_OUTLINE_ARGB = 0xFF021A0E;
 
+    public static final int ANALYZER_FACE_ALPHA = 0x4D;
+
     public static final double NEAR_DISTANCE_BLOCKS = 2.0;
 
     public static final double FAR_DISTANCE_BLOCKS = 8.0;
@@ -26,6 +28,10 @@ public final class LavaVisionPalettePolicy {
         return lerpOpaqueRgb(FAR_OUTLINE_ARGB, SOURCE_OUTLINE_ARGB, t);
     }
 
+    public static int fillColorForDistance(double distanceBlocks) {
+        return withAlpha(colorForDistance(distanceBlocks), ANALYZER_FACE_ALPHA);
+    }
+
     private static double clamp01(double value) {
         return Math.max(0.0, Math.min(1.0, value));
     }
@@ -41,6 +47,10 @@ public final class LavaVisionPalettePolicy {
         int g = interpolateChannel(fromG, toG, t);
         int b = interpolateChannel(fromB, toB, t);
         return 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
+
+    private static int withAlpha(int argb, int alpha) {
+        return ((alpha & 0xFF) << 24) | (argb & 0x00FFFFFF);
     }
 
     private static int interpolateChannel(int from, int to, double t) {
