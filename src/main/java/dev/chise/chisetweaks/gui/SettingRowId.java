@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.gui;
 
 import java.util.Objects;
 
-/** Validated identifier for a settings row. */
+/** 設定画面rowの識別子を検証済みの値として保持する。 */
 record SettingRowId(String value) {
     SettingRowId {
         String normalized = Objects.requireNonNull(value, "value").trim();
@@ -20,16 +20,12 @@ record SettingRowId(String value) {
         }
     }
 
-    static SettingRowId of(String value) {
-        return new SettingRowId(value);
-    }
+    static SettingRowId of(String value) { return new SettingRowId(value); }
 
     boolean startsWith(String prefix) {
         return value.startsWith(Objects.requireNonNull(prefix, "prefix"));
     }
 
     @Override
-    public String toString() {
-        return value;
-    }
+    public String toString() { return value; }
 }
