@@ -11,6 +11,8 @@ import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
+import dev.chise.chisetweaks.feature.resource.ChiseTexturePackController;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +45,15 @@ final class ChiseTweaksSettingsController {
         Surface resolved = surface == null ? Surface.MAIN : surface;
         List<ChiseTweaksSettingRowDefinition> base = catalog.rows(resolved);
         if (resolved != Surface.MAIN) return base;
-        ArrayList<ChiseTweaksSettingRowDefinition> result = new ArrayList<>(base.size() + 3);
+        ArrayList<ChiseTweaksSettingRowDefinition> result = new ArrayList<>(base.size() + 4);
         result.addAll(base);
         result.add(ChiseTweaksSettingRowDefinition.header(
                 "header.diagnostics", "Diagnostics / 診断"));
+        result.add(ChiseTweaksSettingRowDefinition.header(
+                "diagnosticReloadState",
+                "Resource reload: " + RuntimeDiagnosticSnapshot.reloadState(
+                        ChiseTexturePackController.isReloadInFlight(),
+                        ChiseTexturePackController.hasPendingRecovery())));
         result.add(ChiseTweaksSettingRowDefinition.action(
                 "copyDiagnostics",
                 "Copy Diagnostic Snapshot / 診断情報をコピー",
