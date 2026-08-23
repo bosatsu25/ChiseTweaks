@@ -60,7 +60,7 @@ final class ConfigDocumentPolicyTest {
                   "worksiteVisibilityWorldOverlay": true,
                   "worksiteVisibilityExclusiveMode": false,
                   "visualTargetMask": 0,
-                  "visualTargetSchemaVersion": 2
+                  "visualTargetSchemaVersion": 3
                 }
                 """).getAsJsonObject();
         JsonObject source = JsonParser.parseString("""
@@ -139,7 +139,36 @@ final class ConfigDocumentPolicyTest {
         assertEquals(100, config.worksiteVisibilityIntervalTicks);
         assertEquals(8, config.worksiteVisibilityMaxResults);
         assertEquals(24, config.worksiteVisibilityMaxOverlayResults);
-        assertEquals(VisualTargetSelectionPolicy.NEW_NETHER_TARGETS_MASK, config.visualTargetMask);
+        assertEquals(
+                VisualTargetSelectionPolicy.NEW_NETHER_TARGETS_MASK
+                        | VisualTargetSelectionPolicy.NEW_TECHNICAL_TARGETS_MASK,
+                config.visualTargetMask);
+        assertEquals(VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION, config.visualTargetSchemaVersion);
+    }
+
+    @Test
+    void localConfigSchemaTwoAddsTechnicalTargetsOnly() {
+        LocalFeatureConfig config = new LocalFeatureConfig();
+        assertTrue(config.replaceFromJsonDocument("""
+                {
+                  "visualTargetMask": 0,
+                  "visualTargetSchemaVersion": 2
+                }
+                """));
+        assertEquals(VisualTargetSelectionPolicy.NEW_TECHNICAL_TARGETS_MASK, config.visualTargetMask);
+        assertEquals(VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION, config.visualTargetSchemaVersion);
+    }
+
+    @Test
+    void currentSchemaPreservesExplicitlyDisabledTechnicalTargets() {
+        LocalFeatureConfig config = new LocalFeatureConfig();
+        assertTrue(config.replaceFromJsonDocument("""
+                {
+                  "visualTargetMask": 0,
+                  "visualTargetSchemaVersion": 3
+                }
+                """));
+        assertEquals(0, config.visualTargetMask);
         assertEquals(VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION, config.visualTargetSchemaVersion);
     }
 
@@ -150,10 +179,11 @@ final class ConfigDocumentPolicyTest {
                 {
                   "oreHighlightAnimationEnabled": true,
                   "visualTargetMask": 0,
-                  "visualTargetSchemaVersion": 2
+                  "visualTargetSchemaVersion": 3
                 }
                 """));
         assertTrue(config.oreHighlightAnimationEnabled);
+        assertEquals(0, config.visualTargetMask);
     }
 
     @Test
