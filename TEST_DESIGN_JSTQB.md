@@ -23,6 +23,9 @@ The automated suite is intentionally split by responsibility. Pure policy and ge
 | Removed/added navigation sections desynchronize fixed geometry constants | Layout silently degrades after refactor | UI regression / EP |
 | Japanese/English settings diverge structurally | Different behavior by language | Unit / metamorphic regression |
 | Long Japanese/English text breaks row layout | Text obscures controls | UI regression / EP + BVA |
+| Ancient Debris bootstrap scans a full large neighborhood in one tick | Join/movement frame-time spike or temporary FPS loss | Performance contract / BVA |
+| Analyzer lookup accidentally force-loads chunks | Client hitching, extra memory/network pressure | Contract / error guessing |
+| Lava boundary logic treats an unloaded neighbor as non-lava | False-positive source marker at chunk borders | Decision table / state transition |
 | Unicode is truncated inside a surrogate pair | Invalid diagnostic/log text | Security / BVA |
 | Invisible/bidirectional characters spoof config keys | Ambiguous or deceptive config input | Security / EP |
 | Path traversal or Windows device name escapes the intended config boundary | Unsafe local file access | Security / decision table |
@@ -164,6 +167,52 @@ Automated by `SecureConfigStorageTest` and `SecurityPrimitiveTest`.
 
 Automated by `RuntimeSecurityPolicyTest` and `SecurityBoundaryContractTest`.
 
+### 6. Analyzer correctness and frame-time budgets
+
+The Lava Source Highlight and Ancient Debris Analyzer share retained rendering infrastructure, but their discovery policies remain feature-specific. Tests must therefore guard both the shared architecture and the different scan semantics.
+
+**Ancient Debris equivalence partitions**
+
+- non-Nether level: no scan/markers
+- Nether with no relevant loaded chunks
+- Nether with relevant loaded chunks but no Ancient Debris
+- loaded chunk containing Ancient Debris
+- tracked chunk unloaded or moved outside the current neighborhood
+- range/player-chunk change requiring bootstrap refresh
+
+**Ancient Debris boundary values**
+
+- range 16 / 64 / 256 blocks
+- bootstrap radius 2 / 5 / 17 chunks
+- bootstrap neighborhood 25 / 121 / 1225 chunk coordinates
+- at most 64 scheduled chunk probes per client tick
+- max marker count 8 / 64 / 128
+
+The default 64-block bootstrap therefore completes in at most two client ticks when every scheduled coordinate must be checked. The 256-block maximum is intentionally spread across multiple ticks instead of performing all 1225 probes synchronously.
+
+**Lava decision table**
+
+| Enabled | Source lava | Known non-source/non-lava neighbor | Expected marker |
+|---|---|---|---|
+| no | any | any | no |
+| yes | no | any | no |
+| yes | yes | no | no |
+| yes | yes | yes | yes |
+
+An unloaded neighboring chunk is **unknown**, not evidence of a source boundary. The analyzer must not force-load it merely to complete the boundary test.
+
+**Performance/regression oracles**
+
+- analyzer discovery uses already-loaded client chunks only (`getChunkNow`); no force-load path is introduced
+- Ancient Debris full-neighborhood bootstrap is queued and budgeted across ticks
+- newly loaded relevant chunks may still be indexed immediately through the chunk-load callback
+- Lava remains bounded by horizontal radius <= 8, vertical radius <= 5 and adaptive interval >= 5 ticks
+- maximum Lava scan volume at the configured bounds is `(17 * 17 * 11) = 3179` block positions per scan
+- chunk unload, dimension/session reset and runtime quarantine clear stale analyzer state
+- retained rendering may be shared, but source detection semantics must not be merged
+
+Automated by `AncientDebrisAnalyzerPolicyTest`, `SettingsAndAnalyzerDesignContractTest` and the existing analyzer policy tests. Actual FPS/frametime and wall-through rendering remain Prism runtime-smoke responsibilities.
+
 ## Defects cleaned during this test pass
 
 1. **Stale navigation cardinality** — layout geometry still assumed four navigation buttons after the retained UI was reduced to three sections. Runtime geometry now receives the actual section count.
@@ -172,6 +221,7 @@ Automated by `RuntimeSecurityPolicyTest` and `SecurityBoundaryContractTest`.
 4. **Search accessibility label language mismatch** — the EditBox narration label was always Japanese even in English UI. It now follows the active language.
 5. **Diagnostic surrogate splitting** — character-count truncation could cut a supplementary Unicode code point in half. Sanitization is now code-point aware.
 6. **Whitespace-spoofed JSON keys** — JSON object keys with leading/trailing whitespace are now rejected by the security policy.
+7. **Single-tick Ancient Debris bootstrap burst** — range/chunk changes could synchronously inspect the entire loaded-neighborhood candidate set in one tick (up to 1225 coordinates at maximum range). Bootstrap lookup/scanning is now queued and capped at 64 coordinates per tick.
 
 ## CI acceptance criteria
 
