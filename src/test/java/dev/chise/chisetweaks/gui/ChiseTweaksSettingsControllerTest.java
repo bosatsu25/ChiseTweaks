@@ -31,7 +31,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void mainSurfaceExposesAllReleasedVisualGroupsAndDiagnostics() {
+    void mainSurfaceExposesReleasedVisualGroupsWithoutDiagnosticUtilityRows() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
         assertEquals(List.of(
@@ -39,16 +39,15 @@ final class ChiseTweaksSettingsControllerTest {
                 "header.visualFilter", "focusBlocks", "focusEntities",
                 "header.analyzer", "lava", "ancientDebrisAnalyzer",
                 "header.visibilityImprovement", "fireVisibility", "chestVisibility",
-                "whiteConcreteVisibility", "header.diagnostics", "diagnosticReloadState",
-                "copyDiagnostics", "exportDiagnostics"), ids(rows));
+                "whiteConcreteVisibility"), ids(rows));
         assertEquals(List.of(
                         "header.highlight", "header.visualFilter", "header.analyzer",
-                        "header.visibilityImprovement", "header.diagnostics", "diagnosticReloadState"),
+                        "header.visibilityImprovement"),
                 rows.stream()
                         .filter(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER)
                         .map(ChiseTweaksSettingRowDefinition::id)
                         .toList());
-        assertTrue(row(rows, "diagnosticReloadState").name().startsWith("Resource reload: "));
+        assertFalse(rows.stream().anyMatch(row -> row.id().toLowerCase().contains("diagnostic")));
         assertFalse(rows.stream().anyMatch(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.INTEGER));
         assertRowContracts(rows);
     }
@@ -77,7 +76,17 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void sectionAndDiagnosticActionsAreBoundToExpectedCommands() {
+    void mainUsesConciseUniversalAnalyzerAndVisibilityNames() {
+        var rows = new ChiseTweaksSettingsController().rows();
+        assertEquals("Lava Analyzer", row(rows, "lava").name());
+        assertEquals("Ancient Debris Analyzer", row(rows, "ancientDebrisAnalyzer").name());
+        assertEquals("Low Fire", row(rows, "fireVisibility").name());
+        assertEquals("Bright Chest", row(rows, "chestVisibility").name());
+        assertEquals("Bright Concrete", row(rows, "whiteConcreteVisibility").name());
+    }
+
+    @Test
+    void sectionActionsAreBoundToExpectedCommands() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS,
@@ -87,12 +96,6 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS,
                 row(rows, "header.analyzer").action());
         assertNull(row(rows, "header.visibilityImprovement").action());
-        assertNull(row(rows, "header.diagnostics").action());
-        assertNull(row(rows, "diagnosticReloadState").action());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.COPY_DIAGNOSTICS,
-                row(rows, "copyDiagnostics").action());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.EXPORT_DIAGNOSTICS,
-                row(rows, "exportDiagnostics").action());
     }
 
     @Test
@@ -127,6 +130,8 @@ final class ChiseTweaksSettingsControllerTest {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
                 ChiseTweaksSettingsController.Surface.LAVA_DETAILS);
+        assertEquals("Lava Analyzer", row(rows, "detail.analyzer.lava").name());
+        assertEquals("Ancient Debris Analyzer", row(rows, "detail.analyzer.ancientDebris").name());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 row(rows, "lavaRange").integerConfig());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
