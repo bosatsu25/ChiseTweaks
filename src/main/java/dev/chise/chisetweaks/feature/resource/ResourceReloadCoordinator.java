@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.feature.resource;
 
 import java.util.List;
 
-/** Small deterministic state machine for serializing Minecraft resource reload transitions. */
+/** Minecraft resource reloadの連打を直列化・集約する決定的な小型状態機械。 */
 final class ResourceReloadCoordinator {
     enum Action {
         NONE,
