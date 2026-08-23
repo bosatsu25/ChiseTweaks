@@ -74,15 +74,20 @@ final class ChiseTexturePackContractTest {
     void controllerUsesOneSerializedReloadPipelineForBothPacks() throws IOException {
         String controller = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java"));
+        String coordinator = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/resource/ResourceReloadCoordinator.java"));
         assertTrue(controller.contains("isChestEnabled()"));
         assertTrue(controller.contains("isWhiteConcreteEnabled()"));
         assertTrue(controller.contains("setChestEnabled(boolean enabled)"));
         assertTrue(controller.contains("setWhiteConcreteEnabled(boolean enabled)"));
-        assertTrue(controller.contains("reloadInFlight"));
-        assertTrue(controller.contains("reloadPending"));
+        assertTrue(controller.contains("ResourceReloadCoordinator RELOADS"));
+        assertTrue(controller.contains("RELOADS.markPending()"));
         assertTrue(controller.contains("client.reloadResourcePacks().whenComplete"));
         assertTrue(controller.contains("ResourcePackSelectionPolicy.withPack"));
         assertTrue(controller.contains("restoreSelection"));
+        assertTrue(coordinator.contains("enum Action"));
+        assertTrue(coordinator.contains("RELOAD"));
+        assertTrue(coordinator.contains("RESTORE"));
     }
 
     @Test
