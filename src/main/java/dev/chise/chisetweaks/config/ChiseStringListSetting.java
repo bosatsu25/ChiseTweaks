@@ -7,30 +7,37 @@ import java.util.function.Consumer;
 public final class ChiseStringListSetting {
     private final String name;
     private final List<String> defaultValue;
+    private final SettingPersistence persistence;
     private Consumer<ChiseStringListSetting> callback = ignored -> {};
     private List<String> value;
 
-    public ChiseStringListSetting(String name, List<String> defaultValue) {
+    public ChiseStringListSetting(
+            String name,
+            List<String> defaultValue,
+            SettingPersistence persistence) {
         this.name = requireText(name, "name");
         this.defaultValue = List.copyOf(Objects.requireNonNull(defaultValue, "defaultValue"));
+        this.persistence = Objects.requireNonNull(persistence, "persistence");
         this.value = this.defaultValue;
     }
 
     public String getName() { return name; }
     public List<String> getStrings() { return value; }
+    public SettingPersistence persistence() { return persistence; }
 
-    public void setStrings(List<String> requested) {
+    public boolean setStrings(List<String> requested) {
         List<String> next = List.copyOf(Objects.requireNonNullElse(requested, List.of()));
-        if (value.equals(next)) return;
+        if (value.equals(next)) return false;
         value = next;
-        callback.accept(this);
+        SettingChangeDispatcher.notifySafely(name, this, callback);
+        return true;
     }
 
     public void setStringsSilently(List<String> requested) {
         value = List.copyOf(Objects.requireNonNullElse(requested, List.of()));
     }
 
-    public void resetToDefault() { setStrings(defaultValue); }
+    public boolean resetToDefault() { return setStrings(defaultValue); }
 
     public void setValueChangeCallback(Consumer<ChiseStringListSetting> value) {
         callback = value == null ? ignored -> {} : value;
