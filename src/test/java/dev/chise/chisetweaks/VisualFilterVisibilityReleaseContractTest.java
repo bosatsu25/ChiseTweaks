@@ -70,8 +70,12 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(controller.contains("reloadResourcePacks().whenComplete"));
         assertTrue(controller.contains("client.execute(() -> completeReload"));
         assertTrue(controller.contains("ResourceReloadCoordinator RELOADS"));
-        assertTrue(controller.contains("RELOADS.markPending()"));
+        assertTrue(controller.contains("RELOADS.markPending(selected)"));
+        assertTrue(controller.contains("TERMINAL_RECOVERY"));
+        assertTrue(controller.contains("RELOADS.cancel("));
         assertTrue(controller.contains("restoreSelection"));
+        assertTrue(coordinator.contains("record Recovery"));
+        assertTrue(coordinator.contains("terminalFailure"));
         assertTrue(coordinator.contains("Action.RELOAD"));
         assertTrue(coordinator.contains("Action.RESTORE"));
         assertTrue(catalog.contains("\"chestVisibility\""));
