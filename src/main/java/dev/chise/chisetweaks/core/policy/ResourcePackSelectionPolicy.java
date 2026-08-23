@@ -5,7 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 
-/** Pure selection logic for Chise-owned built-in resource packs. */
+/** Chise管理built-in resource packの選択状態を決定的に更新する純粋policy。 */
 public final class ResourcePackSelectionPolicy {
     private ResourcePackSelectionPolicy() {}
 
