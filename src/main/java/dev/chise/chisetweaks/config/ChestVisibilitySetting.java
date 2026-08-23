@@ -18,8 +18,8 @@ public final class ChestVisibilitySetting extends ChiseBooleanSetting {
     }
 
     @Override
-    public boolean requiresApplyPersistence() {
-        return false;
+    public SettingPersistence persistence() {
+        return SettingPersistence.EXTERNAL;
     }
 
     @Override
