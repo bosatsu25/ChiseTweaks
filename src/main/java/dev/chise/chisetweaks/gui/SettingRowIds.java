@@ -18,8 +18,8 @@ final class SettingRowIds {
     static final SettingRowId CHEST_VISIBILITY = SettingRowId.of("chestVisibility");
     static final SettingRowId WHITE_CONCRETE_VISIBILITY = SettingRowId.of("whiteConcreteVisibility");
     static final SettingRowId DIAGNOSTIC_RELOAD_STATE = SettingRowId.of("diagnosticReloadState");
-    static final SettingRowId DIAGNOSTIC_COPY = SettingRowId.of("diagnosticCopy");
-    static final SettingRowId DIAGNOSTIC_EXPORT = SettingRowId.of("diagnosticExport");
+    static final SettingRowId DIAGNOSTIC_COPY = SettingRowId.of("copyDiagnostics");
+    static final SettingRowId DIAGNOSTIC_EXPORT = SettingRowId.of("exportDiagnostics");
 
     static final Set<SettingRowId> MAIN_INTERACTIVE = Set.of(
             MATERIALS, NETHER, THREAD, HIDDEN, KELP, GLASS,
