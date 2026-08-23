@@ -17,7 +17,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private final ArrayList<ChiseTweaksSettingRowView> rows = new ArrayList<>();
     private Screen parent;
     private ChiseTweaksSettingsLayout.Geometry geometry;
-    private Button bulkButton;
     private Button applyButton;
     private String persistenceFeedback = "";
     private int scrollOffset;
@@ -45,22 +44,8 @@ public final class ChiseTweaksConfigScreen extends Screen {
         geometry = ChiseTweaksSettingsLayout.calculate(width, height);
         createFooter();
         createRows();
-        if (surface == ChiseTweaksSettingsController.Surface.MAIN) createHighlightBulkButton();
         updateRowPositions();
         refreshRowButtons();
-    }
-
-    private void createHighlightBulkButton() {
-        bulkButton = addRenderableWidget(Button.builder(
-                bulkMessage(), ignored -> toggleHighlightBulk())
-                .bounds(
-                        geometry.bulk().x(),
-                        geometry.bulk().y(),
-                        geometry.bulk().width(),
-                        geometry.bulk().height())
-                .build());
-        bulkButton.active = PreReleaseUiPolicy.isHighlightBulkInteractive();
-        bulkButton.visible = false;
     }
 
     private void createFooter() {
@@ -112,7 +97,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
         ChiseTweaksSettingRowView row = switch (definition.kind()) {
             case HEADER -> createHeaderRow(definition);
             case BOOLEAN -> createBooleanRow(definition);
-            case BOOLEAN_ACTION -> createBooleanActionRow(definition);
             case INTEGER -> createIntegerRow(definition);
             case ACTION -> createActionRow(definition);
         };
@@ -121,18 +105,31 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void applyPrereleaseInteractivity(ChiseTweaksSettingRowView row) {
-        boolean interactive = PreReleaseUiPolicy.isRowInteractive(surface, row.definition);
-        if (row.primary != null) row.primary.active = interactive;
-        if (row.secondary != null) row.secondary.active = interactive;
-        if (row.minus != null) row.minus.active = interactive;
-        if (row.plus != null) row.plus.active = interactive;
-        if (row.value != null) row.value.active = false;
+        boolean rowInteractive = PreReleaseUiPolicy.isRowInteractive(surface, row.definition);
+        boolean actionInteractive = row.definition.action() != null
+                && PreReleaseUiPolicy.isActionInteractive(surface, row.definition.action());
+        switch (row.definition.kind()) {
+            case HEADER -> {
+                if (row.primary != null) row.primary.active = actionInteractive;
+            }
+            case BOOLEAN -> {
+                if (row.primary != null) row.primary.active = rowInteractive;
+            }
+            case INTEGER -> {
+                if (row.minus != null) row.minus.active = rowInteractive;
+                if (row.plus != null) row.plus.active = rowInteractive;
+                if (row.value != null) row.value.active = false;
+            }
+            case ACTION -> {
+                if (row.primary != null) row.primary.active = actionInteractive;
+            }
+        }
     }
 
     private ChiseTweaksSettingRowView createHeaderRow(ChiseTweaksSettingRowDefinition definition) {
         Button actionButton = definition.action() == null ? null : addRenderableWidget(Button.builder(
                 Component.literal(definition.actionLabel()), ignored -> runRowAction(definition.action()))
-                .bounds(0, 0, geometry.actionWidth(), 18)
+                .bounds(0, 0, geometry.headerAction().width(), 18)
                 .build());
         if (actionButton != null) actionButton.visible = false;
         return ChiseTweaksSettingRowView.header(definition, actionButton);
@@ -144,20 +141,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
             config.toggleBooleanValue();
             markDirty();
         }).bounds(0, 0, geometry.toggleWidth(), 18).build());
-        return new ChiseTweaksSettingRowView(definition, button, null, null, null, null);
-    }
-
-    private ChiseTweaksSettingRowView createBooleanActionRow(ChiseTweaksSettingRowDefinition definition) {
-        ChiseBooleanSetting config = definition.booleanConfig();
-        Button toggle = addRenderableWidget(Button.builder(toggleMessage(config), ignored -> {
-            config.toggleBooleanValue();
-            markDirty();
-        }).bounds(0, 0, geometry.toggleWidth(), 18).build());
-        Button action = addRenderableWidget(Button.builder(
-                Component.literal(definition.actionLabel()), ignored -> runRowAction(definition.action()))
-                .bounds(0, 0, geometry.actionWidth(), 18)
-                .build());
-        return new ChiseTweaksSettingRowView(definition, toggle, action, null, null, null);
+        return new ChiseTweaksSettingRowView(definition, button, null, null, null);
     }
 
     private ChiseTweaksSettingRowView createIntegerRow(ChiseTweaksSettingRowDefinition definition) {
@@ -176,7 +160,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
             config.setIntegerValue(saturatedStep(config.getIntegerValue(), step));
             markDirty();
         }).bounds(0, 0, 24, 18).build());
-        return new ChiseTweaksSettingRowView(definition, null, null, minus, value, plus);
+        return new ChiseTweaksSettingRowView(definition, null, minus, value, plus);
     }
 
     private ChiseTweaksSettingRowView createActionRow(ChiseTweaksSettingRowDefinition definition) {
@@ -185,7 +169,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 addRenderableWidget(Button.builder(Component.literal(definition.actionLabel()),
                         ignored -> runRowAction(definition.action()))
                         .bounds(0, 0, geometry.actionWidth(), 18).build()),
-                null, null, null, null);
+                null, null, null);
     }
 
     private void runRowAction(ChiseTweaksSettingRowDefinition.Action action) {
@@ -193,6 +177,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         if (minecraft == null || action == null || !applyChanges()) return;
         switch (action) {
             case OPEN_HIGHLIGHT_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
+            case OPEN_VISUAL_FILTER_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS);
             case OPEN_LAVA_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.LAVA_DETAILS);
             case EDIT_BLOCK_FILTER -> minecraft.setScreen(new ChiseSceneFilterEditorScreen(
                     this, ChiseSceneFilterEditorScreen.Target.BLOCKS));
@@ -212,12 +197,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void openHelp() {
         if (minecraft == null || !applyChanges()) return;
         minecraft.setScreen(new ChiseTweaksHelpScreen(this));
-    }
-
-    private void toggleHighlightBulk() {
-        if (!PreReleaseUiPolicy.isHighlightBulkInteractive()) return;
-        controller.toggleHighlightBulk();
-        markDirty();
     }
 
     private void resetCurrentSurface() {
@@ -314,9 +293,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 continue;
             }
             int y = row.screenY + Math.max(0, (geometry.rowHeight() - font.lineHeight) / 2);
-            int color = PreReleaseUiPolicy.isRowInteractive(surface, row.definition)
-                    ? 0xFFFFFFFF
-                    : 0xFF7A7A7A;
+            int color = rowTextInteractive(row.definition) ? 0xFFFFFFFF : 0xFF7A7A7A;
             extractor.text(font, row.definition.name(), geometry.nameX(), y, color);
         }
         if (!persistenceFeedback.isEmpty()) {
@@ -328,6 +305,13 @@ public final class ChiseTweaksConfigScreen extends Screen {
                     0xFFFFD166);
         }
         renderScrollbar(extractor);
+    }
+
+    private boolean rowTextInteractive(ChiseTweaksSettingRowDefinition definition) {
+        if (definition.kind() == ChiseTweaksSettingRowDefinition.Kind.ACTION) {
+            return PreReleaseUiPolicy.isActionInteractive(surface, definition.action());
+        }
+        return PreReleaseUiPolicy.isRowInteractive(surface, definition);
     }
 
     private void renderScrollbar(GuiGraphicsExtractor extractor) {
@@ -367,19 +351,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
             if (row.renderVisible) positionWidgets(row, y);
             offset += rowHeight;
         }
-        positionHighlightBulkButton();
-    }
-
-    private void positionHighlightBulkButton() {
-        if (bulkButton == null) return;
-        bulkButton.visible = false;
-        for (ChiseTweaksSettingRowView row : rows) {
-            if (!"header.highlight".equals(row.definition.id())) continue;
-            if (!row.renderVisible) return;
-            bulkButton.setPosition(geometry.bulk().x(), row.screenY + 3);
-            bulkButton.visible = true;
-            return;
-        }
     }
 
     private int contentHeight() {
@@ -405,12 +376,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 row.primary.setPosition(geometry.toggleX(), controlY);
                 row.primary.visible = true;
             }
-            case BOOLEAN_ACTION -> {
-                row.secondary.setPosition(geometry.actionX(), controlY);
-                row.primary.setPosition(geometry.toggleX(), controlY);
-                row.secondary.visible = true;
-                row.primary.visible = true;
-            }
             case INTEGER -> {
                 int x = geometry.integerX();
                 row.minus.setPosition(x, controlY);
@@ -430,8 +395,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
 
     private void refreshRowButtons() {
         for (ChiseTweaksSettingRowView row : rows) {
-            if ((row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.BOOLEAN
-                    || row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.BOOLEAN_ACTION)
+            if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.BOOLEAN
                     && row.primary != null
                     && row.definition.booleanConfig() != null) {
                 row.primary.setMessage(toggleMessage(row.definition.booleanConfig()));
@@ -442,17 +406,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                         row.definition.integerConfig().getFormattedValue()));
             }
         }
-        if (bulkButton != null) {
-            bulkButton.setMessage(bulkMessage());
-            bulkButton.active = PreReleaseUiPolicy.isHighlightBulkInteractive();
-        }
         if (applyButton != null) applyButton.active = dirty;
-    }
-
-    private Component bulkMessage() {
-        return Component.translatable(controller.shouldTurnHighlightBulkOn()
-                ? "screen.chisetweaks.settings.bulk.on"
-                : "screen.chisetweaks.settings.bulk.off");
     }
 
     private static String text(String key) {
