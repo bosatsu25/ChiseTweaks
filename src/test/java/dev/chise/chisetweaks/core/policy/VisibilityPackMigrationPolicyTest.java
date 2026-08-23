@@ -2,10 +2,12 @@ package dev.chise.chisetweaks.core.policy;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class VisibilityPackMigrationPolicyTest {
@@ -32,6 +34,16 @@ final class VisibilityPackMigrationPolicyTest {
         assertEquals(VisibilityPackMigrationPolicy.Source.SPLIT_PACK_STATE, plan.source());
         assertEquals(current, plan.selectedIds());
         assertFalse(plan.selectionChanged());
+    }
+
+    @Test
+    void eitherSplitPackInOptionsWinsOverLegacyEvidence() {
+        String options = "resourcePacks:[\"" + LEGACY + "\",\"" + CONCRETE + "\"]";
+        var plan = VisibilityPackMigrationPolicy.plan(
+                List.of("vanilla", LEGACY, CONCRETE), false, true,
+                options, LEGACY, CHEST, CONCRETE);
+        assertEquals(VisibilityPackMigrationPolicy.Source.SPLIT_PACK_STATE, plan.source());
+        assertEquals(List.of("vanilla", CONCRETE), plan.selectedIds());
     }
 
     @Test
@@ -75,8 +87,43 @@ final class VisibilityPackMigrationPolicyTest {
     }
 
     @Test
+    void currentSelectionIsSanitizedWithoutChangingUnrelatedRelativeOrder() {
+        List<String> noisy = new ArrayList<>();
+        noisy.add(" vanilla ");
+        noisy.add(null);
+        noisy.add("user-pack");
+        noisy.add("vanilla");
+        noisy.add("   ");
+        noisy.add(LEGACY);
+        String options = "resourcePacks:[\"" + LEGACY + "\"]";
+        var plan = VisibilityPackMigrationPolicy.plan(
+                noisy, false, true, options, LEGACY, CHEST, CONCRETE);
+        assertEquals(List.of("vanilla", "user-pack", CHEST, CONCRETE), plan.selectedIds());
+    }
+
+    @Test
     void packIdMentionOutsideResourcePackOptionDoesNotCountAsSelected() {
         String options = "lastServer:" + LEGACY + "\nresourcePacks:[\"vanilla\"]";
         assertFalse(VisibilityPackMigrationPolicy.optionPackSelected(options, LEGACY));
+    }
+
+    @Test
+    void longerPackIdContainingTargetDoesNotCountAsExactSelection() {
+        String options = "resourcePacks:[\"" + CHEST + "_backup\"]";
+        assertFalse(VisibilityPackMigrationPolicy.optionPackSelected(options, CHEST));
+    }
+
+    @Test
+    void exactQuotedPackIdIsDetectedAmongOtherEntries() {
+        String options = "resourcePacks:[\"vanilla\",\"" + CHEST + "\",\"other\"]";
+        assertTrue(VisibilityPackMigrationPolicy.optionPackSelected(options, CHEST));
+    }
+
+    @Test
+    void invalidPackIdsAreRejectedAtThePolicyBoundary() {
+        assertThrows(NullPointerException.class, () -> VisibilityPackMigrationPolicy.plan(
+                List.of(), false, false, "", null, CHEST, CONCRETE));
+        assertThrows(IllegalArgumentException.class, () -> VisibilityPackMigrationPolicy.plan(
+                List.of(), false, false, "", LEGACY, "   ", CONCRETE));
     }
 }
