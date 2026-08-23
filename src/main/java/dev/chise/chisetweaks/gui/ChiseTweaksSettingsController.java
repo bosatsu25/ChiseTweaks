@@ -3,12 +3,12 @@ package dev.chise.chisetweaks.gui;
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChestVisibilitySetting;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
-import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.SettingPersistence;
+import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
@@ -26,13 +26,8 @@ final class ChiseTweaksSettingsController {
         LAVA_DETAILS
     }
 
-    record SaveResult(boolean featureSaved, boolean localSaved) {
-        boolean successful() {
-            return featureSaved && localSaved;
-        }
-    }
-
     private final ChiseTweaksSettingsCatalog catalog = new ChiseTweaksSettingsCatalog();
+    private final SettingPersistenceCoordinator persistence = SettingPersistenceCoordinator.production();
 
     static ChiseTweaksSettingsController forCurrentLanguage() {
         return new ChiseTweaksSettingsController();
@@ -78,13 +73,8 @@ final class ChiseTweaksSettingsController {
         };
     }
 
-    SaveResult saveConfig(Set<SettingPersistence> dirtyDomains) {
-        Set<SettingPersistence> dirty = dirtyDomains == null ? Set.of() : dirtyDomains;
-        boolean featureSaved = !dirty.contains(SettingPersistence.FEATURE_CONFIG)
-                || FeatureConfig.saveToFile();
-        boolean localSaved = !dirty.contains(SettingPersistence.LOCAL_CONFIG)
-                || LocalFeatureConfig.getInstance().save();
-        return new SaveResult(featureSaved, localSaved);
+    SettingPersistenceCoordinator.SaveResult saveConfig(Set<SettingPersistence> dirtyDomains) {
+        return persistence.save(dirtyDomains);
     }
 
     private void resetAll() {
