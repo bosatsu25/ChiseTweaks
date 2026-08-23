@@ -34,7 +34,7 @@ final class ReleaseDistributionContractTest {
     }
 
     @Test
-    void verificationExposesIndependentGatesWithoutPublishingEvidence() throws IOException {
+    void verificationExposesIndependentGatesAndRetainsOnlyRuntimeJar() throws IOException {
         String verify = read(".github/workflows/verify-build.yml");
 
         assertContainsAll(verify,
@@ -47,17 +47,22 @@ final class ReleaseDistributionContractTest {
                 "python scripts/visual_asset_audit.py",
                 "python scripts/release_residue_audit.py",
                 "python scripts/quality_summary.py --allow-partial",
-                "Enforce aggregate quality gate");
+                "Enforce aggregate quality gate",
+                "actions/upload-artifact@",
+                "path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}",
+                "archive: false");
         assertContainsNone(verify,
-                "actions/upload-artifact",
                 "verification-evidence",
                 "build/verified",
+                "steps.artifacts.outputs.sources_jar",
+                "build/ci/artifact-audit.json",
+                "build/ci/visual-asset-audit.json",
                 "gh release",
                 "git tag");
     }
 
     @Test
-    void officialReleaseKeepsTheStrictSingleCiGateAndUploadsExactlyOneRuntimeJar() throws IOException {
+    void officialReleaseRebuildsVerifiedShaAndUploadsExactlyOneRuntimeJar() throws IOException {
         String release = read(".github/workflows/release.yml");
 
         assertContainsAll(release,
@@ -66,12 +71,20 @@ final class ReleaseDistributionContractTest {
                 "github.event.workflow_run.event == 'push'",
                 "github.event.workflow_run.head_branch == 'main'",
                 "ref: ${{ github.event.workflow_run.head_sha }}",
-                "./gradlew --no-daemon --stacktrace clean ciGate",
+                "./gradlew --no-daemon --stacktrace clean assemble",
+                "python scripts/artifact_audit.py",
+                "python scripts/visual_asset_audit.py",
+                "python scripts/release_residue_audit.py",
                 "python scripts/version_policy.py",
                 "gh release create \"$TAG\"",
                 "\"build/libs/$RUNTIME_JAR\"",
                 "Official Release must expose exactly one uploaded mod asset");
         assertContainsNone(release,
+                "clean ciGate",
+                "--stacktrace test",
+                "jacocoTestReport",
+                "pitest",
+                "python scripts/quality_summary.py",
                 "actions/upload-artifact",
                 "\"build/libs/$SOURCES_JAR\"",
                 "\"build/ci/SHA256SUMS.txt\"",
