@@ -30,10 +30,8 @@ public final class LocalFeatureConfig {
     public int worksiteVisibilityHorizontalRadius = 5;
     public int worksiteVisibilityVerticalRadius = 3;
     public int worksiteVisibilityIntervalTicks = 10;
-    public int worksiteVisibilityMaxResults = 6;
     public int worksiteVisibilityMaxOverlayResults = 12;
     public boolean worksiteVisibilityWorldOverlay = true;
-    public boolean worksiteVisibilityExclusiveMode = false;
     public boolean worksiteVisibilityDimensionPresetsEnabled = false;
     public int fineThreadTraceColorPreset = WorksiteHighlightProfilePolicy.DEFAULT_COLOR_PRESET;
     public int fineThreadTraceOpacityPercent = WorksiteHighlightProfilePolicy.DEFAULT_OPACITY_PERCENT;
@@ -154,8 +152,6 @@ public final class LocalFeatureConfig {
                 WorksiteVisibilityBudgetPolicy.clampVerticalRadius(worksiteVisibilityVerticalRadius);
         worksiteVisibilityIntervalTicks =
                 WorksiteVisibilityBudgetPolicy.clampIntervalTicks(worksiteVisibilityIntervalTicks);
-        worksiteVisibilityMaxResults =
-                WorksiteVisibilityBudgetPolicy.clampLegacyResults(worksiteVisibilityMaxResults);
         worksiteVisibilityMaxOverlayResults =
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(worksiteVisibilityMaxOverlayResults);
         fineThreadTraceColorPreset =
@@ -190,10 +186,8 @@ public final class LocalFeatureConfig {
         worksiteVisibilityHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
         worksiteVisibilityVerticalRadius = loaded.worksiteVisibilityVerticalRadius;
         worksiteVisibilityIntervalTicks = loaded.worksiteVisibilityIntervalTicks;
-        worksiteVisibilityMaxResults = loaded.worksiteVisibilityMaxResults;
         worksiteVisibilityMaxOverlayResults = loaded.worksiteVisibilityMaxOverlayResults;
         worksiteVisibilityWorldOverlay = loaded.worksiteVisibilityWorldOverlay;
-        worksiteVisibilityExclusiveMode = loaded.worksiteVisibilityExclusiveMode;
         worksiteVisibilityDimensionPresetsEnabled = loaded.worksiteVisibilityDimensionPresetsEnabled;
         fineThreadTraceColorPreset = loaded.fineThreadTraceColorPreset;
         fineThreadTraceOpacityPercent = loaded.fineThreadTraceOpacityPercent;
