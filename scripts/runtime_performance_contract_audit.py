@@ -2,6 +2,7 @@
 """Reject deterministic runtime patterns that can regress startup/reload/analyzer responsiveness."""
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -15,6 +16,28 @@ ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"),
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"),
 }
+BLOCKING_FUTURE_WAIT = re.compile(r"\.(?:join|get)\s*\(")
+PLAIN_GET_CHUNK = re.compile(r"\bgetChunk\s*\(")
+JAVA_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
+JAVA_LINE_COMMENT = re.compile(r"//.*?$", re.MULTILINE)
+
+
+def java_code_only(text: str) -> str:
+    """Remove comments so examples of forbidden APIs do not become audit false positives."""
+    return JAVA_LINE_COMMENT.sub("", JAVA_BLOCK_COMMENT.sub("", text))
+
+
+def blocking_wait_lines(text: str) -> list[str]:
+    """Return suspicious blocking waits while excluding known synchronous state-holder reads."""
+    failures: list[str] = []
+    for raw in java_code_only(text).splitlines():
+        line = raw.strip()
+        if not BLOCKING_FUTURE_WAIT.search(line):
+            continue
+        if "TERMINAL_RECOVERY.get()" in line:
+            continue
+        failures.append(line)
+    return failures
 
 
 def audit() -> list[str]:
@@ -23,7 +46,7 @@ def audit() -> list[str]:
 
     for path in PRODUCTION.rglob("*.java"):
         relative = path.relative_to(ROOT)
-        text = path.read_text(encoding="utf-8")
+        text = java_code_only(path.read_text(encoding="utf-8"))
         if "Thread.sleep(" in text:
             failures.append(f"{relative}: production thread sleep is forbidden")
         if "reloadResourcePacks()" in text:
@@ -35,34 +58,32 @@ def audit() -> list[str]:
             f"actual={sorted(map(str, reload_callers))}"
         )
 
-    texture = (ROOT / next(path for path in RELOAD_CONTROLLERS if "ChiseTexturePackController" in path.name))
+    texture = ROOT / next(path for path in RELOAD_CONTROLLERS if "ChiseTexturePackController" in path.name)
     texture_text = texture.read_text(encoding="utf-8")
     for marker in ("ResourceReloadCoordinator", "whenComplete", "client.execute", "markPending"):
-        if marker not in texture_text:
+        if marker not in java_code_only(texture_text):
             failures.append(f"{texture.relative_to(ROOT)}: missing non-blocking reload marker {marker}")
-    for blocking in (".join()", ".get()"):
-        if blocking in texture_text:
-            failures.append(f"{texture.relative_to(ROOT)}: blocking reload wait detected: {blocking}")
+    for line in blocking_wait_lines(texture_text):
+        failures.append(f"{texture.relative_to(ROOT)}: blocking reload wait detected: {line}")
 
-    ore = (ROOT / next(path for path in RELOAD_CONTROLLERS if "OreHighlightModelReload" in path.name))
+    ore = ROOT / next(path for path in RELOAD_CONTROLLERS if "OreHighlightModelReload" in path.name)
     ore_text = ore.read_text(encoding="utf-8")
     for marker in ("AtomicBoolean", "whenComplete", "client.execute", "PENDING"):
-        if marker not in ore_text:
+        if marker not in java_code_only(ore_text):
             failures.append(f"{ore.relative_to(ROOT)}: missing coalescing reload marker {marker}")
-    for blocking in (".join()", ".get()"):
-        if blocking in ore_text:
-            failures.append(f"{ore.relative_to(ROOT)}: blocking reload wait detected: {blocking}")
+    for line in blocking_wait_lines(ore_text):
+        failures.append(f"{ore.relative_to(ROOT)}: blocking reload wait detected: {line}")
 
     for relative in ANALYZERS:
         path = ROOT / relative
-        text = path.read_text(encoding="utf-8")
+        text = java_code_only(path.read_text(encoding="utf-8"))
         if "getChunkNow(" not in text:
             failures.append(f"{relative}: analyzer must inspect only already-loaded chunks")
-        if "getChunk(" in text and "getChunkNow(" not in text.replace("getChunkNow(", ""):
+        if PLAIN_GET_CHUNK.search(text):
             failures.append(f"{relative}: potentially force-loading getChunk call detected")
 
-    policy = (ROOT / "src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java")
-    policy_text = policy.read_text(encoding="utf-8")
+    policy = ROOT / "src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java"
+    policy_text = java_code_only(policy.read_text(encoding="utf-8"))
     for marker in (
         "MAX_BOOTSTRAP_CHUNKS_PER_TICK = 64",
         "MAX_VALIDATION_CHUNKS_PER_TICK = 16",
