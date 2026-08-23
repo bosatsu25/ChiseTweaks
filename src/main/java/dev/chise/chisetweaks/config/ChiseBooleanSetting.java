@@ -60,24 +60,26 @@ public abstract class ChiseBooleanSetting {
         return persistence;
     }
 
-    public final void setBooleanValue(boolean value) {
+    /** 実効値が変化した場合だけtrueを返す。変更後callbackの失敗は値変更を取り消さない。 */
+    public final boolean setBooleanValue(boolean value) {
         boolean previous = readValue();
-        if (previous == value) return;
+        if (previous == value) return false;
         writeValue(value);
-        if (readValue() == previous) return;
+        if (readValue() == previous) return false;
         notifyChangeListeners();
+        return true;
     }
 
     public final void setBooleanValueSilently(boolean value) {
         if (readValue() != value) writeValue(value);
     }
 
-    public final void toggleBooleanValue() {
-        setBooleanValue(!readValue());
+    public final boolean toggleBooleanValue() {
+        return setBooleanValue(!readValue());
     }
 
-    public final void resetToDefault() {
-        setBooleanValue(defaultValue);
+    public final boolean resetToDefault() {
+        return setBooleanValue(defaultValue);
     }
 
     public final void resetSilently() {
@@ -93,22 +95,10 @@ public abstract class ChiseBooleanSetting {
     }
 
     private void notifyChangeListeners() {
-        Throwable firstFailure = null;
-        try {
-            callback.accept(this);
-        } catch (RuntimeException | LinkageError failure) {
-            firstFailure = failure;
-        }
+        SettingChangeDispatcher.notifySafely(name, this, callback);
         for (Consumer<ChiseBooleanSetting> listener : additionalListeners) {
-            try {
-                listener.accept(this);
-            } catch (RuntimeException | LinkageError failure) {
-                if (firstFailure == null) firstFailure = failure;
-                else firstFailure.addSuppressed(failure);
-            }
+            SettingChangeDispatcher.notifySafely(name, this, listener);
         }
-        if (firstFailure instanceof RuntimeException runtimeFailure) throw runtimeFailure;
-        if (firstFailure instanceof LinkageError linkageFailure) throw linkageFailure;
     }
 
     private static String requireText(String value, String field) {
