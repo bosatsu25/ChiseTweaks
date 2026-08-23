@@ -1,6 +1,8 @@
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
+import java.util.zip.CRC32
+import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -12,9 +14,29 @@ tasks.withType(org.gradle.api.tasks.compile.JavaCompile).configureEach {
     options.debugOptions.debugLevel = 'source,lines'
 }
 
+// ZipOutputStream normally emits a 16-byte data descriptor for DEFLATED entries when CRC/size values
+// are unknown. Pre-compute the exact raw-DEFLATE size and CRC so every local header is complete.
+// This only removes ZIP container overhead; entry payload bytes remain unchanged.
+def compressedSizeFor = { byte[] payload ->
+    Deflater deflater = new Deflater(9, true)
+    try {
+        deflater.setInput(payload)
+        deflater.finish()
+        byte[] buffer = new byte[8192]
+        long compressedSize = 0L
+        while (!deflater.finished()) {
+            compressedSize += deflater.deflate(buffer)
+        }
+        return compressedSize
+    } finally {
+        deflater.end()
+    }
+}
+
 // JAR/ZIP directory entries are optional metadata. Re-emit only real files with maximum DEFLATE
-// compression after Loom has produced each runtime archive. Entry payload bytes are copied exactly;
-// there is no class shrinking, resource minification, renaming or semantic transformation here.
+// compression after Loom has produced each runtime archive. Already-compressed payloads are STORED
+// when DEFLATE would be larger. There is no class shrinking, resource minification, renaming or
+// semantic transformation here.
 def recompressRuntimeArchive = { File archive ->
     if (!archive.isFile()) {
         throw new GradleException("Runtime archive does not exist: ${archive}")
@@ -28,7 +50,18 @@ def recompressRuntimeArchive = { File archive ->
                 input.getInputStream(sourceEntry).withCloseable { stream ->
                     payload = stream.readAllBytes()
                 }
-                entries.add([name: sourceEntry.name, payload: payload])
+
+                CRC32 crc32 = new CRC32()
+                crc32.update(payload)
+                long deflatedSize = compressedSizeFor(payload)
+                boolean storeUncompressed = deflatedSize >= payload.length
+                entries.add([
+                        name          : sourceEntry.name,
+                        payload       : payload,
+                        method        : storeUncompressed ? ZipEntry.STORED : ZipEntry.DEFLATED,
+                        compressedSize: storeUncompressed ? (long) payload.length : deflatedSize,
+                        crc           : crc32.value,
+                ])
             }
         }
     }
@@ -43,12 +76,18 @@ def recompressRuntimeArchive = { File archive ->
             new ZipOutputStream(new BufferedOutputStream(fileOutput)).withCloseable { output ->
                 output.setLevel(9)
                 entries.each { record ->
+                    byte[] payload = (byte[]) record.payload
                     ZipEntry targetEntry = new ZipEntry((String) record.name)
-                    // ZIP stores a local date/time. Set it directly so host timezone cannot change
-                    // archive metadata or introduce an extended timestamp field around the 1980 epoch.
-                    targetEntry.setTimeLocal(LocalDateTime.of(1980, 1, 1, 0, 0))
+                    // 1980-01-01 is the DOS ZIP epoch boundary and makes the JDK add an extended
+                    // timestamp field. 1980-01-02 remains timezone-independent with setTimeLocal,
+                    // while fitting directly in the DOS timestamp and therefore needs no extra field.
+                    targetEntry.setTimeLocal(LocalDateTime.of(1980, 1, 2, 0, 0))
+                    targetEntry.setMethod((int) record.method)
+                    targetEntry.setSize(payload.length)
+                    targetEntry.setCompressedSize((long) record.compressedSize)
+                    targetEntry.setCrc((long) record.crc)
                     output.putNextEntry(targetEntry)
-                    output.write((byte[]) record.payload)
+                    output.write(payload)
                     output.closeEntry()
                 }
             }
