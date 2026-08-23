@@ -3,34 +3,19 @@ package dev.chise.chisetweaks.runtime;
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseStringListSetting;
 import dev.chise.chisetweaks.config.FeatureConfig;
-import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
-import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
-import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import dev.chise.chisetweaks.feature.rendering.model.OreHighlightRenderInvalidation;
 import dev.chise.chisetweaks.feature.rendering.model.VisualRenderState;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-
 public final class FeatureControlBindings {
-    private static final List<FeatureSwitch> WORKSITE_VISIBILITY_TOGGLES =
-            FeatureSwitches.VALUES.stream()
-                    .filter(toggle -> toggle.definition().isWorksiteVisibilityMode())
-                    .filter(toggle -> PreReleaseFeaturePolicy.isAvailable(toggle.definition()))
-                    .toList();
-    private static boolean applyingExclusiveWorksiteSelection;
-
     private FeatureControlBindings() {}
 
     public static void init() {
-        if (!WORKSITE_VISIBILITY_TOGGLES.isEmpty()) bindWorksiteVisibilityCallbacks();
         if (builderFocusAvailable()) {
             BuilderFocusVisibility.applyConfig();
             bindBuilderFocusLists();
@@ -77,66 +62,9 @@ public final class FeatureControlBindings {
                 config -> BuilderFocusVisibility.buildEntityLists());
     }
 
-    private static void bindWorksiteVisibilityCallbacks() {
-        for (FeatureSwitch toggle : WORKSITE_VISIBILITY_TOGGLES) {
-            bindExclusiveWorksiteMode(toggle);
-        }
-        LocalFeatureSettings.setWorksiteVisibilityModeChangedCallback(
-                FeatureControlBindings::normalizeExclusiveWorksiteMode);
-        normalizeExclusiveWorksiteMode();
-    }
-
-    private static void bindExclusiveWorksiteMode(FeatureSwitch selected) {
-        selected.setValueChangeCallback(config -> {
-            if (applyingExclusiveWorksiteSelection) return;
-            Set<WorksiteVisibilitySelectionPolicy.Mode> nextModes =
-                    WorksiteVisibilitySelectionPolicy.afterToggle(
-                            activeWorksiteModes(),
-                            modeOf(selected),
-                            config.getBooleanValue(),
-                            LocalFeatureConfig.getInstance().worksiteVisibilityExclusiveMode);
-            applyWorksiteModesAtomically(nextModes);
-        });
-    }
-
-    private static void normalizeExclusiveWorksiteMode() {
-        Set<WorksiteVisibilitySelectionPolicy.Mode> normalizedModes =
-                WorksiteVisibilitySelectionPolicy.normalize(
-                        activeWorksiteModes(),
-                        LocalFeatureConfig.getInstance().worksiteVisibilityExclusiveMode);
-        applyWorksiteModesAtomically(normalizedModes);
-    }
-
-    private static void applyWorksiteModesAtomically(
-            Set<WorksiteVisibilitySelectionPolicy.Mode> activeModes) {
-        applyingExclusiveWorksiteSelection = true;
-        try {
-            for (FeatureSwitch toggle : WORKSITE_VISIBILITY_TOGGLES) {
-                toggle.setBooleanValue(activeModes.contains(modeOf(toggle)));
-            }
-        } finally {
-            applyingExclusiveWorksiteSelection = false;
-        }
-    }
-
     private static boolean builderFocusAvailable() {
         return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)
                 || PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES);
-    }
-
-    private static Set<WorksiteVisibilitySelectionPolicy.Mode> activeWorksiteModes() {
-        EnumSet<WorksiteVisibilitySelectionPolicy.Mode> active =
-                EnumSet.noneOf(WorksiteVisibilitySelectionPolicy.Mode.class);
-        for (FeatureSwitch toggle : WORKSITE_VISIBILITY_TOGGLES) {
-            if (toggle.getBooleanValue()) active.add(modeOf(toggle));
-        }
-        return active;
-    }
-
-    private static WorksiteVisibilitySelectionPolicy.Mode modeOf(FeatureSwitch toggle) {
-        WorksiteVisibilitySelectionPolicy.Mode mode = toggle.definition().worksiteMode();
-        if (mode == null) throw new IllegalArgumentException("Not a scan visibility toggle: " + toggle);
-        return mode;
     }
 
     private static void bindSanitized(ChiseStringListSetting config, Runnable rebuild) {

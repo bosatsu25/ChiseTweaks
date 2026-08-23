@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
+import dev.chise.chisetweaks.config.ChiseTextureVisibilitySetting;
 import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
@@ -57,6 +58,7 @@ final class ChiseTweaksSettingsController {
     boolean resetAll() {
         FeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
         LocalFeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
+        ChiseTextureVisibilitySetting.INSTANCE.resetToDefault();
         resetHighlightDetails();
         resetAnalyzerDetails();
         resetBuilderFocusDetails();

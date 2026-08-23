@@ -30,4 +30,8 @@ public final class ChiseTexturePackRegistrar {
             throw new IllegalStateException("Chise Texture built-in resource pack could not be registered");
         }
     }
+
+    static String repositoryPackId() {
+        return PACK_ID.toString();
+    }
 }

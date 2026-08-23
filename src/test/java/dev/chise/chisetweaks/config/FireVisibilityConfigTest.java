@@ -20,7 +20,7 @@ final class FireVisibilityConfigTest {
     }
 
     @Test
-    void explicitFireVisibilityOptInIsNormalizedOffDuringOreOnlyPrerelease() {
+    void explicitFireVisibilityOptInIsRestoredAfterRelease() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         assertTrue(config.replaceFromJsonDocument("""
                 {
@@ -29,7 +29,7 @@ final class FireVisibilityConfigTest {
                   "visualTargetSchemaVersion": 2
                 }
                 """));
-        assertFalse(config.fireVisibilityEnabled);
+        assertTrue(config.fireVisibilityEnabled);
     }
 
     @Test

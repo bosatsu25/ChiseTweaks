@@ -15,15 +15,19 @@ final class PreReleaseUiPolicy {
 
         return switch (resolved) {
             case MAIN -> "materials".equals(row.id())
+                    || "nether".equals(row.id())
                     || "thread".equals(row.id())
                     || "hidden".equals(row.id())
                     || "kelp".equals(row.id())
                     || "glass".equals(row.id())
+                    || "focusBlocks".equals(row.id())
+                    || "focusEntities".equals(row.id())
                     || "lava".equals(row.id())
-                    || "ancientDebrisAnalyzer".equals(row.id());
+                    || "ancientDebrisAnalyzer".equals(row.id())
+                    || "fireVisibility".equals(row.id())
+                    || "chestVisibility".equals(row.id());
             case HIGHLIGHT_DETAILS -> isReleasedHighlightDetail(row.id());
-            case VISUAL_FILTER_DETAILS -> false;
-            case LAVA_DETAILS -> true;
+            case VISUAL_FILTER_DETAILS, LAVA_DETAILS -> true;
         };
     }
 
@@ -36,9 +40,12 @@ final class PreReleaseUiPolicy {
                 : surface;
         return switch (resolved) {
             case MAIN -> action == ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS
+                    || action == ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS
                     || action == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS;
             case HIGHLIGHT_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
-            case VISUAL_FILTER_DETAILS, LAVA_DETAILS -> false;
+            case VISUAL_FILTER_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
+                    || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER;
+            case LAVA_DETAILS -> false;
         };
     }
 
@@ -51,7 +58,6 @@ final class PreReleaseUiPolicy {
                 || "highlightInterval".equals(id)
                 || "highlightMaxOverlays".equals(id)
                 || "highlightWorldOverlay".equals(id)
-                || "highlightExclusiveMode".equals(id)
                 || "highlightDimensionPresets".equals(id)
                 || "fineThreadColor".equals(id)
                 || "fineThreadOpacity".equals(id)

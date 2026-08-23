@@ -9,11 +9,15 @@ public final class PreReleaseFeaturePolicy {
 
     public static boolean isAvailable(FeatureDefinition definition) {
         FeatureDefinition checked = Objects.requireNonNull(definition, "definition");
-        return checked == FeatureDefinition.MATERIAL_HIGHLIGHTS
+        return checked == FeatureDefinition.BUILDER_FOCUS_BLOCKS
+                || checked == FeatureDefinition.BUILDER_FOCUS_ENTITIES
+                || checked == FeatureDefinition.MATERIAL_HIGHLIGHTS
+                || checked == FeatureDefinition.NETHER_PALETTE
                 || checked == FeatureDefinition.KELP_HIGHLIGHT
                 || checked == FeatureDefinition.GLASS_INSPECTION
                 || checked == FeatureDefinition.FINE_THREAD_TRACE
                 || checked == FeatureDefinition.HIDDEN_SURFACE_TRACE
+                || checked == FeatureDefinition.FIRE_VISIBILITY
                 || checked == FeatureDefinition.LAVA_HIGHLIGHT
                 || checked == FeatureDefinition.ANCIENT_DEBRIS_ANALYZER;
     }
