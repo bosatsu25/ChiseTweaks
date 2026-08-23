@@ -7,7 +7,6 @@ import java.util.function.Consumer;
 public final class SimpleBooleanSetting extends ChiseBooleanSetting {
     private final BooleanSupplier reader;
     private final Consumer<Boolean> writer;
-    private final SettingPersistence persistence;
     private boolean value;
 
     public SimpleBooleanSetting(
@@ -38,7 +37,8 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
             String englishComment,
             String japaneseComment,
             BooleanSupplier reader,
-            Consumer<Boolean> writer) {
+            Consumer<Boolean> writer,
+            SettingPersistence persistence) {
         this(
                 name,
                 defaultValue,
@@ -49,7 +49,7 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
                 reader,
                 writer,
                 true,
-                SettingPersistence.LOCAL_CONFIG);
+                persistence);
     }
 
     private SimpleBooleanSetting(
@@ -63,9 +63,8 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
             Consumer<Boolean> writer,
             boolean bound,
             SettingPersistence persistence) {
-        super(name, defaultValue, englishName, japaneseName, englishComment, japaneseComment);
+        super(name, defaultValue, englishName, japaneseName, englishComment, japaneseComment, persistence);
         this.value = defaultValue;
-        this.persistence = Objects.requireNonNull(persistence, "persistence");
         if (bound) {
             this.reader = Objects.requireNonNull(reader, "reader");
             this.writer = Objects.requireNonNull(writer, "writer");
@@ -73,11 +72,6 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
             this.reader = () -> value;
             this.writer = next -> value = next;
         }
-    }
-
-    @Override
-    public SettingPersistence persistence() {
-        return persistence;
     }
 
     @Override
