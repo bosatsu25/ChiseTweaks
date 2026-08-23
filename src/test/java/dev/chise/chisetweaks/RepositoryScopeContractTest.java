@@ -132,14 +132,15 @@ final class RepositoryScopeContractTest {
     }
 
     @Test
-    void requiredVerificationFilesAndIndependentGradleGatesArePresent() throws IOException {
+    void requiredVerificationFilesAndSingleGradleGateArePresent() throws IOException {
         assertTrue(exists(".github/workflows/ci.yml"));
-        assertTrue(exists(".github/workflows/verify-build.yml"));
         assertTrue(exists(".github/workflows/release.yml"));
+        assertFalse(exists(".github/workflows/verify-build.yml"));
         assertFalse(exists(".github/workflows/verified-release.yml"));
         assertTrue(exists("scripts/repository_audit.py"));
-        assertTrue(exists("scripts/quality_summary.py"));
         assertTrue(exists("scripts/artifact_audit.py"));
+        assertFalse(exists("scripts/ci_toolchain_audit.py"));
+        assertFalse(exists("scripts/quality_summary.py"));
         assertFalse(exists("scripts/local_ci.py"));
 
         String build = read("build.gradle");

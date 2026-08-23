@@ -45,9 +45,9 @@ final class LightweightRuntimeBudgetContractTest {
     }
 
     @Test
-    void mandatoryArtifactAuditAlsoEnforcesNoGrowthAndReportsGoalProgress() throws IOException {
+    void mandatoryArtifactAuditEnforcesNoGrowthAndCiRunsItOnce() throws IOException {
         String audit = source("scripts/artifact_audit.py");
-        String verify = source(".github/workflows/verify-build.yml");
+        String ci = source(".github/workflows/ci.yml");
         String release = source(".github/workflows/release.yml");
 
         assertTrue(audit.contains("runtime_jar_target_bytes"));
@@ -58,8 +58,10 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(audit.contains("info.flag_bits & 0x08"));
         assertTrue(audit.contains("if info.extra"));
         assertTrue(audit.contains("Remaining to goal"));
-        assertTrue(verify.contains("python scripts/artifact_audit.py"));
-        assertTrue(release.contains("python scripts/artifact_audit.py"));
+        assertTrue(ci.contains("python scripts/artifact_audit.py"));
+        assertTrue(release.contains("actions/download-artifact@"));
+        assertFalse(release.contains("python scripts/artifact_audit.py"));
+        assertFalse(release.contains("./gradlew"));
     }
 
     @Test

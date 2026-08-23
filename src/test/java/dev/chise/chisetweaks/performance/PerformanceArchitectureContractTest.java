@@ -58,54 +58,45 @@ final class PerformanceArchitectureContractTest {
     }
 
     @Test
-    void ciOwnsQualityGatesWhileReleaseOnlyRebuildsAndAuditsArtifacts() throws IOException {
+    void ciOwnsQualityGatesAndReleaseOnlyPromotesTheVerifiedArtifact() throws IOException {
         String build = Files.readString(ROOT.resolve("build.gradle"));
         String ci = Files.readString(ROOT.resolve(".github/workflows/ci.yml"));
-        String verify = Files.readString(ROOT.resolve(".github/workflows/verify-build.yml"));
         String release = Files.readString(ROOT.resolve(".github/workflows/release.yml"));
 
         assertTrue(build.contains("tasks.register('ciGate')"));
         assertTrue(build.contains("tasks.register('comparePerformanceEvidence', JavaExec)"));
         assertFalse(build.contains("tasks.register('performanceGate', Test)"));
 
-        assertTrue(verify.contains("clean assemble testClasses"));
-        assertTrue(verify.contains("--stacktrace test"));
-        assertTrue(verify.contains("jacocoTestReport jacocoTestCoverageVerification"));
-        assertTrue(verify.contains("--stacktrace pitest"));
-        assertTrue(verify.contains("Enforce aggregate quality gate"));
-        assertTrue(verify.contains("actions/upload-artifact@"));
-        assertTrue(verify.contains("path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}"));
-        assertTrue(verify.contains("archive: false"));
-        assertFalse(verify.contains("gh release"));
+        assertTrue(ci.contains("./gradlew --stacktrace ciGate"));
+        assertTrue(ci.contains("actions/upload-artifact@"));
+        assertTrue(ci.contains("path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}"));
+        assertTrue(ci.contains("archive: false"));
+        assertFalse(ci.contains("continue-on-error"));
         assertFalse(ci.contains("gh release"));
         assertFalse(ci.contains("git tag"));
 
-        assertTrue(release.contains("./gradlew --no-daemon --stacktrace clean assemble"));
-        assertTrue(release.contains("python scripts/artifact_audit.py"));
-        assertTrue(release.contains("python scripts/visual_asset_audit.py"));
-        assertTrue(release.contains("python scripts/release_residue_audit.py"));
-        assertFalse(release.contains("clean ciGate"));
-        assertFalse(release.contains("--stacktrace test"));
-        assertFalse(release.contains("jacocoTestReport"));
-        assertFalse(release.contains("pitest"));
-        assertFalse(release.contains("python scripts/quality_summary.py"));
-        assertFalse(release.contains("gh run download"));
-        assertFalse(release.contains("actions/download-artifact"));
-        assertFalse(release.contains("verification-evidence"));
+        assertTrue(release.contains("actions/download-artifact@"));
+        assertTrue(release.contains("run-id: ${{ github.event.workflow_run.id }}"));
+        assertTrue(release.contains("Exact CI artifact promoted: `PASS`"));
+        assertFalse(release.contains("./gradlew"));
+        assertFalse(release.contains("python scripts/artifact_audit.py"));
+        assertFalse(release.contains("python scripts/visual_asset_audit.py"));
+        assertFalse(release.contains("python scripts/release_residue_audit.py"));
+        assertFalse(release.contains("gh release download"));
     }
 
     @Test
-    void releaseDependencyNotesComeFromTheRuntimeJarBuiltByTheReleaseGate() throws IOException {
+    void releaseDependencyNotesComeFromThePromotedRuntimeJar() throws IOException {
         String release = Files.readString(ROOT.resolve(".github/workflows/release.yml"));
 
-        assertTrue(release.contains("runtime=\"build/libs/$RUNTIME_JAR\""));
+        assertTrue(release.contains("runtime=\"${candidates[0]}\""));
         assertTrue(release.contains("unzip -p \"$runtime\" fabric.mod.json"));
         assertTrue(release.contains(".depends.fabricloader"));
         assertTrue(release.contains(".depends[\"fabric-api\"]"));
         assertTrue(release.contains(".depends.java"));
         assertTrue(release.contains("serverInstallationRequired"));
         assertTrue(release.contains("server_required\" != 'false'"));
-        assertTrue(release.contains("\"build/libs/$RUNTIME_JAR\""));
+        assertTrue(release.contains("\"$RUNTIME_PATH\""));
         assertFalse(release.contains("Fabric Loader 0.19.3"));
         assertFalse(release.contains("- Java: \\`25\\`"));
     }

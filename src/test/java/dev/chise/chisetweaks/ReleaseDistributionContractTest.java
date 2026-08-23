@@ -11,7 +11,6 @@ import java.util.regex.Pattern;
 import static dev.chise.chisetweaks.SourceContractSupport.assertContainsAll;
 import static dev.chise.chisetweaks.SourceContractSupport.assertContainsNone;
 import static dev.chise.chisetweaks.SourceContractSupport.read;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** CI検証、SemVer、利用者が導入する単一JARの境界を固定する。 */
@@ -19,50 +18,39 @@ final class ReleaseDistributionContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void normalCiVerifiesOnlyAndNeverCreatesTagsOrReleases() throws IOException {
+    void normalCiIsOneReadOnlyFailFastQualityPipeline() throws IOException {
         String ci = read(".github/workflows/ci.yml");
 
         assertContainsAll(ci,
-                "uses: ./.github/workflows/verify-build.yml",
+                "permissions:\n  contents: read",
+                "name: verify / Java 25 quality gate",
+                "python scripts/version_policy.py",
+                "python scripts/repository_audit.py",
+                "python scripts/functional_parity_audit.py",
+                "./gradlew --stacktrace ciGate",
+                "python scripts/artifact_audit.py",
+                "python scripts/visual_asset_audit.py",
+                "python scripts/release_residue_audit.py",
+                "actions/upload-artifact@",
+                "path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}",
+                "archive: false",
                 "cancel-in-progress: true");
         assertContainsNone(ci,
-                "contents: write",
-                "gh release",
-                "git tag",
-                "verified-v",
-                "Publish verified runtime JAR");
-    }
-
-    @Test
-    void verificationExposesIndependentGatesAndRetainsOnlyRuntimeJar() throws IOException {
-        String verify = read(".github/workflows/verify-build.yml");
-
-        assertContainsAll(verify,
-                "python scripts/version_policy.py",
+                "uses: ./.github/workflows/verify-build.yml",
+                "continue-on-error",
+                "Enforce aggregate quality gate",
+                "quality_summary.py",
                 "clean assemble testClasses",
                 "--stacktrace test",
                 "jacocoTestReport jacocoTestCoverageVerification",
                 "--stacktrace pitest",
-                "python scripts/artifact_audit.py",
-                "python scripts/visual_asset_audit.py",
-                "python scripts/release_residue_audit.py",
-                "python scripts/quality_summary.py --allow-partial",
-                "Enforce aggregate quality gate",
-                "actions/upload-artifact@",
-                "path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}",
-                "archive: false");
-        assertContainsNone(verify,
-                "verification-evidence",
-                "build/verified",
-                "steps.artifacts.outputs.sources_jar",
-                "build/ci/artifact-audit.json",
-                "build/ci/visual-asset-audit.json",
+                "contents: write",
                 "gh release",
                 "git tag");
     }
 
     @Test
-    void officialReleaseRebuildsVerifiedShaAndUploadsExactlyOneRuntimeJar() throws IOException {
+    void officialReleasePromotesTheExactSuccessfulMainCiArtifact() throws IOException {
         String release = read(".github/workflows/release.yml");
 
         assertContainsAll(release,
@@ -70,37 +58,51 @@ final class ReleaseDistributionContractTest {
                 "github.event.workflow_run.conclusion == 'success'",
                 "github.event.workflow_run.event == 'push'",
                 "github.event.workflow_run.head_branch == 'main'",
-                "ref: ${{ github.event.workflow_run.head_sha }}",
-                "./gradlew --no-daemon --stacktrace clean assemble",
+                "actions: read",
+                "contents: write",
+                "actions/download-artifact@",
+                "run-id: ${{ github.event.workflow_run.id }}",
+                "github-token: ${{ github.token }}",
+                "pattern: chise-tweaks-*.jar",
+                "Validate promoted runtime JAR",
+                "sha256sum \"$runtime\"",
+                "unzip -p \"$runtime\" fabric.mod.json",
+                "serverInstallationRequired",
+                "gh release create \"$TAG\"",
+                "Published runtime JAR digest mismatch",
+                "Release tag points to");
+        assertContainsNone(release,
+                "actions/checkout@",
+                "actions/setup-java@",
+                "actions/setup-python@",
+                "gradle/actions/setup-gradle@",
+                "./gradlew",
                 "python scripts/artifact_audit.py",
                 "python scripts/visual_asset_audit.py",
                 "python scripts/release_residue_audit.py",
-                "python scripts/version_policy.py",
-                "gh release create \"$TAG\"",
-                "\"build/libs/$RUNTIME_JAR\"",
-                "Official Release must expose exactly one uploaded mod asset");
-        assertContainsNone(release,
-                "clean ciGate",
-                "--stacktrace test",
-                "jacocoTestReport",
-                "pitest",
-                "python scripts/quality_summary.py",
-                "actions/upload-artifact",
-                "\"build/libs/$SOURCES_JAR\"",
-                "\"build/ci/SHA256SUMS.txt\"",
-                "\"build/ci/artifact-audit.json\"",
-                "\"build/ci/visual-asset-audit.json\"",
-                "\"build/ci/quality-summary.md\"");
+                "gh release download",
+                "actions/upload-artifact@");
     }
 
     @Test
-    void legacyPerCommitVerifiedTagsAreReadOnlyVersionFallbacks() throws IOException {
+    void newOfficialReleaseKeepsTheOneStepSemverGuardWithoutRebuilding() throws IOException {
         String release = read(".github/workflows/release.yml");
+        String policy = read("VERSIONING.md");
 
-        assertTrue(release.contains("git tag --list 'verified-v*'"));
-        assertFalse(release.contains("gh release delete \"$legacy_tag\""));
-        assertFalse(release.contains("git push origin \":refs/tags/$legacy_tag\""));
-        assertFalse(release.contains("tag=\"verified-v"));
+        assertContainsAll(release,
+                "Enforce one-step SemVer increment",
+                "gh release list",
+                "release_type='patch'",
+                "release_type='minor'",
+                "release_type='major'",
+                "not an exact patch/minor/major increment");
+        assertContainsAll(policy,
+                "promotes the exact runtime JAR retained by that successful CI run",
+                "Only one-step PATCH, MINOR, or MAJOR increments are accepted");
+        assertContainsNone(release,
+                "python scripts/version_policy.py",
+                "actions/checkout@",
+                "./gradlew");
     }
 
     @Test

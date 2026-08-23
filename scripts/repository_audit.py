@@ -84,14 +84,12 @@ REQUIRED_PATHS = (
     "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/NearestPositionBuffer.java",
     ".github/workflows/ci.yml",
-    ".github/workflows/verify-build.yml",
     ".github/workflows/release.yml",
-    "scripts/ci_toolchain_audit.py",
-    "scripts/quality_summary.py",
     "scripts/artifact_audit.py",
     "scripts/release_residue_audit.py",
     "scripts/documentation_consistency_audit.py",
     "scripts/compatibility_contract_audit.py",
+    "scripts/functional_parity_audit.py",
 )
 
 FORBIDDEN_TRACKED_DIRECTORY_NAMES = {
@@ -173,23 +171,6 @@ def audit_repository_hygiene(failures: list[str]) -> None:
             fail(f"{relative}: non-loopback IPv4/server address detected", failures)
 
 
-def audit_ci_toolchain(failures: list[str]) -> None:
-    try:
-        completed = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/ci_toolchain_audit.py")],
-            cwd=ROOT,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-    except OSError as error:
-        fail(f"CI toolchain audit could not start: {error}", failures)
-        return
-    if completed.returncode != 0:
-        detail = (completed.stderr or completed.stdout).strip()
-        fail(f"CI toolchain audit failed: {detail}", failures)
-
-
 def audit() -> list[str]:
     failures: list[str] = []
 
@@ -258,6 +239,7 @@ def audit() -> list[str]:
             "id 'jacoco'",
             "id 'info.solidsoft.pitest'",
             "tasks.register('qualityGate')",
+            "tasks.register('ciGate')",
             "mutationThreshold",
             "testStrengthThreshold",
             "WorksiteScanThrottlePolicy",
@@ -272,7 +254,6 @@ def audit() -> list[str]:
             if marker not in build:
                 fail(f"verification marker missing from build.gradle: {marker}", failures)
 
-    audit_ci_toolchain(failures)
     audit_repository_hygiene(failures)
     return failures
 
@@ -287,7 +268,6 @@ def main() -> int:
     print("REPOSITORY AUDIT: PASS")
     print("scope=11 retained rendering features")
     print("client_only=true")
-    print("ci_toolchain_policy=true")
     print("canonical_architecture=true")
     print("removed_feature_residue=false")
     print("local_machine_paths=false")
