@@ -15,6 +15,7 @@ import java.util.List;
 /** 設定画面で使うlocalize済みimmutable row定義を構築する。 */
 final class ChiseTweaksSettingsCatalog {
     private static final List<ChiseBooleanSetting> RESOURCE_TARGETS = targets("visualTargetMaterial");
+    private static final List<ChiseBooleanSetting> TECHNICAL_TARGETS = targets("visualTargetTechnical");
     private static final List<ChiseBooleanSetting> VISIBILITY_TARGETS = targets("visualTargetHidden");
 
     List<ChiseTweaksSettingRowDefinition> rows(ChiseTweaksSettingsController.Surface surface) {
@@ -126,6 +127,9 @@ final class ChiseTweaksSettingsCatalog {
                 LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
                 text(FeatureDefinition.HIDDEN_SURFACE_TRACE.nameKey()) + " - Opacity / 不透明度",
                 "20-100%", 5);
+
+        headerLiteral(rows, "detail.highlight.technicalTargets", "Fine Thread targets / 細線対象");
+        for (ChiseBooleanSetting option : TECHNICAL_TARGETS) targetLiteral(rows, option);
 
         header(rows, "detail.highlight.materialTargets", "screen.chisetweaks.settings.section.material_targets");
         for (ChiseBooleanSetting option : RESOURCE_TARGETS) target(rows, option);
@@ -256,6 +260,16 @@ final class ChiseTweaksSettingsCatalog {
         String base = "screen.chisetweaks.settings.target." + config.getName();
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 config.getName(), text(base + ".name"), text(base + ".description"), config));
+    }
+
+    private static void targetLiteral(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            ChiseBooleanSetting config) {
+        rows.add(ChiseTweaksSettingRowDefinition.bool(
+                config.getName(),
+                config.getDisplayName(false) + " / " + config.getDisplayName(true),
+                config.getComment(false) + " / " + config.getComment(true),
+                config));
     }
 
     private static List<ChiseBooleanSetting> targets(String prefix) {
