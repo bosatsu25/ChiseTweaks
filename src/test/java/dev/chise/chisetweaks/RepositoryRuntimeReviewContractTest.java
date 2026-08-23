@@ -41,13 +41,18 @@ final class RepositoryRuntimeReviewContractTest {
     }
 
     @Test
-    void persistenceFailuresRemainVisibleToSettingsUi() throws IOException {
+    void persistenceFailuresRemainVisibleAndOnlyFailedDomainsStayDirty() throws IOException {
         String featureConfig = source("src/main/java/dev/chise/chisetweaks/config/FeatureConfig.java");
         String localConfig = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
+        String coordinator = source("src/main/java/dev/chise/chisetweaks/config/SettingPersistenceCoordinator.java");
         String screen = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         assertTrue(featureConfig.contains("public static boolean saveToFile()"));
         assertTrue(localConfig.contains("public synchronized boolean save()"));
-        assertTrue(screen.contains("if (!controller.saveConfig())"));
+        assertTrue(coordinator.contains("catch (RuntimeException | LinkageError failure)"));
+        assertTrue(coordinator.contains("return new SaveResult(failed);"));
+        assertTrue(screen.contains("dirtyDomains.retainAll(result.failedDomains())"));
+        assertTrue(screen.contains("if (!result.successful())"));
+        assertTrue(screen.contains("screen.chisetweaks.settings.save_failed"));
         assertTrue(screen.contains("if (!applyChanges()) return;"));
     }
 
