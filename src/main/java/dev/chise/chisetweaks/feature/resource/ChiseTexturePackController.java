@@ -5,15 +5,11 @@ import dev.chise.chisetweaks.core.policy.ResourcePackSelectionPolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.PackRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /** Chise-owned visibility packs share one serialized Minecraft resource-reload pipeline. */
 public final class ChiseTexturePackController {
-    private static boolean reloadInFlight;
-    private static boolean reloadPending;
-    private static List<String> inFlightFallback = List.of();
-    private static List<String> inFlightTarget = List.of();
+    private static final ResourceReloadCoordinator RELOADS = new ResourceReloadCoordinator();
 
     private ChiseTexturePackController() {}
 
@@ -71,8 +67,8 @@ public final class ChiseTexturePackController {
             return;
         }
 
-        if (reloadInFlight) {
-            reloadPending = true;
+        if (RELOADS.isInFlight()) {
+            RELOADS.markPending();
             return;
         }
         startReload(client, previous, selected);
@@ -82,15 +78,13 @@ public final class ChiseTexturePackController {
             Minecraft client,
             List<String> fallbackSelection,
             List<String> targetSelection) {
-        reloadInFlight = true;
-        inFlightFallback = List.copyOf(fallbackSelection);
-        inFlightTarget = List.copyOf(targetSelection);
+        RELOADS.begin(fallbackSelection, targetSelection);
         try {
             client.reloadResourcePacks().whenComplete((ignored, failure) -> {
                 try {
                     client.execute(() -> completeReload(client, failure));
                 } catch (RuntimeException | LinkageError schedulingFailure) {
-                    resetReloadState();
+                    RELOADS.reset();
                     logFailure(schedulingFailure);
                 }
             });
@@ -101,20 +95,19 @@ public final class ChiseTexturePackController {
 
     private static void completeReload(Minecraft client, Throwable failure) {
         PackRepository repository = client.getResourcePackRepository();
-        List<String> fallback = inFlightFallback;
-        List<String> completedTarget = inFlightTarget;
-        List<String> desired = new ArrayList<>(repository.getSelectedIds());
-        boolean pending = reloadPending;
-        resetReloadState();
-
+        List<String> desired = List.copyOf(repository.getSelectedIds());
         if (failure != null) logFailure(failure);
-        List<String> active = failure == null ? completedTarget : fallback;
-        if (pending && !desired.equals(active)) {
-            startReload(client, active, desired);
-            return;
-        }
-        if (failure != null && !desired.equals(active)) {
-            restoreSelection(client, repository, active);
+
+        ResourceReloadCoordinator.Completion completion =
+                RELOADS.complete(desired, failure == null);
+        switch (completion.action()) {
+            case RELOAD -> startReload(
+                    client,
+                    completion.activeSelection(),
+                    completion.targetSelection());
+            case RESTORE -> restoreSelection(client, repository, completion.activeSelection());
+            case NONE -> {
+            }
         }
     }
 
@@ -130,13 +123,6 @@ public final class ChiseTexturePackController {
                     "Chise visibility pack selection rollback failed after {}",
                     rollbackFailure.getClass().getSimpleName());
         }
-    }
-
-    private static void resetReloadState() {
-        reloadInFlight = false;
-        reloadPending = false;
-        inFlightFallback = List.of();
-        inFlightTarget = List.of();
     }
 
     private static void logFailure(Throwable failure) {
