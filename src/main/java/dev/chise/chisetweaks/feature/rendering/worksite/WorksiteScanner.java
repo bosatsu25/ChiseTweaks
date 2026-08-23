@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.feature.rendering.worksite;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.performance.WorksiteCandidateRetentionPolicy;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
+import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
@@ -10,6 +11,7 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -75,10 +77,15 @@ final class WorksiteScanner {
             return List.of();
         }
 
-        int horizontalRadius = WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(
-                config.worksiteVisibilityHorizontalRadius);
-        int verticalRadius = WorksiteVisibilityBudgetPolicy.clampVerticalRadius(
-                config.worksiteVisibilityVerticalRadius);
+        WorksiteHighlightProfilePolicy.DimensionProfile dimensionProfile = dimensionProfile(client);
+        WorksiteHighlightProfilePolicy.ScanProfile scanProfile =
+                WorksiteHighlightProfilePolicy.scanProfile(
+                        config.worksiteVisibilityHorizontalRadius,
+                        config.worksiteVisibilityVerticalRadius,
+                        config.worksiteVisibilityDimensionPresetsEnabled,
+                        dimensionProfile);
+        int horizontalRadius = scanProfile.horizontalRadius();
+        int verticalRadius = scanProfile.verticalRadius();
         int overlayLimit = WorksiteVisibilityBudgetPolicy.clampOverlayResults(
                 config.worksiteVisibilityMaxOverlayResults);
         BlockPos origin = client.player.blockPosition();
@@ -126,6 +133,7 @@ final class WorksiteScanner {
                             eyePosition,
                             cursor,
                             activeCategories,
+                            dimensionProfile,
                             candidateBuffer);
                 }
             }
@@ -147,6 +155,7 @@ final class WorksiteScanner {
             Vec3 eyePosition,
             BlockPos position,
             Set<BlockInspectionCategory> activeCategories,
+            WorksiteHighlightProfilePolicy.DimensionProfile dimensionProfile,
             PriorityQueue<WorksiteScanCandidate> candidates) {
         BlockState state = client.level.getBlockState(position);
         WorksiteBlockDescriptor descriptor = blockInspector.describe(state);
@@ -158,7 +167,15 @@ final class WorksiteScanner {
                 descriptor.id(),
                 category)) return;
 
-        VisualAssistanceStylePolicy.OverlayStyle style = descriptor.styleFor(category);
+        VisualAssistanceStylePolicy.OverlayStyle style = WorksiteHighlightProfilePolicy.customize(
+                descriptor.styleFor(category),
+                category,
+                config.fineThreadTraceColorPreset,
+                config.fineThreadTraceOpacityPercent,
+                config.hiddenSurfaceTraceColorPreset,
+                config.hiddenSurfaceTraceOpacityPercent,
+                config.worksiteVisibilityDimensionPresetsEnabled,
+                dimensionProfile);
         if (!style.visible()) return;
 
         double dx = position.getX() + 0.5 - eyePosition.x;
@@ -237,6 +254,19 @@ final class WorksiteScanner {
                     && result.getBlockPos().equals(position)) return true;
         }
         return false;
+    }
+
+    private static WorksiteHighlightProfilePolicy.DimensionProfile dimensionProfile(Minecraft client) {
+        if (client == null || client.level == null) {
+            return WorksiteHighlightProfilePolicy.DimensionProfile.OTHER;
+        }
+        if (Level.NETHER.equals(client.level.dimension())) {
+            return WorksiteHighlightProfilePolicy.DimensionProfile.NETHER;
+        }
+        if (Level.OVERWORLD.equals(client.level.dimension())) {
+            return WorksiteHighlightProfilePolicy.DimensionProfile.OVERWORLD;
+        }
+        return WorksiteHighlightProfilePolicy.DimensionProfile.OTHER;
     }
 
     private static double[][] samplesFor(BlockInspectionCategory category) {
