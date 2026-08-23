@@ -1,0 +1,8 @@
+{
+  "visualTargetMask": 1073750016,
+  "visualTargetSchemaVersion": 99,
+  "futureField": true,
+  "futureNested": {
+    "enabled": true
+  }
+}
