@@ -69,7 +69,7 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(jarSize.contains("output.setLevel(9)"));
         assertTrue(jarSize.contains("if (!sourceEntry.directory)"));
         assertTrue(jarSize.contains("stream.readAllBytes()"));
-        assertTrue(jarSize.contains("315532800000L"));
+        assertTrue(jarSize.contains("setTimeLocal(LocalDateTime.of(1980, 1, 1, 0, 0))"));
         assertTrue(jarSize.contains("task.name == 'jar' || task.name == 'remapJar'"));
         assertTrue(jarSize.contains("StandardCopyOption.REPLACE_EXISTING"));
         assertFalse(jarSize.toLowerCase().contains("proguard"));
