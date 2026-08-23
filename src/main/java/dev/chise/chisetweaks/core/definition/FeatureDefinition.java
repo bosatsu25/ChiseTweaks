@@ -82,7 +82,7 @@ public enum FeatureDefinition {
             "fire_visibility",
             FeatureArea.RENDERING,
             "config.name.localfirevisibility",
-            "Fire Visibility",
+            "Low Fire",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
             null),
@@ -90,7 +90,7 @@ public enum FeatureDefinition {
             "lava_highlight",
             FeatureArea.RENDERING,
             "config.name.locallavahighlight",
-            "Lava Source Highlight",
+            "Lava Analyzer",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
             null);
