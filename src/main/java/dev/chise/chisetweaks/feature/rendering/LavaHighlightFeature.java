@@ -4,8 +4,8 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
+import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
-import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
 import dev.chise.chisetweaks.feature.TickingFeature;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -319,7 +319,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
 
     @Override
     public boolean isEnabled() {
-        return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
+        return FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
                 && !isSessionQuarantined()
                 && LocalFeatureConfig.getInstance().lavaHighlightEnabled;
     }
