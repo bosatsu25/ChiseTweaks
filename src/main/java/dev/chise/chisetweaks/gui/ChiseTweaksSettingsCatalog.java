@@ -1,5 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
+import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
@@ -23,6 +24,7 @@ final class ChiseTweaksSettingsCatalog {
         switch (surface == null ? ChiseTweaksSettingsController.Surface.MAIN : surface) {
             case MAIN -> addMainRows(rows);
             case HIGHLIGHT_DETAILS -> addHighlightDetailRows(rows);
+            case VISUAL_FILTER_DETAILS -> addVisualFilterDetailRows(rows);
             case LAVA_DETAILS -> addAnalyzerDetailRows(rows);
         }
         return List.copyOf(rows);
@@ -32,6 +34,7 @@ final class ChiseTweaksSettingsCatalog {
         return switch (surface == null ? ChiseTweaksSettingsController.Surface.MAIN : surface) {
             case MAIN -> "";
             case HIGHLIGHT_DETAILS -> text("screen.chisetweaks.settings.title.highlight");
+            case VISUAL_FILTER_DETAILS -> text("screen.chisetweaks.settings.section.visual_filter");
             case LAVA_DETAILS -> text("screen.chisetweaks.settings.title.analyzer");
         };
     }
@@ -55,13 +58,15 @@ final class ChiseTweaksSettingsCatalog {
         compactFeature(rows, "kelp", FeatureSwitches.KELP_HIGHLIGHT,
                 FeatureDefinition.KELP_HIGHLIGHT);
 
-        header(rows, "header.visualFilter", "screen.chisetweaks.settings.section.visual_filter");
-        compactFeatureAction(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
-                FeatureDefinition.BUILDER_FOCUS_BLOCKS,
-                ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER);
-        compactFeatureAction(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
-                FeatureDefinition.BUILDER_FOCUS_ENTITIES,
-                ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
+        rows.add(ChiseTweaksSettingRowDefinition.headerAction(
+                "header.visualFilter",
+                text("screen.chisetweaks.settings.section.visual_filter"),
+                ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS,
+                text("screen.chisetweaks.settings.action.settings")));
+        compactFeature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
+                FeatureDefinition.BUILDER_FOCUS_BLOCKS);
+        compactFeature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
+                FeatureDefinition.BUILDER_FOCUS_ENTITIES);
 
         rows.add(ChiseTweaksSettingRowDefinition.headerAction(
                 "header.analyzer",
@@ -138,6 +143,21 @@ final class ChiseTweaksSettingsCatalog {
         for (ChiseBooleanSetting option : VISIBILITY_TARGETS) target(rows, option);
     }
 
+    private static void addVisualFilterDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "detail.visualFilter.behavior", "Visual Filter / 表示フィルター");
+        bool(rows, "refreshRenderer", BuilderFocusConfig.REFRESH_RENDERER,
+                "config.option.refreshbuilderfocusrenderer.name",
+                "config.option.refreshbuilderfocusrenderer.comment");
+        action(rows, "editBlockFilter",
+                FeatureDefinition.BUILDER_FOCUS_BLOCKS.nameKey(),
+                "config.comment.builderfocusblocks",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER);
+        action(rows, "editEntityFilter",
+                FeatureDefinition.BUILDER_FOCUS_ENTITIES.nameKey(),
+                "config.comment.builderfocusentities",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
+    }
+
     private static void addAnalyzerDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         header(rows, "detail.analyzer.lava", "screen.chisetweaks.settings.section.lava_source");
         integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
@@ -183,21 +203,6 @@ final class ChiseTweaksSettingsCatalog {
             FeatureDefinition definition) {
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 id, text(definition.nameKey()), "", config));
-    }
-
-    private static void compactFeatureAction(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseBooleanSetting config,
-            FeatureDefinition definition,
-            ChiseTweaksSettingRowDefinition.Action action) {
-        rows.add(ChiseTweaksSettingRowDefinition.boolAction(
-                id,
-                text(definition.nameKey()),
-                "",
-                config,
-                action,
-                text("screen.chisetweaks.settings.action.settings")));
     }
 
     private static void bool(

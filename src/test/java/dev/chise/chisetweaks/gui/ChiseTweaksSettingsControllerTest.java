@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
-import dev.chise.chisetweaks.config.ChiseBooleanSetting;
+import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
@@ -84,13 +84,18 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void settingsActionsAreAttachedOnlyToTheGroupsTheyActuallyConfigure() {
+    void mainSectionSettingsActionsAreConsolidatedAtHeaders() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
 
         ChiseTweaksSettingRowDefinition highlightHeader = row(rows, "header.highlight");
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS, highlightHeader.action());
         assertFalse(highlightHeader.actionLabel().isBlank());
+
+        ChiseTweaksSettingRowDefinition visualFilterHeader = row(rows, "header.visualFilter");
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS,
+                visualFilterHeader.action());
+        assertFalse(visualFilterHeader.actionLabel().isBlank());
 
         ChiseTweaksSettingRowDefinition analyzerHeader = row(rows, "header.analyzer");
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS, analyzerHeader.action());
@@ -100,16 +105,45 @@ final class ChiseTweaksSettingsControllerTest {
         assertNull(visibilityHeader.action());
         assertEquals("", visibilityHeader.actionLabel());
 
-        ChiseTweaksSettingRowDefinition blocks = row(rows, "focusBlocks");
-        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN_ACTION, blocks.kind());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER, blocks.action());
+        for (String id : List.of("focusBlocks", "focusEntities")) {
+            ChiseTweaksSettingRowDefinition filter = row(rows, id);
+            assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, filter.kind());
+            assertNull(filter.action());
+            assertTrue(filter.actionLabel().isEmpty());
+        }
+        assertFalse(rows.stream().anyMatch(row -> row.id().toLowerCase().contains("bulk")));
+    }
 
-        ChiseTweaksSettingRowDefinition entities = row(rows, "focusEntities");
-        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN_ACTION, entities.kind());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER, entities.action());
+    @Test
+    void visualFilterDetailSurfaceOwnsBothEditorsAndRendererRefreshSetting() {
+        var controller = new ChiseTweaksSettingsController();
+        List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
+                ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS);
 
-        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, row(rows, "lava").kind());
-        assertEquals(ChiseTweaksSettingRowDefinition.Kind.BOOLEAN, row(rows, "ancientDebrisAnalyzer").kind());
+        assertFalse(controller.surfaceTitle(
+                ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS).isBlank());
+        assertSame(BuilderFocusConfig.REFRESH_RENDERER, row(rows, "refreshRenderer").booleanConfig());
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER,
+                row(rows, "editBlockFilter").action());
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER,
+                row(rows, "editEntityFilter").action());
+        assertEquals(2, rows.stream()
+                .filter(candidate -> candidate.kind() == ChiseTweaksSettingRowDefinition.Kind.ACTION)
+                .count());
+    }
+
+    @Test
+    void visualFilterDetailResetRestoresBuilderFocusDefaults() {
+        boolean originalRefresh = BuilderFocusConfig.REFRESH_RENDERER.getBooleanValue();
+        try {
+            BuilderFocusConfig.REFRESH_RENDERER.setBooleanValueSilently(false);
+            var controller = new ChiseTweaksSettingsController();
+            assertTrue(controller.reset(ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS));
+            assertEquals(BuilderFocusConfig.REFRESH_RENDERER.getDefaultBooleanValue(),
+                    BuilderFocusConfig.REFRESH_RENDERER.getBooleanValue());
+        } finally {
+            BuilderFocusConfig.REFRESH_RENDERER.setBooleanValueSilently(originalRefresh);
+        }
     }
 
     @Test
@@ -153,6 +187,7 @@ final class ChiseTweaksSettingsControllerTest {
                 row(rows, "moddedOreTargets").action());
 
         assertTrue(rows.stream().anyMatch(row -> row.id().startsWith("visualTargetMaterial")));
+        assertTrue(rows.stream().anyMatch(row -> row.id().startsWith("visualTargetTechnical")));
         assertTrue(rows.stream().anyMatch(row -> row.id().startsWith("visualTargetHidden")));
     }
 
@@ -180,27 +215,6 @@ final class ChiseTweaksSettingsControllerTest {
                 row.integerConfig() == LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS));
         assertFalse(rows.stream().anyMatch(row ->
                 row.integerConfig() == LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL));
-    }
-
-    @Test
-    void prereleaseBulkEnablesOnlyReleasedHighlights() {
-        List<ChiseBooleanSetting> highlights = highlightFeatures();
-        try {
-            for (ChiseBooleanSetting highlight : highlights) highlight.setBooleanValueSilently(false);
-            var controller = new ChiseTweaksSettingsController();
-
-            controller.toggleHighlightBulk();
-
-            assertTrue(FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue());
-            assertTrue(FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue());
-            assertTrue(FeatureSwitches.GLASS_INSPECTION.getBooleanValue());
-            assertFalse(FeatureSwitches.NETHER_PALETTE.getBooleanValue());
-            assertFalse(FeatureSwitches.FINE_THREAD_TRACE.getBooleanValue());
-            assertFalse(FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue());
-            assertFalse(controller.shouldTurnHighlightBulkOn());
-        } finally {
-            for (ChiseBooleanSetting highlight : highlights) highlight.setBooleanValueSilently(false);
-        }
     }
 
     @Test
@@ -253,7 +267,7 @@ final class ChiseTweaksSettingsControllerTest {
     @Test
     void rowIdsAreUniqueAndRemovedFeaturesDoNotReturnOnAnySurface() {
         var controller = new ChiseTweaksSettingsController();
-        Set<String> removedTokens = Set.of("pumpkin", "placement", "lavaSourceColor", "sodium");
+        Set<String> removedTokens = Set.of("pumpkin", "placement", "lavaSourceColor", "sodium", "bulk");
         for (ChiseTweaksSettingsController.Surface surface : ChiseTweaksSettingsController.Surface.values()) {
             Set<String> unique = new HashSet<>();
             for (ChiseTweaksSettingRowDefinition row : controller.rows(surface)) {
@@ -265,16 +279,6 @@ final class ChiseTweaksSettingsControllerTest {
                 }
             }
         }
-    }
-
-    private static List<ChiseBooleanSetting> highlightFeatures() {
-        return List.of(
-                FeatureSwitches.MATERIAL_HIGHLIGHTS,
-                FeatureSwitches.NETHER_PALETTE,
-                FeatureSwitches.FINE_THREAD_TRACE,
-                FeatureSwitches.HIDDEN_SURFACE_TRACE,
-                FeatureSwitches.GLASS_INSPECTION,
-                FeatureSwitches.KELP_HIGHLIGHT);
     }
 
     private static ChiseTweaksSettingRowDefinition row(
@@ -304,18 +308,14 @@ final class ChiseTweaksSettingsControllerTest {
                     assertNotNull(row.booleanConfig());
                     assertNull(row.integerConfig());
                     assertNull(row.action());
-                }
-                case BOOLEAN_ACTION -> {
-                    assertNotNull(row.booleanConfig());
-                    assertNull(row.integerConfig());
-                    assertNotNull(row.action());
-                    assertFalse(row.actionLabel().isBlank());
+                    assertTrue(row.actionLabel().isEmpty());
                 }
                 case INTEGER -> {
                     assertNull(row.booleanConfig());
                     assertNotNull(row.integerConfig());
                     assertTrue(row.step() >= 1);
                     assertNull(row.action());
+                    assertTrue(row.actionLabel().isEmpty());
                 }
                 case ACTION -> {
                     assertNull(row.booleanConfig());

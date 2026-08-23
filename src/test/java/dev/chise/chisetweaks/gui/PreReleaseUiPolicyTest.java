@@ -23,10 +23,12 @@ final class PreReleaseUiPolicyTest {
                     PreReleaseUiPolicy.isRowInteractive(ChiseTweaksSettingsController.Surface.MAIN, row) == expected,
                     row.id());
         }
-        assertFalse(PreReleaseUiPolicy.isHighlightBulkInteractive());
         assertTrue(PreReleaseUiPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.MAIN,
                 ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS));
+        assertFalse(PreReleaseUiPolicy.isActionInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN,
+                ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS));
         assertTrue(PreReleaseUiPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.MAIN,
                 ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS));
@@ -53,23 +55,26 @@ final class PreReleaseUiPolicyTest {
     }
 
     @Test
-    void analyzerActionLivesOnAnalyzerHeaderInsteadOfGeneralVisibilityHeader() {
+    void sectionHeadersStayVisibleWhileEachSettingsActionHasIndependentAvailability() {
         var controller = new ChiseTweaksSettingsController();
-        ChiseTweaksSettingRowDefinition analyzer = controller.rows().stream()
-                .filter(row -> "header.analyzer".equals(row.id()))
-                .findFirst()
-                .orElseThrow();
-        ChiseTweaksSettingRowDefinition visibility = controller.rows().stream()
-                .filter(row -> "header.visibilityImprovement".equals(row.id()))
-                .findFirst()
-                .orElseThrow();
+        for (String id : List.of("header.highlight", "header.visualFilter", "header.analyzer")) {
+            ChiseTweaksSettingRowDefinition header = controller.rows().stream()
+                    .filter(row -> id.equals(row.id()))
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(PreReleaseUiPolicy.isRowInteractive(
+                    ChiseTweaksSettingsController.Surface.MAIN, header), id);
+        }
 
-        assertTrue(PreReleaseUiPolicy.isRowInteractive(
-                ChiseTweaksSettingsController.Surface.MAIN, analyzer));
-        assertTrue(PreReleaseUiPolicy.isRowInteractive(
-                ChiseTweaksSettingsController.Surface.MAIN, visibility));
-        assertTrue(analyzer.action() == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS);
-        assertTrue(visibility.action() == null);
+        assertTrue(PreReleaseUiPolicy.isActionInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN,
+                ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS));
+        assertFalse(PreReleaseUiPolicy.isActionInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN,
+                ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS));
+        assertTrue(PreReleaseUiPolicy.isActionInteractive(
+                ChiseTweaksSettingsController.Surface.MAIN,
+                ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS));
     }
 
     @Test
@@ -86,6 +91,27 @@ final class PreReleaseUiPolicyTest {
         assertFalse(PreReleaseUiPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS,
                 ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS));
+    }
+
+    @Test
+    void visualFilterDetailSurfaceRemainsFailClosedUntilBuilderFocusRelease() {
+        var controller = new ChiseTweaksSettingsController();
+        for (ChiseTweaksSettingRowDefinition row : controller.rows(
+                ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS)) {
+            if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
+                assertTrue(PreReleaseUiPolicy.isRowInteractive(
+                        ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS, row), row.id());
+            } else {
+                assertFalse(PreReleaseUiPolicy.isRowInteractive(
+                        ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS, row), row.id());
+            }
+        }
+        assertFalse(PreReleaseUiPolicy.isActionInteractive(
+                ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS,
+                ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER));
+        assertFalse(PreReleaseUiPolicy.isActionInteractive(
+                ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS,
+                ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER));
     }
 
     @Test

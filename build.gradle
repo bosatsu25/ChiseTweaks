@@ -144,7 +144,7 @@ jacoco {
     toolVersion = project.jacoco_version
 }
 
-// The 96% gate covers deterministic policy code and the critical tick-dispatch boundary.
+// 96% gateは決定的なpolicy、描画budget、UI契約、critical tick dispatchを対象にする。
 def qualityGateClasses = [
         'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
@@ -152,6 +152,7 @@ def qualityGateClasses = [
         'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
         'dev/chise/chisetweaks/core/policy/LavaVisionPalettePolicy*.class',
         'dev/chise/chisetweaks/core/policy/PreReleaseFeaturePolicy*.class',
+        'dev/chise/chisetweaks/core/policy/WorksiteHighlightProfilePolicy*.class',
         'dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy*.class',
         'dev/chise/chisetweaks/core/vision/FireVisibilityPolicy*.class',
         'dev/chise/chisetweaks/core/vision/GlassHighlightTargetPolicy*.class',
@@ -159,6 +160,8 @@ def qualityGateClasses = [
         'dev/chise/chisetweaks/core/vision/VanillaOreVisualCatalog*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetGroupPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetSelectionPolicy*.class',
+        'dev/chise/chisetweaks/gui/ChiseTweaksSettingsLayout*.class',
+        'dev/chise/chisetweaks/gui/PreReleaseUiPolicy*.class',
         'dev/chise/chisetweaks/runtime/FeatureManager$TickSlot*.class'
 ]
 
@@ -202,6 +205,7 @@ pitest {
         'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
         'dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy',
         'dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy',
+        'dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy',
         'dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy',
         'dev.chise.chisetweaks.core.vision.FireVisibilityPolicy',
         'dev.chise.chisetweaks.core.vision.GlassHighlightTargetPolicy',
@@ -209,6 +213,8 @@ pitest {
         'dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog',
         'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy',
+        'dev.chise.chisetweaks.gui.ChiseTweaksSettingsLayout',
+        'dev.chise.chisetweaks.gui.PreReleaseUiPolicy',
         'dev.chise.chisetweaks.runtime.FeatureManager$TickSlot*'
     ]
     targetTests = [
@@ -219,6 +225,7 @@ pitest {
         'dev.chise.chisetweaks.core.policy.*Test',
         'dev.chise.chisetweaks.core.security.*Test',
         'dev.chise.chisetweaks.core.vision.*Test',
+        'dev.chise.chisetweaks.gui.*Test',
         'dev.chise.chisetweaks.runtime.*Test'
     ]
     junit5PluginVersion = '1.2.3'
