@@ -83,8 +83,10 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(chestSetting.contains("VisibilityPack.CHEST"));
         assertTrue(catalog.contains("\"chestVisibility\""));
         assertTrue(catalog.contains("\"whiteConcreteVisibility\""));
-        assertTrue(catalog.contains("Chest Visibility / チェスト視認性"));
-        assertTrue(catalog.contains("White Concrete Visibility / 白色コンクリート視認性"));
+        assertTrue(catalog.contains("\"Bright Chest\""));
+        assertTrue(catalog.contains("\"Bright Concrete\""));
+        assertFalse(catalog.contains("Chest Visibility / チェスト視認性"));
+        assertFalse(catalog.contains("White Concrete Visibility / 白色コンクリート視認性"));
         assertFalse(catalog.contains("bundled white-concrete"));
     }
 
