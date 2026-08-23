@@ -26,6 +26,13 @@ public record RuntimeDiagnosticSnapshot(
                 Objects.requireNonNull(quarantinedComponents, "quarantinedComponents"));
     }
 
+    public String reloadState() {
+        if (resourceReloadInFlight && resourceRecoveryPending) return "reloading_with_recovery";
+        if (resourceReloadInFlight) return "reloading";
+        if (resourceRecoveryPending) return "recovery_pending";
+        return "idle";
+    }
+
     public String toLogLine() {
         return "version=" + version
                 + " sessionId=" + sessionId
@@ -34,8 +41,7 @@ public record RuntimeDiagnosticSnapshot(
                 + " enabled=" + listValue(enabledFeatures)
                 + " visibilityPacks=" + listValue(selectedVisibilityPacks)
                 + " quarantined=" + listValue(quarantinedComponents)
-                + " reloadInFlight=" + resourceReloadInFlight
-                + " recoveryPending=" + resourceRecoveryPending;
+                + " reloadState=" + reloadState();
     }
 
     private static String listValue(List<String> values) {
