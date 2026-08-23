@@ -46,12 +46,10 @@ public final class ChiseTweaksSettingsLayout {
         int headerHeight = 24;
 
         int headerInset = Math.min(8, Math.max(0, panel.height() / 4));
-        Rect bulk = new Rect(toggleX, panel.y() + headerInset + 3, toggleWidth, 18);
-        Rect headerAction = new Rect(actionX, panel.y() + headerInset + 3, actionWidth, 18);
+        Rect headerAction = new Rect(toggleX, panel.y() + headerInset + 3, toggleWidth, 18);
 
         return new Geometry(
                 content,
-                bulk,
                 headerAction,
                 panel,
                 footer,
@@ -100,7 +98,6 @@ public final class ChiseTweaksSettingsLayout {
 
     public record Geometry(
             Rect content,
-            Rect bulk,
             Rect headerAction,
             Rect panel,
             Rect footer,
