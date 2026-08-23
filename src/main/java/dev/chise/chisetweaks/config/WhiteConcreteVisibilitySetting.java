@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.feature.resource.ChiseTexturePackController;
 
-/** Settings bridge for the independently controlled white-concrete visibility pack. */
+/** White Concrete Visibility用の独立built-in resource packと設定UIを接続する。 */
 public final class WhiteConcreteVisibilitySetting extends ChiseBooleanSetting {
     public static final WhiteConcreteVisibilitySetting INSTANCE = new WhiteConcreteVisibilitySetting();
 
