@@ -2,25 +2,16 @@ package dev.chise.chisetweaks.config;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PreReleaseConfigGateTest {
     @Test
-    void featureConfigRestoresOnlyReleasedFeatureSwitches() {
+    void featureConfigRestoresAllReleasedFeatureSwitches() {
         try {
             for (FeatureSwitch feature : FeatureSwitches.VALUES) {
                 feature.setBooleanValueSilently(true);
+                assertTrue(feature.getBooleanValue(), feature.getName());
             }
-
-            assertTrue(FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue());
-            assertTrue(FeatureSwitches.GLASS_INSPECTION.getBooleanValue());
-            assertTrue(FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue());
-            assertTrue(FeatureSwitches.FINE_THREAD_TRACE.getBooleanValue());
-            assertTrue(FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue());
-            assertFalse(FeatureSwitches.NETHER_PALETTE.getBooleanValue());
-            assertFalse(FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue());
-            assertFalse(FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue());
         } finally {
             for (FeatureSwitch feature : FeatureSwitches.VALUES) {
                 feature.setBooleanValueSilently(false);
@@ -29,7 +20,7 @@ final class PreReleaseConfigGateTest {
     }
 
     @Test
-    void releasedLavaSettingCanBeRestoredWhileFireRemainsLocked() {
+    void releasedLavaAndLowFireSettingsCanBothBeRestored() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         assertTrue(config.replaceFromJsonDocument("""
                 {
@@ -41,6 +32,6 @@ final class PreReleaseConfigGateTest {
                 """));
 
         assertTrue(config.lavaHighlightEnabled);
-        assertFalse(config.fireVisibilityEnabled);
+        assertTrue(config.fireVisibilityEnabled);
     }
 }
