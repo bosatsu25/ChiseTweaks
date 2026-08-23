@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
-/** @deprecated Use {@link UiAvailabilityPolicy}. */
+/** @deprecated 正式なUI判定APIとして{@link UiAvailabilityPolicy}を使用する。 */
 @Deprecated(forRemoval = true)
 final class PreReleaseUiPolicy {
     private PreReleaseUiPolicy() {}
