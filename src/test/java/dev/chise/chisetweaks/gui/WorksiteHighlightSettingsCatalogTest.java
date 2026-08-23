@@ -14,7 +14,11 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 final class WorksiteHighlightSettingsCatalogTest {
     @AfterEach
     void resetSharedConfig() {
-        LocalFeatureConfig.getInstance().resetToDefaults();
+        LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS.resetToDefault();
+        LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET.resetToDefault();
+        LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY.resetToDefault();
+        LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET.resetToDefault();
+        LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY.resetToDefault();
     }
 
     @Test
