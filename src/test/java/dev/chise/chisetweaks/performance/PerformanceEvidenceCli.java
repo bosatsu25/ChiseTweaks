@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.performance;
 import java.nio.file.Path;
 import java.util.Map;
 
-/** Manual entry point for comparing real Prism performance captures without runtime instrumentation. */
+/** Manual entry point for comparing and accepting real Prism captures without runtime instrumentation. */
 public final class PerformanceEvidenceCli {
     private PerformanceEvidenceCli() {}
 
@@ -24,23 +24,22 @@ public final class PerformanceEvidenceCli {
         System.out.println("candidate=" + candidate.metadata().get("variant") + " (" + candidatePath + ")");
         System.out.println("scenario=" + baseline.metadata().get("scenario"));
         System.out.println("environment_id=" + baseline.metadata().get("environment_id"));
-        System.out.println("metric\tbaseline_median\tcandidate_median\tdelta_pct\tdirection\tsamples");
+        System.out.println("metric\tbaseline_median\tcandidate_median\tdelta_pct\tdirection\tmax_regression_pct\tsamples");
         for (PerformanceMetric metric : PerformanceMetric.values()) {
             PerformanceComparison.Result result = comparison.get(metric);
-            if (result == null) {
-                continue;
-            }
+            if (result == null) continue;
             String delta = result.deltaPercent() == null
                     ? "n/a"
                     : String.format(java.util.Locale.ROOT, "%+.3f", result.deltaPercent());
             System.out.printf(
                     java.util.Locale.ROOT,
-                    "%s\t%.3f\t%.3f\t%s\t%s\t%d/%d%n",
+                    "%s\t%.3f\t%.3f\t%s\t%s\t%.3f\t%d/%d%n",
                     metric,
                     result.baselineMedian(),
                     result.candidateMedian(),
                     delta,
                     result.direction(),
+                    PerformanceAcceptancePolicy.maxRegressionPercent(metric),
                     result.baselineSamples(),
                     result.candidateSamples());
         }
@@ -49,6 +48,16 @@ public final class PerformanceEvidenceCli {
             printJfr("baseline_jfr", Path.of(args[2]));
             printJfr("candidate_jfr", Path.of(args[3]));
         }
+
+        PerformanceAcceptancePolicy.Verdict verdict = PerformanceAcceptancePolicy.evaluate(comparison);
+        if (!verdict.accepted()) {
+            System.err.println("performance_acceptance=FAIL");
+            for (String violation : verdict.violations()) {
+                System.err.println("- " + violation);
+            }
+            throw new IllegalStateException("candidate performance evidence exceeded the acceptance budget");
+        }
+        System.out.println("performance_acceptance=PASS");
     }
 
     private static void printJfr(String label, Path path) throws Exception {
