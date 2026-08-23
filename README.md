@@ -35,7 +35,8 @@ ChiseTweaks は、大規模建築・技術施設の確認作業を支援する *
 - Sodium / Iris / ImmediatelyFast / EntityCullingについてhard dependency・conflict・implementation namespace直結をCIで禁止
 - resource reloadのblocking wait、Analyzerのforce chunk load、budget逸脱をruntime performance contract auditで検出
 - 5つのPrism性能scenario用baseline/candidate CSV template generatorを追加
-- 0.9.3の検証済みJAR `441198 bytes` をsize baselineとし、40KBを超える増加をArtifact Auditで拒否
+- 検証済み0.9.4 JAR `446814 bytes` をM0 size baselineとして固定し、軽量化中の容量増加を拒否
+- runtime JARの最終目標を `358400 bytes`（350 KiB）以下へ固定。ただしFunctional Parityを優先し、機能削除による達成は認めない
 - `RuntimeDiagnosticReport`をJaCoCo / PITの96% retained-scope gateへ追加
 
 ## 現在の機能構成
@@ -195,11 +196,11 @@ python scripts/prism_acceptance_audit.py /path/to/latest.log --require-join --re
 - Ancient Debris validationは最大 `16 chunks / tick`
 - runtime iconは `128x128`
 - built-in pack iconは `64x64`
-- runtime JAR改善目標: `400000 bytes`未満
-- 0.9.3検証済みsize baseline: `441198 bytes`
-- 1 releaseで許容する増加: `40000 bytes`未満
-- absolute max: `500000 bytes`未満
-- 現在のeffective CI上限: `481198 bytes`未満
+- runtime JAR最終目標: `358400 bytes` 以下（350 KiB）
+- M0 frozen size baseline: `446814 bytes`
+- 軽量化中に許容する容量増加: `0 bytes`
+- absolute / effective CI上限: `446814 bytes`
+- 容量削減よりFunctional Parity、起動安定性、互換性、診断可能性を優先
 
 Prismでの性能比較は次の5 scenarioを固定します。
 
@@ -233,6 +234,7 @@ CIでは次をRelease Candidateの必須条件として扱います。
 - version policy
 - repository / production source audit
 - README / version / Fabric metadata consistency audit
+- **Functional Parity Audit**（FeatureDefinition、設定key/default、Resource Pack ID、Mixin、Fabric契約、UI action、diagnostics、migration、Analyzer budget）
 - optional renderer compatibility contract audit
 - blocking reload / force chunk load / Analyzer budget contract audit
 - Java compile warning = 0
@@ -242,7 +244,7 @@ CIでは次をRelease Candidateの必須条件として扱います。
 - Artifact Audit
 - Visual Asset Audit
 - Release Residue Audit
-- runtime JAR baseline-relative size / metadata / client-only contract
+- runtime JAR no-growth size / metadata / client-only contract
 
 品質閾値はJaCoCo line coverage、PIT coverage、mutation score、test strengthの各 `96%` です。
 
@@ -278,6 +280,7 @@ ChiseTweaksはクライアント専用なのでサーバーの`mods`フォルダ
 python scripts/repository_audit.py
 python scripts/source_usage_audit.py
 python scripts/documentation_consistency_audit.py
+python scripts/functional_parity_audit.py
 python scripts/compatibility_contract_audit.py
 python scripts/runtime_performance_contract_audit.py
 python scripts/artifact_audit.py
