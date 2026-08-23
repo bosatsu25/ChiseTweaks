@@ -7,7 +7,7 @@ import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
 
-/** Current release feature availability. Release status is independent from UI placement and runtime state. */
+/** 現行リリースで利用可能な機能を一元管理し、UI配置やruntime状態とは独立して判定する。 */
 public final class FeatureAvailabilityPolicy {
     private static final Set<FeatureDefinition> AVAILABLE_FEATURES =
             Collections.unmodifiableSet(EnumSet.allOf(FeatureDefinition.class));
