@@ -14,10 +14,8 @@ final class FeatureManagerTickSlotTest {
     void initiallyInactiveRuntimeComponentStillGetsOpportunityToActivate() {
         FakeRuntimeComponent component = new FakeRuntimeComponent();
         FeatureManager.TickSlot slot = new FeatureManager.TickSlot(component);
-
         assertFalse(component.isActive());
         slot.runForTick(null);
-
         assertEquals(1, component.ticks);
         assertTrue(component.isActive());
         assertFalse(slot.isQuarantined());
@@ -27,20 +25,35 @@ final class FeatureManagerTickSlotTest {
     void firstRuntimeFailureQuarantinesCleansUpAndFutureTicksAreSkipped() {
         FailingRuntimeComponent component = new FailingRuntimeComponent();
         FeatureManager.TickSlot slot = new FeatureManager.TickSlot(component);
-
         slot.runForTick(null);
         slot.runForTick(null);
-
         assertTrue(slot.isQuarantined());
         assertEquals(1, component.ticks);
         assertEquals(1, component.cleanupCalls());
     }
 
     @Test
+    void oneFailingSlotDoesNotQuarantineOrStopAnotherSlot() {
+        FailingRuntimeComponent failing = new FailingRuntimeComponent();
+        FakeRuntimeComponent healthy = new FakeRuntimeComponent();
+        FeatureManager.TickSlot failingSlot = new FeatureManager.TickSlot(failing);
+        FeatureManager.TickSlot healthySlot = new FeatureManager.TickSlot(healthy);
+
+        failingSlot.runForTick(null);
+        healthySlot.runForTick(null);
+        failingSlot.runForTick(null);
+        healthySlot.runForTick(null);
+
+        assertTrue(failingSlot.isQuarantined());
+        assertFalse(healthySlot.isQuarantined());
+        assertEquals(1, failing.ticks);
+        assertEquals(2, healthy.ticks);
+    }
+
+    @Test
     void cleanupFailureDoesNotEscapeQuarantineBoundary() {
         FailingCleanupRuntimeComponent component = new FailingCleanupRuntimeComponent();
         FeatureManager.TickSlot slot = new FeatureManager.TickSlot(component);
-
         assertDoesNotThrow(() -> slot.runForTick(null));
         assertTrue(slot.isQuarantined());
         assertEquals(1, component.cleanupCalls());
@@ -50,9 +63,7 @@ final class FeatureManagerTickSlotTest {
     void failingFeatureIsQuarantinedWithoutMutatingUserConfiguration() {
         FailingFeature feature = new FailingFeature();
         FeatureManager.TickSlot slot = new FeatureManager.TickSlot(feature);
-
         slot.runForTick(null);
-
         assertTrue(slot.isQuarantined());
         assertEquals(1, feature.quarantineCalls);
         assertTrue(feature.isEnabled());
@@ -76,7 +87,6 @@ final class FeatureManagerTickSlotTest {
         @Override public void init() {}
         @Override public void tick(Minecraft client) { ticks++; throw new IllegalStateException("boom"); }
         @Override public void onQuarantined(Minecraft client) { cleanupCalls++; }
-
         int cleanupCalls() { return cleanupCalls; }
     }
 
