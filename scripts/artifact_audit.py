@@ -85,6 +85,28 @@ def audit_runtime_size() -> tuple[int, int, int, int]:
             f"size={size}, baseline={baseline}, max_growth={max_growth}, "
             f"effective_max={effective_max}"
         )
+
+    with core.zipfile.ZipFile(runtime) as archive:
+        data_descriptor_entries = [
+            info.filename for info in archive.infolist()
+            if info.flag_bits & 0x08
+        ]
+        if data_descriptor_entries:
+            raise RuntimeError(
+                "runtime JAR still contains ZIP data descriptors: "
+                f"{data_descriptor_entries[:5]}"
+            )
+
+        extra_field_entries = [
+            info.filename for info in archive.infolist()
+            if info.extra
+        ]
+        if extra_field_entries:
+            raise RuntimeError(
+                "runtime JAR still contains avoidable ZIP extra fields: "
+                f"{extra_field_entries[:5]}"
+            )
+
     return size, baseline, goal, effective_max
 
 
@@ -106,6 +128,7 @@ def update_summary(size: int, baseline: int, goal: int, effective_max: int) -> N
         f"- 350 KiB final goal: **<= {goal} bytes**\n"
         f"- Reduction from baseline: **{reduction} bytes**\n"
         f"- Remaining to goal: **{remaining} bytes**\n"
+        f"- ZIP metadata compaction: **descriptor-free / extra-field-free**\n"
         f"- No-growth hard ceiling: **<= {effective_max} bytes**\n"
     )
     summary.write_text(text, encoding="utf-8")
@@ -125,7 +148,8 @@ def main() -> int:
     print(
         "ARTIFACT SIZE CONTRACT: PASS "
         f"size={size} baseline={baseline} goal={goal} "
-        f"remaining={max(0, size - goal)} effective_max={effective_max}"
+        f"remaining={max(0, size - goal)} effective_max={effective_max} "
+        "zip_metadata=compact"
     )
     return 0
 
