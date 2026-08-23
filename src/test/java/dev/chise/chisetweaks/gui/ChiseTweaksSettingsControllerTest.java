@@ -39,14 +39,16 @@ final class ChiseTweaksSettingsControllerTest {
                 "header.visualFilter", "focusBlocks", "focusEntities",
                 "header.analyzer", "lava", "ancientDebrisAnalyzer",
                 "header.visibilityImprovement", "fireVisibility", "chestVisibility",
-                "whiteConcreteVisibility", "header.diagnostics", "copyDiagnostics", "exportDiagnostics"), ids(rows));
+                "whiteConcreteVisibility", "header.diagnostics", "diagnosticReloadState",
+                "copyDiagnostics", "exportDiagnostics"), ids(rows));
         assertEquals(List.of(
                         "header.highlight", "header.visualFilter", "header.analyzer",
-                        "header.visibilityImprovement", "header.diagnostics"),
+                        "header.visibilityImprovement", "header.diagnostics", "diagnosticReloadState"),
                 rows.stream()
                         .filter(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER)
                         .map(ChiseTweaksSettingRowDefinition::id)
                         .toList());
+        assertTrue(row(rows, "diagnosticReloadState").name().startsWith("Resource reload: "));
         assertFalse(rows.stream().anyMatch(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.INTEGER));
         assertRowContracts(rows);
     }
@@ -86,6 +88,7 @@ final class ChiseTweaksSettingsControllerTest {
                 row(rows, "header.analyzer").action());
         assertNull(row(rows, "header.visibilityImprovement").action());
         assertNull(row(rows, "header.diagnostics").action());
+        assertNull(row(rows, "diagnosticReloadState").action());
         assertEquals(ChiseTweaksSettingRowDefinition.Action.COPY_DIAGNOSTICS,
                 row(rows, "copyDiagnostics").action());
         assertEquals(ChiseTweaksSettingRowDefinition.Action.EXPORT_DIAGNOSTICS,
