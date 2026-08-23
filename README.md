@@ -8,7 +8,7 @@ ChiseTweaks は、大規模建築・技術施設の確認作業を支援する *
 
 | 項目 | 対応 |
 | --- | --- |
-| ChiseTweaks | `0.9.1+mc26.1.2` |
+| ChiseTweaks | `0.9.2+mc26.1.2` |
 | Minecraft | `26.1.2` |
 | Fabric Loader | `0.19.3` 以上 |
 | Fabric API | `0.155.2+26.1.2` 以上 |
@@ -292,7 +292,7 @@ MAJOR.MINOR.PATCH+mc<MinecraftVersion>
 現在:
 
 ```text
-0.9.1+mc26.1.2
+0.9.2+mc26.1.2
 ```
 
 - `PATCH`: バグ修正・互換性を壊さない改善
@@ -306,7 +306,7 @@ MAJOR.MINOR.PATCH+mc<MinecraftVersion>
 Minecraftへ導入するのは次のJARだけです。
 
 ```text
-chise-tweaks-0.9.1+mc26.1.2.jar
+chise-tweaks-0.9.2+mc26.1.2.jar
 ```
 
 ## ライセンス
