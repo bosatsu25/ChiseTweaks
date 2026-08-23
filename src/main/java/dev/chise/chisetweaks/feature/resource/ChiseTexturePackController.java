@@ -29,25 +29,25 @@ public final class ChiseTexturePackController {
         setEnabled(checked.repositoryPackId(), checked.displayName(), enabled);
     }
 
-    /** @deprecated Use {@link #isEnabled(VisibilityPack)}. */
+    /** @deprecated pack種別を明示する{@link #isEnabled(VisibilityPack)}を使用する。 */
     @Deprecated(forRemoval = true)
     public static boolean isChestEnabled() {
         return isEnabled(VisibilityPack.CHEST);
     }
 
-    /** @deprecated Use {@link #setEnabled(VisibilityPack, boolean)}. */
+    /** @deprecated pack種別を明示する{@link #setEnabled(VisibilityPack, boolean)}を使用する。 */
     @Deprecated(forRemoval = true)
     public static void setChestEnabled(boolean enabled) {
         setEnabled(VisibilityPack.CHEST, enabled);
     }
 
-    /** @deprecated Use {@link #isEnabled(VisibilityPack)}. */
+    /** @deprecated pack種別を明示する{@link #isEnabled(VisibilityPack)}を使用する。 */
     @Deprecated(forRemoval = true)
     public static boolean isWhiteConcreteEnabled() {
         return isEnabled(VisibilityPack.WHITE_CONCRETE);
     }
 
-    /** @deprecated Use {@link #setEnabled(VisibilityPack, boolean)}. */
+    /** @deprecated pack種別を明示する{@link #setEnabled(VisibilityPack, boolean)}を使用する。 */
     @Deprecated(forRemoval = true)
     public static void setWhiteConcreteEnabled(boolean enabled) {
         setEnabled(VisibilityPack.WHITE_CONCRETE, enabled);
