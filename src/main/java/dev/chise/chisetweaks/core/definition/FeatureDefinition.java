@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.core.definition;
 
-import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 
 import java.util.List;
@@ -14,7 +13,6 @@ public enum FeatureDefinition {
             "Scene Filter: Blocks",
             "",
             FeatureHelpLevel.ADVANCED,
-            null,
             null),
     BUILDER_FOCUS_ENTITIES(
             "builder_focus_entities",
@@ -23,7 +21,6 @@ public enum FeatureDefinition {
             "Scene Filter: Entities",
             "",
             FeatureHelpLevel.ADVANCED,
-            null,
             null),
     FINE_THREAD_TRACE(
             "fine_thread_trace",
@@ -32,7 +29,6 @@ public enum FeatureDefinition {
             "Fine Thread Trace",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD,
             BlockInspectionCategory.TECHNICAL_TRACE),
     HIDDEN_SURFACE_TRACE(
             "hidden_surface_trace",
@@ -41,7 +37,6 @@ public enum FeatureDefinition {
             "Hidden Surface Trace",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            WorksiteVisibilitySelectionPolicy.Mode.HIDDEN_SURFACE,
             BlockInspectionCategory.HIDDEN_SURFACE),
     GLASS_INSPECTION(
             "glass_inspection",
@@ -50,7 +45,6 @@ public enum FeatureDefinition {
             "Glass Highlight",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            null,
             null),
     MATERIAL_HIGHLIGHTS(
             "material_highlights",
@@ -59,7 +53,6 @@ public enum FeatureDefinition {
             "Ore Highlights",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            null,
             null),
     NETHER_PALETTE(
             "nether_palette",
@@ -68,7 +61,6 @@ public enum FeatureDefinition {
             "Nether Palette",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE,
             BlockInspectionCategory.NETHER_PALETTE),
     KELP_HIGHLIGHT(
             "kelp_highlight",
@@ -77,7 +69,6 @@ public enum FeatureDefinition {
             "Kelp Highlight",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            null,
             null),
     ANCIENT_DEBRIS_ANALYZER(
             "ancient_debris_analyzer",
@@ -86,7 +77,6 @@ public enum FeatureDefinition {
             "Ancient Debris Analyzer",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            null,
             null),
     FIRE_VISIBILITY(
             "fire_visibility",
@@ -95,7 +85,6 @@ public enum FeatureDefinition {
             "Fire Visibility",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            null,
             null),
     LAVA_HIGHLIGHT(
             "lava_highlight",
@@ -104,7 +93,6 @@ public enum FeatureDefinition {
             "Lava Source Highlight",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
-            null,
             null);
 
     public static final List<FeatureDefinition> VALUES = List.of(values());
@@ -115,7 +103,6 @@ public enum FeatureDefinition {
     private final String englishName;
     private final String dependency;
     private final FeatureHelpLevel helpLevel;
-    private final WorksiteVisibilitySelectionPolicy.Mode worksiteMode;
     private final BlockInspectionCategory inspectionCategory;
 
     FeatureDefinition(
@@ -125,7 +112,6 @@ public enum FeatureDefinition {
             String englishName,
             String dependency,
             FeatureHelpLevel helpLevel,
-            WorksiteVisibilitySelectionPolicy.Mode worksiteMode,
             BlockInspectionCategory inspectionCategory) {
         this.id = requireText(id, "id");
         this.area = Objects.requireNonNull(area, "area");
@@ -133,11 +119,7 @@ public enum FeatureDefinition {
         this.englishName = requireText(englishName, "englishName");
         this.dependency = dependency == null ? "" : dependency.trim();
         this.helpLevel = Objects.requireNonNull(helpLevel, "helpLevel");
-        this.worksiteMode = worksiteMode;
         this.inspectionCategory = inspectionCategory;
-        if ((worksiteMode == null) != (inspectionCategory == null)) {
-            throw new IllegalArgumentException("worksite mode and inspection category must be paired");
-        }
     }
 
     public String id() { return id; }
@@ -146,8 +128,7 @@ public enum FeatureDefinition {
     public String englishName() { return englishName; }
     public String dependency() { return dependency; }
     public FeatureHelpLevel helpLevel() { return helpLevel; }
-    public boolean isWorksiteVisibilityMode() { return worksiteMode != null; }
-    public WorksiteVisibilitySelectionPolicy.Mode worksiteMode() { return worksiteMode; }
+    public boolean isWorksiteVisibilityMode() { return inspectionCategory != null; }
     public BlockInspectionCategory inspectionCategory() { return inspectionCategory; }
 
     private static String requireText(String value, String field) {
