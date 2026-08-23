@@ -8,7 +8,7 @@ import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
-/** Chise-owned high-visibility textures are registered as independently controllable built-in packs. */
+/** 高視認テクスチャを独立切替可能なbuilt-in resource packとして登録する。 */
 public final class ChiseTexturePackRegistrar {
     private static final Identifier CHEST_PACK_ID = Identifier.fromNamespaceAndPath(
             ChiseTweaksClient.MOD_ID, "chise_chest_visibility");
