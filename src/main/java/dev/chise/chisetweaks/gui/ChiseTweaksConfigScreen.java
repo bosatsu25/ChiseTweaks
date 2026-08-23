@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
+import dev.chise.chisetweaks.config.SettingPersistence;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -10,18 +11,21 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Set;
 
 public final class ChiseTweaksConfigScreen extends Screen {
     private final ChiseTweaksSettingsController controller;
     private final ChiseTweaksSettingsController.Surface surface;
     private final ArrayList<ChiseTweaksSettingRowView> rows = new ArrayList<>();
+    private final EnumSet<SettingPersistence> dirtyDomains =
+            EnumSet.noneOf(SettingPersistence.class);
     private Screen parent;
     private ChiseTweaksSettingsLayout.Geometry geometry;
     private Button applyButton;
     private String persistenceFeedback = "";
     private int scrollOffset;
     private int maxScroll;
-    private boolean dirty;
 
     public ChiseTweaksConfigScreen() {
         this(ChiseTweaksSettingsController.Surface.MAIN);
@@ -85,7 +89,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 ignored -> applyChanges())
                 .bounds(apply.x(), apply.y(), apply.width(), apply.height())
                 .build());
-        applyButton.active = dirty;
+        applyButton.active = hasDirtyDomains();
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.chisetweaks.settings.done"),
                 ignored -> onClose())
@@ -147,8 +151,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         Button button = addRenderableWidget(Button.builder(toggleMessage(config), ignored -> {
             boolean previous = config.getBooleanValue();
             config.toggleBooleanValue();
-            boolean changed = config.getBooleanValue() != previous;
-            finishSettingEdit(changed, config.requiresApplyPersistence());
+            finishSettingEdit(config.getBooleanValue() != previous, config.persistence());
         }).bounds(0, 0, geometry.toggleWidth(), 18).build());
         return new ChiseTweaksSettingRowView(definition, button, null, null, null);
     }
@@ -159,7 +162,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         Button minus = addRenderableWidget(Button.builder(Component.literal("−"), ignored -> {
             int previous = config.getIntegerValue();
             config.setIntegerValue(saturatedStep(previous, -step));
-            finishSettingEdit(config.getIntegerValue() != previous, true);
+            finishSettingEdit(config.getIntegerValue() != previous, config.persistence());
         }).bounds(0, 0, 24, 18).build());
         Button value = addRenderableWidget(Button.builder(
                 Component.literal(config.getFormattedValue()), ignored -> {})
@@ -169,7 +172,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         Button plus = addRenderableWidget(Button.builder(Component.literal("+"), ignored -> {
             int previous = config.getIntegerValue();
             config.setIntegerValue(saturatedStep(previous, step));
-            finishSettingEdit(config.getIntegerValue() != previous, true);
+            finishSettingEdit(config.getIntegerValue() != previous, config.persistence());
         }).bounds(0, 0, 24, 18).build());
         return new ChiseTweaksSettingRowView(definition, null, minus, value, plus);
     }
@@ -211,35 +214,49 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void resetCurrentSurface() {
-        if (!controller.reset(surface)) return;
-        markDirty();
+        markDirty(controller.reset(surface));
     }
 
-    private void finishSettingEdit(boolean changed, boolean requiresApplyPersistence) {
+    private void finishSettingEdit(boolean changed, SettingPersistence persistence) {
         if (changed) {
             persistenceFeedback = "";
-            if (requiresApplyPersistence) dirty = true;
+            if (persistence != null && persistence != SettingPersistence.EXTERNAL) {
+                dirtyDomains.add(persistence);
+            }
         }
         refreshRowButtons();
     }
 
-    private void markDirty() {
-        dirty = true;
+    private void markDirty(Set<SettingPersistence> persistenceDomains) {
+        if (persistenceDomains != null) {
+            for (SettingPersistence persistence : persistenceDomains) {
+                if (persistence != null && persistence != SettingPersistence.EXTERNAL) {
+                    dirtyDomains.add(persistence);
+                }
+            }
+        }
         persistenceFeedback = "";
         refreshRowButtons();
     }
 
     private boolean applyChanges() {
-        if (!dirty) return true;
-        if (!controller.saveConfig()) {
+        if (!hasDirtyDomains()) return true;
+        EnumSet<SettingPersistence> attempted = EnumSet.copyOf(dirtyDomains);
+        ChiseTweaksSettingsController.SaveResult result = controller.saveConfig(attempted);
+        if (result.featureSaved()) dirtyDomains.remove(SettingPersistence.FEATURE_CONFIG);
+        if (result.localSaved()) dirtyDomains.remove(SettingPersistence.LOCAL_CONFIG);
+        if (!result.successful()) {
             persistenceFeedback = text("screen.chisetweaks.settings.save_failed");
-            if (applyButton != null) applyButton.active = true;
+            refreshRowButtons();
             return false;
         }
         persistenceFeedback = "";
-        dirty = false;
-        if (applyButton != null) applyButton.active = false;
+        refreshRowButtons();
         return true;
+    }
+
+    private boolean hasDirtyDomains() {
+        return !dirtyDomains.isEmpty();
     }
 
     @Override
@@ -425,7 +442,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
                         row.definition.integerConfig().getFormattedValue()));
             }
         }
-        if (applyButton != null) applyButton.active = dirty;
+        if (applyButton != null) applyButton.active = hasDirtyDomains();
     }
 
     private static String text(String key) {
