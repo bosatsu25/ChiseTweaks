@@ -1,13 +1,14 @@
 package dev.chise.chisetweaks.feature.resource;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
+import dev.chise.chisetweaks.core.policy.ResourcePackSelectionPolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.PackRepository;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/** Chise Textureの選択状態をMinecraft標準のresource-pack repositoryへ反映する。 */
+/** Chise-owned visibility packs share one serialized Minecraft resource-reload pipeline. */
 public final class ChiseTexturePackController {
     private static boolean reloadInFlight;
     private static boolean reloadPending;
@@ -16,37 +17,50 @@ public final class ChiseTexturePackController {
 
     private ChiseTexturePackController() {}
 
-    public static boolean isEnabled() {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null) return false;
-        return client.getResourcePackRepository()
-                .getSelectedIds()
-                .contains(ChiseTexturePackRegistrar.repositoryPackId());
+    public static boolean isChestEnabled() {
+        return isEnabled(ChiseTexturePackRegistrar.chestRepositoryPackId());
     }
 
-    public static void setEnabled(boolean enabled) {
+    public static void setChestEnabled(boolean enabled) {
+        setEnabled(
+                ChiseTexturePackRegistrar.chestRepositoryPackId(),
+                "Chest Visibility",
+                enabled);
+    }
+
+    public static boolean isWhiteConcreteEnabled() {
+        return isEnabled(ChiseTexturePackRegistrar.whiteConcreteRepositoryPackId());
+    }
+
+    public static void setWhiteConcreteEnabled(boolean enabled) {
+        setEnabled(
+                ChiseTexturePackRegistrar.whiteConcreteRepositoryPackId(),
+                "White Concrete Visibility",
+                enabled);
+    }
+
+    private static boolean isEnabled(String packId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) return false;
+        return client.getResourcePackRepository().getSelectedIds().contains(packId);
+    }
+
+    private static void setEnabled(String packId, String label, boolean enabled) {
         Minecraft client = Minecraft.getInstance();
         if (client == null) return;
 
         PackRepository repository = client.getResourcePackRepository();
-        String packId = ChiseTexturePackRegistrar.repositoryPackId();
         if (!repository.getAvailableIds().contains(packId)) {
             ChiseTweaksClient.LOGGER.warn(
-                    "Chise Texture visibility was not changed because built-in pack {} is unavailable",
+                    "{} was not changed because built-in pack {} is unavailable",
+                    label,
                     packId);
             return;
         }
 
-        List<String> previous = new ArrayList<>(repository.getSelectedIds());
-        List<String> selected = new ArrayList<>(previous);
-        boolean changed;
-        if (enabled) {
-            changed = !selected.contains(packId);
-            if (changed) selected.add(packId);
-        } else {
-            changed = selected.remove(packId);
-        }
-        if (!changed) return;
+        List<String> previous = List.copyOf(repository.getSelectedIds());
+        List<String> selected = ResourcePackSelectionPolicy.withPack(previous, packId, enabled);
+        if (selected.equals(previous)) return;
 
         try {
             repository.setSelected(selected);
@@ -113,7 +127,7 @@ public final class ChiseTexturePackController {
             client.options.updateResourcePacks(repository);
         } catch (RuntimeException | LinkageError rollbackFailure) {
             ChiseTweaksClient.LOGGER.error(
-                    "Chise Texture selection rollback failed after {}",
+                    "Chise visibility pack selection rollback failed after {}",
                     rollbackFailure.getClass().getSimpleName());
         }
     }
@@ -127,7 +141,7 @@ public final class ChiseTexturePackController {
 
     private static void logFailure(Throwable failure) {
         ChiseTweaksClient.LOGGER.warn(
-                "Chise Texture resource reload failed after {}",
+                "Chise visibility resource reload failed after {}",
                 failure == null ? "unknown failure" : failure.getClass().getSimpleName());
     }
 }
