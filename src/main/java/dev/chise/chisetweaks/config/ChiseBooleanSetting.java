@@ -53,9 +53,14 @@ public abstract class ChiseBooleanSetting {
         return japanese ? japaneseComment : englishComment;
     }
 
-    /** ApplyでChise設定ファイルへ永続化する設定かを返す。外部永続化を持つ設定だけoverrideする。 */
-    public boolean requiresApplyPersistence() {
-        return true;
+    /** この設定をどの永続化境界へ書き込むかを返す。 */
+    public SettingPersistence persistence() {
+        return SettingPersistence.FEATURE_CONFIG;
+    }
+
+    /** 後方互換の簡易判定。新規UIは{@link #persistence()}を使う。 */
+    public final boolean requiresApplyPersistence() {
+        return persistence() != SettingPersistence.EXTERNAL;
     }
 
     public final void setBooleanValue(boolean value) {
