@@ -24,9 +24,11 @@ JAVA_LINE_COMMENT = re.compile(r"//.*?$", re.MULTILINE)
 
 # These controller files intentionally reserve every method literally named get(...) or join(...)
 # as forbidden syntax. This conservative rule avoids pretending a regex is a Java data-flow engine.
-# The one existing synchronous state-holder read is removed exactly before scanning; any other wait
-# on the same line or elsewhere remains visible to the detector.
-ALLOWED_EXACT_SYNCHRONOUS_READS = ("TERMINAL_RECOVERY.get()",)
+# The one existing synchronous state-holder read is removed as a complete Java identifier token;
+# any prefixed/suffixed receiver or any other wait remains visible to the detector.
+ALLOWED_EXACT_SYNCHRONOUS_READS = (
+    re.compile(r"(?<![\w$])TERMINAL_RECOVERY\s*\.\s*get\s*\(\s*\)"),
+)
 
 
 def java_code_only(text: str) -> str:
@@ -38,7 +40,7 @@ def strict_reload_controller_code(text: str) -> str:
     """Return executable controller text after removing only explicitly approved synchronous reads."""
     code = java_code_only(text)
     for allowed in ALLOWED_EXACT_SYNCHRONOUS_READS:
-        code = code.replace(allowed, "")
+        code = allowed.sub("", code)
     return code
 
 
@@ -58,6 +60,17 @@ def detector_contract_failures() -> list[str]:
     """Self-test the intentionally conservative syntax contract against prior review regressions."""
     cases = (
         ("TERMINAL_RECOVERY.get();", False, "the one exact AtomicReference read remains allowed"),
+        ("TERMINAL_RECOVERY . get ( );", False, "formatting around the exact allowed read remains allowed"),
+        (
+            "OTHER_TERMINAL_RECOVERY.get();",
+            True,
+            "a receiver merely ending with the allowed identifier must remain forbidden",
+        ),
+        (
+            "TERMINAL_RECOVERY_EXTRA.get();",
+            True,
+            "a receiver extending the allowed identifier must remain forbidden",
+        ),
         (
             "TERMINAL_RECOVERY.get(); future.join();",
             True,
