@@ -248,7 +248,7 @@ def audit() -> list[str]:
             "ChiseTweaksSettingsLayout",
             "UiAvailabilityPolicy",
             "RuntimeDiagnosticSnapshot",
-            "FeatureManager$TickSlot",
+            "FeatureManager$ComponentSlot",
             "-Werror",
         ):
             if marker not in build:
