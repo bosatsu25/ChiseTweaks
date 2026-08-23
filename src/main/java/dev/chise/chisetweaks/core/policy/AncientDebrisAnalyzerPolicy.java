@@ -16,6 +16,7 @@ public final class AncientDebrisAnalyzerPolicy {
     public static final int MAX_TRACKED_CHUNKS = 4096;
     public static final int MAX_DEBRIS_PER_CHUNK = 256;
     public static final int VALIDATION_INTERVAL_TICKS = 20;
+    public static final float ANALYZER_FACE_ALPHA_SCALE = 0.30f;
 
     private AncientDebrisAnalyzerPolicy() {}
 
@@ -60,6 +61,13 @@ public final class AncientDebrisAnalyzerPolicy {
         if (distance <= 64.0) return 0xE6FFB347;
         if (distance <= 128.0) return 0xB3FF8C42;
         return 0x80FF6B35;
+    }
+
+    public static int fillColorForDistance(double distance) {
+        int outline = colorForDistance(distance);
+        int outlineAlpha = (outline >>> 24) & 0xFF;
+        int fillAlpha = Math.round(outlineAlpha * ANALYZER_FACE_ALPHA_SCALE);
+        return (fillAlpha << 24) | (outline & 0x00FFFFFF);
     }
 
     public static float edgeThicknessForDistance(double distance) {
