@@ -23,7 +23,9 @@ public final class VisualTargetSelectionPolicy {
         HIDDEN_SCULK_CATALYST(24),
         MATERIAL_CRYING_OBSIDIAN(25),
         MATERIAL_NETHER_GOLD_ORE(26),
-        MATERIAL_NETHER_QUARTZ_ORE(27);
+        MATERIAL_NETHER_QUARTZ_ORE(27),
+        TECHNICAL_TRIPWIRE(28),
+        TECHNICAL_TRIPWIRE_HOOK(29);
 
         private final int bit;
 
@@ -33,11 +35,15 @@ public final class VisualTargetSelectionPolicy {
     }
 
     public static final int LEGACY_SCHEMA_VERSION = 1;
-    public static final int CURRENT_SCHEMA_VERSION = 2;
+    public static final int NETHER_TARGET_SCHEMA_VERSION = 2;
+    public static final int CURRENT_SCHEMA_VERSION = 3;
     public static final int NEW_NETHER_TARGETS_MASK =
             Target.MATERIAL_CRYING_OBSIDIAN.bitMask()
                     | Target.MATERIAL_NETHER_GOLD_ORE.bitMask()
                     | Target.MATERIAL_NETHER_QUARTZ_ORE.bitMask();
+    public static final int NEW_TECHNICAL_TARGETS_MASK =
+            Target.TECHNICAL_TRIPWIRE.bitMask()
+                    | Target.TECHNICAL_TRIPWIRE_HOOK.bitMask();
 
     public static final int ORE_HIGHLIGHT_TARGETS_MASK =
             Target.MATERIAL_OBSIDIAN.bitMask()
@@ -60,8 +66,12 @@ public final class VisualTargetSelectionPolicy {
                     | Target.HIDDEN_POWDER_SNOW.bitMask()
                     | Target.HIDDEN_SCULK_CATALYST.bitMask();
 
+    public static final int TECHNICAL_TRACE_TARGETS_MASK = NEW_TECHNICAL_TARGETS_MASK;
+
     public static final int ALL_TARGETS_MASK =
-            ORE_HIGHLIGHT_TARGETS_MASK | HIDDEN_SURFACE_TARGETS_MASK;
+            ORE_HIGHLIGHT_TARGETS_MASK
+                    | HIDDEN_SURFACE_TARGETS_MASK
+                    | TECHNICAL_TRACE_TARGETS_MASK;
 
     private VisualTargetSelectionPolicy() {}
 
@@ -70,10 +80,14 @@ public final class VisualTargetSelectionPolicy {
     }
 
     public static int migrateMask(int mask, int schemaVersion) {
-        int sanitized = sanitizeMask(mask);
-        return schemaVersion < CURRENT_SCHEMA_VERSION
-                ? sanitized | NEW_NETHER_TARGETS_MASK
-                : sanitized;
+        int migrated = sanitizeMask(mask);
+        if (schemaVersion < NETHER_TARGET_SCHEMA_VERSION) {
+            migrated |= NEW_NETHER_TARGETS_MASK;
+        }
+        if (schemaVersion < CURRENT_SCHEMA_VERSION) {
+            migrated |= NEW_TECHNICAL_TARGETS_MASK;
+        }
+        return migrated;
     }
 
     public static boolean isEnabled(int mask, Target target) {
@@ -112,11 +126,22 @@ public final class VisualTargetSelectionPolicy {
         if (id.isEmpty()) return false;
 
         return switch (category) {
-            case TECHNICAL_TRACE, NETHER_PALETTE -> true;
+            case TECHNICAL_TRACE -> technicalEnabled(mask, id);
+            case NETHER_PALETTE -> true;
             case MATERIAL_HIGHLIGHT -> materialEnabled(mask, id);
             case HIDDEN_SURFACE -> hiddenEnabled(mask, id);
             case NONE -> false;
         };
+    }
+
+    private static boolean technicalEnabled(int mask, String id) {
+        if (id.equals("minecraft:tripwire")) {
+            return isEnabled(mask, Target.TECHNICAL_TRIPWIRE);
+        }
+        if (id.equals("minecraft:tripwire_hook")) {
+            return isEnabled(mask, Target.TECHNICAL_TRIPWIRE_HOOK);
+        }
+        return false;
     }
 
     private static boolean materialEnabled(int mask, String id) {
