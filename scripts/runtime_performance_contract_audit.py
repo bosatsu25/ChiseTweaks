@@ -16,10 +16,12 @@ ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"),
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"),
 }
-BLOCKING_FUTURE_WAIT = re.compile(r"\.(?:join|get)\s*\(")
+BLOCKING_ZERO_ARG_WAIT = re.compile(r"\.(?:join|get)\s*\(\s*\)")
+DIRECT_RELOAD_TIMED_GET = re.compile(r"reloadResourcePacks\s*\(\s*\)\s*\.\s*get\s*\(")
 PLAIN_GET_CHUNK = re.compile(r"\bgetChunk\s*\(")
 JAVA_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
 JAVA_LINE_COMMENT = re.compile(r"//.*?$", re.MULTILINE)
+ALLOWED_SYNCHRONOUS_GETS = ("TERMINAL_RECOVERY.get()",)
 
 
 def java_code_only(text: str) -> str:
@@ -28,20 +30,49 @@ def java_code_only(text: str) -> str:
 
 
 def blocking_wait_lines(text: str) -> list[str]:
-    """Return suspicious blocking waits while excluding known synchronous state-holder reads."""
+    """Return suspicious reload waits without treating ordinary collection/state-holder gets as Future waits."""
     failures: list[str] = []
     for raw in java_code_only(text).splitlines():
         line = raw.strip()
-        if not BLOCKING_FUTURE_WAIT.search(line):
+        if not line:
             continue
-        if "TERMINAL_RECOVERY.get()" in line:
-            continue
-        failures.append(line)
+        candidate = line
+        for allowed in ALLOWED_SYNCHRONOUS_GETS:
+            candidate = candidate.replace(allowed, "")
+        if BLOCKING_ZERO_ARG_WAIT.search(candidate) or DIRECT_RELOAD_TIMED_GET.search(candidate):
+            failures.append(line)
+    return failures
+
+
+def detector_contract_failures() -> list[str]:
+    """Self-test the source detector so CI cannot silently reintroduce known false positives or masking."""
+    cases = (
+        ("cache.get(key);", False, "argument-taking collection get must not be treated as a wait"),
+        ("future.get();", True, "zero-argument Future.get must be rejected"),
+        ("future.join();", True, "Future.join must be rejected"),
+        ("TERMINAL_RECOVERY.get();", False, "known AtomicReference read must remain allowed"),
+        (
+            "TERMINAL_RECOVERY.get(); future.join();",
+            True,
+            "allowed AtomicReference read must not mask another blocking wait",
+        ),
+        ("// future.join();", False, "comment-only blocking examples must be ignored"),
+        (
+            "client.reloadResourcePacks().get(5, TimeUnit.SECONDS);",
+            True,
+            "direct timed get on the reload Future must be rejected",
+        ),
+    )
+    failures: list[str] = []
+    for sample, expected, label in cases:
+        actual = bool(blocking_wait_lines(sample))
+        if actual != expected:
+            failures.append(f"blocking-wait detector self-test failed: {label}: sample={sample!r}")
     return failures
 
 
 def audit() -> list[str]:
-    failures: list[str] = []
+    failures = detector_contract_failures()
     reload_callers: set[Path] = set()
 
     for path in PRODUCTION.rglob("*.java"):
@@ -108,6 +139,7 @@ def main() -> int:
     print("resource_reload_callers=2_coalescing_controllers")
     print("analyzers_force_chunk_load=false")
     print("analyzer_budgets=bounded")
+    print("detector_self_test=true")
     return 0
 
 
