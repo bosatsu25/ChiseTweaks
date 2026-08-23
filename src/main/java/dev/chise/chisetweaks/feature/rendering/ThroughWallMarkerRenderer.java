@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Optional;
 
-/** 上限付きAnalyzerで共有する、地形越しwire-box用の保持型renderer。 */
+/** 上限付きAnalyzerで共有する、地形越しの輪郭＋半透明面を描画する保持型renderer。 */
 final class ThroughWallMarkerRenderer implements AutoCloseable {
     enum Style {
         LAVA_SOURCE,
@@ -82,14 +82,25 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
             double dy = y + 0.5 - state.eyeY();
             double dz = z + 0.5 - state.eyeZ();
             double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            float edgeThickness = edgeThicknessForDistance(distance);
+            float boxInset = boxInsetForDistance(distance);
+
+            // 面を先に描き、その上から輪郭を重ねることで位置を見失わず視界も潰さない。
+            ThroughWallWireBoxGeometry.drawFilledBox(
+                    buffer,
+                    x - anchorX,
+                    y - anchorY,
+                    z - anchorZ,
+                    fillColorForDistance(distance),
+                    boxInset + edgeThickness);
             ThroughWallWireBoxGeometry.drawWireBox(
                     buffer,
                     x - anchorX,
                     y - anchorY,
                     z - anchorZ,
                     colorForDistance(distance),
-                    edgeThicknessForDistance(distance),
-                    boxInsetForDistance(distance));
+                    edgeThickness,
+                    boxInset);
         }
 
         MeshData builtBuffer = buffer.buildOrThrow();
@@ -104,6 +115,13 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
         return switch (style) {
             case LAVA_SOURCE -> LavaVisionPalettePolicy.colorForDistance(distance);
             case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.colorForDistance(distance);
+        };
+    }
+
+    private int fillColorForDistance(double distance) {
+        return switch (style) {
+            case LAVA_SOURCE -> LavaVisionPalettePolicy.fillColorForDistance(distance);
+            case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.fillColorForDistance(distance);
         };
     }
 
