@@ -1,0 +1,76 @@
+name: One-shot merged branch cleanup
+
+on:
+  push:
+    branches:
+      - ops/cleanup-merged-branches-run
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Enable merge branch auto deletion
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PATCH "repos/${GITHUB_REPOSITORY}" -f delete_branch_on_merge=true >/dev/null
+      - name: Delete only safely integrated branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*' --prune
+          protected='^(main|feature/0\.9\.4-acceptance-observability|ops/cleanup-merged-branches|ops/cleanup-merged-branches-run)$'
+          mapfile -t branches < <(git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin | grep -v '^HEAD$' | sort)
+          deleted=0
+          kept=0
+          for branch in "${branches[@]}"; do
+            if [[ "$branch" =~ $protected ]]; then
+              continue
+            fi
+            integrated=false
+            if git merge-base --is-ancestor "origin/$branch" origin/main 2>/dev/null; then
+              integrated=true
+            elif git diff --quiet origin/main "origin/$branch"; then
+              integrated=true
+            else
+              plus_count="$(git cherry origin/main "origin/$branch" | grep -c '^+' || true)"
+              if [[ "$plus_count" == '0' ]]; then
+                integrated=true
+              fi
+            fi
+            if [[ "$integrated" == true ]]; then
+              encoded="$(python - "$branch" <<'PY'
+import sys, urllib.parse
+print(urllib.parse.quote(sys.argv[1], safe=''))
+PY
+)"
+              echo "Deleting integrated branch: $branch"
+              gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${encoded}" >/dev/null
+              deleted=$((deleted + 1))
+            else
+              echo "Keeping branch with unique work: $branch"
+              kept=$((kept + 1))
+            fi
+          done
+          echo "deleted=$deleted kept=$kept"
+      - name: Delete temporary cleanup branches
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for branch in ops/cleanup-merged-branches ops/cleanup-merged-branches-run; do
+            encoded="$(python - "$branch" <<'PY'
+import sys, urllib.parse
+print(urllib.parse.quote(sys.argv[1], safe=''))
+PY
+)"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${encoded}" >/dev/null 2>&1 || true
+          done
