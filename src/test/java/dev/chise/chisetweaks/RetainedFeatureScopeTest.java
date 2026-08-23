@@ -39,9 +39,14 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void qualitySummaryAlsoReportsElevenRetainedFeatures() throws IOException {
+    void qualitySummaryReportsQualityMetricsWithoutDuplicatingFeatureCardinality() throws IOException {
         String summaryScript = Files.readString(Path.of("scripts/quality_summary.py"));
-        assertTrue(summaryScript.contains("eleven retained features"));
+
+        assertTrue(summaryScript.contains("junit_totals"));
+        assertTrue(summaryScript.contains("jacoco_lines"));
+        assertTrue(summaryScript.contains("pit_totals"));
+        assertTrue(summaryScript.contains("retained-scope quality summary"));
+        assertFalse(summaryScript.contains("eleven retained features"));
         assertFalse(summaryScript.contains("ten retained features"));
     }
 
