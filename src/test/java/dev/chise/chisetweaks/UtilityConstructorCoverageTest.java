@@ -5,7 +5,6 @@ import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
-import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.core.vision.OreHighlightRuntimePolicy;
 import dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
@@ -28,7 +27,6 @@ final class UtilityConstructorCoverageTest {
                 ConfigListPolicy.class,
                 LavaVisionPalettePolicy.class,
                 WorksiteHighlightProfilePolicy.class,
-                WorksiteVisibilitySelectionPolicy.class,
                 OreHighlightRuntimePolicy.class,
                 VanillaOreVisualCatalog.class,
                 VisualTargetGroupPolicy.class,
