@@ -55,10 +55,8 @@ final class ConfigDocumentPolicyTest {
                   "worksiteVisibilityHorizontalRadius": 5,
                   "worksiteVisibilityVerticalRadius": 3,
                   "worksiteVisibilityIntervalTicks": 10,
-                  "worksiteVisibilityMaxResults": 6,
                   "worksiteVisibilityMaxOverlayResults": 12,
                   "worksiteVisibilityWorldOverlay": true,
-                  "worksiteVisibilityExclusiveMode": false,
                   "visualTargetMask": 0,
                   "visualTargetSchemaVersion": 3
                 }
@@ -70,6 +68,8 @@ final class ConfigDocumentPolicyTest {
                   "worksiteVisibilityHorizontalRadius": 8,
                   "worksiteVisibilityWorldOverlay": false,
                   "visualTargetMask": 123,
+                  "worksiteVisibilityMaxResults": 8,
+                  "worksiteVisibilityExclusiveMode": true,
                   "pumpkinScaffoldPlacementRange": 5,
                   "lavaSourceColor": 1234
                 }
@@ -81,6 +81,8 @@ final class ConfigDocumentPolicyTest {
         assertEquals(8, merged.get("worksiteVisibilityHorizontalRadius").getAsInt());
         assertFalse(merged.get("worksiteVisibilityWorldOverlay").getAsBoolean());
         assertEquals(123, merged.get("visualTargetMask").getAsInt());
+        assertFalse(merged.has("worksiteVisibilityMaxResults"));
+        assertFalse(merged.has("worksiteVisibilityExclusiveMode"));
         assertFalse(merged.has("pumpkinScaffoldPlacementRange"));
         assertFalse(merged.has("lavaSourceColor"));
         assertNotSame(defaults, merged);
@@ -116,7 +118,7 @@ final class ConfigDocumentPolicyTest {
     }
 
     @Test
-    void localConfigMigrationKeepsSafeBoundsAndPreservesReleasedLavaSetting() {
+    void localConfigMigrationKeepsSafeBoundsAndIgnoresRemovedLegacyFields() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         assertTrue(config.replaceFromJsonDocument("""
                 {
@@ -125,6 +127,7 @@ final class ConfigDocumentPolicyTest {
                   "worksiteVisibilityVerticalRadius": -20,
                   "worksiteVisibilityIntervalTicks": 10000,
                   "worksiteVisibilityMaxResults": 999,
+                  "worksiteVisibilityExclusiveMode": true,
                   "worksiteVisibilityMaxOverlayResults": 999,
                   "visualTargetMask": 0,
                   "visualTargetSchemaVersion": 1,
@@ -137,7 +140,6 @@ final class ConfigDocumentPolicyTest {
         assertEquals(8, config.worksiteVisibilityHorizontalRadius);
         assertEquals(1, config.worksiteVisibilityVerticalRadius);
         assertEquals(100, config.worksiteVisibilityIntervalTicks);
-        assertEquals(8, config.worksiteVisibilityMaxResults);
         assertEquals(24, config.worksiteVisibilityMaxOverlayResults);
         assertEquals(
                 VisualTargetSelectionPolicy.NEW_NETHER_TARGETS_MASK
