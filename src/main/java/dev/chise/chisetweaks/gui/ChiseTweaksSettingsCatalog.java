@@ -44,7 +44,7 @@ final class ChiseTweaksSettingsCatalog {
     private static void addMainRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         rows.add(ChiseTweaksSettingRowDefinition.headerAction(
                 "header.highlight",
-                text("screen.chisetweaks.settings.section.highlight"),
+                "Highlight",
                 ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS,
                 text("screen.chisetweaks.settings.action.settings")));
         compactFeature(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
@@ -62,7 +62,7 @@ final class ChiseTweaksSettingsCatalog {
 
         rows.add(ChiseTweaksSettingRowDefinition.headerAction(
                 "header.visualFilter",
-                text("screen.chisetweaks.settings.section.visual_filter"),
+                "Visual Filter",
                 ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS,
                 text("screen.chisetweaks.settings.action.settings")));
         compactFeature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
@@ -72,7 +72,7 @@ final class ChiseTweaksSettingsCatalog {
 
         rows.add(ChiseTweaksSettingRowDefinition.headerAction(
                 "header.analyzer",
-                text("screen.chisetweaks.settings.section.analyzer"),
+                "Analyzer",
                 ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS,
                 text("screen.chisetweaks.settings.action.settings")));
         boolLiteral(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
@@ -80,7 +80,7 @@ final class ChiseTweaksSettingsCatalog {
         boolLiteral(rows, "ancientDebrisAnalyzer", LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
                 "Ancient Debris Analyzer", "Analyze Ancient Debris in already-loaded Nether chunks");
 
-        header(rows, "header.visibilityImprovement", "screen.chisetweaks.settings.section.visibility");
+        headerLiteral(rows, "header.visibilityImprovement", "Visibility");
         boolLiteral(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
                 "Low Fire", "Lower the first-person fire overlay");
         boolLiteral(rows, "chestVisibility", ChestVisibilitySetting.INSTANCE,
@@ -195,7 +195,7 @@ final class ChiseTweaksSettingsCatalog {
 
     private static void compactFeature(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
             ChiseBooleanSetting config, FeatureDefinition definition) {
-        rows.add(ChiseTweaksSettingRowDefinition.bool(id, text(definition.nameKey()), "", config));
+        rows.add(ChiseTweaksSettingRowDefinition.bool(id, definition.englishName(), "", config));
     }
 
     private static void bool(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
