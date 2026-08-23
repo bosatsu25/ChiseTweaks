@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.feature.resource.ChiseTexturePackController;
 
-/** Settings bridge for the independently controlled chest visibility pack. */
+/** Chest Visibility用の独立built-in resource packと設定UIを接続する。 */
 public final class ChiseTextureVisibilitySetting extends ChiseBooleanSetting {
     public static final ChiseTextureVisibilitySetting INSTANCE = new ChiseTextureVisibilitySetting();
 
