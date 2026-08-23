@@ -4,7 +4,7 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 
 import java.util.Objects;
 
-/** Built-in visibility resource packs managed by ChiseTweaks. */
+/** ChiseTweaksが管理するbuilt-in resource packを型安全に表現する。 */
 public enum VisibilityPack {
     CHEST("chise_chest_visibility", "Chest Visibility"),
     WHITE_CONCRETE("chise_white_concrete_visibility", "White Concrete Visibility");
@@ -17,17 +17,9 @@ public enum VisibilityPack {
         this.displayName = requireText(displayName, "displayName");
     }
 
-    public String path() {
-        return path;
-    }
-
-    public String displayName() {
-        return displayName;
-    }
-
-    public String repositoryPackId() {
-        return ChiseTweaksClient.MOD_ID + ":" + path;
-    }
+    public String path() { return path; }
+    public String displayName() { return displayName; }
+    public String repositoryPackId() { return ChiseTweaksClient.MOD_ID + ":" + path; }
 
     private static String requireText(String value, String field) {
         String normalized = Objects.requireNonNull(value, field).trim();
