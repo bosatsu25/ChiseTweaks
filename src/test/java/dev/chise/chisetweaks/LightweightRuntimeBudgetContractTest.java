@@ -45,6 +45,20 @@ final class LightweightRuntimeBudgetContractTest {
     }
 
     @Test
+    void mandatoryArtifactAuditAlsoEnforcesRuntimeJarGrowth() throws IOException {
+        String audit = source("scripts/artifact_audit.py");
+        String verify = source(".github/workflows/verify-build.yml");
+        String release = source(".github/workflows/release.yml");
+
+        assertTrue(audit.contains("runtime_jar_baseline_bytes"));
+        assertTrue(audit.contains("runtime_jar_max_growth_bytes"));
+        assertTrue(audit.contains("effective_max = min(absolute_max, baseline + max_growth)"));
+        assertTrue(audit.contains("if size >= effective_max:"));
+        assertTrue(verify.contains("python scripts/artifact_audit.py"));
+        assertTrue(release.contains("python scripts/artifact_audit.py"));
+    }
+
+    @Test
     void sizeBudgetDoesNotRewriteOrMinifyTheRuntimeJar() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
         String build = source("build.gradle");
@@ -58,15 +72,6 @@ final class LightweightRuntimeBudgetContractTest {
         assertFalse(budget.contains("HttpClient"));
         assertFalse(budget.contains("URL("));
         assertFalse(build.contains("-g:none"));
-    }
-
-    @Test
-    void ciInvokesJarBudgetAsAnExplicitRequiredGate() throws IOException {
-        String verify = source(".github/workflows/verify-build.yml");
-        assertTrue(verify.contains("id: size"));
-        assertTrue(verify.contains("./gradlew --no-daemon --stacktrace verifyRuntimeJarBudget"));
-        assertTrue(verify.contains("SIZE_OUTCOME: ${{ steps.size.outcome }}"));
-        assertTrue(verify.contains("\"size:$SIZE_OUTCOME\""));
     }
 
     private static String source(String relativePath) throws IOException {
