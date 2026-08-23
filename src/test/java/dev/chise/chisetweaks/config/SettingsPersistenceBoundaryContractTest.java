@@ -22,6 +22,7 @@ final class SettingsPersistenceBoundaryContractTest {
         String debris = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
         String featureContract = source("src/main/java/dev/chise/chisetweaks/feature/Feature.java");
         String controller = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
+        String persistence = source("src/main/java/dev/chise/chisetweaks/config/SettingPersistenceCoordinator.java");
 
         assertFalse(localSettings.contains(".save()"));
         assertFalse(targetSettings.contains(".save()"));
@@ -33,9 +34,18 @@ final class SettingsPersistenceBoundaryContractTest {
         assertFalse(featureContract.contains("setEnabled("));
         assertFalse(targetSettings.contains("refreshTranslations"));
 
+        assertTrue(localSettings.contains("SettingPersistence.LOCAL_CONFIG"));
+        assertTrue(targetSettings.contains("SettingPersistence.LOCAL_CONFIG"));
+        assertTrue(localSwitch.contains("SettingPersistence.LOCAL_CONFIG"));
         assertTrue(localSwitch.contains("setter.accept(LocalFeatureConfig.getInstance(), effectiveValue)"));
-        assertTrue(controller.contains("FeatureConfig.saveToFile()"));
-        assertTrue(controller.contains("LocalFeatureConfig.getInstance().save()"));
+
+        assertFalse(controller.contains("FeatureConfig.saveToFile()"));
+        assertFalse(controller.contains("LocalFeatureConfig.getInstance().save()"));
+        assertTrue(controller.contains("SettingPersistenceCoordinator.production()"));
+        assertTrue(controller.contains("return persistence.save(dirtyDomains);"));
+        assertTrue(persistence.contains("FeatureConfig::saveToFile"));
+        assertTrue(persistence.contains("LocalFeatureConfig.getInstance().save()"));
+        assertTrue(persistence.contains("domain.isApplyManaged()"));
     }
 
     private static String source(String relativePath) throws IOException {
