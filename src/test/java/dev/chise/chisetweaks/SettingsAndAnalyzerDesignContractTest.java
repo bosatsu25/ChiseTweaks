@@ -82,7 +82,7 @@ final class SettingsAndAnalyzerDesignContractTest {
     }
 
     @Test
-    void settingsPresentationIsSeparatedAndLocalizedByMinecraftResources() throws IOException {
+    void settingsPresentationKeepsUniversalMainLabelsAndMinecraftLocalizedDetailResources() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String catalog = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
@@ -97,7 +97,16 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "japanese ?");
         assertContainsAll(catalog,
                 "Component.translatable(",
-                "definition.nameKey()");
+                "definition.englishName()",
+                "\"Highlight\"",
+                "\"Visual Filter\"",
+                "\"Analyzer\"",
+                "\"Visibility\"",
+                "\"Lava Analyzer\"",
+                "\"Ancient Debris Analyzer\"",
+                "\"Low Fire\"",
+                "\"Bright Chest\"",
+                "\"Bright Concrete\"");
         assertContainsNone(screen, "controller.japanese()");
         assertContainsNone(sceneFilter, "boolean japanese");
         assertContainsNone(oreCompat, "boolean japanese");
