@@ -5,10 +5,15 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 public final class VisualTargetGroupPolicy {
     public enum Group {
         MATERIAL,
+        TECHNICAL,
         HIDDEN
     }
 
     public static final int MATERIAL_MASK = VisualTargetSelectionPolicy.ORE_HIGHLIGHT_TARGETS_MASK;
+
+    public static final int TECHNICAL_MASK =
+            Target.TECHNICAL_TRIPWIRE.bitMask()
+                    | Target.TECHNICAL_TRIPWIRE_HOOK.bitMask();
 
     public static final int HIDDEN_MASK =
             Target.HIDDEN_BLUE_ICE.bitMask()
@@ -22,6 +27,7 @@ public final class VisualTargetGroupPolicy {
         if (group == null) return 0;
         return switch (group) {
             case MATERIAL -> MATERIAL_MASK;
+            case TECHNICAL -> TECHNICAL_MASK;
             case HIDDEN -> HIDDEN_MASK;
         };
     }
