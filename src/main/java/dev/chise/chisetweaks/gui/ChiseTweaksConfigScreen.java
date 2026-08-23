@@ -220,9 +220,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void finishSettingEdit(boolean changed, SettingPersistence persistence) {
         if (changed) {
             persistenceFeedback = "";
-            if (persistence != null && persistence != SettingPersistence.EXTERNAL) {
-                dirtyDomains.add(persistence);
-            }
+            if (persistence != null && persistence.isApplyManaged()) dirtyDomains.add(persistence);
         }
         refreshRowButtons();
     }
@@ -230,9 +228,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void markDirty(Set<SettingPersistence> persistenceDomains) {
         if (persistenceDomains != null) {
             for (SettingPersistence persistence : persistenceDomains) {
-                if (persistence != null && persistence != SettingPersistence.EXTERNAL) {
-                    dirtyDomains.add(persistence);
-                }
+                if (persistence != null && persistence.isApplyManaged()) dirtyDomains.add(persistence);
             }
         }
         persistenceFeedback = "";
@@ -242,9 +238,8 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private boolean applyChanges() {
         if (!hasDirtyDomains()) return true;
         EnumSet<SettingPersistence> attempted = EnumSet.copyOf(dirtyDomains);
-        ChiseTweaksSettingsController.SaveResult result = controller.saveConfig(attempted);
-        if (result.featureSaved()) dirtyDomains.remove(SettingPersistence.FEATURE_CONFIG);
-        if (result.localSaved()) dirtyDomains.remove(SettingPersistence.LOCAL_CONFIG);
+        var result = controller.saveConfig(attempted);
+        dirtyDomains.retainAll(result.failedDomains());
         if (!result.successful()) {
             persistenceFeedback = text("screen.chisetweaks.settings.save_failed");
             refreshRowButtons();
