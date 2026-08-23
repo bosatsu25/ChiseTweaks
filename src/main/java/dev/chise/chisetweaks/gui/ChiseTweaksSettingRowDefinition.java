@@ -39,18 +39,6 @@ record ChiseTweaksSettingRowDefinition(
                 config, null, 0, null, "");
     }
 
-    static ChiseTweaksSettingRowDefinition boolAction(
-            String id,
-            String name,
-            String description,
-            ChiseBooleanSetting config,
-            Action action,
-            String actionLabel) {
-        return new ChiseTweaksSettingRowDefinition(
-                Kind.BOOLEAN_ACTION, id, name, description == null ? "" : description,
-                config, null, 0, action, actionLabel == null ? "" : actionLabel);
-    }
-
     static ChiseTweaksSettingRowDefinition integer(
             String id,
             String name,
@@ -83,13 +71,13 @@ record ChiseTweaksSettingRowDefinition(
     enum Kind {
         HEADER,
         BOOLEAN,
-        BOOLEAN_ACTION,
         INTEGER,
         ACTION
     }
 
     enum Action {
         OPEN_HIGHLIGHT_DETAILS,
+        OPEN_VISUAL_FILTER_DETAILS,
         OPEN_LAVA_DETAILS,
         EDIT_BLOCK_FILTER,
         EDIT_ENTITY_FILTER,
