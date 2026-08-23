@@ -37,6 +37,11 @@ public final class LocalFeatureSwitch extends ChiseBooleanSetting {
     }
 
     @Override
+    public SettingPersistence persistence() {
+        return SettingPersistence.LOCAL_CONFIG;
+    }
+
+    @Override
     protected boolean readValue() {
         return FeatureAvailabilityPolicy.isAvailable(definition)
                 && getter.test(LocalFeatureConfig.getInstance());
