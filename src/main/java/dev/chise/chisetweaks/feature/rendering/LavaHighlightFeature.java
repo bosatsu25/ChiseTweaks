@@ -7,6 +7,9 @@ import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.feature.TickingFeature;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticEvent;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -230,6 +233,12 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
             ChiseTweaksClient.LOGGER.error(
                     "Lava Source Highlight rendering was quarantined after {}",
                     failure.getClass().getSimpleName());
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
+                    Minecraft.getInstance(),
+                    RuntimeDiagnosticDetail.of("componentId", getId()),
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()),
+                    RuntimeDiagnosticDetail.of("stage", "render"));
         }
     }
 
