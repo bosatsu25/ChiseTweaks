@@ -10,6 +10,9 @@ public final class AncientDebrisAnalyzerPolicy {
     public static final int MAX_MAX_MARKERS = 128;
 
     public static final int MAX_BOOTSTRAP_CHUNK_RADIUS = 17;
+    public static final int MAX_BOOTSTRAP_CHUNK_COUNT =
+            (MAX_BOOTSTRAP_CHUNK_RADIUS * 2 + 1) * (MAX_BOOTSTRAP_CHUNK_RADIUS * 2 + 1);
+    public static final int MAX_BOOTSTRAP_CHUNKS_PER_TICK = 64;
     public static final int MAX_TRACKED_CHUNKS = 4096;
     public static final int MAX_DEBRIS_PER_CHUNK = 256;
     public static final int VALIDATION_INTERVAL_TICKS = 20;
@@ -27,6 +30,12 @@ public final class AncientDebrisAnalyzerPolicy {
     public static int chunkRadiusForRangeBlocks(int rangeBlocks) {
         int range = clampRangeBlocks(rangeBlocks);
         return Math.min(MAX_BOOTSTRAP_CHUNK_RADIUS, (range + 15) / 16 + 1);
+    }
+
+    public static int bootstrapChunkCountForRangeBlocks(int rangeBlocks) {
+        int radius = chunkRadiusForRangeBlocks(rangeBlocks);
+        int width = radius * 2 + 1;
+        return width * width;
     }
 
     public static boolean isChunkRelevant(
