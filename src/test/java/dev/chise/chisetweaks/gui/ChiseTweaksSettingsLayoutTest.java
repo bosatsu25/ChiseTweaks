@@ -16,15 +16,13 @@ final class ChiseTweaksSettingsLayoutTest {
         assertTrue(geometry.panel().right() <= geometry.content().right());
         assertTrue(geometry.footer().right() <= geometry.content().right());
         assertTrue(geometry.footer().bottom() <= 240);
-        assertTrue(geometry.panel().contains(geometry.bulk()));
         assertTrue(geometry.panel().contains(geometry.headerAction()));
-        assertFalse(geometry.headerAction().overlaps(geometry.bulk()));
         assertTrue(geometry.panel().bottom() <= geometry.footer().y());
         assertFooterIsNonOverlappingAndContained(geometry);
     }
 
     @Test
-    void compactRowsReserveOneNameColumnAndTwoNonOverlappingControls() {
+    void compactRowsReserveOneNameColumnAndStableRightAlignedControls() {
         var compact = ChiseTweaksSettingsLayout.calculate(320, 240);
         var desktop = ChiseTweaksSettingsLayout.calculate(854, 480);
 
@@ -37,14 +35,15 @@ final class ChiseTweaksSettingsLayoutTest {
     }
 
     @Test
-    void highlightHeaderSettingsAndBulkButtonsShareOneHeaderWithoutOverlap() {
+    void sectionSettingsButtonOccupiesFormerRightmostBulkSlot() {
         var geometry = ChiseTweaksSettingsLayout.calculate(854, 480);
 
-        assertEquals(18, geometry.bulk().height());
         assertEquals(18, geometry.headerAction().height());
-        assertFalse(geometry.headerAction().overlaps(geometry.bulk()));
-        assertTrue(geometry.bulk().bottom() <= geometry.panelContentTop() + geometry.headerHeight());
-        assertTrue(geometry.headerAction().bottom() <= geometry.panelContentTop() + geometry.headerHeight());
+        assertEquals(geometry.toggleX(), geometry.headerAction().x());
+        assertEquals(geometry.toggleWidth(), geometry.headerAction().width());
+        assertEquals(geometry.toggleX() + geometry.toggleWidth(), geometry.headerAction().right());
+        assertTrue(geometry.headerAction().bottom()
+                <= geometry.panelContentTop() + geometry.headerHeight());
     }
 
     @Test
