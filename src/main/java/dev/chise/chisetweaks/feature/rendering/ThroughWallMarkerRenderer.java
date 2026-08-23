@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Optional;
 
-/** Retained through-terrain wire-box renderer shared by bounded analyzer features. */
+/** 上限付きAnalyzerで共有する、地形越しwire-box用の保持型renderer。 */
 final class ThroughWallMarkerRenderer implements AutoCloseable {
     enum Style {
         LAVA_SOURCE,

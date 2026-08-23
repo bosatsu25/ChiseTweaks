@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.feature.rendering;
 
 import java.util.Arrays;
 
-/** Fixed-capacity nearest-N position buffer shared by through-wall analyzers. */
+/** 壁越しAnalyzerで共有する固定容量のnearest-N位置buffer。 */
 final class NearestPositionBuffer {
     private final long[] positions;
     private final double[] distanceSquared;

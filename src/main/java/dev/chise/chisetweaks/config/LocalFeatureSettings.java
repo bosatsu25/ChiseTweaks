@@ -9,12 +9,14 @@ import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 
 /**
- * UI-facing settings bound directly to {@link LocalFeatureConfig}.
- * The config instance is the single in-memory source of truth; these objects add metadata and callbacks only.
+ * {@link LocalFeatureConfig} を直接参照するUI向け設定メタデータ。
+ * メモリ上の状態はLocalFeatureConfigだけを正とし、このクラスは表示情報と変更通知だけを持つ。
  */
 public final class LocalFeatureSettings {
-    private static Runnable worksiteVisibilityModeChangedCallback = () -> {};
-    private static Runnable oreHighlightChangedCallback = () -> {};
+    private static final Runnable NOOP = () -> {};
+
+    private static Runnable worksiteVisibilityModeChangedCallback = NOOP;
+    private static Runnable oreHighlightChangedCallback = NOOP;
 
     public static final SimpleBooleanSetting ORE_HIGHLIGHT_ANIMATION = bool(
             "localOreHighlightAnimation", false,
@@ -120,15 +122,19 @@ public final class LocalFeatureSettings {
 
     private LocalFeatureSettings() {}
 
-    /** Kept as an explicit bootstrap boundary; direct bindings require no state synchronization. */
+    /** 起動処理の境界を明示するため残している。直接bindingのため状態同期処理は不要。 */
     public static void init() {}
 
     public static void setWorksiteVisibilityModeChangedCallback(Runnable callback) {
-        worksiteVisibilityModeChangedCallback = callback == null ? () -> {} : callback;
+        worksiteVisibilityModeChangedCallback = callbackOrNoop(callback);
     }
 
     public static void setOreHighlightChangedCallback(Runnable callback) {
-        oreHighlightChangedCallback = callback == null ? () -> {} : callback;
+        oreHighlightChangedCallback = callbackOrNoop(callback);
+    }
+
+    private static Runnable callbackOrNoop(Runnable callback) {
+        return callback == null ? NOOP : callback;
     }
 
     private static LocalFeatureConfig config() {

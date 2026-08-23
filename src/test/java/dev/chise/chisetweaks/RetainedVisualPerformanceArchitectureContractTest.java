@@ -4,42 +4,79 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static dev.chise.chisetweaks.SourceContractSupport.assertContainsAll;
+import static dev.chise.chisetweaks.SourceContractSupport.assertContainsNone;
+import static dev.chise.chisetweaks.SourceContractSupport.read;
 
 @Tag("performance")
 final class RetainedVisualPerformanceArchitectureContractTest {
-    private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
-
     @Test
     void lavaScannerPublishesPrimitiveSnapshotsAndReadsOnlyAlreadyLoadedChunks() throws IOException {
         String source = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
+        String nearest = read("src/main/java/dev/chise/chisetweaks/feature/rendering/NearestPositionBuffer.java");
+        String snapshot = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallPositionSnapshot.java");
 
-        assertTrue(source.contains("LavaSourceSnapshot"));
-        assertTrue(source.contains("long[] packedCandidatePositions"));
-        assertTrue(source.contains("Arrays.sort(packedCandidatePositions, 0, count)"));
-        assertTrue(source.contains("getChunkNow("));
-        assertTrue(source.contains("LevelChunk sourceChunk"));
-        assertFalse(source.contains("new ArrayList"));
-        assertFalse(source.contains("List<BlockPos>"));
+        assertContainsAll(source,
+                "new ThroughWallPositionSnapshot(",
+                "new NearestPositionBuffer(",
+                "LevelChunk[] loadedChunkBuffer",
+                "nearestSources.offer(",
+                "nearestSources.sortPositions()",
+                "highlightedSources.publish(",
+                "getChunkNow(",
+                "LevelChunk sourceChunk");
+        assertContainsAll(nearest,
+                "long[] positions",
+                "double[] distanceSquared");
+        assertContainsAll(snapshot,
+                "long[][] positions",
+                "System.arraycopy(");
+        assertContainsNone(source,
+                "new ArrayList",
+                "List<BlockPos>",
+                ".getChunk(");
     }
 
     @Test
-    void lavaRendererRetainsGeometryAcrossUnchangedFrames() throws IOException {
-        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java");
+    void sharedAnalyzerRendererRetainsGeometryAcrossUnchangedFrames() throws IOException {
+        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
         String retained = read("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
 
-        assertTrue(renderer.contains("sources.renderRevision() != uploadedRevision"));
-        assertTrue(renderer.contains("RetainedThroughWallBuffer"));
-        assertTrue(renderer.contains("rebuildAndUpload(capture)"));
-        assertTrue(retained.contains("drawVertexBuffer"));
-        assertTrue(retained.contains("vertexBuffer.rotate()"));
-        assertTrue(retained.contains("anchorX - camera.x"));
-        assertFalse(renderer.contains("PoseStack"));
-        assertFalse(renderer.contains("matrices.translate(-camera"));
+        assertContainsAll(renderer,
+                "sources.renderRevision() != uploadedRevision",
+                "RetainedThroughWallBuffer",
+                "rebuildAndUpload(capture)",
+                "ThroughWallWireBoxGeometry.drawWireBox");
+        assertContainsAll(retained,
+                "drawVertexBuffer",
+                "vertexBuffer.rotate()",
+                "anchorX - camera.x");
+        assertContainsNone(renderer,
+                "PoseStack",
+                "matrices.translate(-camera",
+                "MappableRingBuffer",
+                "MemoryUtil.memCopy");
+    }
+
+    @Test
+    void ancientDebrisBootstrapHasAFrameTimeBudget() throws IOException {
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
+        String policy = read("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java");
+
+        assertContainsAll(feature,
+                "pendingBootstrapChunks",
+                "scheduleLoadedChunkBootstrap(",
+                "processPendingLoadedChunks(",
+                "MAX_BOOTSTRAP_CHUNKS_PER_TICK",
+                "getChunkNow(");
+        assertContainsAll(policy,
+                "MAX_BOOTSTRAP_CHUNKS_PER_TICK",
+                "MAX_BOOTSTRAP_CHUNK_COUNT");
+        assertContainsNone(feature,
+                "Executor",
+                "new Thread(",
+                "CompletableFuture");
     }
 
     @Test
@@ -49,26 +86,24 @@ final class RetainedVisualPerformanceArchitectureContractTest {
         String glass = read("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightGlassHighlightModel.java");
         String state = read("src/main/java/dev/chise/chisetweaks/feature/rendering/model/VisualRenderState.java");
 
-        assertTrue(ore.contains("VisualRenderState.current()"));
-        assertTrue(kelp.contains("VisualRenderState.current().kelpEnabled()"));
-        assertTrue(glass.contains("VisualRenderState.current().glassEnabled()"));
-        assertTrue(state.contains("private static volatile Snapshot current"));
-        assertFalse(ore.contains("LocalFeatureConfig.getInstance()"));
-        assertFalse(ore.contains("FeatureSwitches.MATERIAL_HIGHLIGHTS"));
-        assertFalse(kelp.contains("FeatureSwitches.KELP_HIGHLIGHT"));
-        assertFalse(glass.contains("FeatureSwitches.GLASS_INSPECTION"));
+        assertContainsAll(ore, "VisualRenderState.current()");
+        assertContainsAll(kelp, "VisualRenderState.current().kelpEnabled()");
+        assertContainsAll(glass, "VisualRenderState.current().glassEnabled()");
+        assertContainsAll(state, "private static volatile Snapshot current");
+        assertContainsNone(ore,
+                "LocalFeatureConfig.getInstance()",
+                "FeatureSwitches.MATERIAL_HIGHLIGHTS");
+        assertContainsNone(kelp, "FeatureSwitches.KELP_HIGHLIGHT");
+        assertContainsNone(glass, "FeatureSwitches.GLASS_INSPECTION");
     }
 
     @Test
     void targetClassificationCacheIsScopedToOneModelReload() throws IOException {
         String plugin = read("src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
 
-        assertTrue(plugin.contains("ConcurrentHashMap<Block, VisualModelClassification> classificationCache"));
-        assertTrue(plugin.contains("classificationCache.computeIfAbsent("));
-        assertTrue(plugin.contains("VisualModelClassification classify(BlockState state)"));
-    }
-
-    private static String read(String relativePath) throws IOException {
-        return Files.readString(ROOT.resolve(relativePath));
+        assertContainsAll(plugin,
+                "ConcurrentHashMap<Block, VisualModelClassification> classificationCache",
+                "classificationCache.computeIfAbsent(",
+                "VisualModelClassification classify(BlockState state)");
     }
 }

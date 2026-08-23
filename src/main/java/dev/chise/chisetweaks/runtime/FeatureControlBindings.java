@@ -78,7 +78,7 @@ public final class FeatureControlBindings {
     }
 
     private static void bindWorksiteVisibilityCallbacks() {
-        for (FeatureSwitch toggle : worksiteVisibilityToggles()) {
+        for (FeatureSwitch toggle : WORKSITE_VISIBILITY_TOGGLES) {
             bindExclusiveWorksiteMode(toggle);
         }
         LocalFeatureSettings.setWorksiteVisibilityModeChangedCallback(
@@ -89,19 +89,13 @@ public final class FeatureControlBindings {
     private static void bindExclusiveWorksiteMode(FeatureSwitch selected) {
         selected.setValueChangeCallback(config -> {
             if (applyingExclusiveWorksiteSelection) return;
-            WorksiteVisibilitySelectionPolicy.Mode selectedMode = modeOf(selected);
             Set<WorksiteVisibilitySelectionPolicy.Mode> nextModes =
                     WorksiteVisibilitySelectionPolicy.afterToggle(
                             activeWorksiteModes(),
-                            selectedMode,
+                            modeOf(selected),
                             config.getBooleanValue(),
                             LocalFeatureConfig.getInstance().worksiteVisibilityExclusiveMode);
-            applyingExclusiveWorksiteSelection = true;
-            try {
-                applyWorksiteModes(nextModes);
-            } finally {
-                applyingExclusiveWorksiteSelection = false;
-            }
+            applyWorksiteModesAtomically(nextModes);
         });
     }
 
@@ -110,9 +104,16 @@ public final class FeatureControlBindings {
                 WorksiteVisibilitySelectionPolicy.normalize(
                         activeWorksiteModes(),
                         LocalFeatureConfig.getInstance().worksiteVisibilityExclusiveMode);
+        applyWorksiteModesAtomically(normalizedModes);
+    }
+
+    private static void applyWorksiteModesAtomically(
+            Set<WorksiteVisibilitySelectionPolicy.Mode> activeModes) {
         applyingExclusiveWorksiteSelection = true;
         try {
-            applyWorksiteModes(normalizedModes);
+            for (FeatureSwitch toggle : WORKSITE_VISIBILITY_TOGGLES) {
+                toggle.setBooleanValue(activeModes.contains(modeOf(toggle)));
+            }
         } finally {
             applyingExclusiveWorksiteSelection = false;
         }
@@ -123,23 +124,13 @@ public final class FeatureControlBindings {
                 || PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES);
     }
 
-    private static List<FeatureSwitch> worksiteVisibilityToggles() {
-        return WORKSITE_VISIBILITY_TOGGLES;
-    }
-
     private static Set<WorksiteVisibilitySelectionPolicy.Mode> activeWorksiteModes() {
         EnumSet<WorksiteVisibilitySelectionPolicy.Mode> active =
                 EnumSet.noneOf(WorksiteVisibilitySelectionPolicy.Mode.class);
-        for (FeatureSwitch toggle : worksiteVisibilityToggles()) {
+        for (FeatureSwitch toggle : WORKSITE_VISIBILITY_TOGGLES) {
             if (toggle.getBooleanValue()) active.add(modeOf(toggle));
         }
         return active;
-    }
-
-    private static void applyWorksiteModes(Set<WorksiteVisibilitySelectionPolicy.Mode> activeModes) {
-        for (FeatureSwitch toggle : worksiteVisibilityToggles()) {
-            toggle.setBooleanValue(activeModes.contains(modeOf(toggle)));
-        }
     }
 
     private static WorksiteVisibilitySelectionPolicy.Mode modeOf(FeatureSwitch toggle) {

@@ -157,8 +157,8 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     }
 
     /**
-     * Schedules already-loaded chunks for bounded bootstrap work. Chunk lookup/scanning is deliberately
-     * spread across client ticks so a large analyzer radius cannot monopolize one render-adjacent tick.
+     * ロード済みチャンク候補を固定上限queueへ積み、探索処理を複数のclient tickへ分散する。
+     * 大きな検出範囲でも1 tickへ処理が集中しないよう、lookupとscanの実行数をtick単位で制限する。
      */
     private void scheduleLoadedChunkBootstrap(
             int rangeBlocks,

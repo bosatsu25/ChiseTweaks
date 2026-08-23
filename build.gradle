@@ -169,7 +169,7 @@ def qualityGateClassDirectories = providers.provider {
 }
 
 jacocoTestReport {
-    dependsOn tasks.named('test')
+    mustRunAfter tasks.named('test')
     classDirectories.setFrom(qualityGateClassDirectories)
     reports {
         xml.required = true
@@ -179,7 +179,8 @@ jacocoTestReport {
 }
 
 jacocoTestCoverageVerification {
-    dependsOn tasks.named('test')
+    dependsOn tasks.named('jacocoTestReport')
+    mustRunAfter tasks.named('test')
     classDirectories.setFrom(qualityGateClassDirectories)
     violationRules {
         rule {
@@ -231,6 +232,10 @@ pitest {
     exportLineCoverage = true
 }
 
+tasks.named('pitest') {
+    mustRunAfter tasks.named('test')
+}
+
 java {
     withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_25
@@ -275,7 +280,7 @@ tasks.register('qualityGate') {
 
 tasks.register('ciGate') {
     group = 'verification'
-    description = 'Single CI entry point: quality gates plus reproducible runtime and sources artifacts.'
+    description = 'Single strict release entry point: quality gates plus reproducible runtime and sources artifacts.'
     dependsOn tasks.named('qualityGate')
     dependsOn tasks.named('build')
 }

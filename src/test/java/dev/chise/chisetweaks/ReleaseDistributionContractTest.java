@@ -8,6 +8,9 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import static dev.chise.chisetweaks.SourceContractSupport.assertContainsAll;
+import static dev.chise.chisetweaks.SourceContractSupport.assertContainsNone;
+import static dev.chise.chisetweaks.SourceContractSupport.read;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,56 +20,69 @@ final class ReleaseDistributionContractTest {
 
     @Test
     void normalCiVerifiesOnlyAndNeverCreatesTagsOrReleases() throws IOException {
-        String ci = source(".github/workflows/ci.yml");
+        String ci = read(".github/workflows/ci.yml");
 
-        assertTrue(ci.contains("uses: ./.github/workflows/verify-build.yml"));
-        assertTrue(ci.contains("cancel-in-progress: true"));
-        assertFalse(ci.contains("contents: write"));
-        assertFalse(ci.contains("gh release"));
-        assertFalse(ci.contains("git tag"));
-        assertFalse(ci.contains("verified-v"));
-        assertFalse(ci.contains("Publish verified runtime JAR"));
+        assertContainsAll(ci,
+                "uses: ./.github/workflows/verify-build.yml",
+                "cancel-in-progress: true");
+        assertContainsNone(ci,
+                "contents: write",
+                "gh release",
+                "git tag",
+                "verified-v",
+                "Publish verified runtime JAR");
     }
 
     @Test
-    void verificationDoesNotUploadZipArchivesOrPublishQaEvidence() throws IOException {
-        String verify = source(".github/workflows/verify-build.yml");
+    void verificationExposesIndependentGatesWithoutPublishingEvidence() throws IOException {
+        String verify = read(".github/workflows/verify-build.yml");
 
-        assertTrue(verify.contains("python scripts/version_policy.py"));
-        assertTrue(verify.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
-        assertTrue(verify.contains("python scripts/artifact_audit.py"));
-        assertTrue(verify.contains("python scripts/visual_asset_audit.py"));
-        assertTrue(verify.contains("python scripts/release_residue_audit.py"));
-        assertFalse(verify.contains("actions/upload-artifact"));
-        assertFalse(verify.contains("verification-evidence"));
-        assertFalse(verify.contains("build/verified"));
+        assertContainsAll(verify,
+                "python scripts/version_policy.py",
+                "clean assemble testClasses",
+                "--stacktrace test",
+                "jacocoTestReport jacocoTestCoverageVerification",
+                "--stacktrace pitest",
+                "python scripts/artifact_audit.py",
+                "python scripts/visual_asset_audit.py",
+                "python scripts/release_residue_audit.py",
+                "python scripts/quality_summary.py --allow-partial",
+                "Enforce aggregate quality gate");
+        assertContainsNone(verify,
+                "actions/upload-artifact",
+                "verification-evidence",
+                "build/verified",
+                "gh release",
+                "git tag");
     }
 
     @Test
-    void officialReleaseFollowsSuccessfulMainCiAndUploadsExactlyOneRuntimeJar() throws IOException {
-        String release = source(".github/workflows/release.yml");
+    void officialReleaseKeepsTheStrictSingleCiGateAndUploadsExactlyOneRuntimeJar() throws IOException {
+        String release = read(".github/workflows/release.yml");
 
-        assertTrue(release.contains("workflow_run:"));
-        assertTrue(release.contains("github.event.workflow_run.conclusion == 'success'"));
-        assertTrue(release.contains("github.event.workflow_run.event == 'push'"));
-        assertTrue(release.contains("github.event.workflow_run.head_branch == 'main'"));
-        assertTrue(release.contains("ref: ${{ github.event.workflow_run.head_sha }}"));
-        assertTrue(release.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
-        assertTrue(release.contains("python scripts/version_policy.py"));
-        assertTrue(release.contains("gh release create \"$TAG\""));
-        assertTrue(release.contains("\"build/libs/$RUNTIME_JAR\""));
-        assertTrue(release.contains("Official Release must expose exactly one uploaded mod asset"));
-        assertFalse(release.contains("actions/upload-artifact"));
-        assertFalse(release.contains("\"build/libs/$SOURCES_JAR\""));
-        assertFalse(release.contains("\"build/ci/SHA256SUMS.txt\""));
-        assertFalse(release.contains("\"build/ci/artifact-audit.json\""));
-        assertFalse(release.contains("\"build/ci/visual-asset-audit.json\""));
-        assertFalse(release.contains("\"build/ci/quality-summary.md\""));
+        assertContainsAll(release,
+                "workflow_run:",
+                "github.event.workflow_run.conclusion == 'success'",
+                "github.event.workflow_run.event == 'push'",
+                "github.event.workflow_run.head_branch == 'main'",
+                "ref: ${{ github.event.workflow_run.head_sha }}",
+                "./gradlew --no-daemon --stacktrace clean ciGate",
+                "python scripts/version_policy.py",
+                "gh release create \"$TAG\"",
+                "\"build/libs/$RUNTIME_JAR\"",
+                "Official Release must expose exactly one uploaded mod asset");
+        assertContainsNone(release,
+                "actions/upload-artifact",
+                "\"build/libs/$SOURCES_JAR\"",
+                "\"build/ci/SHA256SUMS.txt\"",
+                "\"build/ci/artifact-audit.json\"",
+                "\"build/ci/visual-asset-audit.json\"",
+                "\"build/ci/quality-summary.md\"");
     }
 
     @Test
     void legacyPerCommitVerifiedTagsAreReadOnlyVersionFallbacks() throws IOException {
-        String release = source(".github/workflows/release.yml");
+        String release = read(".github/workflows/release.yml");
 
         assertTrue(release.contains("git tag --list 'verified-v*'"));
         assertFalse(release.contains("gh release delete \"$legacy_tag\""));
@@ -85,31 +101,30 @@ final class ReleaseDistributionContractTest {
         assertTrue(version.matches("(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\+mc"
                 + Pattern.quote(minecraft)));
 
-        String policy = source("VERSIONING.md");
-        String script = source("scripts/version_policy.py");
-        assertTrue(policy.contains("PATCH"));
-        assertTrue(policy.contains("MINOR"));
-        assertTrue(policy.contains("MAJOR"));
-        assertTrue(policy.contains("Every official release must increase the SemVer core"));
-        assertTrue(script.contains("expected_bump"));
-        assertTrue(script.contains("--release-type"));
-        assertTrue(script.contains("current_minecraft != minecraft"));
+        String policy = read("VERSIONING.md");
+        String script = read("scripts/version_policy.py");
+        assertContainsAll(policy,
+                "PATCH",
+                "MINOR",
+                "MAJOR",
+                "Every official release must increase the SemVer core");
+        assertContainsAll(script,
+                "expected_bump",
+                "--release-type",
+                "current_minecraft != minecraft");
     }
 
     @Test
     void releaseNotesTellPrismUsersToInstallOnlyRuntimeJar() throws IOException {
-        String release = source(".github/workflows/release.yml");
+        String release = read(".github/workflows/release.yml");
 
-        assertTrue(release.contains("Install / 導入"));
-        assertTrue(release.contains("Prism Launcher の Mods には **\\`${RUNTIME_JAR}\\`** だけを追加してください"));
-        assertTrue(release.contains("- Minecraft:"));
-        assertTrue(release.contains("- Fabric Loader:"));
-        assertTrue(release.contains("- Fabric API:"));
-        assertTrue(release.contains("- Java:"));
-        assertTrue(release.contains("- SHA-256:"));
-    }
-
-    private static String source(String relativePath) throws IOException {
-        return Files.readString(ROOT.resolve(relativePath));
+        assertContainsAll(release,
+                "Install / 導入",
+                "Prism Launcher の Mods には **\\`${RUNTIME_JAR}\\`** だけを追加してください",
+                "- Minecraft:",
+                "- Fabric Loader:",
+                "- Fabric API:",
+                "- Java:",
+                "- SHA-256:");
     }
 }
