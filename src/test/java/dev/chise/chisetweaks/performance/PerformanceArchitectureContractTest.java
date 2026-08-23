@@ -51,7 +51,7 @@ final class PerformanceArchitectureContractTest {
     }
 
     @Test
-    void ciExposesDiagnosticGatesWhileOfficialReleaseKeepsTheStrictAggregateGate() throws IOException {
+    void ciOwnsQualityGatesWhileReleaseOnlyRebuildsAndAuditsArtifacts() throws IOException {
         String build = Files.readString(ROOT.resolve("build.gradle"));
         String ci = Files.readString(ROOT.resolve(".github/workflows/ci.yml"));
         String verify = Files.readString(ROOT.resolve(".github/workflows/verify-build.yml"));
@@ -66,15 +66,22 @@ final class PerformanceArchitectureContractTest {
         assertTrue(verify.contains("jacocoTestReport jacocoTestCoverageVerification"));
         assertTrue(verify.contains("--stacktrace pitest"));
         assertTrue(verify.contains("Enforce aggregate quality gate"));
-        assertFalse(verify.contains("actions/upload-artifact"));
+        assertTrue(verify.contains("actions/upload-artifact@"));
+        assertTrue(verify.contains("path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}"));
+        assertTrue(verify.contains("archive: false"));
         assertFalse(verify.contains("gh release"));
         assertFalse(ci.contains("gh release"));
         assertFalse(ci.contains("git tag"));
 
-        assertTrue(release.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
+        assertTrue(release.contains("./gradlew --no-daemon --stacktrace clean assemble"));
         assertTrue(release.contains("python scripts/artifact_audit.py"));
         assertTrue(release.contains("python scripts/visual_asset_audit.py"));
         assertTrue(release.contains("python scripts/release_residue_audit.py"));
+        assertFalse(release.contains("clean ciGate"));
+        assertFalse(release.contains("--stacktrace test"));
+        assertFalse(release.contains("jacocoTestReport"));
+        assertFalse(release.contains("pitest"));
+        assertFalse(release.contains("python scripts/quality_summary.py"));
         assertFalse(release.contains("gh run download"));
         assertFalse(release.contains("actions/download-artifact"));
         assertFalse(release.contains("verification-evidence"));
