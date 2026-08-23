@@ -50,18 +50,18 @@ final class ChiseTweaksSettingsController {
         result.add(ChiseTweaksSettingRowDefinition.header(
                 "header.diagnostics", "Diagnostics / 診断"));
         result.add(ChiseTweaksSettingRowDefinition.header(
-                "diagnosticReloadState",
+                SettingRowIds.DIAGNOSTIC_RELOAD_STATE.value(),
                 "Resource reload: " + RuntimeDiagnosticSnapshot.reloadState(
                         ChiseTexturePackController.isReloadInFlight(),
                         ChiseTexturePackController.hasPendingRecovery())));
         result.add(ChiseTweaksSettingRowDefinition.action(
-                "copyDiagnostics",
+                SettingRowIds.DIAGNOSTIC_COPY.value(),
                 "Copy Diagnostic Snapshot / 診断情報をコピー",
                 "Copy a privacy-minimized runtime snapshot to the clipboard / 個人情報を追加しない実行状態をクリップボードへコピーします",
                 ChiseTweaksSettingRowDefinition.Action.COPY_DIAGNOSTICS,
                 "Copy / コピー"));
         result.add(ChiseTweaksSettingRowDefinition.action(
-                "exportDiagnostics",
+                SettingRowIds.DIAGNOSTIC_EXPORT.value(),
                 "Export Diagnostic Snapshot / 診断情報を書き出す",
                 "Save a bounded local diagnostic report without server address or absolute paths / サーバーアドレスや絶対パスを含めず診断情報を保存します",
                 ChiseTweaksSettingRowDefinition.Action.EXPORT_DIAGNOSTICS,
