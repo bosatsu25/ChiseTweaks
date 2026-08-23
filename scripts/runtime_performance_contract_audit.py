@@ -8,15 +8,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION = ROOT / "src/main/java"
-RELOAD_CONTROLLERS = {
-    Path("src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java"),
-    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java"),
-}
+TEXTURE_RELOAD_CONTROLLER = Path(
+    "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java"
+)
+FULL_RELOAD_CONTROLLER = Path(
+    "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java"
+)
+RELOAD_CONTROLLERS = {TEXTURE_RELOAD_CONTROLLER, FULL_RELOAD_CONTROLLER}
 ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"),
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"),
 }
-RELOAD_CALL = re.compile(r"\breloadResourcePacks\s*\(\s*\)")
+FULL_RELOAD_CALL = re.compile(r"\breloadResourcePacks\s*\(\s*\)")
+DELAYED_TEXTURE_RELOAD_CALL = re.compile(r"\bdelayTextureReload\s*\(\s*\)")
 BLOCKING_WAIT_SYNTAX = re.compile(r"\.\s*(?:join|get)\s*\(")
 PLAIN_GET_CHUNK = re.compile(r"\bgetChunk\s*\(")
 JAVA_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
@@ -87,9 +91,9 @@ def detector_contract_failures() -> list[str]:
             "block-bodied completion stages cannot hide a terminal wait",
         ),
         (
-            "var reload = client.reloadResourcePacks();\nreload.get(5, TimeUnit.SECONDS);",
+            "var reload = client.delayTextureReload();\nreload.get(5, TimeUnit.SECONDS);",
             True,
-            "stored reload Future timed waits are forbidden without data-flow analysis",
+            "stored delayed texture reload Future timed waits are forbidden without data-flow analysis",
         ),
         (
             "consume(client.reloadResourcePacks(), cache.get(key));",
@@ -97,7 +101,7 @@ def detector_contract_failures() -> list[str]:
             "ordinary get calls are deliberately forbidden in the tiny reload-controller boundary",
         ),
         (
-            "Supplier<CompletableFuture<Void>> reload = () -> client.reloadResourcePacks(); reload.get();",
+            "Supplier<CompletableFuture<Void>> reload = () -> client.delayTextureReload(); reload.get();",
             True,
             "Supplier.get is deliberately forbidden in the reload-controller boundary",
         ),
@@ -118,35 +122,57 @@ def detector_contract_failures() -> list[str]:
 
 def audit() -> list[str]:
     failures = detector_contract_failures()
-    reload_callers: set[Path] = set()
+    full_reload_callers: set[Path] = set()
+    delayed_texture_reload_callers: set[Path] = set()
 
     for path in PRODUCTION.rglob("*.java"):
         relative = path.relative_to(ROOT)
         text = java_code_only(path.read_text(encoding="utf-8"))
         if "Thread.sleep(" in text:
             failures.append(f"{relative}: production thread sleep is forbidden")
-        if RELOAD_CALL.search(text):
-            reload_callers.add(relative)
+        if FULL_RELOAD_CALL.search(text):
+            full_reload_callers.add(relative)
+        if DELAYED_TEXTURE_RELOAD_CALL.search(text):
+            delayed_texture_reload_callers.add(relative)
 
-    if reload_callers != RELOAD_CONTROLLERS:
+    if full_reload_callers != {FULL_RELOAD_CONTROLLER}:
         failures.append(
-            "resource reload callers changed; expected exactly the two coalescing controllers: "
-            f"actual={sorted(map(str, reload_callers))}"
+            "full resource reload callers changed; expected only the model reload controller: "
+            f"actual={sorted(map(str, full_reload_callers))}"
+        )
+    if delayed_texture_reload_callers != {TEXTURE_RELOAD_CONTROLLER}:
+        failures.append(
+            "delayed texture reload callers changed; expected only the built-in visibility pack controller: "
+            f"actual={sorted(map(str, delayed_texture_reload_callers))}"
         )
 
-    texture = ROOT / next(path for path in RELOAD_CONTROLLERS if "ChiseTexturePackController" in path.name)
+    texture = ROOT / TEXTURE_RELOAD_CONTROLLER
     texture_text = texture.read_text(encoding="utf-8")
-    for marker in ("ResourceReloadCoordinator", "whenComplete", "client.execute", "markPending"):
-        if marker not in java_code_only(texture_text):
-            failures.append(f"{texture.relative_to(ROOT)}: missing non-blocking reload marker {marker}")
+    texture_code = java_code_only(texture_text)
+    for marker in (
+        "ResourceReloadCoordinator",
+        "whenComplete",
+        "client.execute",
+        "markPending",
+        "delayTextureReload",
+    ):
+        if marker not in texture_code:
+            failures.append(f"{texture.relative_to(ROOT)}: missing non-blocking texture reload marker {marker}")
+    if FULL_RELOAD_CALL.search(texture_code):
+        failures.append(
+            f"{texture.relative_to(ROOT)}: Bright built-in packs must not invoke the foreground full resource reload"
+        )
     for wait in blocking_wait_syntax(texture_text):
         failures.append(f"{texture.relative_to(ROOT)}: forbidden get/join syntax in reload controller: {wait}")
 
-    ore = ROOT / next(path for path in RELOAD_CONTROLLERS if "OreHighlightModelReload" in path.name)
+    ore = ROOT / FULL_RELOAD_CONTROLLER
     ore_text = ore.read_text(encoding="utf-8")
-    for marker in ("AtomicBoolean", "whenComplete", "client.execute", "PENDING"):
-        if marker not in java_code_only(ore_text):
-            failures.append(f"{ore.relative_to(ROOT)}: missing coalescing reload marker {marker}")
+    ore_code = java_code_only(ore_text)
+    for marker in ("AtomicBoolean", "whenComplete", "client.execute", "PENDING", "reloadResourcePacks"):
+        if marker not in ore_code:
+            failures.append(f"{ore.relative_to(ROOT)}: missing coalescing full reload marker {marker}")
+    if DELAYED_TEXTURE_RELOAD_CALL.search(ore_code):
+        failures.append(f"{ore.relative_to(ROOT)}: model rebuild must not silently downgrade to texture-only reload")
     for wait in blocking_wait_syntax(ore_text):
         failures.append(f"{ore.relative_to(ROOT)}: forbidden get/join syntax in reload controller: {wait}")
 
@@ -181,7 +207,8 @@ def main() -> int:
         return 1
     print("RUNTIME PERFORMANCE CONTRACT AUDIT: PASS")
     print("blocking_reload_waits=false")
-    print("resource_reload_callers=2_coalescing_controllers")
+    print("full_resource_reload_callers=1_model_controller")
+    print("visibility_pack_reload=delayed_texture")
     print("reload_controllers_get_join_free=true")
     print("analyzers_force_chunk_load=false")
     print("analyzer_budgets=bounded")

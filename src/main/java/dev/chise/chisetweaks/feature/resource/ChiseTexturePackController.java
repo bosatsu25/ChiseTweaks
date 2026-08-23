@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Chise管理Visibility packのMinecraft resource reloadを1本のqueueへ直列化する。 */
+/** Chise管理Visibility packの軽量なtexture reloadを1本のqueueへ直列化する。 */
 public final class ChiseTexturePackController {
     private static final ResourceReloadCoordinator RELOADS = new ResourceReloadCoordinator();
     private static final AtomicReference<ResourceReloadCoordinator.Recovery> TERMINAL_RECOVERY =
@@ -127,7 +127,9 @@ public final class ChiseTexturePackController {
             List<String> targetSelection) {
         RELOADS.begin(fallbackSelection, targetSelection);
         try {
-            client.reloadResourcePacks().whenComplete((ignored, failure) -> {
+            // Bright Chest / Bright Concreteは前面の全resource reloadを直接呼ばず、
+            // Minecraftが提供する遅延・並行texture reload経路で軽量に反映する。
+            client.delayTextureReload().whenComplete((ignored, failure) -> {
                 try {
                     client.execute(() -> completeReload(client, failure));
                 } catch (RuntimeException | LinkageError schedulingFailure) {
@@ -135,7 +137,7 @@ public final class ChiseTexturePackController {
                             RELOADS.terminalFailure(failure == null);
                     if (recovery != null) TERMINAL_RECOVERY.set(recovery);
                     ChiseTweaksClient.LOGGER.error(
-                            "Chise visibility resource reload completion could not reach the client thread after {}",
+                            "Chise visibility texture reload completion could not reach the client thread after {}",
                             schedulingFailure.getClass().getSimpleName());
                     RuntimeDiagnostics.log(
                             RuntimeDiagnosticEvent.RESOURCE_RELOAD_TERMINAL_FAILURE,
@@ -154,7 +156,7 @@ public final class ChiseTexturePackController {
         ResourceReloadCoordinator.Completion completion = RELOADS.complete(failure == null);
         if (completion == null) return;
         PackRepository repository = client.getResourcePackRepository();
-        if (failure != null) logFailure("Chise visibility resource reload", failure);
+        if (failure != null) logFailure("Chise visibility texture reload", failure);
 
         switch (completion.action()) {
             case RELOAD -> startReload(

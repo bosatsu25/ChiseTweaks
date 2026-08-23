@@ -6,8 +6,8 @@ import java.util.Objects;
 
 /** ChiseTweaksが管理するbuilt-in resource packを型安全に表現する。 */
 public enum VisibilityPack {
-    CHEST("chise_chest_visibility", "Chest Visibility"),
-    WHITE_CONCRETE("chise_white_concrete_visibility", "White Concrete Visibility");
+    CHEST("chise_chest_visibility", "Bright Chest"),
+    WHITE_CONCRETE("chise_white_concrete_visibility", "Bright Concrete");
 
     private final String path;
     private final String displayName;

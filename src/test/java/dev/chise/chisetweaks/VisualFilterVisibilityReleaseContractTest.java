@@ -47,7 +47,7 @@ final class VisualFilterVisibilityReleaseContractTest {
     }
 
     @Test
-    void visibilityPacksAreIndependentAndShareOneReloadQueue() throws IOException {
+    void visibilityPacksAreIndependentAndUseTheDelayedTextureReloadPath() throws IOException {
         String controller = source(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java");
         String coordinator = source(
@@ -58,10 +58,12 @@ final class VisualFilterVisibilityReleaseContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/resource/VisibilityPack.java");
         String chestSetting = source(
                 "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java");
+        String concreteSetting = source(
+                "src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java");
         String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
 
-        assertTrue(visibilityPack.contains("CHEST(\"chise_chest_visibility\""));
-        assertTrue(visibilityPack.contains("WHITE_CONCRETE(\"chise_white_concrete_visibility\""));
+        assertTrue(visibilityPack.contains("CHEST(\"chise_chest_visibility\", \"Bright Chest\")"));
+        assertTrue(visibilityPack.contains("WHITE_CONCRETE(\"chise_white_concrete_visibility\", \"Bright Concrete\")"));
         assertTrue(registrar.contains("for (VisibilityPack pack : VisibilityPack.values())"));
         assertTrue(controller.contains("isEnabled(VisibilityPack pack)"));
         assertTrue(controller.contains("setEnabled(VisibilityPack pack, boolean enabled)"));
@@ -69,7 +71,8 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(controller.contains("getAvailableIds()"));
         assertTrue(controller.contains("repository.setSelected(selected)"));
         assertTrue(controller.contains("options.updateResourcePacks(repository)"));
-        assertTrue(controller.contains("reloadResourcePacks().whenComplete"));
+        assertTrue(controller.contains("delayTextureReload().whenComplete"));
+        assertFalse(controller.contains("reloadResourcePacks().whenComplete"));
         assertTrue(controller.contains("client.execute(() -> completeReload"));
         assertTrue(controller.contains("ResourceReloadCoordinator RELOADS"));
         assertTrue(controller.contains("RELOADS.markPending(selected)"));
@@ -81,6 +84,9 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(coordinator.contains("Action.RELOAD"));
         assertTrue(coordinator.contains("Action.RESTORE"));
         assertTrue(chestSetting.contains("VisibilityPack.CHEST"));
+        assertTrue(chestSetting.contains("\"Bright Chest\""));
+        assertTrue(concreteSetting.contains("VisibilityPack.WHITE_CONCRETE"));
+        assertTrue(concreteSetting.contains("\"Bright Concrete\""));
         assertTrue(catalog.contains("\"chestVisibility\""));
         assertTrue(catalog.contains("\"whiteConcreteVisibility\""));
         assertTrue(catalog.contains("\"Bright Chest\""));
