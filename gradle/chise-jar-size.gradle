@@ -1,5 +1,6 @@
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.time.LocalDateTime
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -43,8 +44,9 @@ def recompressRuntimeArchive = { File archive ->
                 output.setLevel(9)
                 entries.each { record ->
                     ZipEntry targetEntry = new ZipEntry((String) record.name)
-                    // ZIP's native timestamp epoch keeps output reproducible without extra timestamp fields.
-                    targetEntry.setTime(315532800000L) // 1980-01-01T00:00:00Z
+                    // ZIP stores a local date/time. Set it directly so host timezone cannot change
+                    // archive metadata or introduce an extended timestamp field around the 1980 epoch.
+                    targetEntry.setTimeLocal(LocalDateTime.of(1980, 1, 1, 0, 0))
                     output.putNextEntry(targetEntry)
                     output.write((byte[]) record.payload)
                     output.closeEntry()
