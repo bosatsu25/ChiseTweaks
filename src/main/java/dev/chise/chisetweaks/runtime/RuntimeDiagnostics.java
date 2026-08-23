@@ -13,6 +13,7 @@ import net.minecraft.world.level.Level;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /** クラッシュ・切断・隔離時に再現条件を復元するための構造化診断情報を生成する。 */
 public final class RuntimeDiagnostics {
@@ -31,18 +32,37 @@ public final class RuntimeDiagnostics {
                 ChiseTexturePackController.hasPendingRecovery());
     }
 
-    public static void log(String event, Minecraft client) {
+    public static void log(RuntimeDiagnosticEvent event, Minecraft client) {
+        log(event, client, new RuntimeDiagnosticDetail[0]);
+    }
+
+    public static void log(
+            RuntimeDiagnosticEvent event,
+            Minecraft client,
+            RuntimeDiagnosticDetail... details) {
         try {
+            RuntimeDiagnosticEvent checkedEvent = Objects.requireNonNull(event, "event");
             RuntimeDiagnosticSnapshot snapshot = capture(client);
             ChiseTweaksClient.LOGGER.info(
-                    "Chise diagnostics event={} {}",
-                    normalizeEvent(event),
+                    "Chise diagnostics event={}{} {}",
+                    checkedEvent.wireName(),
+                    detailLogFragment(details),
                     snapshot.toLogLine());
         } catch (RuntimeException | LinkageError failure) {
             ChiseTweaksClient.LOGGER.warn(
                     "Chise diagnostics capture failed after {}",
                     failure.getClass().getSimpleName());
         }
+    }
+
+    private static String detailLogFragment(RuntimeDiagnosticDetail[] details) {
+        if (details == null || details.length == 0) return "";
+        StringBuilder result = new StringBuilder();
+        for (RuntimeDiagnosticDetail detail : details) {
+            RuntimeDiagnosticDetail checked = Objects.requireNonNull(detail, "diagnostic detail");
+            result.append(' ').append(checked.toLogToken());
+        }
+        return result.toString();
     }
 
     private static List<String> enabledFeatures() {
@@ -63,10 +83,5 @@ public final class RuntimeDiagnostics {
         if (client.level.dimension().equals(Level.END)) return "end";
         if (client.level.dimension().equals(Level.OVERWORLD)) return "overworld";
         return "other";
-    }
-
-    private static String normalizeEvent(String event) {
-        if (event == null || event.isBlank()) return "unknown";
-        return event.trim().replaceAll("[\\s=]+", "_");
     }
 }
