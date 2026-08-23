@@ -17,14 +17,14 @@ public final class WorksiteHighlightProfilePolicy {
     public static final int MAX_OPACITY_PERCENT = 100;
 
     private static final int[] PRESET_RGB = {
-            0xB29CFF, // violet
-            0x6FE7F7, // cyan
-            0xFFD166, // amber
-            0x8BE28B, // lime
-            0xFF72D2, // magenta
-            0xF0F4FF, // ice white
-            0xFF9F5A, // orange
-            0xFF6B6B  // red
+            0xB29CFF, // 紫
+            0x6FE7F7, // シアン
+            0xFFD166, // 琥珀
+            0x8BE28B, // 黄緑
+            0xFF72D2, // マゼンタ
+            0xF0F4FF, // 氷色
+            0xFF9F5A, // オレンジ
+            0xFF6B6B  // 赤
     };
 
     private WorksiteHighlightProfilePolicy() {}
