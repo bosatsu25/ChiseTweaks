@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.feature.resource;
 
 import java.util.List;
 
-/** Minecraft resource reloadの連打を直列化・集約する決定的な小型状態機械。 */
+/** Minecraft resource reloadの連打・失敗・終了競合を直列化する決定的な状態機械。 */
 final class ResourceReloadCoordinator {
     enum Action {
         NONE,
@@ -17,47 +17,92 @@ final class ResourceReloadCoordinator {
         }
     }
 
+    record Recovery(List<String> activeSelection, List<String> desiredSelection) {
+        Recovery {
+            activeSelection = List.copyOf(activeSelection);
+            desiredSelection = List.copyOf(desiredSelection);
+        }
+
+        boolean requiresReload() {
+            return !activeSelection.equals(desiredSelection);
+        }
+    }
+
+    record Snapshot(boolean inFlight, boolean pending) {}
+
     private boolean inFlight;
     private boolean pending;
     private List<String> fallback = List.of();
     private List<String> target = List.of();
+    private List<String> pendingTarget = List.of();
 
-    boolean isInFlight() {
+    synchronized boolean isInFlight() {
         return inFlight;
     }
 
-    void markPending() {
-        if (inFlight) pending = true;
+    synchronized Snapshot snapshot() {
+        return new Snapshot(inFlight, pending);
     }
 
-    void begin(List<String> fallbackSelection, List<String> targetSelection) {
+    synchronized void markPending(List<String> desiredSelection) {
+        if (!inFlight) return;
+        pending = true;
+        pendingTarget = List.copyOf(desiredSelection);
+    }
+
+    synchronized void begin(List<String> fallbackSelection, List<String> targetSelection) {
         if (inFlight) throw new IllegalStateException("resource reload is already in flight");
         inFlight = true;
         pending = false;
         fallback = List.copyOf(fallbackSelection);
         target = List.copyOf(targetSelection);
+        pendingTarget = List.of();
     }
 
-    Completion complete(List<String> desiredSelection, boolean succeeded) {
-        if (!inFlight) throw new IllegalStateException("no resource reload is in flight");
-        List<String> desired = List.copyOf(desiredSelection);
-        List<String> active = succeeded ? target : fallback;
+    synchronized Completion complete(boolean succeeded) {
+        if (!inFlight) return null;
         boolean hadPending = pending;
-        reset();
+        List<String> active = succeeded ? target : fallback;
+        List<String> desired = hadPending
+                ? pendingTarget
+                : (succeeded ? target : fallback);
+        resetInternal();
 
-        if (hadPending && !desired.equals(active)) {
-            return new Completion(Action.RELOAD, active, desired);
-        }
-        if (!succeeded && !desired.equals(active)) {
+        if (!succeeded && !hadPending) {
             return new Completion(Action.RESTORE, active, active);
+        }
+        if (!desired.equals(active)) {
+            return new Completion(Action.RELOAD, active, desired);
         }
         return new Completion(Action.NONE, active, active);
     }
 
-    void reset() {
+    synchronized Recovery terminalFailure(boolean reloadSucceeded) {
+        if (!inFlight) return null;
+        List<String> active = reloadSucceeded ? target : fallback;
+        List<String> desired = pending
+                ? pendingTarget
+                : (reloadSucceeded ? target : fallback);
+        resetInternal();
+        return new Recovery(active, desired);
+    }
+
+    synchronized Recovery cancel(List<String> desiredSelection) {
+        if (!inFlight) return null;
+        Recovery recovery = new Recovery(fallback, desiredSelection);
+        resetInternal();
+        return recovery;
+    }
+
+    synchronized void reset() {
+        resetInternal();
+    }
+
+    private void resetInternal() {
         inFlight = false;
         pending = false;
         fallback = List.of();
         target = List.of();
+        pendingTarget = List.of();
     }
 }

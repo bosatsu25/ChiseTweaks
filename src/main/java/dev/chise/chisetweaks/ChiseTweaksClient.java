@@ -6,14 +6,17 @@ import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.feature.rendering.model.ChiseVisualModelPlugin;
 import dev.chise.chisetweaks.feature.resource.ChiseTexturePackRegistrar;
+import dev.chise.chisetweaks.feature.resource.VisibilityPackMigrationService;
 import dev.chise.chisetweaks.runtime.ClientSessionState;
 import dev.chise.chisetweaks.runtime.FeatureControlBindings;
 import dev.chise.chisetweaks.runtime.FeatureManager;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import dev.chise.chisetweaks.runtime.SafeStartup;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +28,11 @@ public final class ChiseTweaksClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        SafeStartup.run("chise-texture-pack", ChiseTexturePackRegistrar::register);
+        SafeStartup.run("visibility-pack-migration", () ->
+                VisibilityPackMigrationService.migrate(Minecraft.getInstance()));
         SafeStartup.run("local-config", () -> LocalFeatureConfig.getInstance().load());
         SafeStartup.run("feature-config", FeatureConfig::loadFromFile);
-        SafeStartup.run("chise-texture-pack", ChiseTexturePackRegistrar::register);
         SafeStartup.run("local-settings", LocalFeatureSettings::init);
         SafeStartup.run("visual-target-settings", VisualTargetSettings::init);
         SafeStartup.run("feature-bindings", FeatureControlBindings::init);
@@ -43,5 +48,6 @@ public final class ChiseTweaksClient implements ClientModInitializer {
                 "ChiseTweaks {} standalone client initialized with {} isolated startup failure(s)",
                 ChiseTweaksMetadata.MOD_VERSION,
                 SafeStartup.failures().size());
+        RuntimeDiagnostics.log("startup", Minecraft.getInstance());
     }
 }

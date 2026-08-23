@@ -6,6 +6,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ResourceReloadCoordinatorTest {
@@ -17,16 +18,16 @@ final class ResourceReloadCoordinatorTest {
     void rapidOnThenOffSchedulesExactlyOneFollowUpReload() {
         ResourceReloadCoordinator coordinator = new ResourceReloadCoordinator();
         coordinator.begin(OFF, CHEST_ON);
-        coordinator.markPending();
+        coordinator.markPending(OFF);
 
-        var first = coordinator.complete(OFF, true);
+        var first = coordinator.complete(true);
         assertEquals(ResourceReloadCoordinator.Action.RELOAD, first.action());
         assertEquals(CHEST_ON, first.activeSelection());
         assertEquals(OFF, first.targetSelection());
         assertFalse(coordinator.isInFlight());
 
         coordinator.begin(first.activeSelection(), first.targetSelection());
-        var second = coordinator.complete(OFF, true);
+        var second = coordinator.complete(true);
         assertEquals(ResourceReloadCoordinator.Action.NONE, second.action());
         assertEquals(OFF, second.activeSelection());
     }
@@ -35,10 +36,10 @@ final class ResourceReloadCoordinatorTest {
     void rapidOnOffOnCoalescesBackToCompletedTargetWithoutExtraReload() {
         ResourceReloadCoordinator coordinator = new ResourceReloadCoordinator();
         coordinator.begin(OFF, CHEST_ON);
-        coordinator.markPending();
-        coordinator.markPending();
+        coordinator.markPending(OFF);
+        coordinator.markPending(CHEST_ON);
 
-        var completion = coordinator.complete(CHEST_ON, true);
+        var completion = coordinator.complete(true);
         assertEquals(ResourceReloadCoordinator.Action.NONE, completion.action());
         assertEquals(CHEST_ON, completion.activeSelection());
         assertFalse(coordinator.isInFlight());
@@ -48,9 +49,9 @@ final class ResourceReloadCoordinatorTest {
     void changeToSecondPackDuringReloadPreservesBothDesiredSelections() {
         ResourceReloadCoordinator coordinator = new ResourceReloadCoordinator();
         coordinator.begin(OFF, CHEST_ON);
-        coordinator.markPending();
+        coordinator.markPending(BOTH_ON);
 
-        var first = coordinator.complete(BOTH_ON, true);
+        var first = coordinator.complete(true);
         assertEquals(ResourceReloadCoordinator.Action.RELOAD, first.action());
         assertEquals(CHEST_ON, first.activeSelection());
         assertEquals(BOTH_ON, first.targetSelection());
@@ -60,7 +61,7 @@ final class ResourceReloadCoordinatorTest {
     void failedReloadWithoutFollowUpRestoresKnownActiveSelection() {
         ResourceReloadCoordinator coordinator = new ResourceReloadCoordinator();
         coordinator.begin(OFF, CHEST_ON);
-        var completion = coordinator.complete(CHEST_ON, false);
+        var completion = coordinator.complete(false);
         assertEquals(ResourceReloadCoordinator.Action.RESTORE, completion.action());
         assertEquals(OFF, completion.activeSelection());
         assertEquals(OFF, completion.targetSelection());
@@ -70,19 +71,55 @@ final class ResourceReloadCoordinatorTest {
     void failedReloadWithNewDesiredStateRetriesFromKnownActiveSelection() {
         ResourceReloadCoordinator coordinator = new ResourceReloadCoordinator();
         coordinator.begin(OFF, CHEST_ON);
-        coordinator.markPending();
-        var completion = coordinator.complete(BOTH_ON, false);
+        coordinator.markPending(BOTH_ON);
+        var completion = coordinator.complete(false);
         assertEquals(ResourceReloadCoordinator.Action.RELOAD, completion.action());
         assertEquals(OFF, completion.activeSelection());
         assertEquals(BOTH_ON, completion.targetSelection());
     }
 
     @Test
-    void resetClearsInFlightState() {
+    void clientThreadSchedulingFailureCapturesRecoverableDesiredState() {
         ResourceReloadCoordinator coordinator = new ResourceReloadCoordinator();
         coordinator.begin(OFF, CHEST_ON);
-        assertTrue(coordinator.isInFlight());
-        coordinator.reset();
+        coordinator.markPending(BOTH_ON);
+        var recovery = coordinator.terminalFailure(true);
+        assertEquals(CHEST_ON, recovery.activeSelection());
+        assertEquals(BOTH_ON, recovery.desiredSelection());
+        assertTrue(recovery.requiresReload());
         assertFalse(coordinator.isInFlight());
+    }
+
+    @Test
+    void disconnectDuringReloadRecoversFromLastKnownActiveSelection() {
+        ResourceReloadCoordinator coordinator = new ResourceReloadCoordinator();
+        coordinator.begin(OFF, CHEST_ON);
+        var recovery = coordinator.cancel(BOTH_ON);
+        assertEquals(OFF, recovery.activeSelection());
+        assertEquals(BOTH_ON, recovery.desiredSelection());
+        assertTrue(recovery.requiresReload());
+        assertFalse(coordinator.isInFlight());
+    }
+
+    @Test
+    void lateCompletionAfterDisconnectIsIgnoredInsteadOfThrowing() {
+        ResourceReloadCoordinator coordinator = new ResourceReloadCoordinator();
+        coordinator.begin(OFF, CHEST_ON);
+        coordinator.cancel(CHEST_ON);
+        assertNull(coordinator.complete(true));
+        assertNull(coordinator.terminalFailure(true));
+        assertNull(coordinator.cancel(OFF));
+    }
+
+    @Test
+    void snapshotReportsPendingStateAndResetClearsIt() {
+        ResourceReloadCoordinator coordinator = new ResourceReloadCoordinator();
+        coordinator.begin(OFF, CHEST_ON);
+        coordinator.markPending(BOTH_ON);
+        assertTrue(coordinator.snapshot().inFlight());
+        assertTrue(coordinator.snapshot().pending());
+        coordinator.reset();
+        assertFalse(coordinator.snapshot().inFlight());
+        assertFalse(coordinator.snapshot().pending());
     }
 }

@@ -35,6 +35,7 @@ final class ChiseTexturePackContractTest {
         assertTrue(source.contains("ResourceLoader.registerBuiltinPack"));
         assertTrue(source.contains("PackActivationType.DEFAULT_ENABLED"));
         assertTrue(client.contains("SafeStartup.run(\"chise-texture-pack\", ChiseTexturePackRegistrar::register)"));
+        assertTrue(client.contains("SafeStartup.run(\"visibility-pack-migration\""));
         assertTrue(Files.readString(CHEST_PACK.resolve("pack.mcmeta")).contains("\"min_format\": 84"));
         assertTrue(Files.readString(WHITE_CONCRETE_PACK.resolve("pack.mcmeta")).contains("\"max_format\": 84"));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_texture")));
@@ -81,13 +82,27 @@ final class ChiseTexturePackContractTest {
         assertTrue(controller.contains("setChestEnabled(boolean enabled)"));
         assertTrue(controller.contains("setWhiteConcreteEnabled(boolean enabled)"));
         assertTrue(controller.contains("ResourceReloadCoordinator RELOADS"));
-        assertTrue(controller.contains("RELOADS.markPending()"));
+        assertTrue(controller.contains("RELOADS.markPending(selected)"));
         assertTrue(controller.contains("client.reloadResourcePacks().whenComplete"));
         assertTrue(controller.contains("ResourcePackSelectionPolicy.withPack"));
         assertTrue(controller.contains("restoreSelection"));
-        assertTrue(coordinator.contains("enum Action"));
+        assertTrue(controller.contains("TERMINAL_RECOVERY"));
+        assertTrue(coordinator.contains("record Recovery"));
+        assertTrue(coordinator.contains("terminalFailure"));
+        assertTrue(coordinator.contains("cancel"));
         assertTrue(coordinator.contains("RELOAD"));
         assertTrue(coordinator.contains("RESTORE"));
+    }
+
+    @Test
+    void migrationReadsLegacyEvidenceBeforeConfigsAreCreated() throws IOException {
+        String migration = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/resource/VisibilityPackMigrationService.java"));
+        assertTrue(migration.contains("chisetweaks:chise_texture"));
+        assertTrue(migration.contains("options.txt"));
+        assertTrue(migration.contains("chisetweaks-visibility-pack-migration-v1.txt"));
+        assertTrue(migration.contains("VisibilityPackMigrationPolicy.plan"));
+        assertTrue(migration.contains("applyMigrationSelection"));
     }
 
     @Test

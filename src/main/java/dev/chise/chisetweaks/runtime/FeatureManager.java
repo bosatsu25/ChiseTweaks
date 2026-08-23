@@ -12,6 +12,7 @@ import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,6 +26,7 @@ public final class FeatureManager {
     private final Map<String, RuntimeComponent> components = new LinkedHashMap<>();
     private final List<TickSlot> mutableTickSlots = new ArrayList<>();
     private final List<SessionAwareRuntimeComponent> mutableSessionComponents = new ArrayList<>();
+    private final LinkedHashSet<String> initializationQuarantines = new LinkedHashSet<>();
     private volatile TickSlot[] tickSchedule = NO_TICK_SLOTS;
     private volatile SessionAwareRuntimeComponent[] sessionSchedule = NO_SESSION_COMPONENTS;
     private boolean initialized;
@@ -81,6 +83,14 @@ public final class FeatureManager {
         }
     }
 
+    public synchronized List<String> diagnosticQuarantinedComponentIds() {
+        LinkedHashSet<String> result = new LinkedHashSet<>(initializationQuarantines);
+        for (TickSlot slot : tickSchedule) {
+            if (slot.isQuarantined()) result.add(slot.componentId());
+        }
+        return List.copyOf(result);
+    }
+
     private static boolean hasAvailableWorksiteVisibilityFeature() {
         for (FeatureDefinition definition : FeatureDefinition.VALUES) {
             if (definition.isWorksiteVisibilityMode()
@@ -105,6 +115,7 @@ public final class FeatureManager {
             component.init();
         } catch (RuntimeException | LinkageError failure) {
             removeFromSchedules(component);
+            initializationQuarantines.add(component.getId());
             if (component instanceof TickingRuntimeComponent ticking) {
                 notifyInitializationQuarantine(component.getId(), ticking);
             }
@@ -112,6 +123,7 @@ public final class FeatureManager {
                     "Runtime component '{}' was quarantined during initialization after {}",
                     component.getId(),
                     failure.getClass().getSimpleName());
+            RuntimeDiagnostics.log("component-init-quarantine-" + component.getId(), Minecraft.getInstance());
         }
     }
 
@@ -148,7 +160,7 @@ public final class FeatureManager {
     static final class TickSlot {
         private final TickingRuntimeComponent component;
         private int recoverableFailures;
-        private boolean quarantined;
+        private volatile boolean quarantined;
 
         TickSlot(TickingRuntimeComponent component) {
             this.component = component;
@@ -167,6 +179,7 @@ public final class FeatureManager {
                         "Runtime component '{}' was quarantined after {}",
                         component.getId(),
                         failure.getClass().getSimpleName());
+                RuntimeDiagnostics.log("component-quarantine-" + component.getId(), client);
             }
         }
 
@@ -183,6 +196,10 @@ public final class FeatureManager {
 
         boolean isQuarantined() {
             return quarantined;
+        }
+
+        String componentId() {
+            return component.getId();
         }
     }
 }
