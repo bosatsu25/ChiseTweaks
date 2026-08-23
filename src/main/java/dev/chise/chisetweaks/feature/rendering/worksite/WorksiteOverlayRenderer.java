@@ -21,15 +21,13 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 final class WorksiteOverlayRenderer {
-    private static final String RENDERER_REVISION = "surface-line-v8-worksite-no-glass";
+    private static final String RENDERER_REVISION = "surface-line-v9-worksite-profile-cache";
     private static final int ACCENT_DARK = 0xFF4E3A8C;
-    private static final int ACCENT_LIGHT = 0xFFB29CFF;
-    private static final int THREAD_IDLE = 0xFF5E4FA2;
-    private static final int THREAD_POWERED = 0xFFA68BFF;
 
     private final BooleanSupplier activeSupplier;
     private final Consumer<LevelRenderContext> guardedRender;
     private volatile List<WorksiteRenderTarget> targets = List.of();
+    private List<WorksiteVisibleTarget> cachedVisibleTargets = List.of();
     private boolean rendererIdentityLogged;
 
     WorksiteOverlayRenderer(BooleanSupplier activeSupplier) {
@@ -43,17 +41,22 @@ final class WorksiteOverlayRenderer {
 
     void updateTargets(List<WorksiteVisibleTarget> visibleTargets) {
         if (visibleTargets == null || visibleTargets.isEmpty()) {
-            targets = List.of();
+            clear();
             return;
         }
-        ArrayList<WorksiteRenderTarget> prepared = new ArrayList<>(visibleTargets.size());
-        for (WorksiteVisibleTarget target : visibleTargets) {
+        List<WorksiteVisibleTarget> snapshot = List.copyOf(visibleTargets);
+        if (snapshot.equals(cachedVisibleTargets)) return;
+
+        ArrayList<WorksiteRenderTarget> prepared = new ArrayList<>(snapshot.size());
+        for (WorksiteVisibleTarget target : snapshot) {
             if (target != null) prepared.add(WorksiteRenderTarget.prepare(target));
         }
+        cachedVisibleTargets = snapshot;
         targets = List.copyOf(prepared);
     }
 
     void clear() {
+        cachedVisibleTargets = List.of();
         targets = List.of();
     }
 
@@ -117,8 +120,12 @@ final class WorksiteOverlayRenderer {
 
         switch (target.presentation().category()) {
             case TECHNICAL_TRACE -> {
-                int stateColor = target.powered() ? THREAD_POWERED : THREAD_IDLE;
-                int accent = target.powered() ? ACCENT_DARK : ACCENT_LIGHT;
+                int stateColor = target.powered()
+                        ? adjustBrightness(primary, 26)
+                        : primary;
+                int accent = target.powered()
+                        ? adjustBrightness(primary, -42)
+                        : adjustBrightness(primary, 30);
                 if (compact) {
                     SurfaceLineVisualGeometry.drawCompactFrame(
                             vertices, pose, target.position(), stateColor, 1.8f);
@@ -142,12 +149,13 @@ final class WorksiteOverlayRenderer {
                 }
             }
             case HIDDEN_SURFACE -> {
+                int accent = adjustBrightness(primary, -44);
                 if (compact) {
                     SurfaceLineVisualGeometry.drawCompactFrame(
                             vertices, pose, target.position(), primary, 2.2f);
                 } else {
                     SurfaceLineVisualGeometry.drawHiddenSurfaceSkin(
-                            vertices, pose, target.position(), primary, ACCENT_DARK, 3.0f);
+                            vertices, pose, target.position(), primary, accent, 3.0f);
                 }
             }
             case MATERIAL_HIGHLIGHT -> { }
@@ -162,5 +170,17 @@ final class WorksiteOverlayRenderer {
             }
             case NONE -> { }
         }
+    }
+
+    private static int adjustBrightness(int argb, int delta) {
+        int alpha = argb >>> 24;
+        int red = clampChannel((argb >>> 16 & 0xFF) + delta);
+        int green = clampChannel((argb >>> 8 & 0xFF) + delta);
+        int blue = clampChannel((argb & 0xFF) + delta);
+        return alpha << 24 | red << 16 | green << 8 | blue;
+    }
+
+    private static int clampChannel(int value) {
+        return Math.max(0, Math.min(255, value));
     }
 }
