@@ -18,6 +18,7 @@ public final class ChiseIntegerSetting {
     private final IntSupplier reader;
     private final IntConsumer writer;
     private final IntFunction<String> valueFormatter;
+    private final SettingPersistence persistence;
     private Consumer<ChiseIntegerSetting> callback = ignored -> {};
     private int value;
 
@@ -42,7 +43,8 @@ public final class ChiseIntegerSetting {
                 null,
                 null,
                 value -> Integer.toString(value),
-                false);
+                false,
+                SettingPersistence.FEATURE_CONFIG);
     }
 
     ChiseIntegerSetting(
@@ -68,7 +70,8 @@ public final class ChiseIntegerSetting {
                 reader,
                 writer,
                 value -> Integer.toString(value),
-                true);
+                true,
+                SettingPersistence.LOCAL_CONFIG);
     }
 
     ChiseIntegerSetting(
@@ -95,7 +98,8 @@ public final class ChiseIntegerSetting {
                 reader,
                 writer,
                 valueFormatter,
-                true);
+                true,
+                SettingPersistence.LOCAL_CONFIG);
     }
 
     private ChiseIntegerSetting(
@@ -110,7 +114,8 @@ public final class ChiseIntegerSetting {
             IntSupplier reader,
             IntConsumer writer,
             IntFunction<String> valueFormatter,
-            boolean bound) {
+            boolean bound,
+            SettingPersistence persistence) {
         if (minValue > maxValue) throw new IllegalArgumentException("minValue > maxValue");
         this.name = requireText(name, "name");
         this.defaultValue = clamp(defaultValue, minValue, maxValue);
@@ -121,6 +126,7 @@ public final class ChiseIntegerSetting {
         this.englishComment = Objects.requireNonNullElse(englishComment, "");
         this.japaneseComment = Objects.requireNonNullElse(japaneseComment, this.englishComment);
         this.valueFormatter = Objects.requireNonNull(valueFormatter, "valueFormatter");
+        this.persistence = Objects.requireNonNull(persistence, "persistence");
         this.value = this.defaultValue;
         if (bound) {
             this.reader = Objects.requireNonNull(reader, "reader");
@@ -138,6 +144,7 @@ public final class ChiseIntegerSetting {
     public int getMaxIntegerValue() { return maxValue; }
     public String getDisplayName(boolean japanese) { return japanese ? japaneseName : englishName; }
     public String getComment(boolean japanese) { return japanese ? japaneseComment : englishComment; }
+    public SettingPersistence persistence() { return persistence; }
     public String getFormattedValue() {
         int current = getIntegerValue();
         return Objects.requireNonNullElse(
