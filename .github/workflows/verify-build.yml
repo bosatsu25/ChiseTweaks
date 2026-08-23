@@ -8,34 +8,65 @@ permissions:
 
 jobs:
   verify:
-    # Keep this composed status context aligned with branch protection:
-    # "verify / Java 25 quality gate".
+    # branch protectionのrequired contextと一致させる。
     name: Java 25 quality gate
     runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Java 25
-        uses: actions/setup-java@v5.7.0
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: '25'
 
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v6.0.0
+      - name: Set up Python 3.14
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6.3.0
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
+
+      - name: Verify CI runtime toolchain
+        id: environment
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          import sys
+          expected = (3, 14)
+          actual = sys.version_info[:2]
+          if actual != expected:
+              raise SystemExit(f"Expected Python {expected[0]}.{expected[1]}, got {actual[0]}.{actual[1]}")
+          print(f"Python runtime: {sys.version.split()[0]}")
+          PY
+
+          java_feature="$(java -XshowSettings:properties -version 2>&1 \
+            | sed -n 's/^[[:space:]]*java.specification.version = //p' \
+            | head -n 1)"
+          if [[ "$java_feature" != '25' ]]; then
+            echo "Expected Java 25, got '$java_feature'." >&2
+            exit 1
+          fi
+
+          gradle_version="$(./gradlew --version | sed -n 's/^Gradle //p' | head -n 1)"
+          if [[ "$gradle_version" != '9.7.1' ]]; then
+            echo "Expected Gradle 9.7.1, got '$gradle_version'." >&2
+            exit 1
+          fi
+
+          echo "Java specification: $java_feature"
+          echo "Gradle runtime: $gradle_version"
 
       - name: Validate version policy
         id: version
@@ -66,6 +97,7 @@ jobs:
 
       - name: Run PIT mutation and test-strength gates
         id: pit
+        if: ${{ always() && steps.compile.outcome == 'success' && steps.junit.outcome == 'success' }}
         continue-on-error: true
         run: ./gradlew --no-daemon --stacktrace pitest
 
@@ -98,6 +130,7 @@ jobs:
           fi
 
           printf '\n## Gate outcomes\n\n' >> "$GITHUB_STEP_SUMMARY"
+          printf -- '- CI toolchain: `%s`\n' "${{ steps.environment.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           printf -- '- Version policy: `%s`\n' "${{ steps.version.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           printf -- '- Repository/source audit: `%s`\n' "${{ steps.repository.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           printf -- '- Compile/artifacts: `%s`\n' "${{ steps.compile.outcome }}" >> "$GITHUB_STEP_SUMMARY"
@@ -111,6 +144,7 @@ jobs:
       - name: Enforce aggregate quality gate
         if: ${{ always() }}
         env:
+          ENVIRONMENT_OUTCOME: ${{ steps.environment.outcome }}
           VERSION_OUTCOME: ${{ steps.version.outcome }}
           REPOSITORY_OUTCOME: ${{ steps.repository.outcome }}
           COMPILE_OUTCOME: ${{ steps.compile.outcome }}
@@ -122,12 +156,12 @@ jobs:
         run: |
           failed=0
           for gate in \
+            "environment:$ENVIRONMENT_OUTCOME" \
             "version:$VERSION_OUTCOME" \
             "repository:$REPOSITORY_OUTCOME" \
             "compile:$COMPILE_OUTCOME" \
             "junit:$JUNIT_OUTCOME" \
             "jacoco:$JACOCO_OUTCOME" \
-            "pit:$PIT_OUTCOME" \
             "artifacts:$ARTIFACT_OUTCOME" \
             "summary:$SUMMARY_OUTCOME"; do
             name="${gate%%:*}"
@@ -137,4 +171,11 @@ jobs:
               failed=1
             fi
           done
+
+          if [[ "$COMPILE_OUTCOME" == 'success' && "$JUNIT_OUTCOME" == 'success' ]]; then
+            if [[ "$PIT_OUTCOME" != 'success' ]]; then
+              echo "Required CI gate 'pit' finished with '$PIT_OUTCOME'." >&2
+              failed=1
+            fi
+          fi
           exit "$failed"
