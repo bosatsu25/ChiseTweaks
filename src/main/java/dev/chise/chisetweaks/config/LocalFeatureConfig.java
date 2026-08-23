@@ -8,7 +8,7 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
-import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
+import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
@@ -137,13 +137,13 @@ public final class LocalFeatureConfig {
     }
 
     void sanitize() {
-        if (!PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
             lavaHighlightEnabled = false;
         }
-        if (!PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
             ancientDebrisAnalyzerEnabled = false;
         }
-        if (!PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.FIRE_VISIBILITY)) {
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.FIRE_VISIBILITY)) {
             fireVisibilityEnabled = false;
         }
         worksiteVisibilityHorizontalRadius =
