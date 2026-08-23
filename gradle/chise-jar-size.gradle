@@ -34,7 +34,7 @@ def compressedSizeFor = { byte[] payload ->
 }
 
 // JAR/ZIP directory entries are optional metadata. Re-emit only real files with maximum DEFLATE
-// compression after Loom has produced each runtime archive. Already-compressed payloads are STORED
+// compression after Loom has produced the runtime archive. Already-compressed payloads are STORED
 // when DEFLATE would be larger. There is no class shrinking, resource minification, renaming or
 // semantic transformation here.
 def recompressRuntimeArchive = { File archive ->
@@ -101,9 +101,26 @@ def recompressRuntimeArchive = { File archive ->
     }
 }
 
-// `jar` is kept compact for the local budget task; `remapJar` is the Fabric-distributable artifact.
-tasks.matching { task -> task.name == 'jar' || task.name == 'remapJar' }.configureEach {
+// Run compaction as an explicit final distribution step rather than relying on a `jar.doLast` hook.
+// Loom/Gradle may finalize or restore archive task outputs after task actions; finalizing `assemble`
+// guarantees the file inspected by external Artifact Audit is the compacted runtime JAR.
+def compactRuntimeJar = tasks.register('compactRuntimeJar') {
+    group = 'build'
+    description = 'Compacts the final runtime JAR container without changing entry payload bytes.'
+    dependsOn 'jar'
+
     doLast {
-        recompressRuntimeArchive(archiveFile.get().asFile)
+        def runtimeJarTask = tasks.named('jar').get()
+        File runtimeJar = runtimeJarTask.archiveFile.get().asFile
+        recompressRuntimeArchive(runtimeJar)
+        logger.lifecycle('Compacted runtime JAR container: {} bytes', runtimeJar.length())
     }
+}
+
+tasks.matching { task -> task.name == 'assemble' }.configureEach {
+    finalizedBy compactRuntimeJar
+}
+
+tasks.matching { task -> task.name == 'verifyRuntimeJarBudget' }.configureEach {
+    dependsOn compactRuntimeJar
 }

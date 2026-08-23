@@ -95,8 +95,6 @@ record ChiseTweaksSettingRowDefinition(
         OPEN_LAVA_DETAILS,
         EDIT_BLOCK_FILTER,
         EDIT_ENTITY_FILTER,
-        EDIT_ORE_COMPAT,
-        COPY_DIAGNOSTICS,
-        EXPORT_DIAGNOSTICS
+        EDIT_ORE_COMPAT
     }
 }
