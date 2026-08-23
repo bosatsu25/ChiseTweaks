@@ -53,9 +53,16 @@ public abstract class ChiseBooleanSetting {
         return japanese ? japaneseComment : englishComment;
     }
 
+    /** ApplyでChise設定ファイルへ永続化する設定かを返す。外部永続化を持つ設定だけoverrideする。 */
+    public boolean requiresApplyPersistence() {
+        return true;
+    }
+
     public final void setBooleanValue(boolean value) {
-        if (readValue() == value) return;
+        boolean previous = readValue();
+        if (previous == value) return;
         writeValue(value);
+        if (readValue() == previous) return;
         notifyChangeListeners();
     }
 

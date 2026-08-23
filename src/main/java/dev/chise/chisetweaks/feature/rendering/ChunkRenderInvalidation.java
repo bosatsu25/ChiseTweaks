@@ -1,4 +1,4 @@
-package dev.chise.chisetweaks.feature.rendering.model;
+package dev.chise.chisetweaks.feature.rendering;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import net.minecraft.client.Minecraft;
@@ -6,17 +6,15 @@ import net.minecraft.client.Minecraft;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class OreHighlightRenderInvalidation {
+/** 設定変更後のchunk renderer再構築をcoalesceし、一過性失敗だけを固定回数retryする。 */
+public final class ChunkRenderInvalidation {
     static final int MAX_FAILURE_RETRIES = 3;
 
     private static final AtomicBoolean REQUESTED = new AtomicBoolean();
     private static final AtomicInteger FAILURE_RETRIES = new AtomicInteger();
 
-    private OreHighlightRenderInvalidation() {}
+    private ChunkRenderInvalidation() {}
 
-    /**
-     * リソース全体の再読み込みや常時ポーリングを開始せず、必要なチャンク形状だけの再構築を要求する。
-     */
     public static void request() {
         FAILURE_RETRIES.set(0);
         schedule();
@@ -27,6 +25,7 @@ public final class OreHighlightRenderInvalidation {
         Minecraft client = Minecraft.getInstance();
         if (client == null) {
             REQUESTED.set(false);
+            FAILURE_RETRIES.set(0);
             return;
         }
         try {
@@ -60,7 +59,7 @@ public final class OreHighlightRenderInvalidation {
 
     private static void warnFailure(Throwable failure) {
         ChiseTweaksClient.LOGGER.warn(
-                "Model highlight renderer refresh failed after bounded retries: {}",
+                "Chunk renderer refresh failed after bounded retries: {}",
                 failure.getClass().getSimpleName());
     }
 }

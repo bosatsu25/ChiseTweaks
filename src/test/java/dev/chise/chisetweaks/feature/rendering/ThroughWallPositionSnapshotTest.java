@@ -3,6 +3,8 @@ package dev.chise.chisetweaks.feature.rendering;
 import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Modifier;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -53,6 +55,16 @@ final class ThroughWallPositionSnapshotTest {
         snapshot.captureInto(capture);
         assertEquals(0, capture.count());
         assertFalse(snapshot.clear());
+    }
+
+    @Test
+    void mutationAndCaptureUseOneSerializationBoundary() throws NoSuchMethodException {
+        Class<ThroughWallPositionSnapshot> type = ThroughWallPositionSnapshot.class;
+        assertTrue(Modifier.isSynchronized(type.getDeclaredMethod(
+                "publish", long[].class, int.class, double.class, double.class, double.class).getModifiers()));
+        assertTrue(Modifier.isSynchronized(type.getDeclaredMethod("clear").getModifiers()));
+        assertTrue(Modifier.isSynchronized(type.getDeclaredMethod(
+                "captureInto", ThroughWallPositionSnapshot.Capture.class).getModifiers()));
     }
 
     @Test

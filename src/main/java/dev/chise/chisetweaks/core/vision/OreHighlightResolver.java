@@ -38,6 +38,8 @@ public final class OreHighlightResolver {
     private static Resolved resolveUncached(BlockState state) {
         Block block = state.getBlock();
         Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+        // 未登録・不正な外部Blockだけでmodel bake全体を壊さず、Chise overlayなしとして扱う。
+        if (id == null) return NONE;
         String blockId = id.toString();
 
         Target vanillaTarget = VanillaOreVisualCatalog.targetForBlockId(blockId);

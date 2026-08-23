@@ -63,27 +63,37 @@ public final class VisibilityPackMigrationService {
                     concreteId);
             if (plan.source() == VisibilityPackMigrationPolicy.Source.ALREADY_MIGRATED) return true;
 
-            boolean accepted = !plan.selectionChanged()
-                    || ChiseTexturePackController.applyMigrationSelection(client, plan.selectedIds());
-            if (!accepted) {
+            if (plan.selectionChanged()) {
+                if (!ChiseTexturePackController.applyMigrationSelection(client, plan.selectedIds())) {
+                    RuntimeDiagnostics.log(
+                            RuntimeDiagnosticEvent.VISIBILITY_PACK_MIGRATION_DEFERRED,
+                            client,
+                            RuntimeDiagnosticDetail.of("reason", "selection-not-accepted"),
+                            RuntimeDiagnosticDetail.of("source", plan.source().name().toLowerCase()));
+                    return false;
+                }
+
+                // reloadは非同期なので、この起動ではmarkerを確定しない。options.txtへ反映された実状態を次回起動で再評価する。
+                ChiseTweaksClient.LOGGER.info(
+                        "Visibility pack migration selection staged source={}; marker confirmation deferred",
+                        plan.source());
                 RuntimeDiagnostics.log(
                         RuntimeDiagnosticEvent.VISIBILITY_PACK_MIGRATION_DEFERRED,
                         client,
-                        RuntimeDiagnosticDetail.of("reason", "selection-not-accepted"),
+                        RuntimeDiagnosticDetail.of("reason", "marker-awaits-next-startup"),
                         RuntimeDiagnosticDetail.of("source", plan.source().name().toLowerCase()));
-                return false;
+                return true;
             }
 
             SecureConfigStorage.writeUtf8Atomic(configDir, MARKER_FILE, "1\n");
             ChiseTweaksClient.LOGGER.info(
-                    "Visibility pack migration completed source={} selectionChanged={}",
-                    plan.source(),
-                    plan.selectionChanged());
+                    "Visibility pack migration completed source={} selectionChanged=false",
+                    plan.source());
             RuntimeDiagnostics.log(
                     RuntimeDiagnosticEvent.VISIBILITY_PACK_MIGRATION,
                     client,
                     RuntimeDiagnosticDetail.of("source", plan.source().name().toLowerCase()),
-                    RuntimeDiagnosticDetail.of("selectionChanged", plan.selectionChanged()));
+                    RuntimeDiagnosticDetail.of("selectionChanged", false));
             return true;
         } catch (IOException | RuntimeException | LinkageError failure) {
             ChiseTweaksClient.LOGGER.warn(

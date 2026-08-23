@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Source-level crash-containment contracts for optional Ore Highlight rendering. */
+/** Source-level crash-containment contracts for optional visual rendering. */
 final class OreHighlightFailSoftContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
@@ -62,11 +62,13 @@ final class OreHighlightFailSoftContractTest {
     }
 
     @Test
-    void ordinaryRendererInvalidationIsOnDemandCoalescedBoundedAndFailSoft() throws IOException {
+    void ordinaryChunkRendererInvalidationIsSharedCoalescedBoundedAndFailSoft() throws IOException {
         String invalidation = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightRenderInvalidation.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/ChunkRenderInvalidation.java");
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
+        String builderFocus = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/BuilderFocusVisibility.java");
         assertTrue(invalidation.contains("MAX_FAILURE_RETRIES = 3"));
         assertTrue(invalidation.contains("REQUESTED.compareAndSet(false, true)"));
         assertTrue(invalidation.contains("client.execute(() -> refresh(client))"));
@@ -76,7 +78,11 @@ final class OreHighlightFailSoftContractTest {
         assertTrue(invalidation.contains("client.levelRenderer.allChanged()"));
         assertFalse(invalidation.contains("ClientTickEvents"));
         assertFalse(invalidation.contains("reloadResourcePacks"));
-        assertFalse(plugin.contains("OreHighlightRenderInvalidation.register"));
+        assertTrue(builderFocus.contains("ChunkRenderInvalidation.request()"));
+        assertFalse(builderFocus.contains("client.levelRenderer.allChanged()"));
+        assertFalse(plugin.contains("ChunkRenderInvalidation.register"));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightRenderInvalidation.java")));
     }
 
     @Test

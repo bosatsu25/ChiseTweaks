@@ -73,12 +73,18 @@ public final class FeatureManager {
 
     public void resetSessionState(Minecraft client) {
         for (SessionAwareRuntimeComponent component : sessionSchedule) {
+            TickSlot tickSlot = tickSlotFor(component);
+            if (tickSlot != null && tickSlot.isQuarantined()) continue;
             try {
                 component.resetSession(client);
             } catch (RuntimeException | LinkageError failure) {
-                ChiseTweaksClient.LOGGER.error(
-                        "Client session reset skipped after {}",
-                        failure.getClass().getSimpleName());
+                if (tickSlot != null) {
+                    tickSlot.quarantineForLifecycleFailure(client, failure);
+                } else {
+                    ChiseTweaksClient.LOGGER.error(
+                            "Client session reset skipped after {}",
+                            failure.getClass().getSimpleName());
+                }
             }
         }
     }
@@ -89,6 +95,13 @@ public final class FeatureManager {
             if (slot.isQuarantined()) result.add(slot.componentId());
         }
         return List.copyOf(result);
+    }
+
+    private TickSlot tickSlotFor(SessionAwareRuntimeComponent component) {
+        for (TickSlot slot : tickSchedule) {
+            if (slot.component == (Object) component) return slot;
+        }
+        return null;
     }
 
     private static boolean hasAvailableWorksiteVisibilityFeature() {
@@ -177,18 +190,29 @@ public final class FeatureManager {
             } catch (RuntimeException | LinkageError failure) {
                 recoverableFailures++;
                 if (!FailureIsolationPolicy.shouldQuarantine(recoverableFailures)) return;
-                quarantined = true;
-                quarantineComponent(client);
-                ChiseTweaksClient.LOGGER.error(
-                        "Runtime component '{}' was quarantined after {}",
-                        component.getId(),
-                        failure.getClass().getSimpleName());
-                RuntimeDiagnostics.log(
-                        RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
-                        client,
-                        RuntimeDiagnosticDetail.of("componentId", component.getId()),
-                        RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
+                quarantine(client, failure, "tick");
             }
+        }
+
+        void quarantineForLifecycleFailure(Minecraft client, Throwable failure) {
+            quarantine(client, failure, "session-reset");
+        }
+
+        private void quarantine(Minecraft client, Throwable failure, String stage) {
+            if (quarantined) return;
+            quarantined = true;
+            quarantineComponent(client);
+            ChiseTweaksClient.LOGGER.error(
+                    "Runtime component '{}' was quarantined during {} after {}",
+                    component.getId(),
+                    stage,
+                    failure.getClass().getSimpleName());
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
+                    client,
+                    RuntimeDiagnosticDetail.of("componentId", component.getId()),
+                    RuntimeDiagnosticDetail.of("stage", stage),
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
         }
 
         private void quarantineComponent(Minecraft client) {

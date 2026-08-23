@@ -18,6 +18,11 @@ public final class ChestVisibilitySetting extends ChiseBooleanSetting {
     }
 
     @Override
+    public boolean requiresApplyPersistence() {
+        return false;
+    }
+
+    @Override
     protected boolean readValue() {
         return ChiseTexturePackController.isEnabled(VisibilityPack.CHEST);
     }

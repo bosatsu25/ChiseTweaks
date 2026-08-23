@@ -48,6 +48,13 @@ public final class ChiseTweaksConfigScreen extends Screen {
         refreshRowButtons();
     }
 
+    @Override
+    public void tick() {
+        super.tick();
+        // 非同期resource reloadのrollbackなど、画面外で変化した実効値も次tickでUIへ反映する。
+        refreshRowButtons();
+    }
+
     private void createFooter() {
         var help = geometry.helpButton();
         var reset = geometry.resetButton();
@@ -138,8 +145,10 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private ChiseTweaksSettingRowView createBooleanRow(ChiseTweaksSettingRowDefinition definition) {
         ChiseBooleanSetting config = definition.booleanConfig();
         Button button = addRenderableWidget(Button.builder(toggleMessage(config), ignored -> {
+            boolean previous = config.getBooleanValue();
             config.toggleBooleanValue();
-            markDirty();
+            boolean changed = config.getBooleanValue() != previous;
+            finishSettingEdit(changed, config.requiresApplyPersistence());
         }).bounds(0, 0, geometry.toggleWidth(), 18).build());
         return new ChiseTweaksSettingRowView(definition, button, null, null, null);
     }
@@ -148,8 +157,9 @@ public final class ChiseTweaksConfigScreen extends Screen {
         var config = definition.integerConfig();
         int step = definition.step();
         Button minus = addRenderableWidget(Button.builder(Component.literal("−"), ignored -> {
-            config.setIntegerValue(saturatedStep(config.getIntegerValue(), -step));
-            markDirty();
+            int previous = config.getIntegerValue();
+            config.setIntegerValue(saturatedStep(previous, -step));
+            finishSettingEdit(config.getIntegerValue() != previous, true);
         }).bounds(0, 0, 24, 18).build());
         Button value = addRenderableWidget(Button.builder(
                 Component.literal(config.getFormattedValue()), ignored -> {})
@@ -157,8 +167,9 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 .build());
         value.active = false;
         Button plus = addRenderableWidget(Button.builder(Component.literal("+"), ignored -> {
-            config.setIntegerValue(saturatedStep(config.getIntegerValue(), step));
-            markDirty();
+            int previous = config.getIntegerValue();
+            config.setIntegerValue(saturatedStep(previous, step));
+            finishSettingEdit(config.getIntegerValue() != previous, true);
         }).bounds(0, 0, 24, 18).build());
         return new ChiseTweaksSettingRowView(definition, null, minus, value, plus);
     }
@@ -202,6 +213,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void resetCurrentSurface() {
         if (!controller.reset(surface)) return;
         markDirty();
+    }
+
+    private void finishSettingEdit(boolean changed, boolean requiresApplyPersistence) {
+        if (changed) {
+            persistenceFeedback = "";
+            if (requiresApplyPersistence) dirty = true;
+        }
+        refreshRowButtons();
     }
 
     private void markDirty() {

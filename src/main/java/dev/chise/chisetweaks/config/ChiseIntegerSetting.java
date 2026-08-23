@@ -139,15 +139,18 @@ public final class ChiseIntegerSetting {
     public String getDisplayName(boolean japanese) { return japanese ? japaneseName : englishName; }
     public String getComment(boolean japanese) { return japanese ? japaneseComment : englishComment; }
     public String getFormattedValue() {
+        int current = getIntegerValue();
         return Objects.requireNonNullElse(
-                valueFormatter.apply(getIntegerValue()),
-                Integer.toString(getIntegerValue()));
+                valueFormatter.apply(current),
+                Integer.toString(current));
     }
 
     public void setIntegerValue(int requested) {
         int next = clamp(requested, minValue, maxValue);
-        if (getIntegerValue() == next) return;
+        int previous = getIntegerValue();
+        if (previous == next) return;
         writer.accept(next);
+        if (getIntegerValue() == previous) return;
         callback.accept(this);
     }
 

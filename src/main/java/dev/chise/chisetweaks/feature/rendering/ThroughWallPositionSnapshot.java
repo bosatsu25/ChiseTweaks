@@ -22,7 +22,7 @@ class ThroughWallPositionSnapshot {
     boolean isEmpty() { return counts[activeSlot] == 0; }
     long renderRevision() { return renderRevision; }
 
-    boolean publish(long[] sortedPositions, int count, double eyeX, double eyeY, double eyeZ) {
+    synchronized boolean publish(long[] sortedPositions, int count, double eyeX, double eyeY, double eyeZ) {
         validateInput(sortedPositions, count);
         int currentSlot = activeSlot;
         boolean changed = !matches(currentSlot, sortedPositions, count);
@@ -39,7 +39,7 @@ class ThroughWallPositionSnapshot {
         return changed;
     }
 
-    boolean clear() {
+    synchronized boolean clear() {
         int currentSlot = activeSlot;
         if (counts[currentSlot] == 0) return false;
         int nextSlot = currentSlot ^ 1;
@@ -49,29 +49,20 @@ class ThroughWallPositionSnapshot {
         return true;
     }
 
-    void captureInto(Capture target) {
+    /** 座標・視点・revisionを同一monitor下で取得し、混在した描画snapshotを作らない。 */
+    synchronized void captureInto(Capture target) {
         if (target == null) throw new IllegalArgumentException("target must not be null");
         if (target.positions.length < capacity()) {
             throw new IllegalArgumentException("capture capacity is smaller than snapshot capacity");
         }
-        while (true) {
-            long before = renderRevision;
-            int slot = activeSlot;
-            int count = counts[slot];
-            double capturedEyeX = eyeX;
-            double capturedEyeY = eyeY;
-            double capturedEyeZ = eyeZ;
-            System.arraycopy(positions[slot], 0, target.positions, 0, count);
-            long after = renderRevision;
-            if (before == after) {
-                target.count = count;
-                target.eyeX = capturedEyeX;
-                target.eyeY = capturedEyeY;
-                target.eyeZ = capturedEyeZ;
-                target.revision = after;
-                return;
-            }
-        }
+        int slot = activeSlot;
+        int count = counts[slot];
+        System.arraycopy(positions[slot], 0, target.positions, 0, count);
+        target.count = count;
+        target.eyeX = eyeX;
+        target.eyeY = eyeY;
+        target.eyeZ = eyeZ;
+        target.revision = renderRevision;
     }
 
     private boolean matches(int slot, long[] candidate, int count) {

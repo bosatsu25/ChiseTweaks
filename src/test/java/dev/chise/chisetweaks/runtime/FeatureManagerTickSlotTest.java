@@ -33,6 +33,19 @@ final class FeatureManagerTickSlotTest {
     }
 
     @Test
+    void lifecycleFailureQuarantinesBeforeAnyFutureTickCanUseStaleState() {
+        FailingRuntimeComponent component = new FailingRuntimeComponent();
+        FeatureManager.TickSlot slot = new FeatureManager.TickSlot(component);
+
+        slot.quarantineForLifecycleFailure(null, new IllegalStateException("reset"));
+        slot.runForTick(null);
+
+        assertTrue(slot.isQuarantined());
+        assertEquals(0, component.ticks);
+        assertEquals(1, component.cleanupCalls());
+    }
+
+    @Test
     void oneFailingSlotDoesNotQuarantineOrStopAnotherSlot() {
         FailingRuntimeComponent failing = new FailingRuntimeComponent();
         FakeRuntimeComponent healthy = new FakeRuntimeComponent();

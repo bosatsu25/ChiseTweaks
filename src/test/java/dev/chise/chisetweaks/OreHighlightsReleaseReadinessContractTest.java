@@ -100,15 +100,17 @@ final class OreHighlightsReleaseReadinessContractTest {
     }
 
     @Test
-    void ordinaryTogglesUseChunkInvalidationWhileTargetMembershipChangesUseColdReload() throws IOException {
+    void ordinaryTogglesUseSharedChunkInvalidationWhileTargetMembershipChangesUseColdReload() throws IOException {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String invalidation = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightRenderInvalidation.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/ChunkRenderInvalidation.java");
         String modelReload = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java");
         String bindings = source(
                 "src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
+        String builderFocus = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/BuilderFocusVisibility.java");
         String editor = source(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseOreCompatibilityScreen.java");
 
@@ -119,10 +121,24 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertTrue(invalidation.contains("client.levelRenderer.allChanged()"));
         assertTrue(invalidation.contains("AtomicBoolean REQUESTED"));
         assertTrue(bindings.contains("VisualRenderState.refreshFromConfig()"));
-        assertTrue(bindings.contains("OreHighlightRenderInvalidation.request()"));
+        assertTrue(bindings.contains("ChunkRenderInvalidation.request()"));
+        assertTrue(builderFocus.contains("ChunkRenderInvalidation.request()"));
+        assertFalse(builderFocus.contains("levelRenderer.allChanged()"));
         assertTrue(editor.contains("OreHighlightModelReload.request()"));
         assertTrue(modelReload.contains("client.reloadResourcePacks()"));
         assertTrue(modelReload.contains("ChiseVisualModelPlugin.isModelPipelineReady()"));
+    }
+
+    @Test
+    void resolverFailsOpenBeforeDereferencingUnknownRegistryIds() throws IOException {
+        String resolver = source(
+                "src/main/java/dev/chise/chisetweaks/core/vision/OreHighlightResolver.java");
+        int keyLookup = resolver.indexOf("Identifier id = BuiltInRegistries.BLOCK.getKey(block);");
+        int nullGuard = resolver.indexOf("if (id == null) return NONE;", keyLookup);
+        int toString = resolver.indexOf("String blockId = id.toString();", keyLookup);
+        assertTrue(keyLookup >= 0);
+        assertTrue(nullGuard > keyLookup);
+        assertTrue(toString > nullGuard);
     }
 
     @Test

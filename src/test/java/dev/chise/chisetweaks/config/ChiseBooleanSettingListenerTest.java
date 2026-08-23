@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseBooleanSettingListenerTest {
     @Test
@@ -20,6 +22,25 @@ final class ChiseBooleanSettingListenerTest {
         setting.setBooleanValue(true);
 
         assertEquals(List.of("primary", "listener"), calls);
+    }
+
+    @Test
+    void refusedWriteDoesNotEmitFalseChangeNotification() {
+        RefusingSetting setting = new RefusingSetting();
+        ArrayList<String> calls = new ArrayList<>();
+        setting.setValueChangeCallback(ignored -> calls.add("primary"));
+        setting.addValueChangeListener(ignored -> calls.add("listener"));
+
+        setting.setBooleanValue(true);
+
+        assertFalse(setting.getBooleanValue());
+        assertEquals(List.of(), calls);
+    }
+
+    @Test
+    void applyPersistenceIsDefaultButCanBeOwnedExternally() {
+        assertTrue(new TestSetting().requiresApplyPersistence());
+        assertFalse(new ImmediateSetting().requiresApplyPersistence());
     }
 
     @Test
@@ -63,7 +84,7 @@ final class ChiseBooleanSettingListenerTest {
         assertEquals(List.of("first", "second"), calls);
     }
 
-    private static final class TestSetting extends ChiseBooleanSetting {
+    private static class TestSetting extends ChiseBooleanSetting {
         private boolean value;
 
         TestSetting() {
@@ -78,6 +99,19 @@ final class ChiseBooleanSettingListenerTest {
         @Override
         protected void writeValue(boolean value) {
             this.value = value;
+        }
+    }
+
+    private static final class RefusingSetting extends TestSetting {
+        @Override
+        protected void writeValue(boolean value) {
+        }
+    }
+
+    private static final class ImmediateSetting extends TestSetting {
+        @Override
+        public boolean requiresApplyPersistence() {
+            return false;
         }
     }
 }

@@ -18,6 +18,11 @@ public final class WhiteConcreteVisibilitySetting extends ChiseBooleanSetting {
     }
 
     @Override
+    public boolean requiresApplyPersistence() {
+        return false;
+    }
+
+    @Override
     protected boolean readValue() {
         return ChiseTexturePackController.isEnabled(VisibilityPack.WHITE_CONCRETE);
     }

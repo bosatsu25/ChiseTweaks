@@ -93,16 +93,40 @@ final class ChiseTexturePackContractTest {
     }
 
     @Test
-    void migrationReadsLegacyEvidenceBeforeConfigsAreCreated() throws IOException {
+    void brightPackSettingsUseMinecraftOptionsInsteadOfUnrelatedApplyPersistence() throws IOException {
+        String chest = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java"));
+        String concrete = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java"));
+        String screen = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+        assertTrue(chest.contains("requiresApplyPersistence()"));
+        assertTrue(chest.contains("return false;"));
+        assertTrue(concrete.contains("requiresApplyPersistence()"));
+        assertTrue(screen.contains("config.requiresApplyPersistence()"));
+        assertTrue(screen.contains("public void tick()"));
+        assertTrue(screen.contains("refreshRowButtons();"));
+    }
+
+    @Test
+    void migrationDefersCompletionMarkerUntilChangedSelectionIsReobservedNextStartup() throws IOException {
         String migration = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/VisibilityPackMigrationService.java"));
         assertTrue(migration.contains("chisetweaks:chise_texture"));
         assertTrue(migration.contains("options.txt"));
         assertTrue(migration.contains("chisetweaks-visibility-pack-migration-v1.txt"));
         assertTrue(migration.contains("VisibilityPackMigrationPolicy.plan"));
-        assertTrue(migration.contains("applyMigrationSelection"));
         assertTrue(migration.contains("VisibilityPack.CHEST.repositoryPackId()"));
         assertTrue(migration.contains("VisibilityPack.WHITE_CONCRETE.repositoryPackId()"));
+
+        int changed = migration.indexOf("if (plan.selectionChanged())");
+        int apply = migration.indexOf("applyMigrationSelection", changed);
+        int deferred = migration.indexOf("marker-awaits-next-startup", apply);
+        int markerWrite = migration.indexOf("SecureConfigStorage.writeUtf8Atomic(configDir, MARKER_FILE", deferred);
+        assertTrue(changed >= 0);
+        assertTrue(apply > changed);
+        assertTrue(deferred > apply);
+        assertTrue(markerWrite > deferred);
     }
 
     @Test
