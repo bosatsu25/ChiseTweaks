@@ -119,7 +119,8 @@ public final class VisualTargetSettings {
                             config.visualTargetMask,
                             target,
                             enabled);
-                });
+                },
+                SettingPersistence.LOCAL_CONFIG);
         if (isMaterialTarget(target)) {
             option.setValueChangeCallback(ignored -> materialTargetsChangedCallback.run());
         }
