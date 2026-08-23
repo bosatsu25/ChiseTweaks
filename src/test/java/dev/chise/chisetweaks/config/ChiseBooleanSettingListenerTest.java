@@ -7,7 +7,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseBooleanSettingListenerTest {
     @Test
@@ -17,8 +17,8 @@ final class ChiseBooleanSettingListenerTest {
         setting.setValueChangeCallback(ignored -> calls.add("primary"));
         setting.addValueChangeListener(ignored -> calls.add("listener"));
 
-        setting.setBooleanValue(true);
-        setting.setBooleanValue(true);
+        assertTrue(setting.setBooleanValue(true));
+        assertFalse(setting.setBooleanValue(true));
 
         assertEquals(List.of("primary", "listener"), calls);
     }
@@ -30,7 +30,7 @@ final class ChiseBooleanSettingListenerTest {
         setting.setValueChangeCallback(ignored -> calls.add("primary"));
         setting.addValueChangeListener(ignored -> calls.add("listener"));
 
-        setting.setBooleanValue(true);
+        assertFalse(setting.setBooleanValue(true));
 
         assertFalse(setting.getBooleanValue());
         assertEquals(List.of(), calls);
@@ -50,13 +50,13 @@ final class ChiseBooleanSettingListenerTest {
         setting.setValueChangeCallback(ignored -> calls.add("first"));
         setting.setValueChangeCallback(ignored -> calls.add("replacement"));
 
-        setting.setBooleanValue(true);
+        assertTrue(setting.setBooleanValue(true));
 
         assertEquals(List.of("replacement", "listener"), calls);
     }
 
     @Test
-    void primaryFailureDoesNotPreventIndependentListenerNotification() {
+    void primaryFailureIsContainedAndDoesNotPreventIndependentListenerNotification() {
         TestSetting setting = new TestSetting();
         ArrayList<String> calls = new ArrayList<>();
         setting.setValueChangeCallback(ignored -> {
@@ -65,12 +65,13 @@ final class ChiseBooleanSettingListenerTest {
         });
         setting.addValueChangeListener(ignored -> calls.add("listener"));
 
-        assertThrows(IllegalStateException.class, () -> setting.setBooleanValue(true));
+        assertTrue(setting.setBooleanValue(true));
+        assertTrue(setting.getBooleanValue());
         assertEquals(List.of("primary", "listener"), calls);
     }
 
     @Test
-    void failingIndependentListenerDoesNotBlockLaterListeners() {
+    void failingIndependentListenerIsContainedAndDoesNotBlockLaterListeners() {
         TestSetting setting = new TestSetting();
         ArrayList<String> calls = new ArrayList<>();
         setting.addValueChangeListener(ignored -> {
@@ -79,7 +80,8 @@ final class ChiseBooleanSettingListenerTest {
         });
         setting.addValueChangeListener(ignored -> calls.add("second"));
 
-        assertThrows(IllegalStateException.class, () -> setting.setBooleanValue(true));
+        assertTrue(setting.setBooleanValue(true));
+        assertTrue(setting.getBooleanValue());
         assertEquals(List.of("first", "second"), calls);
     }
 
