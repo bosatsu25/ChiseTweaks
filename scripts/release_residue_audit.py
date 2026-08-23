@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject removed production classes and legacy Ore Highlight assets from release JARs."""
+"""Reject removed production classes and legacy visual assets from release JARs."""
 from __future__ import annotations
 
 import sys
@@ -18,6 +18,10 @@ FORBIDDEN_EXACT_ENTRIES = {
 FORBIDDEN_ENTRY_TOKENS = (
     "BuilderEntityVisibilityPolicy",
     "ModVersionPolicy",
+    "PreReleaseFeaturePolicy",
+    "PreReleaseUiPolicy",
+    "ChiseTextureVisibilitySetting",
+    "PreReleaseMixinConfigPlugin",
 )
 
 
@@ -39,7 +43,7 @@ def audit_jar(path: Path) -> None:
         names = set(archive.namelist())
         exact = sorted(names & FORBIDDEN_EXACT_ENTRIES)
         if exact:
-            raise RuntimeError(f"legacy Ore Highlight asset returned to {path.name}: {exact}")
+            raise RuntimeError(f"legacy visual asset returned to {path.name}: {exact}")
         for token in FORBIDDEN_ENTRY_TOKENS:
             matches = sorted(name for name in names if token in name)
             if matches:
@@ -54,6 +58,7 @@ def main() -> int:
         audit_jar(LIBS / f"{base}-{version}.jar")
         audit_jar(LIBS / f"{base}-{version}-sources.jar")
         print("RELEASE RESIDUE AUDIT: PASS")
+        print("legacy_architecture_residue=false")
         return 0
     except (OSError, KeyError, zipfile.BadZipFile, RuntimeError) as error:
         print(f"RELEASE RESIDUE AUDIT: FAIL: {error}", file=sys.stderr)

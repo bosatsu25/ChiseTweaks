@@ -35,6 +35,14 @@ FORBIDDEN_JAVA_TOKENS = (
     "ExternalHookCircuitBreaker",
     "BuilderEntityVisibilityPolicy",
     "ModVersionPolicy",
+    "PreReleaseFeaturePolicy",
+    "PreReleaseUiPolicy",
+    "ChiseTextureVisibilitySetting",
+    "applyPrereleaseInteractivity",
+    "isChestEnabled()",
+    "setChestEnabled(",
+    "isWhiteConcreteEnabled()",
+    "setWhiteConcreteEnabled(",
 )
 
 FORBIDDEN_PATHS = (
@@ -48,6 +56,11 @@ FORBIDDEN_PATHS = (
     "src/main/java/dev/chise/chisetweaks/runtime/ExternalHookCircuitBreaker.java",
     "src/main/java/dev/chise/chisetweaks/core/policy/BuilderEntityVisibilityPolicy.java",
     "src/main/java/dev/chise/chisetweaks/core/policy/ModVersionPolicy.java",
+    "src/main/java/dev/chise/chisetweaks/core/policy/PreReleaseFeaturePolicy.java",
+    "src/main/java/dev/chise/chisetweaks/gui/PreReleaseUiPolicy.java",
+    "src/main/java/dev/chise/chisetweaks/config/ChiseTextureVisibilitySetting.java",
+    "src/test/java/dev/chise/chisetweaks/core/policy/PreReleaseFeaturePolicyTest.java",
+    "src/test/java/dev/chise/chisetweaks/gui/PreReleaseUiPolicyTest.java",
     "src/main/resources/assets/chisetweaks/models/block/visual/diamond_ore.json",
     "src/main/resources/assets/chisetweaks/models/block/visual/deepslate_diamond_ore.json",
     "src/main/resources/assets/chisetweaks/textures/block/visual/diamond_ore_chise.png.mcmeta",
@@ -61,6 +74,12 @@ REQUIRED_PATHS = (
     "src/main/resources/fabric.mod.json",
     "src/main/resources/chisetweaks.features.mixins.json",
     "src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java",
+    "src/main/java/dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicy.java",
+    "src/main/java/dev/chise/chisetweaks/gui/UiAvailabilityPolicy.java",
+    "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java",
+    "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticEvent.java",
+    "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticDetail.java",
+    "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticSnapshot.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/NearestPositionBuffer.java",
@@ -71,6 +90,8 @@ REQUIRED_PATHS = (
     "scripts/quality_summary.py",
     "scripts/artifact_audit.py",
     "scripts/release_residue_audit.py",
+    "scripts/documentation_consistency_audit.py",
+    "scripts/compatibility_contract_audit.py",
 )
 
 FORBIDDEN_TRACKED_DIRECTORY_NAMES = {
@@ -241,9 +262,12 @@ def audit() -> list[str]:
             "testStrengthThreshold",
             "WorksiteScanThrottlePolicy",
             "WorksiteHighlightProfilePolicy",
+            "FeatureAvailabilityPolicy",
             "ChiseTweaksSettingsLayout",
-            "PreReleaseUiPolicy",
+            "UiAvailabilityPolicy",
+            "RuntimeDiagnosticSnapshot",
             "FeatureManager$TickSlot",
+            "-Werror",
         ):
             if marker not in build:
                 fail(f"verification marker missing from build.gradle: {marker}", failures)
@@ -264,6 +288,7 @@ def main() -> int:
     print("scope=11 retained rendering features")
     print("client_only=true")
     print("ci_toolchain_policy=true")
+    print("canonical_architecture=true")
     print("removed_feature_residue=false")
     print("local_machine_paths=false")
     print("non_loopback_ipv4_literals=false")

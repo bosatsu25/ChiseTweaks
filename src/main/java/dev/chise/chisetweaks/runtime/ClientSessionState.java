@@ -25,12 +25,12 @@ public final class ClientSessionState {
         phase = SessionPhase.JOINED;
         reset(client);
         ChiseTexturePackController.onSessionStart(client);
-        RuntimeDiagnostics.log("join", client);
+        RuntimeDiagnostics.log(RuntimeDiagnosticEvent.CLIENT_JOIN, client);
     }
 
     public static void onDisconnect(Minecraft client) {
         phase = SessionPhase.DISCONNECTING;
-        RuntimeDiagnostics.log("disconnect", client);
+        RuntimeDiagnostics.log(RuntimeDiagnosticEvent.CLIENT_DISCONNECT, client);
         ChiseTexturePackController.onSessionEnd(client);
         reset(client);
         phase = SessionPhase.DISCONNECTED;

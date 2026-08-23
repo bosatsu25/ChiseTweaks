@@ -8,7 +8,7 @@ ChiseTweaks は、大規模建築・技術施設の確認作業を支援する *
 
 | 項目 | 対応 |
 | --- | --- |
-| ChiseTweaks | `0.9.2+mc26.1.2` |
+| ChiseTweaks | `0.9.3+mc26.1.2` |
 | Minecraft | `26.1.2` |
 | Fabric Loader | `0.19.3` 以上 |
 | Fabric API | `0.155.2+26.1.2` 以上 |
@@ -20,122 +20,68 @@ ChiseTweaks は、大規模建築・技術施設の確認作業を支援する *
 
 > 配布JARは Minecraft `26.1.2` 専用です。異なるMinecraft / Fabric / Javaバージョンへ流用しないでください。
 
-## 0.9.2 の主な更新
+## 0.9.3 の主な更新
 
-`0.9.2+mc26.1.2` では、0.9.1のVisual Filter / Analyzer公開後の受入・安定化を中心に更新しています。
+`0.9.3+mc26.1.2` は、0.9.2で分離したVisibility packsとAnalyzerを中心に、移行・異常系・診断・保守性を強化したリリース候補です。
 
-- Chest VisibilityとWhite Concrete Visibilityを別々のbuilt-in resource packへ分離
-- 2つのvisibility packを独立ON/OFF可能に変更
-- resource reloadを直列化・集約し、高速切替時も最後の要求状態へ収束させるstate machineを追加
-- resource reload失敗時のrollback経路を追加
-- Fine Line / Hidden Block / Nether Highlightなどの独立ON/OFFを回帰テストで固定
-- 11個のruntime featureを同時にONにできることを統合回帰テストで固定
-- Ancient Debris Analyzerで、ロード済みチャンクへ後から追加・削除された古代の残骸を固定予算で再検出
-- Lava Source Highlight / Ancient Debris Analyzerの輪郭表示に半透明面を追加
-- Prism Launcher実機向けのperformance acceptance比較CLIを追加
-- JUnit / JaCoCo / PIT / Artifact Audit / Visual Asset Audit / Release Residue Auditをrelease gateとして維持
+- 0.9.1以前の単一 `chisetweaks:chise_texture` packからChest / White Concreteの2packへ安全に移行
+- 旧packのON/OFF、既存pack順序、すでに分割済みの選択状態を保持するmigration policyを追加
+- `options.txt`のpack IDを完全一致で判定し、部分一致による誤migrationを防止
+- resource reload中のdisconnect、client-thread scheduling failure、terminal recovery、rollback失敗を状態機械で処理
+- session join / disconnect、resource reload、migration、feature quarantineを構造化diagnosticsとして記録
+- diagnostic event名を型付きcatalogへ固定し、追加detailを単一行へ安全に正規化
+- `FeatureAvailabilityPolicy` / `UiAvailabilityPolicy` / `ChestVisibilitySetting`へ正式APIを統一
+- `PreReleaseFeaturePolicy` / `PreReleaseUiPolicy` / `ChiseTextureVisibilitySetting`のdeprecated bridgeを削除
+- config migration / future-schema downgrade safety / reload state-machine / session lifecycle / feature isolation / Ancient Debris境界値の回帰テストを強化
+- README・Gradle properties・Fabric metadataの整合性をCIで自動検査
+- optional renderer MODへのhard dependencyと実装namespace直結をCIで監査
+- legacy classや旧assetがruntime / sources JARへ再混入した場合にRelease Residue Auditで失敗させる
+- Java compile warningをCI上のエラーとして扱う
 
 ## 現在の機能構成
 
-設定画面上では **Highlight / Visual Filter / Analyzer / Visibility** の4系統に整理されています。
+設定画面は **Highlight / Visual Filter / Analyzer / Visibility** の4系統です。主要な11個のruntime featureは初期状態OFFです。Chest VisibilityとWhite Concrete VisibilityはMinecraft標準Resource Packsとして初期ONです。
 
-主要な11個のruntime featureは初期状態ではOFFです。Chest VisibilityとWhite Concrete VisibilityはMinecraft標準Resource Packsとして初期ONです。
+### Highlight
 
-## Highlight
+- **Ore Highlights**: 鉱石・古代の残骸・黒曜石系をモデル描画経路で強調。鉱石family、個別target、animation、modded ore互換設定に対応。
+- **Nether Highlight**: ネザー建築素材をローカル範囲で補助表示。
+- **Fine Line Highlight**: Tripwire / Tripwire Hookなど細い技術ブロックを強調。
+- **Hidden Block Highlight**: Powder Snow / Blue Ice / Dead Coral / Sculk Catalystなどを補助表示。
+- **Glass Highlight**: Glass / Glass Paneを形状別に強調。
+- **Kelp Highlight**: Kelp / Kelp Plantへモデルベースの視認性オーバーレイを追加。
 
-### Ore Highlights
-鉱石・古代の残骸・黒曜石系を、元のブロックモデルを維持したままChiseTweaksのオーバーレイで強調します。
+Fine Line / Hidden Block / Nether Highlightは同時にONにできます。旧排他モードや連動OFF処理は使用しません。
 
-- 通常鉱石 / 深層岩鉱石を鉱石ファミリー単位で管理
-- 対象鉱石を個別ON/OFF可能
-- 静止表示 / 控えめなアニメーションを切替可能
-- Modded Ore互換設定に対応
-- ワールド全体を走査するX-ray方式ではなく通常のモデル描画経路を利用
+共通のHighlight設定は水平範囲 `1–8`、垂直範囲 `1–5`、更新間隔 `5–100 ticks`、最大オーバーレイ `1–24` の範囲へ制限されます。
 
-### Nether Highlight
-見えているネザー建築素材を、ローカルな範囲内で色分けした補助線として表示します。
+### Visual Filter
 
-### Fine Line Highlight
-トリップワイヤーとトリップワイヤーフックなど、細い技術ブロックを見つけやすくします。
+- **Block Filter**: Block IDのAllow / Hide listでローカル描画を制御。
+- **Entity Filter**: Entity IDのAllow / Hide listでローカル描画を制御。プレイヤー自身は保護。
 
-### Hidden Block Highlight
-Powder Snow / Blue Ice / Dead Coral / Sculk Catalystなど、見落としやすい対象を補助線で強調します。
+Visual Filterはクライアント描画だけを変更し、サーバー側のblock/entity状態は変更しません。
 
-### Glass Highlight
-ガラスブロックと板ガラスへ形状別のフルブライト補助表示を追加します。既存resource packのベースモデルと色は維持します。
+### Analyzer
 
-### Kelp Highlight
-Kelp / Kelp Plantへマゼンタ＋オレンジのモデルベースオーバーレイを追加します。
+**Lava Source Highlight** は読み込み済みチャンクの近距離だけを走査し、溶岩源を輪郭＋半透明面で表示します。Flowing Lavaは対象外で、未ロードチャンクを強制ロードしません。
 
-### Highlightの同時利用
+**Ancient Debris Analyzer** はNether内の読み込み済みクライアントチャンクだけを対象に古代の残骸を検出します。
 
-**Fine Line Highlight / Hidden Block Highlight / Nether Highlightは同時にONにできます。**
-
-旧実装に存在した排他モード、片方をONにすると別機能がOFFになる連動処理、旧result上限は削除済みです。各機能のON/OFFは独立しています。
-
-共通設定:
-
-- 水平走査範囲: `1–8`
-- 垂直走査範囲: `1–5`
-- 更新間隔: `5–100 ticks`
-- 最大オーバーレイ数: `1–24`
-- ディメンション自動プリセット
-- Fine Line / Hidden Blockの色と不透明度
-- 各ハイライトの対象ブロック
-
-## Visual Filter
-
-建築確認や撮影時に、指定したブロック・エンティティの表示を一時的に絞り込みます。
-
-### Block Filter
-ブロックIDのAllow list / Hide listを設定し、対象ブロックの描画を制御します。必要に応じて表示中チャンクの再描画を要求できます。
-
-### Entity Filter
-エンティティIDのAllow list / Hide listを設定し、対象エンティティの描画を制御します。プレイヤー自身はフィルター対象から保護されます。
-
-Visual Filterはクライアント描画だけを変更し、サーバー側のブロック・エンティティ状態は変更しません。
-
-## Analyzer
-
-### Lava Source Highlight
-読み込み済みチャンク内の近距離だけを対象に溶岩源を走査し、地形越しに **輪郭＋半透明面** を表示します。
-
-- Flowing Lavaは対象外
-- 未ロードチャンクを強制ロードしない
-- 水平 / 垂直範囲、更新間隔、最大表示数を個別設定
-- 保持型GPUバッファを利用
-- 距離に応じて深緑系の表示を変化
-
-### Ancient Debris Analyzer
-ネザー内の **すでに読み込まれているクライアントチャンク** だけを対象に古代の残骸を検出し、地形越しに **輪郭＋半透明面** を表示します。
-
-- Nether only
 - 検出範囲: `16–256 blocks`
 - 最大表示数: `8–128`
-- 未ロードチャンクを要求しない
-- 初回探索は複数tickへ分散
-- 追跡済みチャンクを固定予算で再走査し、後から追加・削除された古代の残骸も反映
 - 再検証: 最大 `16 chunks / tick`
 - 最大追跡数: `4096 chunks`
 - 1チャンクあたり最大保持数: `256`
-- ワールド退出 / 再接続 / ディメンション切替時にsession cacheを破棄
+- 初回探索は複数tickへ分散
+- 追跡済みチャンクを定期再走査し、後から追加・削除された古代の残骸も反映
+- disconnect / reconnect / dimension変更時にsession cacheを破棄
 
-## Visibility
+### Visibility
 
-### Lower Fire Overlay / Fire Visibility
-プレイヤーが燃えているときの **一人称炎オーバーレイだけ** を下げ、中央付近の視界を確保します。
+**Fire Visibility** は一人称の炎オーバーレイだけを下げます。ワールド上の炎モデルやサーバー状態は変更しません。
 
-ワールド上の炎モデル、炎テクスチャ、サーバー状態は変更しません。
-
-### Chest Visibility / チェスト視認性
-チェスト、ダブルチェスト左右の高視認テクスチャを切り替えます。
-
-### White Concrete Visibility / 白色コンクリート視認性
-White Concreteの高視認テクスチャを切り替えます。
-
-Chest VisibilityとWhite Concrete Visibilityは **完全に別のbuilt-in resource pack** です。片方をOFFにしても、もう片方の状態は変わりません。
-
-内蔵pack:
+Chest / White Concreteは完全に独立したbuilt-in resource packです。
 
 - `chisetweaks:chise_chest_visibility`
   - Chest
@@ -144,243 +90,157 @@ Chest VisibilityとWhite Concrete Visibilityは **完全に別のbuilt-in resour
 - `chisetweaks:chise_white_concrete_visibility`
   - White Concrete
 
-どちらも初期ONで、Minecraftの **Options → Resource Packs** から通常のresource packとして直接切り替えることもできます。ゲーム内テクスチャのバイト列は統合元と同一で、pack iconだけ`64x64`へ軽量化しています。
+2つのpackは同一のserialized resource-reload queueを共有します。高速に切り替えてもreloadを重複実行せず、最後の要求状態へ収束します。reload失敗時は既知の正常選択へrollbackし、client-threadへcompletionを配送できなかった場合はterminal recoveryを次の安全なsession境界へ保持します。
 
-2つのpackは同じresource-reload queueを共有します。高速にON/OFFしてもreloadを重複実行せず、最後に要求された選択状態へ収束します。非同期reload失敗時には既知の正常状態へrollbackします。
+## 0.9.1以前からのVisibility pack移行
 
-## 導入方法
+旧 `chisetweaks:chise_texture` を使用していたインスタンスでは、初回起動時に現在のChest / White Concrete packへ一度だけ移行します。
 
-### Prism Launcher
+migrationは次を区別します。
 
-1. Minecraft `26.1.2` / Fabricのインスタンスを用意します。
-2. Java `25` を使用するようPrism Launcher側で設定します。
-3. Fabric APIを導入します。
-4. GitHub Releasesから対象バージョンの `chise-tweaks-<version>.jar` を取得します。
-5. Prism Launcherの **Mods** に、そのJARを1個だけ追加します。
-6. Minecraftを起動します。
+- 旧packが有効だった既存インスタンス
+- 旧packを無効化していた既存インスタンス
+- 0.9.2以降ですでに2packを個別変更済みのインスタンス
+- 新規インストール
+- migration済みインスタンス
 
-ChiseTweaksはクライアント専用なので、Minecraftサーバーの `mods` フォルダへ入れる必要はありません。
+無関係なResource Packの順序や選択状態は変更しません。migration完了markerにより同じ移行を繰り返しません。
 
 ## 設定
 
-Mod Menuを導入している場合は、Mod MenuからChiseTweaksの設定画面を開けます。Mod Menu自体は必須依存ではありません。
+Mod Menuは任意です。導入している場合はMod MenuからChiseTweaks設定画面を開けます。
 
-ローカル設定はMinecraftインスタンスの `config` ディレクトリに保存されます。
+設定ファイル:
 
-- `chisetweaks.json`
-- `chisetweaks-visual.json`
+- `config/chisetweaks.json`
+- `config/chisetweaks-visual.json`
 
-設定JSONは読み込み時に検証・サニタイズされ、不正または安全でない内容はそのまま適用しません。
+設定JSONは検証・サニタイズされ、未知の古いfieldはruntime状態へ直接反映しません。Visual Target schemaは既知のversionから移行し、future schemaを読み込んだ場合も現行target maskへ安全に制限します。
 
-古いバージョンに存在した旧Highlight排他モードや旧result上限などは現行スキーマでは使用しません。未知の古いフィールドは実行状態へ反映されず、現行設定で保存し直した際に整理されます。
+設定画面では変更をメモリ上で扱い、**Apply / Done** を永続化境界とします。Chest / White Concreteの状態はMinecraft標準Resource Packsを正とし、ChiseTweaks JSONへ重複保存しません。
 
-設定画面では変更内容をメモリ上で扱い、**Apply / Done** を永続化境界として保存します。
+## Structured Diagnostics
 
-Chest / White Concreteの有効状態はMinecraft標準Resource Packs管理を正とするため、ChiseTweaksのJSONへ重複保存しません。
+ChiseTweaksは異常時の原因切り分け用に、必要最小限のruntime状態を単一行で出力します。
+
+主なfield:
+
+- `event`
+- `version`
+- `sessionId`
+- `phase`
+- `dimension`
+- `enabled`
+- `visibilityPacks`
+- `quarantined`
+- `reloadState`
+- event固有の `componentId` / `failure` / `source` / `reason` など
+
+対象eventにはjoin / disconnect、component quarantine、resource selection/reload/recovery、Visibility pack migrationがあります。detailは長さと文字種を制限し、改行や制御文字をそのままログへ入れません。サーバーアドレス、ユーザー名、ローカルpathなどはdiagnostic snapshotへ収集しません。
 
 ## トラブルシューティング
 
-### `disconnect-*-client.txt` と本当のCrash Reportを分ける
+### `disconnect-*-client.txt` とCrash Reportを分ける
 
-`disconnect-*-client.txt` は、サーバー接続が切れた際にも生成されます。たとえば次のような例外だけでは、ChiseTweaksのクライアントクラッシュとは断定できません。
+`disconnect-*-client.txt` はサーバー接続が切れた場合にも生成されます。たとえば次の例外だけではChiseTweaksのクライアントクラッシュとは断定できません。
 
 ```text
 java.net.SocketException: Connection reset
 ```
 
-これはネットワーク接続が相手側または途中経路でリセットされたことを示す例外です。ChiseTweaksは独自packet送信や独自Play Protocolを持たないため、この例外だけを根拠にChiseTweaksの描画機能を原因扱いしないでください。
-
-Minecraftプロセス自体が終了した、画面が固まった、描画例外が発生した場合は次をセットで確認します。
+Minecraftプロセス自体が終了した、画面が固まった、描画例外が発生した場合は次を確認してください。
 
 1. `logs/latest.log`
 2. `crash-reports/crash-*.txt` が存在する場合はそのファイル
 3. `disconnect-*-client.txt` が存在する場合はそのファイル
-4. ChiseTweaksのversion
-5. Minecraft / Fabric Loader / Fabric API / Javaのversion
-6. 再現直前にON/OFFしたChiseTweaks機能
+4. `Chise diagnostics event=...` の直近行
+5. Minecraft / Fabric Loader / Fabric API / Java version
 
-`latest.log` またはCrash Report内に `dev.chise.chisetweaks`、ChiseTweaksのMixin、renderer、resource reloadなどのスタックが存在するかを見て原因を切り分けます。
+`dev.chise.chisetweaks`、ChiseTweaks Mixin、renderer、resource reloadのstackがあるかを確認し、ネットワーク切断とMOD内部例外を分離します。
 
-### Resource Pack切替後に見た目が戻らない場合
+## 安全性・互換性
 
-Chest Visibility / White Concrete VisibilityはMinecraft標準Resource Packs機構を使用します。切替直後はresource reload完了まで待ち、必要なら **Options → Resource Packs** で2つのChiseTweaks packの選択状態を確認してください。
-
-## 安全性・障害分離
-
+- Client only
 - サーバーMOD不要
-- カスタムPlay Protocolなし
-- サーバーへの独自packet送信なし
-- リモートMOD検出なし
-- ChiseTweaks自身による独自バックグラウンドスレッド生成なし
-- 自動MODダウンロードなし
-- 自動JAR置換なし
-- 外部設定ライブラリ不要
-- Feature障害はquarantine方式で隔離
-- Mixin障害はfail-softを基本方針とする
-- Analyzerは未ロードチャンクを生成・要求しない
-
-描画機能の一部で障害が発生した場合も、可能な限り該当機能だけを隔離し、Minecraftクライアント全体への波及を抑えます。
+- custom Play Protocolなし
+- 独自packet送信なし
+- remote MOD detectionなし
+- ChiseTweaks独自background threadなし
+- 自動MOD downloadなし
+- 自動JAR replacementなし
+- Mixinは`required=false`のfail-soft構成
+- Feature障害はquarantineで隔離
+- Analyzerは未ロードチャンクを要求しない
+- Sodiumは任意・推奨でありhard dependencyではない
+- Iris / ImmediatelyFast / EntityCullingを含むrenderer MOD実装namespaceへproduction codeから直接結合しないことをCIで監査
 
 ## パフォーマンス方針
 
-大規模建築・技術施設での利用を想定し、処理量に明示的な上限を設けています。
+- loaded chunks onlyの探索
+- 固定上限bufferとretained GPU bufferを優先
+- Ancient Debris validationは最大 `16 chunks / tick`
+- runtime iconは `128x128`
+- built-in pack iconは `64x64`
+- runtime JAR改善目標: `400000 bytes`未満
+- CI上限: `440000 bytes`
 
-- Highlight scan candidate上限: `128`
-- 1走査あたりのLine-of-Sight ray上限: `192`
-- World overlay上限: `24`
-- Ancient Debris初回探索を複数tickへ分散
-- Ancient Debris再検証: 最大 `16 chunks / tick`
-- 壁越しAnalyzer描画は保持型GPUバッファを再利用
-- 描画対象Snapshotと候補bufferは固定上限で再利用
-- フレームごとの不要なジオメトリ再生成・大規模allocationを回避
-- runtime JAR icon: `128x128`
-- built-in resource pack icon: `64x64`
-- runtime JAR: `400KB`未満を改善目標、`440KB`未満をCI上の回帰上限として監視
+Prism Launcherで取得したbaseline / candidate CSV、必要に応じてJFRを `comparePerformanceEvidence` で比較できます。FPS、P50/P95/P99 frametime、heapの基準を自動判定します。
 
-## 実機パフォーマンス受入
+## 自動品質ゲート
 
-GPUドライバ、Sodium、描画距離、建築規模の影響を受けるため、実FPSをGitHub CI上の疑似値で代用しません。実際のPrism Launcher環境で同一条件のbaseline / candidateをそれぞれ3回以上取得し、テスト専用CLIで判定します。
+CIでは次をRelease Candidateの必須条件として扱います。
 
-```text
-./gradlew comparePerformanceEvidence \
-  -PperformanceBaseline=<baseline.csv> \
-  -PperformanceCandidate=<candidate.csv>
-```
-
-JFRも比較する場合:
-
-```text
-./gradlew comparePerformanceEvidence \
-  -PperformanceBaseline=<baseline.csv> \
-  -PperformanceCandidate=<candidate.csv> \
-  -PperformanceBaselineJfr=<baseline.jfr> \
-  -PperformanceCandidateJfr=<candidate.jfr>
-```
-
-同一 `scenario / minecraft / java / fabric_loader / environment_id` のcaptureだけを比較できます。受入判定では少なくともP50 / P95 / P99 frametime、heap、average FPSの3回以上の測定を必須とします。
-
-回帰許容上限:
-
-| 指標 | 最大悪化率 |
-| --- | ---: |
-| P50 frametime | 8% |
-| P95 frametime | 10% |
-| P99 frametime | 15% |
-| Heap | 10% |
-| Average FPS | 10%低下 |
-| Allocation | 15% |
-| Render thread CPU | 10% |
-| Startup | 15% |
-
-上限を超えるとCLIは `performance_acceptance=FAIL` で失敗します。範囲内なら `performance_acceptance=PASS` です。
-
-## 0.9.x統合回帰
-
-CIでは次の不変条件も固定しています。
-
-- 11個のruntime featureを同時にONにできる
-- 1機能を切り替えても他機能の設定が勝手に反転しない
-- Visual Filter / Fine Line / Hidden Block / Nether Highlightに旧排他処理が戻らない
-- Chest / White Concreteのpack selectionが独立している
-- rapid toggleのreload state machineが最終要求へ収束する
-- join / disconnect / dimension-sensitive featureにsession reset経路が存在する
-- Ancient Debrisの追加・削除を追跡済みチャンクの再走査で反映する
-- `256 blocks / 128 markers` を超えない
-
-## 次の開発タスク
-
-0.9.2公開後は、新機能を増やす前に移行・異常系・実機互換を優先します。
-
-| 優先度 | タスク | 種別 | 完了条件 |
-| --- | --- | --- | --- |
-| P0 | 0.9.1 → 0.9.2 built-in pack移行の明示対応 | 互換性 / 潜在不具合 | 旧 `chisetweaks:chise_texture` 選択状態からChest / White Concreteの2packへ安全に移行でき、既存Resource Packs順序を壊さない |
-| P0 | resource reloadのterminal failure hardening | 潜在不具合 | reload完了後のclient-thread scheduling失敗・終了競合でもcoordinator状態とpack selectionが不整合にならない |
-| P0 | crash / disconnect診断情報の強化 | 保守性 | version、enabled features、selected visibility packs、quarantine状態、dimension/sessionを1つのdiagnostic snapshotとして取得できる |
-| P1 | `PreReleaseFeaturePolicy` / `PreReleaseUiPolicy` のrelease後リファクタリング | 技術負債 | pre-release命名を除去し、feature availabilityとUI availabilityの責務を整理する |
-| P1 | `ChiseTextureVisibilitySetting` をChest固有名へrename | 技術負債 | `ChestVisibilitySetting`など実責務と一致する名前へ変更し、テスト・参照を更新する |
-| P1 | Prism Launcher実機統合リグレッション | QA | 全機能ON、Overworld / Nether / End、再接続、Resource Pack高速切替、Ancient Debris追加・削除を実機で連続確認する |
-| P1 | Rendering MOD互換マトリクス | 互換性 | Sodium / Iris / ImmediatelyFast / EntityCullingなど描画経路に関わる構成でsmoke testを行い、既知の組み合わせを記録する |
-| P1 | 実機performance baselineの固定 | 性能 | 同一Prism環境でbaseline/candidateを各3回以上測定し、`comparePerformanceEvidence`をPASSさせる |
-| P2 | Resource Pack reload中のUI状態表示 | UI/UX | reload中・成功・rollbackをユーザーが判別でき、連打しても状態を誤認しない |
-| P2 | Analyzer最大条件の視認性・stutter stress test | 性能 / UI | Lava + Ancient Debris同時ON、最大range / markers条件でstutter・重なり・視認性を確認する |
-| P2 | config upgrade / downgrade回帰 | 互換性 | 0.7.x / 0.9.1 / 0.9.2間の設定読込で未知field・廃止field・default値が安全に扱われる |
-
-### 次に着手する順序
-
-次の実装は以下の順序を推奨します。
-
-1. **0.9.1 → 0.9.2 Resource Pack migration**
-2. **resource reload異常系のhardening**
-3. **diagnostic snapshot追加**
-4. **PreRelease系とChest設定クラスのrename/refactor**
-5. **Prism実機統合・Rendering MOD互換テスト**
-6. **performance baseline固定**
-7. UI/UX・Analyzer表示の追加調整
-
-## 品質保証
-
-CIはJava 25環境で以下を実行します。
-
-- コンパイル
-- JUnit contract / regression tests
+- Java 25 / Gradle / Python toolchain contract
+- version policy
+- repository / production source audit
+- README / version / Fabric metadata consistency audit
+- optional renderer compatibility contract audit
+- Java compile warning = 0
+- JUnit
 - JaCoCo line coverage gate
-- PIT mutation / test-strength gate
-- Repository audit
-- Production source usage audit
-- Artifact audit
-- Visual asset audit
-- Release residue audit
-- client-only metadata検証
-- runtime JAR容量検証
-- split built-in visibility packsの構成・PNG寸法・元テクスチャSHA-256検証
+- PIT mutation coverage / mutation score / test strength gate
+- Artifact Audit
+- Visual Asset Audit
+- Release Residue Audit
+- runtime JAR size / metadata / client-only contract
 
-品質ゲート対象のcoverage / mutation / test-strengthは現在 `96%` を基準にしています。
+品質閾値はJaCoCo line coverage、PIT coverage、mutation score、test strengthの各 `96%` です。
 
-## Release
+## 実機受入について
 
-Releaseは `main` のCIが成功した場合のみ自動実行され、CIで検証したcommit SHAと `main` の最新SHAが一致する場合だけ進みます。
+自動テストではMinecraftの実GPU描画、Prism Launcher固有環境、実際のworld移動時の見た目やframetimeを完全には再現できません。正式配布前の実機受入では、少なくとも次を確認対象とします。
 
-Release workflowは以下を再確認します。
+- 11 runtime features同時ON
+- Fine Line + Hidden Block + Nether Highlight同時ON
+- Block / Entity Visual Filter
+- Chest / White Concrete高速ON/OFF
+- Lava + Ancient Debris同時利用
+- 古代の残骸の追加 / 削除反映
+- Overworld / Nether / End移動
+- disconnect / reconnect
+- 大規模建築環境でのFPS / frametime / heap比較
 
-- version / SemVer
-- 既存tag・既存Releaseとの衝突防止
-- runtime JAR再ビルド
-- artifact / visual asset / release residue監査
-- SHA-256
-- `fabric.mod.json`
-- Minecraft / Fabric / Java条件
-- client-only条件
+**このREADMEは、実機操作を実施済みと主張するものではありません。** 実機受入結果は自動品質ゲートと分けて扱います。
 
-GitHub ReleaseへChiseTweaksがアップロードするMOD成果物は **runtime `.jar` 1個だけ**です。GitHubが自動生成するSource code ZIP / tar.gzはGitHub側の標準表示です。
+## 導入
 
-## バージョニング
+Prism LauncherではMinecraft `26.1.2` / Fabric / Java `25`のインスタンスを使用し、Fabric APIを導入したうえで、Modsへ次のruntime JARを1個だけ追加します。
 
-形式:
+`chise-tweaks-0.9.3+mc26.1.2.jar`
 
-```text
-MAJOR.MINOR.PATCH+mc<MinecraftVersion>
+ChiseTweaksはクライアント専用なのでサーバーの`mods`フォルダへ入れる必要はありません。
+
+## Build / Test
+
+```bash
+./gradlew clean test jacocoTestCoverageVerification pitest assemble
+python scripts/repository_audit.py
+python scripts/source_usage_audit.py
+python scripts/documentation_consistency_audit.py
+python scripts/compatibility_contract_audit.py
+python scripts/artifact_audit.py
+python scripts/visual_asset_audit.py
+python scripts/release_residue_audit.py
 ```
 
-現在:
-
-```text
-0.9.2+mc26.1.2
-```
-
-- `PATCH`: バグ修正・互換性を壊さない改善
-- `MINOR`: 互換性を維持した機能追加
-- `MAJOR`: 互換性を壊す変更
-
-同じversion/tagのReleaseは再生成しません。
-
-## Releaseから使うファイル
-
-Minecraftへ導入するのは次のJARだけです。
-
-```text
-chise-tweaks-0.9.2+mc26.1.2.jar
-```
-
-## ライセンス
-
-このリポジトリには `MIT` / `Apache-2.0` のライセンス情報とNOTICEが含まれます。再配布・公開範囲を変更する場合は、リポジトリ内のLICENSE / NOTICEを確認してください。
+配布物はruntime JARのみです。sources JARは品質検証・開発用artifactとして生成されますが、Official Releaseへアップロードする対象ではありません。

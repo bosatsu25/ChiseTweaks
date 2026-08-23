@@ -1,7 +1,7 @@
 package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
+import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 
 import java.util.Objects;
 
@@ -32,12 +32,12 @@ public final class FeatureSwitch extends ChiseBooleanSetting {
 
     @Override
     protected boolean readValue() {
-        return PreReleaseFeaturePolicy.isAvailable(definition) && enabled;
+        return FeatureAvailabilityPolicy.isAvailable(definition) && enabled;
     }
 
     @Override
     protected void writeValue(boolean value) {
-        enabled = PreReleaseFeaturePolicy.isAvailable(definition) && value;
+        enabled = FeatureAvailabilityPolicy.isAvailable(definition) && value;
     }
 
     @Override

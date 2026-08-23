@@ -17,10 +17,10 @@ final class PostGlassRegressionHardeningContractTest {
     void runtimeKeepsWorksiteHighlightsIndependentWhileRetainingBoundedScanning() throws IOException {
         String manager = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
         String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
-        assertTrue(manager.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)"));
+        assertTrue(manager.contains("FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)"));
         assertTrue(manager.contains("hasAvailableWorksiteVisibilityFeature()"));
         assertTrue(manager.contains("definition.isWorksiteVisibilityMode()"));
-        assertTrue(manager.contains("PreReleaseFeaturePolicy.isAvailable(definition)"));
+        assertTrue(manager.contains("FeatureAvailabilityPolicy.isAvailable(definition)"));
         assertTrue(manager.contains("if (tickSchedule.length != 0)"));
         assertFalse(bindings.contains("bindExclusiveWorksiteMode"));
         assertFalse(bindings.contains("applyWorksiteModesAtomically"));
@@ -34,8 +34,8 @@ final class PostGlassRegressionHardeningContractTest {
 
         assertFalse(config.contains("BuilderFocusVisibility"));
         assertFalse(config.contains("PreReleaseFeaturePolicy"));
-        assertTrue(bindings.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)"));
-        assertTrue(bindings.contains("PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES)"));
+        assertTrue(bindings.contains("FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)"));
+        assertTrue(bindings.contains("FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES)"));
         assertTrue(bindings.contains("if (builderFocusAvailable())"));
         assertTrue(bindings.contains("BuilderFocusVisibility.applyConfig();"));
     }

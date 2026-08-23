@@ -100,14 +100,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
             case INTEGER -> createIntegerRow(definition);
             case ACTION -> createActionRow(definition);
         };
-        applyPrereleaseInteractivity(row);
+        applyAvailabilityInteractivity(row);
         return row;
     }
 
-    private void applyPrereleaseInteractivity(ChiseTweaksSettingRowView row) {
-        boolean rowInteractive = PreReleaseUiPolicy.isRowInteractive(surface, row.definition);
+    private void applyAvailabilityInteractivity(ChiseTweaksSettingRowView row) {
+        boolean rowInteractive = UiAvailabilityPolicy.isRowInteractive(surface, row.definition);
         boolean actionInteractive = row.definition.action() != null
-                && PreReleaseUiPolicy.isActionInteractive(surface, row.definition.action());
+                && UiAvailabilityPolicy.isActionInteractive(surface, row.definition.action());
         switch (row.definition.kind()) {
             case HEADER -> {
                 if (row.primary != null) row.primary.active = actionInteractive;
@@ -173,7 +173,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void runRowAction(ChiseTweaksSettingRowDefinition.Action action) {
-        if (!PreReleaseUiPolicy.isActionInteractive(surface, action)) return;
+        if (!UiAvailabilityPolicy.isActionInteractive(surface, action)) return;
         if (minecraft == null || action == null || !applyChanges()) return;
         switch (action) {
             case OPEN_HIGHLIGHT_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
@@ -309,9 +309,9 @@ public final class ChiseTweaksConfigScreen extends Screen {
 
     private boolean rowTextInteractive(ChiseTweaksSettingRowDefinition definition) {
         if (definition.kind() == ChiseTweaksSettingRowDefinition.Kind.ACTION) {
-            return PreReleaseUiPolicy.isActionInteractive(surface, definition.action());
+            return UiAvailabilityPolicy.isActionInteractive(surface, definition.action());
         }
-        return PreReleaseUiPolicy.isRowInteractive(surface, definition);
+        return UiAvailabilityPolicy.isRowInteractive(surface, definition);
     }
 
     private void renderScrollbar(GuiGraphicsExtractor extractor) {

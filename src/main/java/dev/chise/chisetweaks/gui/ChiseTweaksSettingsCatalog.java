@@ -1,9 +1,9 @@
 package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
+import dev.chise.chisetweaks.config.ChestVisibilitySetting;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
-import dev.chise.chisetweaks.config.ChiseTextureVisibilitySetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
@@ -83,7 +83,7 @@ final class ChiseTweaksSettingsCatalog {
         header(rows, "header.visibilityImprovement", "screen.chisetweaks.settings.section.visibility");
         compactFeature(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
                 FeatureDefinition.FIRE_VISIBILITY);
-        boolLiteral(rows, "chestVisibility", ChiseTextureVisibilitySetting.INSTANCE,
+        boolLiteral(rows, "chestVisibility", ChestVisibilitySetting.INSTANCE,
                 "Chest Visibility / チェスト視認性",
                 "Toggle only the high-visibility chest textures / 高視認のチェストテクスチャだけを切り替えます");
         boolLiteral(rows, "whiteConcreteVisibility", WhiteConcreteVisibilitySetting.INSTANCE,

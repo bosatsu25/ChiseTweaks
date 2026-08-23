@@ -7,7 +7,7 @@ import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
+import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import dev.chise.chisetweaks.feature.rendering.model.OreHighlightRenderInvalidation;
 import dev.chise.chisetweaks.feature.rendering.model.VisualRenderState;
@@ -63,8 +63,8 @@ public final class FeatureControlBindings {
     }
 
     private static boolean builderFocusAvailable() {
-        return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)
-                || PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES);
+        return FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_BLOCKS)
+                || FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BUILDER_FOCUS_ENTITIES);
     }
 
     private static void bindSanitized(ChiseStringListSetting config, Runnable rebuild) {

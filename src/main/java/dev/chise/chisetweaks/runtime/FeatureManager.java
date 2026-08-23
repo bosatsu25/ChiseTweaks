@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.runtime;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
+import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
 import dev.chise.chisetweaks.feature.rendering.AncientDebrisAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.LavaHighlightFeature;
@@ -38,10 +38,10 @@ public final class FeatureManager {
     public synchronized void init() {
         if (initialized) return;
 
-        if (PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
+        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
             registerComponent(new LavaHighlightFeature());
         }
-        if (PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
+        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
             registerComponent(new AncientDebrisAnalyzerFeature());
         }
         if (hasAvailableWorksiteVisibilityFeature()) {
@@ -94,7 +94,7 @@ public final class FeatureManager {
     private static boolean hasAvailableWorksiteVisibilityFeature() {
         for (FeatureDefinition definition : FeatureDefinition.VALUES) {
             if (definition.isWorksiteVisibilityMode()
-                    && PreReleaseFeaturePolicy.isAvailable(definition)) {
+                    && FeatureAvailabilityPolicy.isAvailable(definition)) {
                 return true;
             }
         }
@@ -123,7 +123,11 @@ public final class FeatureManager {
                     "Runtime component '{}' was quarantined during initialization after {}",
                     component.getId(),
                     failure.getClass().getSimpleName());
-            RuntimeDiagnostics.log("component-init-quarantine-" + component.getId(), Minecraft.getInstance());
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.COMPONENT_INIT_QUARANTINE,
+                    Minecraft.getInstance(),
+                    RuntimeDiagnosticDetail.of("componentId", component.getId()),
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
         }
     }
 
@@ -179,7 +183,11 @@ public final class FeatureManager {
                         "Runtime component '{}' was quarantined after {}",
                         component.getId(),
                         failure.getClass().getSimpleName());
-                RuntimeDiagnostics.log("component-quarantine-" + component.getId(), client);
+                RuntimeDiagnostics.log(
+                        RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
+                        client,
+                        RuntimeDiagnosticDetail.of("componentId", component.getId()),
+                        RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
             }
         }
 

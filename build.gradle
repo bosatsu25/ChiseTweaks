@@ -102,7 +102,7 @@ processResources {
 tasks.withType(JavaCompile).configureEach {
     options.release = 25
     options.encoding = 'UTF-8'
-    options.compilerArgs.addAll(['-Xlint:deprecation', '-Xlint:unchecked'])
+    options.compilerArgs.addAll(['-Xlint:deprecation', '-Xlint:unchecked', '-Werror'])
 }
 
 tasks.withType(Test).configureEach {
@@ -144,14 +144,14 @@ jacoco {
     toolVersion = project.jacoco_version
 }
 
-// JaCoCoは決定的policy、描画budget、UI geometry/availability、critical tick dispatchを広く監視する。
+// JaCoCoは決定的policy、描画budget、UI geometry/availability、diagnostics、critical tick dispatchを広く監視する。
 def coverageGateClasses = [
         'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
         'dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy*.class',
         'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
+        'dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicy*.class',
         'dev/chise/chisetweaks/core/policy/LavaVisionPalettePolicy*.class',
-        'dev/chise/chisetweaks/core/policy/PreReleaseFeaturePolicy*.class',
         'dev/chise/chisetweaks/core/policy/WorksiteHighlightProfilePolicy*.class',
         'dev/chise/chisetweaks/core/vision/FireVisibilityPolicy*.class',
         'dev/chise/chisetweaks/core/vision/GlassHighlightTargetPolicy*.class',
@@ -160,7 +160,9 @@ def coverageGateClasses = [
         'dev/chise/chisetweaks/core/vision/VisualTargetGroupPolicy*.class',
         'dev/chise/chisetweaks/core/vision/VisualTargetSelectionPolicy*.class',
         'dev/chise/chisetweaks/gui/ChiseTweaksSettingsLayout*.class',
-        'dev/chise/chisetweaks/gui/PreReleaseUiPolicy*.class',
+        'dev/chise/chisetweaks/gui/UiAvailabilityPolicy*.class',
+        'dev/chise/chisetweaks/runtime/RuntimeDiagnosticDetail*.class',
+        'dev/chise/chisetweaks/runtime/RuntimeDiagnosticSnapshot*.class',
         'dev/chise/chisetweaks/runtime/FeatureManager$TickSlot*.class'
 ]
 
@@ -171,8 +173,8 @@ def mutationGateClasses = [
         'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
         'dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy',
         'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
+        'dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy',
         'dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy',
-        'dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy',
         'dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy',
         'dev.chise.chisetweaks.core.vision.FireVisibilityPolicy',
         'dev.chise.chisetweaks.core.vision.GlassHighlightTargetPolicy',
@@ -180,7 +182,9 @@ def mutationGateClasses = [
         'dev.chise.chisetweaks.core.vision.VanillaOreVisualCatalog',
         'dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy',
         'dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy',
-        'dev.chise.chisetweaks.gui.PreReleaseUiPolicy',
+        'dev.chise.chisetweaks.gui.UiAvailabilityPolicy',
+        'dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail',
+        'dev.chise.chisetweaks.runtime.RuntimeDiagnosticSnapshot',
         'dev.chise.chisetweaks.runtime.FeatureManager$TickSlot*'
 ]
 

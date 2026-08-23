@@ -4,8 +4,11 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
-import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
+import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.feature.TickingFeature;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticEvent;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -357,6 +360,12 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
             ChiseTweaksClient.LOGGER.error(
                     "Ancient Debris Analyzer rendering was quarantined after {}",
                     failure.getClass().getSimpleName());
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
+                    Minecraft.getInstance(),
+                    RuntimeDiagnosticDetail.of("componentId", getId()),
+                    RuntimeDiagnosticDetail.of("stage", "render"),
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
         }
     }
 
@@ -449,7 +458,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
 
     @Override
     public boolean isEnabled() {
-        return PreReleaseFeaturePolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)
+        return FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)
                 && !isSessionQuarantined()
                 && LocalFeatureConfig.getInstance().ancientDebrisAnalyzerEnabled;
     }

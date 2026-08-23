@@ -2,6 +2,8 @@ package dev.chise.chisetweaks.feature.resource;
 
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.policy.ResourcePackSelectionPolicy;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticEvent;
 import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.PackRepository;
@@ -27,30 +29,6 @@ public final class ChiseTexturePackController {
     public static void setEnabled(VisibilityPack pack, boolean enabled) {
         VisibilityPack checked = Objects.requireNonNull(pack, "pack");
         setEnabled(checked.repositoryPackId(), checked.displayName(), enabled);
-    }
-
-    /** @deprecated pack種別を明示する{@link #isEnabled(VisibilityPack)}を使用する。 */
-    @Deprecated(forRemoval = true)
-    public static boolean isChestEnabled() {
-        return isEnabled(VisibilityPack.CHEST);
-    }
-
-    /** @deprecated pack種別を明示する{@link #setEnabled(VisibilityPack, boolean)}を使用する。 */
-    @Deprecated(forRemoval = true)
-    public static void setChestEnabled(boolean enabled) {
-        setEnabled(VisibilityPack.CHEST, enabled);
-    }
-
-    /** @deprecated pack種別を明示する{@link #isEnabled(VisibilityPack)}を使用する。 */
-    @Deprecated(forRemoval = true)
-    public static boolean isWhiteConcreteEnabled() {
-        return isEnabled(VisibilityPack.WHITE_CONCRETE);
-    }
-
-    /** @deprecated pack種別を明示する{@link #setEnabled(VisibilityPack, boolean)}を使用する。 */
-    @Deprecated(forRemoval = true)
-    public static void setWhiteConcreteEnabled(boolean enabled) {
-        setEnabled(VisibilityPack.WHITE_CONCRETE, enabled);
     }
 
     public static boolean isReloadInFlight() {
@@ -89,7 +67,7 @@ public final class ChiseTexturePackController {
     static boolean applyMigrationSelection(Minecraft client, List<String> selection) {
         if (client == null || selection == null) return false;
         if (!recoverTerminalFailure(client)) return false;
-        return applySelection(client, "Visibility pack migration", List.copyOf(selection));
+        return applySelection(client, "visibility-pack-migration", List.copyOf(selection));
     }
 
     private static boolean isEnabled(String packId) {
@@ -127,7 +105,11 @@ public final class ChiseTexturePackController {
         } catch (RuntimeException | LinkageError failure) {
             restoreSelection(client, repository, previous);
             logFailure(label, failure);
-            RuntimeDiagnostics.log("resource-pack-selection-failure", client);
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.RESOURCE_PACK_SELECTION_FAILURE,
+                    client,
+                    RuntimeDiagnosticDetail.of("operation", label),
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
             return false;
         }
 
@@ -155,6 +137,12 @@ public final class ChiseTexturePackController {
                     ChiseTweaksClient.LOGGER.error(
                             "Chise visibility resource reload completion could not reach the client thread after {}",
                             schedulingFailure.getClass().getSimpleName());
+                    RuntimeDiagnostics.log(
+                            RuntimeDiagnosticEvent.RESOURCE_RELOAD_TERMINAL_FAILURE,
+                            client,
+                            RuntimeDiagnosticDetail.of(
+                                    "failure", schedulingFailure.getClass().getSimpleName()),
+                            RuntimeDiagnosticDetail.of("reloadCompleted", failure == null));
                 }
             });
         } catch (RuntimeException | LinkageError failure) {
@@ -183,7 +171,13 @@ public final class ChiseTexturePackController {
             case NONE -> {
             }
         }
-        if (failure != null) RuntimeDiagnostics.log("resource-reload-failure", client);
+        if (failure != null) {
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.RESOURCE_RELOAD_FAILURE,
+                    client,
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()),
+                    RuntimeDiagnosticDetail.of("action", completion.action().name().toLowerCase()));
+        }
     }
 
     private static boolean recoverTerminalFailure(Minecraft client) {
@@ -203,13 +197,21 @@ public final class ChiseTexturePackController {
             TERMINAL_RECOVERY.compareAndSet(null, recovery);
             restoreSelection(client, repository, before);
             logFailure("Chise visibility terminal recovery", failure);
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.RESOURCE_RELOAD_TERMINAL_FAILURE,
+                    client,
+                    RuntimeDiagnosticDetail.of("stage", "recovery"),
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
             return false;
         }
 
         if (recovery.requiresReload()) {
             startReload(client, recovery.activeSelection(), recovery.desiredSelection());
         }
-        RuntimeDiagnostics.log("resource-reload-recovery", client);
+        RuntimeDiagnostics.log(
+                RuntimeDiagnosticEvent.RESOURCE_RELOAD_RECOVERY,
+                client,
+                RuntimeDiagnosticDetail.of("requiresReload", recovery.requiresReload()));
         return true;
     }
 
@@ -225,6 +227,11 @@ public final class ChiseTexturePackController {
             ChiseTweaksClient.LOGGER.error(
                     "Chise visibility pack selection rollback failed after {}",
                     rollbackFailure.getClass().getSimpleName());
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.RESOURCE_PACK_ROLLBACK_FAILURE,
+                    client,
+                    RuntimeDiagnosticDetail.of(
+                            "failure", rollbackFailure.getClass().getSimpleName()));
             return false;
         }
     }
