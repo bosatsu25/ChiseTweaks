@@ -51,6 +51,8 @@ final class VisualFilterVisibilityReleaseContractTest {
     void visibilityPacksAreIndependentAndShareOneReloadQueue() throws IOException {
         String controller = source(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java");
+        String coordinator = source(
+                "src/main/java/dev/chise/chisetweaks/feature/resource/ResourceReloadCoordinator.java");
         String registrar = source(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackRegistrar.java");
         String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
@@ -67,9 +69,11 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(controller.contains("options.updateResourcePacks(repository)"));
         assertTrue(controller.contains("reloadResourcePacks().whenComplete"));
         assertTrue(controller.contains("client.execute(() -> completeReload"));
-        assertTrue(controller.contains("reloadInFlight"));
-        assertTrue(controller.contains("reloadPending"));
+        assertTrue(controller.contains("ResourceReloadCoordinator RELOADS"));
+        assertTrue(controller.contains("RELOADS.markPending()"));
         assertTrue(controller.contains("restoreSelection"));
+        assertTrue(coordinator.contains("Action.RELOAD"));
+        assertTrue(coordinator.contains("Action.RESTORE"));
         assertTrue(catalog.contains("\"chestVisibility\""));
         assertTrue(catalog.contains("\"whiteConcreteVisibility\""));
         assertTrue(catalog.contains("Chest Visibility / チェスト視認性"));
