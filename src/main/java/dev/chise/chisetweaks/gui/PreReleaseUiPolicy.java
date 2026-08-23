@@ -65,6 +65,7 @@ final class PreReleaseUiPolicy {
                 || "hiddenSurfaceColor".equals(id)
                 || "hiddenSurfaceOpacity".equals(id)
                 || id.startsWith("visualTargetMaterial")
+                || id.startsWith("visualTargetTechnical")
                 || id.startsWith("visualTargetHidden");
     }
 }
