@@ -15,18 +15,47 @@ FORBIDDEN_IMPLEMENTATION_TOKENS = (
     "immediatelyfast",
     "entityculling",
 )
+FORBIDDEN_METADATA_RELATIONS = ("depends", "breaks", "conflicts")
 EXPECTED_MIXIN_PLUGIN = "dev.chise.chisetweaks.mixin.FeatureAvailabilityMixinConfigPlugin"
+
+
+def relation_mod_ids(value: object) -> set[str]:
+    if isinstance(value, dict):
+        return {str(key).lower() for key in value}
+    if isinstance(value, list):
+        return {str(item).lower() for item in value}
+    return set()
+
+
+def scan_resource_namespaces(failures: list[str]) -> None:
+    resources = ROOT / "src/main/resources"
+    for path in resources.rglob("*.json"):
+        if path.name == "fabric.mod.json":
+            continue
+        text = path.read_text(encoding="utf-8").lower()
+        relative = path.relative_to(ROOT)
+        for token in FORBIDDEN_IMPLEMENTATION_TOKENS:
+            if token.lower() in text:
+                failures.append(
+                    f"{relative}: renderer implementation namespace leaked into resource metadata: {token}"
+                )
 
 
 def main() -> int:
     failures: list[str] = []
     fabric = json.loads((ROOT / "src/main/resources/fabric.mod.json").read_text(encoding="utf-8"))
-    hard_depends = set(fabric.get("depends", {}))
-    hard_renderer_dependencies = sorted(hard_depends & OPTIONAL_RENDERER_MODS)
-    if hard_renderer_dependencies:
-        failures.append(f"optional renderer mods became hard dependencies: {hard_renderer_dependencies}")
 
-    recommends = fabric.get("recommends", {})
+    if fabric.get("environment") != "client":
+        failures.append("ChiseTweaks must remain client-only")
+
+    for relation in FORBIDDEN_METADATA_RELATIONS:
+        renderer_relations = sorted(relation_mod_ids(fabric.get(relation, {})) & OPTIONAL_RENDERER_MODS)
+        if renderer_relations:
+            failures.append(
+                f"optional renderer mods became {relation} relationships: {renderer_relations}"
+            )
+
+    recommends = relation_mod_ids(fabric.get("recommends", {}))
     if "sodium" not in recommends:
         failures.append("Sodium should remain an optional recommendation")
 
@@ -45,6 +74,8 @@ def main() -> int:
             if token.lower() in text:
                 failures.append(f"{relative}: hard renderer implementation reference detected: {token}")
 
+    scan_resource_namespaces(failures)
+
     if failures:
         print("COMPATIBILITY CONTRACT AUDIT: FAIL", file=sys.stderr)
         for failure in failures:
@@ -53,6 +84,8 @@ def main() -> int:
 
     print("COMPATIBILITY CONTRACT AUDIT: PASS")
     print("optional_renderer_hard_dependencies=false")
+    print("optional_renderer_conflicts=false")
+    print("resource_namespace_coupling=false")
     print("mixin_fail_soft=true")
     print("canonical_mixin_plugin=true")
     return 0
