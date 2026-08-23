@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PreReleaseConfigGateTest {
     @Test
-    void featureConfigCannotEnableUnreleasedFeatureSwitches() {
+    void featureConfigRestoresOnlyReleasedFeatureSwitches() {
         try {
             for (FeatureSwitch feature : FeatureSwitches.VALUES) {
                 feature.setBooleanValueSilently(true);
@@ -16,9 +16,9 @@ final class PreReleaseConfigGateTest {
             assertTrue(FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue());
             assertTrue(FeatureSwitches.GLASS_INSPECTION.getBooleanValue());
             assertTrue(FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue());
+            assertTrue(FeatureSwitches.FINE_THREAD_TRACE.getBooleanValue());
+            assertTrue(FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue());
             assertFalse(FeatureSwitches.NETHER_PALETTE.getBooleanValue());
-            assertFalse(FeatureSwitches.FINE_THREAD_TRACE.getBooleanValue());
-            assertFalse(FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue());
             assertFalse(FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue());
             assertFalse(FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue());
         } finally {
