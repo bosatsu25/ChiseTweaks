@@ -66,13 +66,10 @@ def audit() -> list[str]:
     baseline = load_json("quality/functional-parity-baseline.json")
     failures: list[str] = []
 
-    properties: dict[str, str] = {}
-    for raw in read("gradle.properties").splitlines():
-        line = raw.strip()
-        if line and not line.startswith("#") and "=" in line:
-            key, value = line.split("=", 1)
-            properties[key.strip()] = value.strip()
-    diff("baseline version", baseline["baseline"]["version"], properties.get("mod_version"), failures)
+    # baseline.version/commit are provenance only. A release-version bump must not be interpreted
+    # as a feature-parity change; the actual product contract below remains frozen independently.
+    if not baseline.get("baseline", {}).get("version") or not baseline.get("baseline", {}).get("commit"):
+        failures.append("functional parity baseline provenance is incomplete")
 
     definition_text = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java")
     definition_map = enum_string_map(definition_text)
@@ -82,7 +79,6 @@ def audit() -> list[str]:
     feature_switches = read("src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java")
     feature_switch = read("src/main/java/dev/chise/chisetweaks/config/FeatureSwitch.java")
     global_constants = re.findall(r"FeatureDefinition\.([A-Z][A-Z0-9_]*)", feature_switches)
-    # Each declaration is referenced once in the registry list as well. Keep first occurrence order only.
     global_constants = list(dict.fromkeys(global_constants))
     global_settings = {
         camel_case(definition_map[name]): False
