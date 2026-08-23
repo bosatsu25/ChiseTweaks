@@ -73,12 +73,14 @@ jobs:
         continue-on-error: true
         run: python scripts/version_policy.py
 
-      - name: Audit repository inputs and production source usage
+      - name: Audit repository, documentation, compatibility and source usage
         id: repository
         continue-on-error: true
         run: |
           python scripts/repository_audit.py
           python scripts/source_usage_audit.py
+          python scripts/documentation_consistency_audit.py
+          python scripts/compatibility_contract_audit.py
 
       - name: Compile production artifacts and test classes
         id: compile
@@ -132,7 +134,7 @@ jobs:
           printf '\n## Gate outcomes\n\n' >> "$GITHUB_STEP_SUMMARY"
           printf -- '- CI toolchain: `%s`\n' "${{ steps.environment.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           printf -- '- Version policy: `%s`\n' "${{ steps.version.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          printf -- '- Repository/source audit: `%s`\n' "${{ steps.repository.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- '- Repository/docs/compat/source audit: `%s`\n' "${{ steps.repository.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           printf -- '- Compile/artifacts: `%s`\n' "${{ steps.compile.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           printf -- '- JUnit: `%s`\n' "${{ steps.junit.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           printf -- '- JaCoCo: `%s`\n' "${{ steps.jacoco.outcome }}" >> "$GITHUB_STEP_SUMMARY"
