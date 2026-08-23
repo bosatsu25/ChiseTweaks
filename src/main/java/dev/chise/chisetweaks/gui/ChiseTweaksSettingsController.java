@@ -100,6 +100,7 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET.resetToDefault();
         LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY.resetToDefault();
         resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
+        resetTargetGroup(VisualTargetGroupPolicy.Group.TECHNICAL);
         resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
     }
 
