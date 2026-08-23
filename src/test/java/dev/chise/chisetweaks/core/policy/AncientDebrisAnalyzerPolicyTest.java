@@ -37,6 +37,31 @@ final class AncientDebrisAnalyzerPolicyTest {
     }
 
     @Test
+    void bootstrapNeighborhoodSizeMatchesTheBoundedChunkRadius() {
+        assertEquals(25, AncientDebrisAnalyzerPolicy.bootstrapChunkCountForRangeBlocks(16));
+        assertEquals(121, AncientDebrisAnalyzerPolicy.bootstrapChunkCountForRangeBlocks(64));
+        assertEquals(1225, AncientDebrisAnalyzerPolicy.bootstrapChunkCountForRangeBlocks(256));
+        assertEquals(
+                AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNK_COUNT,
+                AncientDebrisAnalyzerPolicy.bootstrapChunkCountForRangeBlocks(
+                        AncientDebrisAnalyzerPolicy.MAX_RANGE_BLOCKS));
+    }
+
+    @Test
+    void bootstrapPerTickBudgetIsPositiveAndSmallerThanTheMaximumNeighborhood() {
+        assertTrue(AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNKS_PER_TICK > 0);
+        assertTrue(
+                AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNKS_PER_TICK
+                        < AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNK_COUNT);
+        int defaultChunkCount = AncientDebrisAnalyzerPolicy.bootstrapChunkCountForRangeBlocks(
+                AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS);
+        int defaultTicks = (defaultChunkCount
+                + AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNKS_PER_TICK - 1)
+                / AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNKS_PER_TICK;
+        assertEquals(2, defaultTicks);
+    }
+
+    @Test
     void chunkRelevanceUsesSymmetricBoundariesIncludingNegativeCoordinates() {
         assertTrue(AncientDebrisAnalyzerPolicy.isChunkRelevant(10, -10, 15, -15, 64));
         assertTrue(AncientDebrisAnalyzerPolicy.isChunkRelevant(-10, 10, -15, 15, 64));

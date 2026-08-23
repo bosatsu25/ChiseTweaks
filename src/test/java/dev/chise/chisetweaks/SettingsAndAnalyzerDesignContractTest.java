@@ -60,6 +60,21 @@ final class SettingsAndAnalyzerDesignContractTest {
     }
 
     @Test
+    void analyzerDiscoveryStaysLoadedChunkOnlyAndDebrisBootstrapIsIncremental() throws IOException {
+        String lava = source("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
+        String debris = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
+
+        assertTrue(lava.contains("getChunkNow("));
+        assertTrue(debris.contains("getChunkNow("));
+        assertTrue(debris.contains("scheduleLoadedChunkBootstrap("));
+        assertTrue(debris.contains("processPendingLoadedChunks("));
+        assertTrue(debris.contains("AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNKS_PER_TICK"));
+        assertFalse(debris.contains("private void bootstrapLoadedChunks("));
+        assertFalse(lava.contains("getChunk(chunkX, chunkZ, true)"));
+        assertFalse(debris.contains("getChunk(chunkX, chunkZ, true)"));
+    }
+
+    @Test
     void settingsPresentationIsSeparatedAndLocalizedByMinecraftResources() throws IOException {
         String controller = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
