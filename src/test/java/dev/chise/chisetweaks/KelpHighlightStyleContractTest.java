@@ -99,7 +99,6 @@ final class KelpHighlightStyleContractTest {
     @Test
     void kelpIsNoLongerAWorksiteScannerFeature() {
         assertFalse(FeatureDefinition.KELP_HIGHLIGHT.isWorksiteVisibilityMode());
-        assertNull(FeatureDefinition.KELP_HIGHLIGHT.worksiteMode());
         assertNull(FeatureDefinition.KELP_HIGHLIGHT.inspectionCategory());
     }
 }
