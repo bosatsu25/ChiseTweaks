@@ -75,20 +75,18 @@ final class ChiseTweaksSettingsCatalog {
                 text("screen.chisetweaks.settings.section.analyzer"),
                 ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS,
                 text("screen.chisetweaks.settings.action.settings")));
-        compactFeature(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
-                FeatureDefinition.LAVA_HIGHLIGHT);
-        compactFeature(rows, "ancientDebrisAnalyzer", LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
-                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER);
+        boolLiteral(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
+                "Lava Analyzer", "Analyze nearby lava source blocks in already-loaded chunks");
+        boolLiteral(rows, "ancientDebrisAnalyzer", LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
+                "Ancient Debris Analyzer", "Analyze Ancient Debris in already-loaded Nether chunks");
 
         header(rows, "header.visibilityImprovement", "screen.chisetweaks.settings.section.visibility");
-        compactFeature(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
-                FeatureDefinition.FIRE_VISIBILITY);
+        boolLiteral(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
+                "Low Fire", "Lower the first-person fire overlay");
         boolLiteral(rows, "chestVisibility", ChestVisibilitySetting.INSTANCE,
-                "Chest Visibility / チェスト視認性",
-                "Toggle only the high-visibility chest textures / 高視認のチェストテクスチャだけを切り替えます");
+                "Bright Chest", "Use the bright high-visibility chest texture");
         boolLiteral(rows, "whiteConcreteVisibility", WhiteConcreteVisibilitySetting.INSTANCE,
-                "White Concrete Visibility / 白色コンクリート視認性",
-                "Toggle only the high-visibility White Concrete texture / 高視認の白色コンクリートだけを切り替えます");
+                "Bright Concrete", "Use the high-visibility white concrete texture");
     }
 
     private static void addHighlightDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
@@ -164,7 +162,7 @@ final class ChiseTweaksSettingsCatalog {
     }
 
     private static void addAnalyzerDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        header(rows, "detail.analyzer.lava", "screen.chisetweaks.settings.section.lava_source");
+        headerLiteral(rows, "detail.analyzer.lava", "Lava Analyzer");
         integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 "screen.chisetweaks.settings.lava_range.name",
                 "screen.chisetweaks.settings.lava_range.description", 1);
@@ -178,7 +176,7 @@ final class ChiseTweaksSettingsCatalog {
                 "screen.chisetweaks.settings.lava_max.name",
                 "screen.chisetweaks.settings.lava_max.description", 1);
 
-        header(rows, "detail.analyzer.ancientDebris", "screen.chisetweaks.settings.section.ancient_debris");
+        headerLiteral(rows, "detail.analyzer.ancientDebris", "Ancient Debris Analyzer");
         integer(rows, "ancientDebrisRange", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE,
                 "screen.chisetweaks.settings.debris_range.name",
                 "screen.chisetweaks.settings.debris_range.description", 16);
