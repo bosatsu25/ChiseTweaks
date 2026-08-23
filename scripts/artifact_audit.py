@@ -65,7 +65,7 @@ def gradle_properties() -> dict[str, str]:
     return result
 
 
-def audit_runtime_size() -> tuple[int, int, int]:
+def audit_runtime_size() -> tuple[int, int, int, int]:
     properties = gradle_properties()
     version = properties["mod_version"]
     base_name = properties["archives_base_name"]
@@ -73,21 +73,22 @@ def audit_runtime_size() -> tuple[int, int, int]:
     if not runtime.is_file():
         raise RuntimeError(f"runtime JAR is missing for size audit: {runtime.name}")
 
+    goal = int(properties["runtime_jar_target_bytes"])
     baseline = int(properties["runtime_jar_baseline_bytes"])
     max_growth = int(properties["runtime_jar_max_growth_bytes"])
     absolute_max = int(properties["runtime_jar_max_bytes"])
     effective_max = min(absolute_max, baseline + max_growth)
     size = runtime.stat().st_size
-    if size >= effective_max:
+    if size > effective_max:
         raise RuntimeError(
             "runtime JAR size regression: "
             f"size={size}, baseline={baseline}, max_growth={max_growth}, "
             f"effective_max={effective_max}"
         )
-    return size, baseline, effective_max
+    return size, baseline, goal, effective_max
 
 
-def update_summary(size: int, baseline: int, effective_max: int) -> None:
+def update_summary(size: int, baseline: int, goal: int, effective_max: int) -> None:
     summary = core.CI_DIR / "artifact-summary.md"
     if not summary.is_file():
         return
@@ -97,10 +98,15 @@ def update_summary(size: int, baseline: int, effective_max: int) -> None:
         "- Built-in resource packs: **Chest Visibility + White Concrete Visibility / 8 files**\n"
         "- Unexpected shaderpacks/resourcepacks: **none**",
     )
+    remaining = max(0, size - goal)
+    reduction = baseline - size
     text += (
         f"\n- Runtime JAR size: **{size} bytes**\n"
-        f"- Verified 0.9.3 size baseline: **{baseline} bytes**\n"
-        f"- Effective regression ceiling: **< {effective_max} bytes**\n"
+        f"- Frozen 0.9.4 functional baseline: **{baseline} bytes**\n"
+        f"- 350 KiB final goal: **<= {goal} bytes**\n"
+        f"- Reduction from baseline: **{reduction} bytes**\n"
+        f"- Remaining to goal: **{remaining} bytes**\n"
+        f"- No-growth hard ceiling: **<= {effective_max} bytes**\n"
     )
     summary.write_text(text, encoding="utf-8")
 
@@ -111,14 +117,15 @@ def main() -> int:
     if result != 0:
         return result
     try:
-        size, baseline, effective_max = audit_runtime_size()
+        size, baseline, goal, effective_max = audit_runtime_size()
     except (KeyError, ValueError, OSError, RuntimeError) as failure:
         print(f"ARTIFACT AUDIT SIZE CONTRACT: FAIL: {failure}", file=sys.stderr)
         return 1
-    update_summary(size, baseline, effective_max)
+    update_summary(size, baseline, goal, effective_max)
     print(
         "ARTIFACT SIZE CONTRACT: PASS "
-        f"size={size} baseline={baseline} effective_max={effective_max}"
+        f"size={size} baseline={baseline} goal={goal} "
+        f"remaining={max(0, size - goal)} effective_max={effective_max}"
     )
     return 0
 
