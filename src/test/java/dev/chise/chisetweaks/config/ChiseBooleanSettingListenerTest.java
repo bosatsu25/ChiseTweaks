@@ -38,8 +38,10 @@ final class ChiseBooleanSettingListenerTest {
     }
 
     @Test
-    void applyPersistenceIsDefaultButCanBeOwnedExternally() {
+    void featurePersistenceIsDefaultButCanBeOwnedExternally() {
+        assertEquals(SettingPersistence.FEATURE_CONFIG, new TestSetting().persistence());
         assertTrue(new TestSetting().requiresApplyPersistence());
+        assertEquals(SettingPersistence.EXTERNAL, new ImmediateSetting().persistence());
         assertFalse(new ImmediateSetting().requiresApplyPersistence());
     }
 
@@ -110,8 +112,8 @@ final class ChiseBooleanSettingListenerTest {
 
     private static final class ImmediateSetting extends TestSetting {
         @Override
-        public boolean requiresApplyPersistence() {
-            return false;
+        public SettingPersistence persistence() {
+            return SettingPersistence.EXTERNAL;
         }
     }
 }
