@@ -8,11 +8,14 @@ import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
+import dev.chise.chisetweaks.config.SettingPersistence;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /** 設定操作だけを調整し、表示用メタデータは{@link ChiseTweaksSettingsCatalog}へ分離するcontroller。 */
 final class ChiseTweaksSettingsController {
@@ -46,17 +49,39 @@ final class ChiseTweaksSettingsController {
         return catalog.surfaceTitle(surface);
     }
 
-    boolean reset(Surface surface) {
-        switch (surface == null ? Surface.MAIN : surface) {
-            case MAIN -> resetAll();
-            case HIGHLIGHT_DETAILS -> resetHighlightDetails();
-            case VISUAL_FILTER_DETAILS -> resetBuilderFocusDetails();
-            case LAVA_DETAILS -> resetAnalyzerDetails();
-        }
-        return true;
+    EnumSet<SettingPersistence> reset(Surface surface) {
+        return switch (surface == null ? Surface.MAIN : surface) {
+            case MAIN -> {
+                resetAll();
+                yield EnumSet.of(
+                        SettingPersistence.FEATURE_CONFIG,
+                        SettingPersistence.LOCAL_CONFIG);
+            }
+            case HIGHLIGHT_DETAILS -> {
+                resetHighlightDetails();
+                yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
+            }
+            case VISUAL_FILTER_DETAILS -> {
+                resetBuilderFocusDetails();
+                yield EnumSet.of(SettingPersistence.FEATURE_CONFIG);
+            }
+            case LAVA_DETAILS -> {
+                resetAnalyzerDetails();
+                yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
+            }
+        };
     }
 
-    boolean resetAll() {
+    boolean saveConfig(Set<SettingPersistence> dirtyDomains) {
+        Set<SettingPersistence> dirty = dirtyDomains == null ? Set.of() : dirtyDomains;
+        boolean featureSaved = !dirty.contains(SettingPersistence.FEATURE_CONFIG)
+                || FeatureConfig.saveToFile();
+        boolean localSaved = !dirty.contains(SettingPersistence.LOCAL_CONFIG)
+                || LocalFeatureConfig.getInstance().save();
+        return featureSaved && localSaved;
+    }
+
+    private void resetAll() {
         FeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
         LocalFeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
         ChestVisibilitySetting.INSTANCE.resetToDefault();
@@ -64,13 +89,6 @@ final class ChiseTweaksSettingsController {
         resetHighlightDetails();
         resetAnalyzerDetails();
         resetBuilderFocusDetails();
-        return true;
-    }
-
-    boolean saveConfig() {
-        boolean featureSaved = FeatureConfig.saveToFile();
-        boolean localSaved = LocalFeatureConfig.getInstance().save();
-        return featureSaved && localSaved;
     }
 
     private void resetHighlightDetails() {
