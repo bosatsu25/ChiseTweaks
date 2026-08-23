@@ -147,19 +147,44 @@ final class RetainedPolicyQualityGateTest {
     @Test
     void retainedVisualTargetGroupsAreDisjointCompleteAndNullSafe() {
         int material = VisualTargetGroupPolicy.maskFor(VisualTargetGroupPolicy.Group.MATERIAL);
+        int technical = VisualTargetGroupPolicy.maskFor(VisualTargetGroupPolicy.Group.TECHNICAL);
         int hidden = VisualTargetGroupPolicy.maskFor(VisualTargetGroupPolicy.Group.HIDDEN);
+
+        assertEquals(0, material & technical);
         assertEquals(0, material & hidden);
-        assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK, material | hidden);
+        assertEquals(0, technical & hidden);
+        assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
+                material | technical | hidden);
         assertEquals(0, VisualTargetGroupPolicy.maskFor(null));
+
         int all = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
         assertTrue(VisualTargetGroupPolicy.allEnabled(all, VisualTargetGroupPolicy.Group.MATERIAL));
+        assertTrue(VisualTargetGroupPolicy.allEnabled(all, VisualTargetGroupPolicy.Group.TECHNICAL));
         assertTrue(VisualTargetGroupPolicy.allEnabled(all, VisualTargetGroupPolicy.Group.HIDDEN));
         assertFalse(VisualTargetGroupPolicy.allEnabled(all, null));
-        int noMaterial = VisualTargetGroupPolicy.withAll(all, VisualTargetGroupPolicy.Group.MATERIAL, false);
-        assertFalse(VisualTargetGroupPolicy.allEnabled(noMaterial, VisualTargetGroupPolicy.Group.MATERIAL));
-        assertTrue(VisualTargetGroupPolicy.allEnabled(noMaterial, VisualTargetGroupPolicy.Group.HIDDEN));
+
+        int noMaterial = VisualTargetGroupPolicy.withAll(
+                all, VisualTargetGroupPolicy.Group.MATERIAL, false);
+        assertFalse(VisualTargetGroupPolicy.allEnabled(
+                noMaterial, VisualTargetGroupPolicy.Group.MATERIAL));
+        assertTrue(VisualTargetGroupPolicy.allEnabled(
+                noMaterial, VisualTargetGroupPolicy.Group.TECHNICAL));
+        assertTrue(VisualTargetGroupPolicy.allEnabled(
+                noMaterial, VisualTargetGroupPolicy.Group.HIDDEN));
         assertEquals(all, VisualTargetGroupPolicy.withAll(
                 noMaterial, VisualTargetGroupPolicy.Group.MATERIAL, true));
+
+        int noTechnical = VisualTargetGroupPolicy.withAll(
+                all, VisualTargetGroupPolicy.Group.TECHNICAL, false);
+        assertFalse(VisualTargetGroupPolicy.allEnabled(
+                noTechnical, VisualTargetGroupPolicy.Group.TECHNICAL));
+        assertTrue(VisualTargetGroupPolicy.allEnabled(
+                noTechnical, VisualTargetGroupPolicy.Group.MATERIAL));
+        assertTrue(VisualTargetGroupPolicy.allEnabled(
+                noTechnical, VisualTargetGroupPolicy.Group.HIDDEN));
+        assertEquals(all, VisualTargetGroupPolicy.withAll(
+                noTechnical, VisualTargetGroupPolicy.Group.TECHNICAL, true));
+
         assertEquals(all, VisualTargetGroupPolicy.withAll(all, null, false));
     }
 }
