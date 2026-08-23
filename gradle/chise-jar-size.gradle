@@ -1,6 +1,68 @@
-// Runtime JAR size optimization that preserves actionable stack traces.
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
+// Runtime JAR size optimization that preserves gameplay/resource bytes and actionable stack traces.
 // Keep source/line metadata for diagnostics while dropping local-variable debug tables.
 tasks.withType(org.gradle.api.tasks.compile.JavaCompile).configureEach {
     options.debug = true
     options.debugOptions.debugLevel = 'source,lines'
+}
+
+// JAR/ZIP directory entries are optional metadata. Re-emit only real files with maximum DEFLATE
+// compression after Loom has produced each runtime archive. Entry payload bytes are copied exactly;
+// there is no class shrinking, resource minification, renaming or semantic transformation here.
+def recompressRuntimeArchive = { File archive ->
+    if (!archive.isFile()) {
+        throw new GradleException("Runtime archive does not exist: ${archive}")
+    }
+
+    List<Map<String, Object>> entries = []
+    new ZipFile(archive).withCloseable { input ->
+        input.entries().each { sourceEntry ->
+            if (!sourceEntry.directory) {
+                byte[] payload
+                input.getInputStream(sourceEntry).withCloseable { stream ->
+                    payload = stream.readAllBytes()
+                }
+                entries.add([name: sourceEntry.name, payload: payload])
+            }
+        }
+    }
+
+    File temporary = new File(archive.parentFile, archive.name + '.recompress.tmp')
+    if (temporary.exists() && !temporary.delete()) {
+        throw new GradleException("Unable to clear temporary archive: ${temporary}")
+    }
+
+    try {
+        temporary.withOutputStream { fileOutput ->
+            new ZipOutputStream(new BufferedOutputStream(fileOutput)).withCloseable { output ->
+                output.setLevel(9)
+                entries.each { record ->
+                    ZipEntry targetEntry = new ZipEntry((String) record.name)
+                    // ZIP's native timestamp epoch keeps output reproducible without extra timestamp fields.
+                    targetEntry.setTime(315532800000L) // 1980-01-01T00:00:00Z
+                    output.putNextEntry(targetEntry)
+                    output.write((byte[]) record.payload)
+                    output.closeEntry()
+                }
+            }
+        }
+        Files.move(
+                temporary.toPath(),
+                archive.toPath(),
+                StandardCopyOption.REPLACE_EXISTING)
+    } finally {
+        if (temporary.exists()) temporary.delete()
+    }
+}
+
+// `jar` is kept compact for the local budget task; `remapJar` is the Fabric-distributable artifact.
+tasks.matching { task -> task.name == 'jar' || task.name == 'remapJar' }.configureEach {
+    doLast {
+        recompressRuntimeArchive(archiveFile.get().asFile)
+    }
 }
