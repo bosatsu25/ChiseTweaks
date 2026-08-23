@@ -15,15 +15,14 @@ final class VisualFilterVisibilityReleaseContractTest {
 
     @Test
     void visualFilterAndLowFirePassTheReleaseGate() throws IOException {
-        String policy = source("src/main/java/dev/chise/chisetweaks/core/policy/PreReleaseFeaturePolicy.java");
-        String plugin = source("src/main/java/dev/chise/chisetweaks/mixin/PreReleaseMixinConfigPlugin.java");
+        String policy = source("src/main/java/dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicy.java");
+        String plugin = source("src/main/java/dev/chise/chisetweaks/mixin/FeatureAvailabilityMixinConfigPlugin.java");
 
-        assertTrue(policy.contains("FeatureDefinition.BUILDER_FOCUS_BLOCKS"));
-        assertTrue(policy.contains("FeatureDefinition.BUILDER_FOCUS_ENTITIES"));
-        assertTrue(policy.contains("FeatureDefinition.FIRE_VISIBILITY"));
+        assertTrue(policy.contains("EnumSet.allOf(FeatureDefinition.class)"));
         assertTrue(plugin.contains("BuilderFocusBlockMixin"));
         assertTrue(plugin.contains("BuilderFocusEntityMixin"));
         assertTrue(plugin.contains("FireVisibilityMixin"));
+        assertTrue(plugin.contains("FeatureAvailabilityPolicy.isAvailable(feature)"));
     }
 
     @Test
@@ -55,14 +54,17 @@ final class VisualFilterVisibilityReleaseContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ResourceReloadCoordinator.java");
         String registrar = source(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackRegistrar.java");
+        String visibilityPack = source(
+                "src/main/java/dev/chise/chisetweaks/feature/resource/VisibilityPack.java");
+        String chestSetting = source(
+                "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java");
         String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
 
-        assertTrue(registrar.contains("chise_chest_visibility"));
-        assertTrue(registrar.contains("chise_white_concrete_visibility"));
-        assertTrue(registrar.contains("chestRepositoryPackId()"));
-        assertTrue(registrar.contains("whiteConcreteRepositoryPackId()"));
-        assertTrue(controller.contains("setChestEnabled(boolean enabled)"));
-        assertTrue(controller.contains("setWhiteConcreteEnabled(boolean enabled)"));
+        assertTrue(visibilityPack.contains("CHEST(\"chise_chest_visibility\""));
+        assertTrue(visibilityPack.contains("WHITE_CONCRETE(\"chise_white_concrete_visibility\""));
+        assertTrue(registrar.contains("for (VisibilityPack pack : VisibilityPack.values())"));
+        assertTrue(controller.contains("isEnabled(VisibilityPack pack)"));
+        assertTrue(controller.contains("setEnabled(VisibilityPack pack, boolean enabled)"));
         assertTrue(controller.contains("getSelectedIds()"));
         assertTrue(controller.contains("getAvailableIds()"));
         assertTrue(controller.contains("repository.setSelected(selected)"));
@@ -78,6 +80,7 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(coordinator.contains("terminalFailure"));
         assertTrue(coordinator.contains("Action.RELOAD"));
         assertTrue(coordinator.contains("Action.RESTORE"));
+        assertTrue(chestSetting.contains("VisibilityPack.CHEST"));
         assertTrue(catalog.contains("\"chestVisibility\""));
         assertTrue(catalog.contains("\"whiteConcreteVisibility\""));
         assertTrue(catalog.contains("Chest Visibility / チェスト視認性"));

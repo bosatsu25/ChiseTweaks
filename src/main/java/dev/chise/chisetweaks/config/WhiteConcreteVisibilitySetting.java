@@ -1,6 +1,7 @@
 package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.feature.resource.ChiseTexturePackController;
+import dev.chise.chisetweaks.feature.resource.VisibilityPack;
 
 /** White Concrete Visibility用の独立built-in resource packと設定UIを接続する。 */
 public final class WhiteConcreteVisibilitySetting extends ChiseBooleanSetting {
@@ -18,11 +19,11 @@ public final class WhiteConcreteVisibilitySetting extends ChiseBooleanSetting {
 
     @Override
     protected boolean readValue() {
-        return ChiseTexturePackController.isWhiteConcreteEnabled();
+        return ChiseTexturePackController.isEnabled(VisibilityPack.WHITE_CONCRETE);
     }
 
     @Override
     protected void writeValue(boolean value) {
-        ChiseTexturePackController.setWhiteConcreteEnabled(value);
+        ChiseTexturePackController.setEnabled(VisibilityPack.WHITE_CONCRETE, value);
     }
 }

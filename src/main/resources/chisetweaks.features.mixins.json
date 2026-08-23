@@ -11,5 +11,5 @@
     "rendering.BuilderFocusEntityMixin",
     "rendering.FireVisibilityMixin"
   ],
-  "plugin": "dev.chise.chisetweaks.mixin.PreReleaseMixinConfigPlugin"
+  "plugin": "dev.chise.chisetweaks.mixin.FeatureAvailabilityMixinConfigPlugin"
 }

@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 
 /** 0.9.1以前の単一Visibility pack設定を0.9.2以降の分割packへ一度だけ移行する。 */
 public final class VisibilityPackMigrationService {
@@ -38,8 +37,8 @@ public final class VisibilityPackMigrationService {
             String optionsDocument = readOptionsDocument(loader.getGameDir());
 
             PackRepository repository = client.getResourcePackRepository();
-            String chestId = ChiseTexturePackRegistrar.chestRepositoryPackId();
-            String concreteId = ChiseTexturePackRegistrar.whiteConcreteRepositoryPackId();
+            String chestId = VisibilityPack.CHEST.repositoryPackId();
+            String concreteId = VisibilityPack.WHITE_CONCRETE.repositoryPackId();
             if (!repository.getAvailableIds().contains(chestId)
                     || !repository.getAvailableIds().contains(concreteId)) {
                 ChiseTweaksClient.LOGGER.warn(

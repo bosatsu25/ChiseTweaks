@@ -43,12 +43,12 @@ final class PostGlassRegressionHardeningContractTest {
     @Test
     void compatibilitySensitiveMixinsRemainPolicyGatedBeforeApplication() throws IOException {
         String config = source("src/main/resources/chisetweaks.features.mixins.json");
-        String plugin = source("src/main/java/dev/chise/chisetweaks/mixin/PreReleaseMixinConfigPlugin.java");
-        assertTrue(config.contains("\"plugin\": \"dev.chise.chisetweaks.mixin.PreReleaseMixinConfigPlugin\""));
+        String plugin = source("src/main/java/dev/chise/chisetweaks/mixin/FeatureAvailabilityMixinConfigPlugin.java");
+        assertTrue(config.contains("\"plugin\": \"dev.chise.chisetweaks.mixin.FeatureAvailabilityMixinConfigPlugin\""));
         assertTrue(plugin.contains("BuilderFocusBlockMixin"));
         assertTrue(plugin.contains("BuilderFocusEntityMixin"));
         assertTrue(plugin.contains("FireVisibilityMixin"));
-        assertTrue(plugin.contains("return feature != null && PreReleaseFeaturePolicy.isAvailable(feature);"));
+        assertTrue(plugin.contains("return feature != null && FeatureAvailabilityPolicy.isAvailable(feature);"));
         assertFalse(plugin.contains("import net.minecraft"));
     }
 

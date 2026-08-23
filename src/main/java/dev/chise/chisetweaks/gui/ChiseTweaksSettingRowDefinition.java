@@ -3,9 +3,11 @@ package dev.chise.chisetweaks.gui;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 
+import java.util.Objects;
+
 record ChiseTweaksSettingRowDefinition(
         Kind kind,
-        String id,
+        SettingRowId settingId,
         String name,
         String description,
         ChiseBooleanSetting booleanConfig,
@@ -14,9 +16,21 @@ record ChiseTweaksSettingRowDefinition(
         Action action,
         String actionLabel) {
 
+    ChiseTweaksSettingRowDefinition {
+        Objects.requireNonNull(kind, "kind");
+        Objects.requireNonNull(settingId, "settingId");
+        name = name == null ? "" : name;
+        description = description == null ? "" : description;
+        actionLabel = actionLabel == null ? "" : actionLabel;
+    }
+
+    String id() {
+        return settingId.value();
+    }
+
     static ChiseTweaksSettingRowDefinition header(String id, String name) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.HEADER, id, name, "", null, null, 0, null, "");
+                Kind.HEADER, SettingRowId.of(id), name, "", null, null, 0, null, "");
     }
 
     static ChiseTweaksSettingRowDefinition headerAction(
@@ -25,7 +39,7 @@ record ChiseTweaksSettingRowDefinition(
             Action action,
             String actionLabel) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.HEADER, id, name, "", null, null, 0, action,
+                Kind.HEADER, SettingRowId.of(id), name, "", null, null, 0, action,
                 actionLabel == null ? "" : actionLabel);
     }
 
@@ -35,7 +49,7 @@ record ChiseTweaksSettingRowDefinition(
             String description,
             ChiseBooleanSetting config) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.BOOLEAN, id, name, description == null ? "" : description,
+                Kind.BOOLEAN, SettingRowId.of(id), name, description == null ? "" : description,
                 config, null, 0, null, "");
     }
 
@@ -46,7 +60,7 @@ record ChiseTweaksSettingRowDefinition(
             ChiseIntegerSetting config,
             int step) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.INTEGER, id, name, description == null ? "" : description,
+                Kind.INTEGER, SettingRowId.of(id), name, description == null ? "" : description,
                 null, config, Math.max(1, step), null, "");
     }
 
@@ -58,7 +72,7 @@ record ChiseTweaksSettingRowDefinition(
             String actionLabel) {
         return new ChiseTweaksSettingRowDefinition(
                 Kind.ACTION,
-                id,
+                SettingRowId.of(id),
                 name,
                 description == null ? "" : description,
                 null,
