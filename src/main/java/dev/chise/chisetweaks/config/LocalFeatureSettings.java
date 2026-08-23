@@ -2,10 +2,12 @@ package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
+import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
 import java.util.function.IntSupplier;
 
 /**
@@ -67,6 +69,49 @@ public final class LocalFeatureSettings {
             "スキャン型ハイライトを同時に1つまでに制限します。",
             () -> config().worksiteVisibilityExclusiveMode,
             value -> config().worksiteVisibilityExclusiveMode = value);
+    public static final SimpleBooleanSetting WORKSITE_VISIBILITY_DIMENSION_PRESETS = bool(
+            "localWorksiteVisibilityDimensionPresets", false,
+            "Automatic dimension preset", "ディメンション自動プリセット",
+            "Use the normal profile in the Overworld and a smaller, higher-contrast profile in the Nether.",
+            "オーバーワールドでは通常プロファイル、ネザーでは範囲を少し抑えた高コントラスト表示へ自動切替します。",
+            () -> config().worksiteVisibilityDimensionPresetsEnabled,
+            value -> config().worksiteVisibilityDimensionPresetsEnabled = value);
+    public static final ChiseIntegerSetting FINE_THREAD_TRACE_COLOR_PRESET = integer(
+            "localFineThreadTraceColorPreset",
+            WorksiteHighlightProfilePolicy.DEFAULT_COLOR_PRESET,
+            WorksiteHighlightProfilePolicy.MIN_COLOR_PRESET,
+            WorksiteHighlightProfilePolicy.MAX_COLOR_PRESET,
+            "Fine Thread color", "細線ハイライト色",
+            () -> config().fineThreadTraceColorPreset,
+            value -> config().fineThreadTraceColorPreset = value,
+            WorksiteHighlightProfilePolicy::colorLabel);
+    public static final ChiseIntegerSetting FINE_THREAD_TRACE_OPACITY = integer(
+            "localFineThreadTraceOpacityPercent",
+            WorksiteHighlightProfilePolicy.DEFAULT_OPACITY_PERCENT,
+            WorksiteHighlightProfilePolicy.MIN_OPACITY_PERCENT,
+            WorksiteHighlightProfilePolicy.MAX_OPACITY_PERCENT,
+            "Fine Thread opacity", "細線ハイライト不透明度",
+            () -> config().fineThreadTraceOpacityPercent,
+            value -> config().fineThreadTraceOpacityPercent = value,
+            value -> value + "%");
+    public static final ChiseIntegerSetting HIDDEN_SURFACE_TRACE_COLOR_PRESET = integer(
+            "localHiddenSurfaceTraceColorPreset",
+            WorksiteHighlightProfilePolicy.DEFAULT_COLOR_PRESET,
+            WorksiteHighlightProfilePolicy.MIN_COLOR_PRESET,
+            WorksiteHighlightProfilePolicy.MAX_COLOR_PRESET,
+            "Hidden Surface color", "隠れブロックハイライト色",
+            () -> config().hiddenSurfaceTraceColorPreset,
+            value -> config().hiddenSurfaceTraceColorPreset = value,
+            WorksiteHighlightProfilePolicy::colorLabel);
+    public static final ChiseIntegerSetting HIDDEN_SURFACE_TRACE_OPACITY = integer(
+            "localHiddenSurfaceTraceOpacityPercent",
+            WorksiteHighlightProfilePolicy.DEFAULT_OPACITY_PERCENT,
+            WorksiteHighlightProfilePolicy.MIN_OPACITY_PERCENT,
+            WorksiteHighlightProfilePolicy.MAX_OPACITY_PERCENT,
+            "Hidden Surface opacity", "隠れブロックハイライト不透明度",
+            () -> config().hiddenSurfaceTraceOpacityPercent,
+            value -> config().hiddenSurfaceTraceOpacityPercent = value,
+            value -> value + "%");
 
     public static final ChiseIntegerSetting LAVA_ANALYZER_HORIZONTAL_RADIUS = integer(
             "localLavaAnalyzerHorizontalRadius", 5,
@@ -181,5 +226,29 @@ public final class LocalFeatureSettings {
                 japaneseName,
                 reader,
                 writer);
+    }
+
+    private static ChiseIntegerSetting integer(
+            String name,
+            int defaultValue,
+            int minValue,
+            int maxValue,
+            String englishName,
+            String japaneseName,
+            IntSupplier reader,
+            IntConsumer writer,
+            IntFunction<String> valueFormatter) {
+        return new ChiseIntegerSetting(
+                name,
+                defaultValue,
+                minValue,
+                maxValue,
+                englishName,
+                japaneseName,
+                englishName,
+                japaneseName,
+                reader,
+                writer,
+                valueFormatter);
     }
 }
