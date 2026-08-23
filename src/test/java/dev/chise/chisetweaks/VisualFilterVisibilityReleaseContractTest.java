@@ -48,15 +48,19 @@ final class VisualFilterVisibilityReleaseContractTest {
     }
 
     @Test
-    void chestVisibilityCoalescesReloadsAndRecoversAsynchronousFailures() throws IOException {
+    void visibilityPacksAreIndependentAndShareOneReloadQueue() throws IOException {
         String controller = source(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java");
         String registrar = source(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackRegistrar.java");
         String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
 
-        assertTrue(registrar.contains("Identifier.fromNamespaceAndPath"));
-        assertTrue(registrar.contains("repositoryPackId()"));
+        assertTrue(registrar.contains("chise_chest_visibility"));
+        assertTrue(registrar.contains("chise_white_concrete_visibility"));
+        assertTrue(registrar.contains("chestRepositoryPackId()"));
+        assertTrue(registrar.contains("whiteConcreteRepositoryPackId()"));
+        assertTrue(controller.contains("setChestEnabled(boolean enabled)"));
+        assertTrue(controller.contains("setWhiteConcreteEnabled(boolean enabled)"));
         assertTrue(controller.contains("getSelectedIds()"));
         assertTrue(controller.contains("getAvailableIds()"));
         assertTrue(controller.contains("repository.setSelected(selected)"));
@@ -67,7 +71,10 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(controller.contains("reloadPending"));
         assertTrue(controller.contains("restoreSelection"));
         assertTrue(catalog.contains("\"chestVisibility\""));
+        assertTrue(catalog.contains("\"whiteConcreteVisibility\""));
         assertTrue(catalog.contains("Chest Visibility / チェスト視認性"));
+        assertTrue(catalog.contains("White Concrete Visibility / 白色コンクリート視認性"));
+        assertFalse(catalog.contains("bundled white-concrete"));
     }
 
     private static String source(String relativePath) throws IOException {
