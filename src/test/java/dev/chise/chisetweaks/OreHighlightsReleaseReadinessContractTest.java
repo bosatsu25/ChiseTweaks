@@ -237,8 +237,8 @@ final class OreHighlightsReleaseReadinessContractTest {
 
     @Test
     void requiredGithubStatusNameStaysAlignedWithBranchProtection() throws IOException {
-        String workflow = source(".github/workflows/verify-build.yml");
-        assertTrue(workflow.contains("name: Java 25 quality gate"));
+        String workflow = source(".github/workflows/ci.yml");
+        assertTrue(workflow.contains("name: verify / Java 25 quality gate"));
         assertFalse(workflow.contains("name: Java 25 retained-scope quality gate"));
     }
 

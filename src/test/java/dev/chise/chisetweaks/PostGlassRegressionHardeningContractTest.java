@@ -72,23 +72,21 @@ final class PostGlassRegressionHardeningContractTest {
     }
 
     @Test
-    void visualAssetsAreAuditedWhileCiRetainsOnlyTheRuntimeJar() throws IOException {
+    void visualAssetsAreAuditedOnceBeforeTheRuntimeJarIsPromoted() throws IOException {
         String audit = source("scripts/visual_asset_audit.py");
-        String verify = source(".github/workflows/verify-build.yml");
+        String ci = source(".github/workflows/ci.yml");
         String release = source(".github/workflows/release.yml");
         assertTrue(audit.contains("zipfile.ZipFile(jar)"));
         assertTrue(audit.contains("KELP_ANIMATION"));
         assertTrue(audit.contains("GLASS_BLOCK_MODEL"));
         assertTrue(audit.contains("GLASS_PANE_MODEL"));
-        assertTrue(verify.contains("python scripts/visual_asset_audit.py"));
-        assertTrue(release.contains("python scripts/visual_asset_audit.py"));
-        assertTrue(verify.contains("actions/upload-artifact@"));
-        assertTrue(verify.contains("path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}"));
-        assertTrue(verify.contains("archive: false"));
-        assertFalse(verify.contains("build/ci/visual-asset-audit.json"));
-        assertFalse(verify.contains("steps.artifacts.outputs.sources_jar"));
-        assertFalse(release.contains("actions/upload-artifact"));
-        assertFalse(release.contains("release/visual-asset-audit.json"));
+        assertTrue(ci.contains("python scripts/visual_asset_audit.py"));
+        assertTrue(ci.contains("actions/upload-artifact@"));
+        assertTrue(ci.contains("path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}"));
+        assertTrue(ci.contains("archive: false"));
+        assertTrue(release.contains("actions/download-artifact@"));
+        assertFalse(release.contains("python scripts/visual_asset_audit.py"));
+        assertFalse(release.contains("./gradlew"));
     }
 
     @Test

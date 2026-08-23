@@ -6,9 +6,6 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
@@ -34,18 +31,6 @@ final class RetainedFeatureScopeTest {
         assertEquals(11, FeatureDefinition.VALUES.size());
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.area() == FeatureArea.RENDERING));
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.dependency().isEmpty()));
-    }
-
-    @Test
-    void qualitySummaryReportsQualityMetricsWithoutDuplicatingFeatureCardinality() throws IOException {
-        String summaryScript = Files.readString(Path.of("scripts/quality_summary.py"));
-
-        assertTrue(summaryScript.contains("junit_totals"));
-        assertTrue(summaryScript.contains("jacoco_lines"));
-        assertTrue(summaryScript.contains("pit_totals"));
-        assertTrue(summaryScript.contains("retained-scope quality summary"));
-        assertFalse(summaryScript.contains("eleven retained features"));
-        assertFalse(summaryScript.contains("ten retained features"));
     }
 
     @Test

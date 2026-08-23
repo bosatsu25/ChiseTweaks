@@ -39,7 +39,7 @@ final class FunctionalParityAuditContractTest {
     @Test
     void parityAuditIsARequiredCiRepositoryGate() throws IOException {
         String audit = source("scripts/functional_parity_audit.py");
-        String workflow = source(".github/workflows/verify-build.yml");
+        String workflow = source(".github/workflows/ci.yml");
 
         assertTrue(workflow.contains("python scripts/functional_parity_audit.py"));
         assertTrue(audit.contains("FUNCTIONAL PARITY AUDIT: PASS"));
