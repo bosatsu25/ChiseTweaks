@@ -2,7 +2,7 @@ package dev.chise.chisetweaks.gui;
 
 import java.util.Set;
 
-/** Central IDs used by UI availability policy; catalog-only IDs may still be created through {@link SettingRowId#of(String)}. */
+/** UI availability判定で共有するrow IDを集約し、文字列の重複定義を避ける。 */
 final class SettingRowIds {
     static final SettingRowId MATERIALS = SettingRowId.of("materials");
     static final SettingRowId NETHER = SettingRowId.of("nether");
@@ -19,19 +19,9 @@ final class SettingRowIds {
     static final SettingRowId WHITE_CONCRETE_VISIBILITY = SettingRowId.of("whiteConcreteVisibility");
 
     static final Set<SettingRowId> MAIN_INTERACTIVE = Set.of(
-            MATERIALS,
-            NETHER,
-            THREAD,
-            HIDDEN,
-            KELP,
-            GLASS,
-            FOCUS_BLOCKS,
-            FOCUS_ENTITIES,
-            LAVA,
-            ANCIENT_DEBRIS_ANALYZER,
-            FIRE_VISIBILITY,
-            CHEST_VISIBILITY,
-            WHITE_CONCRETE_VISIBILITY);
+            MATERIALS, NETHER, THREAD, HIDDEN, KELP, GLASS,
+            FOCUS_BLOCKS, FOCUS_ENTITIES, LAVA, ANCIENT_DEBRIS_ANALYZER,
+            FIRE_VISIBILITY, CHEST_VISIBILITY, WHITE_CONCRETE_VISIBILITY);
 
     static final Set<SettingRowId> HIGHLIGHT_DETAIL_INTERACTIVE = Set.of(
             SettingRowId.of("oreMotion"),
