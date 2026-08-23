@@ -17,13 +17,9 @@ final class ChiseTweaksSettingsController {
     enum Surface {
         MAIN,
         HIGHLIGHT_DETAILS,
+        VISUAL_FILTER_DETAILS,
         LAVA_DETAILS
     }
-
-    private static final List<ChiseBooleanSetting> HIGHLIGHT_FEATURES = List.of(
-            FeatureSwitches.MATERIAL_HIGHLIGHTS,
-            FeatureSwitches.GLASS_INSPECTION,
-            FeatureSwitches.KELP_HIGHLIGHT);
 
     private final ChiseTweaksSettingsCatalog catalog = new ChiseTweaksSettingsCatalog();
 
@@ -48,24 +44,11 @@ final class ChiseTweaksSettingsController {
         return catalog.surfaceTitle(surface);
     }
 
-    boolean shouldTurnHighlightBulkOn() {
-        for (ChiseBooleanSetting feature : HIGHLIGHT_FEATURES) {
-            if (!feature.getBooleanValue()) return true;
-        }
-        return false;
-    }
-
-    void toggleHighlightBulk() {
-        boolean enabled = shouldTurnHighlightBulkOn();
-        for (ChiseBooleanSetting feature : HIGHLIGHT_FEATURES) {
-            feature.setBooleanValue(enabled);
-        }
-    }
-
     boolean reset(Surface surface) {
         switch (surface == null ? Surface.MAIN : surface) {
             case MAIN -> resetAll();
             case HIGHLIGHT_DETAILS -> resetHighlightDetails();
+            case VISUAL_FILTER_DETAILS -> resetBuilderFocusDetails();
             case LAVA_DETAILS -> resetAnalyzerDetails();
         }
         return true;
