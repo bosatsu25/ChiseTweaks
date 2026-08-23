@@ -109,24 +109,31 @@ final class ChiseTexturePackContractTest {
     }
 
     @Test
-    void migrationDefersCompletionMarkerUntilChangedSelectionIsReobservedNextStartup() throws IOException {
+    void migrationPersistsIntentBeforeReloadAndCompletesOnlyAfterReloadSuccess() throws IOException {
         String migration = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/VisibilityPackMigrationService.java"));
+        String controller = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java"));
         assertTrue(migration.contains("chisetweaks:chise_texture"));
         assertTrue(migration.contains("options.txt"));
         assertTrue(migration.contains("chisetweaks-visibility-pack-migration-v1.txt"));
-        assertTrue(migration.contains("VisibilityPackMigrationPolicy.plan"));
-        assertTrue(migration.contains("VisibilityPack.CHEST.repositoryPackId()"));
-        assertTrue(migration.contains("VisibilityPack.WHITE_CONCRETE.repositoryPackId()"));
+        assertTrue(migration.contains("VisibilityPackMigrationPolicy.resumePending"));
+        assertTrue(migration.contains("VisibilityPackMigrationPolicy.pendingIntent"));
+        assertTrue(migration.contains("StrictJsonSecurityPolicy.validateObjectDocument"));
+        assertTrue(migration.contains("writePendingIntent(configDir, nextIntent)"));
+        assertTrue(migration.contains("completeAsyncMigration("));
+        assertTrue(migration.contains("persisted intent will be retried on the next startup"));
+        assertTrue(controller.contains("ACTIVE_RELOAD_COMPLETION"));
+        assertTrue(controller.contains("notifyReloadCompletion(reloadCompletion, failure == null)"));
 
         int changed = migration.indexOf("if (plan.selectionChanged())");
-        int apply = migration.indexOf("applyMigrationSelection", changed);
-        int deferred = migration.indexOf("marker-awaits-next-startup", apply);
-        int markerWrite = migration.indexOf("SecureConfigStorage.writeUtf8Atomic(configDir, MARKER_FILE", deferred);
+        int pendingWrite = migration.indexOf("writePendingIntent(configDir, nextIntent)", changed);
+        int apply = migration.indexOf("applyMigrationSelection", pendingWrite);
+        int completion = migration.indexOf("completeAsyncMigration(", apply);
         assertTrue(changed >= 0);
-        assertTrue(apply > changed);
-        assertTrue(deferred > apply);
-        assertTrue(markerWrite > deferred);
+        assertTrue(pendingWrite > changed);
+        assertTrue(apply > pendingWrite);
+        assertTrue(completion > apply);
     }
 
     @Test
