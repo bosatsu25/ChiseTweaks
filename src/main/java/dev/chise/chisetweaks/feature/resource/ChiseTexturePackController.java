@@ -9,6 +9,8 @@ import java.util.List;
 
 /** Chise Textureの選択状態をMinecraft標準のresource-pack repositoryへ反映する。 */
 public final class ChiseTexturePackController {
+    private static long selectionRevision;
+
     private ChiseTexturePackController() {}
 
     public static boolean isEnabled() {
@@ -43,15 +45,47 @@ public final class ChiseTexturePackController {
         }
         if (!changed) return;
 
+        long revision = ++selectionRevision;
         try {
             repository.setSelected(selected);
             client.options.updateResourcePacks(repository);
-            client.reloadResourcePacks();
+            client.reloadResourcePacks().whenComplete((ignored, failure) -> {
+                if (failure == null) return;
+                try {
+                    client.execute(() -> rollbackIfCurrent(client, previous, revision, failure));
+                } catch (RuntimeException | LinkageError schedulingFailure) {
+                    logFailure(schedulingFailure);
+                }
+            });
         } catch (RuntimeException | LinkageError failure) {
-            repository.setSelected(previous);
-            ChiseTweaksClient.LOGGER.warn(
-                    "Chise Texture visibility change failed; previous resource-pack selection was restored",
-                    failure);
+            rollbackIfCurrent(client, previous, revision, failure);
         }
+    }
+
+    private static void rollbackIfCurrent(
+            Minecraft client,
+            List<String> previous,
+            long revision,
+            Throwable failure) {
+        if (revision != selectionRevision) {
+            logFailure(failure);
+            return;
+        }
+        PackRepository repository = client.getResourcePackRepository();
+        try {
+            repository.setSelected(previous);
+            client.options.updateResourcePacks(repository);
+        } catch (RuntimeException | LinkageError rollbackFailure) {
+            ChiseTweaksClient.LOGGER.error(
+                    "Chise Texture selection rollback failed after {}",
+                    rollbackFailure.getClass().getSimpleName());
+        }
+        logFailure(failure);
+    }
+
+    private static void logFailure(Throwable failure) {
+        ChiseTweaksClient.LOGGER.warn(
+                "Chise Texture resource reload failed after {}",
+                failure == null ? "unknown failure" : failure.getClass().getSimpleName());
     }
 }
