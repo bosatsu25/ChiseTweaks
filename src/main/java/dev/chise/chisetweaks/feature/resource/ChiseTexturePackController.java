@@ -7,7 +7,7 @@ import net.minecraft.server.packs.repository.PackRepository;
 
 import java.util.List;
 
-/** Chise-owned visibility packs share one serialized Minecraft resource-reload pipeline. */
+/** Chise管理Visibility packのMinecraft resource reloadを1本のqueueへ直列化する。 */
 public final class ChiseTexturePackController {
     private static final ResourceReloadCoordinator RELOADS = new ResourceReloadCoordinator();
 
