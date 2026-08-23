@@ -51,7 +51,7 @@ final class AncientDebrisAnalyzerArchitectureContractTest {
     }
 
     @Test
-    void productRangeAndMarkerBudgetsRemainHardBounded() throws IOException {
+    void productRangeMarkerAndRefreshBudgetsRemainHardBounded() throws IOException {
         String policy = read("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java");
 
         assertContainsAll(policy,
@@ -62,9 +62,27 @@ final class AncientDebrisAnalyzerArchitectureContractTest {
                 "MAX_MAX_MARKERS = 128",
                 "MAX_BOOTSTRAP_CHUNK_RADIUS = 17",
                 "MAX_BOOTSTRAP_CHUNKS_PER_TICK = 64",
+                "MAX_VALIDATION_CHUNKS_PER_TICK = 16",
                 "MAX_BOOTSTRAP_CHUNK_COUNT",
                 "MAX_TRACKED_CHUNKS = 4096",
-                "MAX_DEBRIS_PER_CHUNK = 256");
+                "MAX_DEBRIS_PER_CHUNK = 256",
+                "VALIDATION_INTERVAL_TICKS = 20");
+    }
+
+    @Test
+    void trackedChunksAreRescannedInBoundedBatchesSoAdditionsAndRemovalsAreDetected() throws IOException {
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
+
+        assertContainsAll(feature,
+                "pendingValidationChunks",
+                "scheduleValidationWhenDue()",
+                "processPendingValidation(client)",
+                "MAX_VALIDATION_CHUNKS_PER_TICK",
+                "refreshTrackedChunk(",
+                "scanChunkIntoBuffer(",
+                "matchesScanResult(",
+                "VALIDATION_INTERVAL_TICKS - 1");
+        assertContainsNone(feature, "validateCachedMarkers(");
     }
 
     @Test
@@ -113,6 +131,7 @@ final class AncientDebrisAnalyzerArchitectureContractTest {
                 "positionsByChunk.clear()",
                 "visibleMarkers.clear()",
                 "clearPendingBootstrap()",
+                "clearPendingValidation()",
                 "resetSession(Minecraft client)");
         assertContainsAll(metadata,
                 "\"environment\": \"client\"",
