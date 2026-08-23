@@ -24,10 +24,8 @@ ChiseTweaks は、大規模建築・技術施設の確認作業を支援する *
 
 `0.9.4+mc26.1.2` は、0.9.3で固めたmigration / reload / diagnostics基盤を、Prism実機受入と性能回帰の切り分けまで扱える形へ拡張します。
 
-- 設定画面へ現在のResource Reload状態を表示
-- runtime diagnostic snapshotをClipboardへコピー可能
-- diagnostic snapshotを `config/chisetweaks/diagnostics/` へ保存可能
-- diagnostic fileは最大10件へ自動整理し、サーバーアドレス・ユーザー名・絶対pathを追加収集しない
+- Structured diagnosticsをMinecraft標準logへ出力し、Prism Launcher / `logs/latest.log` を診断の正とする
+- 設定画面から重複していたResource Reload状態表示・diagnostic copy/export操作を除去
 - `Connection reset` をChiseTweaks内部failureと混同しないPrism log auditを追加
 - `0.7.7 / 0.9.1 / 0.9.2 / future schema` のconfig fixtureを固定し、migration / downgrade safetyを継続検証
 - Resource Reload Coordinatorへ長時間状態遷移stress regressionを追加
@@ -37,11 +35,10 @@ ChiseTweaks は、大規模建築・技術施設の確認作業を支援する *
 - 5つのPrism性能scenario用baseline/candidate CSV template generatorを追加
 - 検証済み0.9.4 JAR `446814 bytes` をM0 size baselineとして固定し、軽量化中の容量増加を拒否
 - runtime JARの最終目標を `358400 bytes`（350 KiB）以下へ固定。ただしFunctional Parityを優先し、機能削除による達成は認めない
-- `RuntimeDiagnosticReport`をJaCoCo / PITの96% retained-scope gateへ追加
 
 ## 現在の機能構成
 
-設定画面は **Highlight / Visual Filter / Analyzer / Visibility** の4系統に、診断操作を加えた構成です。主要な11個のruntime featureは初期状態OFFです。Chest VisibilityとWhite Concrete VisibilityはMinecraft標準Resource Packsとして初期ONです。
+設定画面は **Highlight / Visual Filter / Analyzer / Visibility** の4系統だけに絞っています。診断情報は設定項目として表示せず、Prism Launcher / `logs/latest.log` へ集約します。主要な11個のruntime featureは初期状態OFFです。Bright ChestとBright ConcreteはMinecraft標準Resource Packsとして初期ONです。
 
 ### Highlight
 
@@ -65,7 +62,7 @@ Visual Filterはクライアント描画だけを変更し、サーバー側のb
 
 ### Analyzer
 
-**Lava Source Highlight** は読み込み済みチャンクの近距離だけを走査し、溶岩源を輪郭＋半透明面で表示します。Flowing Lavaは対象外で、未ロードチャンクを強制ロードしません。
+**Lava Analyzer** は読み込み済みチャンクの近距離だけを走査し、溶岩源を輪郭＋半透明面で表示します。Flowing Lavaは対象外で、未ロードチャンクを強制ロードしません。
 
 **Ancient Debris Analyzer** はNether内の読み込み済みクライアントチャンクだけを対象に古代の残骸を検出します。
 
@@ -81,9 +78,9 @@ Visual Filterはクライアント描画だけを変更し、サーバー側のb
 
 ### Visibility
 
-**Fire Visibility** は一人称の炎オーバーレイだけを下げます。ワールド上の炎モデルやサーバー状態は変更しません。
+**Low Fire** は一人称の炎オーバーレイだけを下げます。ワールド上の炎モデルやサーバー状態は変更しません。
 
-Chest / White Concreteは完全に独立したbuilt-in resource packです。
+**Bright Chest** / **Bright Concrete** は完全に独立したbuilt-in resource packです。
 
 - `chisetweaks:chise_chest_visibility`
   - Chest
@@ -123,7 +120,7 @@ Mod Menuは任意です。導入している場合はMod MenuからChiseTweaks�
 
 ## Structured Diagnostics
 
-ChiseTweaksは異常時の原因切り分け用に、必要最小限のruntime状態を単一行で出力します。
+ChiseTweaksは異常時の原因切り分け用に、必要最小限のruntime状態をMinecraftの標準logへ単一行で出力します。Prism Launcherではコンソール表示またはインスタンスの `logs/latest.log` から確認できます。
 
 主なfield:
 
@@ -138,9 +135,7 @@ ChiseTweaksは異常時の原因切り分け用に、必要最小限のruntime�
 - `reloadState`
 - event固有の `componentId` / `failure` / `source` / `reason` など
 
-`reloadState` は `idle / reloading / recovery_pending / reloading_with_recovery` のいずれかです。設定画面でも現在値を確認できます。
-
-設定画面の **Copy Diagnostic Snapshot** では同じsnapshotをClipboardへコピーできます。**Export Diagnostic Snapshot** では `config/chisetweaks/diagnostics/` に保存し、ChiseTweaks生成reportだけを最大10件保持します。
+`reloadState` は `idle / reloading / recovery_pending / reloading_with_recovery` のいずれかです。診断状態を設定画面へ重複表示せず、`Chise diagnostics event=...` のlog行を診断の正とします。
 
 対象eventにはstartup / join / disconnect、component quarantine、resource selection/reload/recovery、Visibility pack migrationがあります。detailは長さと文字種を制限し、改行や制御文字をそのままログへ入れません。サーバーアドレス、ユーザー名、ローカル絶対pathなどはdiagnostic snapshotへ収集しません。
 
@@ -156,10 +151,10 @@ java.net.SocketException: Connection reset
 
 Minecraftプロセス自体が終了した、画面が固まった、描画例外が発生した場合は次を確認してください。
 
-1. `logs/latest.log`
+1. Prism Launcherのコンソール / `logs/latest.log`
 2. `crash-reports/crash-*.txt` が存在する場合はそのファイル
 3. `disconnect-*-client.txt` が存在する場合はそのファイル
-4. `Chise diagnostics event=...` の直近行またはExportしたdiagnostic snapshot
+4. `Chise diagnostics event=...` の直近行
 5. Minecraft / Fabric Loader / Fabric API / Java version
 
 Prism logは次でも機械判定できます。
@@ -255,12 +250,12 @@ CIでは次をRelease Candidateの必須条件として扱います。
 - 11 runtime features同時ON
 - Fine Line + Hidden Block + Nether Highlight同時ON
 - Block / Entity Visual Filter
-- Chest / White Concrete高速ON/OFF
-- Lava + Ancient Debris同時利用
+- Bright Chest / Bright Concrete高速ON/OFF
+- Lava Analyzer + Ancient Debris Analyzer同時利用
 - 古代の残骸の追加 / 削除反映
 - Overworld / Nether / End移動
 - disconnect / reconnect
-- diagnostic copy / exportとreload状態表示
+- Prism Launcher / `latest.log` のstructured diagnostics
 - 大規模建築環境でのFPS / frametime / heap比較
 
 **このREADMEは、実機操作や実測Performanceを実施済みと主張するものではありません。** 実機受入結果は自動品質ゲートと分けて扱います。
