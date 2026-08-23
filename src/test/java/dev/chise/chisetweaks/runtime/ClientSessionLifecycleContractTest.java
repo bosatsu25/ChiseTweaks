@@ -20,7 +20,7 @@ final class ClientSessionLifecycleContractTest {
         int joined = source.indexOf("phase = SessionPhase.JOINED", increment);
         int reset = source.indexOf("reset(client);", joined);
         int recovery = source.indexOf("ChiseTexturePackController.onSessionStart(client)", reset);
-        int log = source.indexOf("RuntimeDiagnostics.log(\"join\", client)", recovery);
+        int log = source.indexOf("RuntimeDiagnosticEvent.CLIENT_JOIN", recovery);
         assertTrue(method >= 0 && increment > method && joined > increment
                 && reset > joined && recovery > reset && log > recovery);
     }
@@ -30,7 +30,7 @@ final class ClientSessionLifecycleContractTest {
         String source = Files.readString(SOURCE);
         int method = source.indexOf("public static void onDisconnect(Minecraft client)");
         int disconnecting = source.indexOf("phase = SessionPhase.DISCONNECTING", method);
-        int log = source.indexOf("RuntimeDiagnostics.log(\"disconnect\", client)", disconnecting);
+        int log = source.indexOf("RuntimeDiagnosticEvent.CLIENT_DISCONNECT", disconnecting);
         int packEnd = source.indexOf("ChiseTexturePackController.onSessionEnd(client)", log);
         int reset = source.indexOf("reset(client);", packEnd);
         int disconnected = source.indexOf("phase = SessionPhase.DISCONNECTED", reset);
