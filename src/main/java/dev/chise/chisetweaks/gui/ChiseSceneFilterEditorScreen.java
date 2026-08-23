@@ -4,7 +4,8 @@ import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseRuleMode;
 import dev.chise.chisetweaks.config.ChiseRuleModeSetting;
 import dev.chise.chisetweaks.config.ChiseStringListSetting;
-import dev.chise.chisetweaks.config.FeatureConfig;
+import dev.chise.chisetweaks.config.SettingPersistence;
+import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -20,6 +21,7 @@ import net.minecraft.world.level.block.Block;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public final class ChiseSceneFilterEditorScreen extends Screen {
     private static final int OUTER_MARGIN = 12;
@@ -34,6 +36,7 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
     private final Screen parent;
     private final Target target;
     private final ArrayList<Button> removeButtons = new ArrayList<>();
+    private final SettingPersistenceCoordinator persistence = SettingPersistenceCoordinator.production();
 
     private EditBox idBox;
     private Button modeButton;
@@ -127,8 +130,8 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
             case BLACKLIST -> ChiseRuleMode.WHITELIST;
             case WHITELIST -> ChiseRuleMode.NONE;
         };
-        setting.setValue(next);
-        if (!FeatureConfig.saveToFile()) {
+        if (!setting.setValue(next)) return;
+        if (!persist(setting.persistence())) {
             setting.setValue(previous);
             feedback = text("screen.chisetweaks.scene_filter.feedback.save_failed");
         } else {
@@ -172,8 +175,8 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
             return;
         }
 
-        setting.setStrings(sanitized);
-        if (!FeatureConfig.saveToFile()) {
+        if (!setting.setStrings(sanitized)) return;
+        if (!persist(setting.persistence())) {
             setting.setStrings(previous);
             feedback = text("screen.chisetweaks.scene_filter.feedback.save_failed");
             refreshControls();
@@ -207,8 +210,8 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         List<String> previous = setting.getStrings();
         ArrayList<String> updated = new ArrayList<>(previous);
         updated.remove(index);
-        setting.setStrings(updated);
-        if (!FeatureConfig.saveToFile()) {
+        if (!setting.setStrings(updated)) return;
+        if (!persist(setting.persistence())) {
             setting.setStrings(previous);
             feedback = text("screen.chisetweaks.scene_filter.feedback.save_failed");
         } else {
@@ -222,8 +225,8 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         ChiseStringListSetting setting = activeListSetting();
         if (setting == null || setting.getStrings().isEmpty()) return;
         List<String> previous = setting.getStrings();
-        setting.setStrings(List.of());
-        if (!FeatureConfig.saveToFile()) {
+        if (!setting.setStrings(List.of())) return;
+        if (!persist(setting.persistence())) {
             setting.setStrings(previous);
             feedback = text("screen.chisetweaks.scene_filter.feedback.save_failed");
         } else {
@@ -231,6 +234,10 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
             feedback = text("screen.chisetweaks.scene_filter.feedback.cleared");
         }
         refreshControls();
+    }
+
+    private boolean persist(SettingPersistence domain) {
+        return persistence.save(Set.of(domain)).successful();
     }
 
     private void movePage(int delta) {
