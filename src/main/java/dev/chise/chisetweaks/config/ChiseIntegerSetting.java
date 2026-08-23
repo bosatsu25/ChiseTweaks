@@ -57,7 +57,8 @@ public final class ChiseIntegerSetting {
             String englishComment,
             String japaneseComment,
             IntSupplier reader,
-            IntConsumer writer) {
+            IntConsumer writer,
+            SettingPersistence persistence) {
         this(
                 name,
                 defaultValue,
@@ -71,7 +72,7 @@ public final class ChiseIntegerSetting {
                 writer,
                 value -> Integer.toString(value),
                 true,
-                SettingPersistence.LOCAL_CONFIG);
+                persistence);
     }
 
     ChiseIntegerSetting(
@@ -85,7 +86,8 @@ public final class ChiseIntegerSetting {
             String japaneseComment,
             IntSupplier reader,
             IntConsumer writer,
-            IntFunction<String> valueFormatter) {
+            IntFunction<String> valueFormatter,
+            SettingPersistence persistence) {
         this(
                 name,
                 defaultValue,
@@ -99,7 +101,7 @@ public final class ChiseIntegerSetting {
                 writer,
                 valueFormatter,
                 true,
-                SettingPersistence.LOCAL_CONFIG);
+                persistence);
     }
 
     private ChiseIntegerSetting(
