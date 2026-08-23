@@ -26,8 +26,16 @@ final class RuntimeDiagnosticSnapshotTest {
                 "version=0.9.3+mc26.1.2 sessionId=7 phase=joined dimension=nether "
                         + "enabled=[lava_highlight,ancient_debris_analyzer] "
                         + "visibilityPacks=[chisetweaks:chise_chest_visibility] "
-                        + "quarantined=[worksite_visibility] reloadInFlight=true recoveryPending=false",
+                        + "quarantined=[worksite_visibility] reloadState=reloading",
                 snapshot.toLogLine());
+    }
+
+    @Test
+    void reloadStateCoversEveryCoordinatorStateCombination() {
+        assertEquals("idle", snapshot(false, false).reloadState());
+        assertEquals("reloading", snapshot(true, false).reloadState());
+        assertEquals("recovery_pending", snapshot(false, true).reloadState());
+        assertEquals("reloading_with_recovery", snapshot(true, true).reloadState());
     }
 
     @Test
@@ -44,5 +52,18 @@ final class RuntimeDiagnosticSnapshotTest {
     void rejectsBlankRequiredText() {
         assertThrows(IllegalArgumentException.class, () -> new RuntimeDiagnosticSnapshot(
                 " ", 1L, "joined", "overworld", List.of(), List.of(), List.of(), false, false));
+    }
+
+    private static RuntimeDiagnosticSnapshot snapshot(boolean reloading, boolean recovery) {
+        return new RuntimeDiagnosticSnapshot(
+                "0.9.3+mc26.1.2",
+                1L,
+                "joined",
+                "overworld",
+                List.of(),
+                List.of(),
+                List.of(),
+                reloading,
+                recovery);
     }
 }
