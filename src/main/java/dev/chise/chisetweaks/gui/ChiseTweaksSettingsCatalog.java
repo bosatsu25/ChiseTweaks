@@ -8,6 +8,7 @@ import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
+import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import net.minecraft.network.chat.Component;
 
@@ -84,7 +85,10 @@ final class ChiseTweaksSettingsCatalog {
                 FeatureDefinition.FIRE_VISIBILITY);
         boolLiteral(rows, "chestVisibility", ChiseTextureVisibilitySetting.INSTANCE,
                 "Chest Visibility / チェスト視認性",
-                "Toggle the high-visibility white chest texture (and the bundled white-concrete texture) / 白いチェスト視認テクスチャと同梱の白色コンクリートを切り替えます");
+                "Toggle only the high-visibility chest textures / 高視認のチェストテクスチャだけを切り替えます");
+        boolLiteral(rows, "whiteConcreteVisibility", WhiteConcreteVisibilitySetting.INSTANCE,
+                "White Concrete Visibility / 白色コンクリート視認性",
+                "Toggle only the high-visibility White Concrete texture / 高視認の白色コンクリートだけを切り替えます");
     }
 
     private static void addHighlightDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
@@ -183,94 +187,53 @@ final class ChiseTweaksSettingsCatalog {
                 "screen.chisetweaks.settings.debris_max.description", 8);
     }
 
-    private static void header(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            String translationKey) {
+    private static void header(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id, String translationKey) {
         rows.add(ChiseTweaksSettingRowDefinition.header(id, text(translationKey)));
     }
 
-    private static void headerLiteral(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            String name) {
+    private static void headerLiteral(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id, String name) {
         rows.add(ChiseTweaksSettingRowDefinition.header(id, name));
     }
 
-    private static void compactFeature(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseBooleanSetting config,
-            FeatureDefinition definition) {
-        rows.add(ChiseTweaksSettingRowDefinition.bool(
-                id, text(definition.nameKey()), "", config));
+    private static void compactFeature(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+            ChiseBooleanSetting config, FeatureDefinition definition) {
+        rows.add(ChiseTweaksSettingRowDefinition.bool(id, text(definition.nameKey()), "", config));
     }
 
-    private static void bool(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseBooleanSetting config,
-            String nameKey,
-            String descriptionKey) {
-        rows.add(ChiseTweaksSettingRowDefinition.bool(
-                id, text(nameKey), text(descriptionKey), config));
+    private static void bool(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+            ChiseBooleanSetting config, String nameKey, String descriptionKey) {
+        rows.add(ChiseTweaksSettingRowDefinition.bool(id, text(nameKey), text(descriptionKey), config));
     }
 
-    private static void boolLiteral(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseBooleanSetting config,
-            String name,
-            String description) {
+    private static void boolLiteral(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+            ChiseBooleanSetting config, String name, String description) {
         rows.add(ChiseTweaksSettingRowDefinition.bool(id, name, description, config));
     }
 
-    private static void integer(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseIntegerSetting config,
-            String nameKey,
-            String descriptionKey,
-            int step) {
-        rows.add(ChiseTweaksSettingRowDefinition.integer(
-                id, text(nameKey), text(descriptionKey), config, step));
+    private static void integer(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+            ChiseIntegerSetting config, String nameKey, String descriptionKey, int step) {
+        rows.add(ChiseTweaksSettingRowDefinition.integer(id, text(nameKey), text(descriptionKey), config, step));
     }
 
-    private static void integerLiteral(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            ChiseIntegerSetting config,
-            String name,
-            String description,
-            int step) {
+    private static void integerLiteral(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+            ChiseIntegerSetting config, String name, String description, int step) {
         rows.add(ChiseTweaksSettingRowDefinition.integer(id, name, description, config, step));
     }
 
-    private static void action(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String id,
-            String nameKey,
-            String descriptionKey,
-            ChiseTweaksSettingRowDefinition.Action action) {
+    private static void action(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+            String nameKey, String descriptionKey, ChiseTweaksSettingRowDefinition.Action action) {
         rows.add(ChiseTweaksSettingRowDefinition.action(
-                id,
-                text(nameKey),
-                text(descriptionKey),
-                action,
+                id, text(nameKey), text(descriptionKey), action,
                 text("screen.chisetweaks.settings.action.settings")));
     }
 
-    private static void target(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            ChiseBooleanSetting config) {
+    private static void target(ArrayList<ChiseTweaksSettingRowDefinition> rows, ChiseBooleanSetting config) {
         String base = "screen.chisetweaks.settings.target." + config.getName();
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 config.getName(), text(base + ".name"), text(base + ".description"), config));
     }
 
-    private static void targetLiteral(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            ChiseBooleanSetting config) {
+    private static void targetLiteral(ArrayList<ChiseTweaksSettingRowDefinition> rows, ChiseBooleanSetting config) {
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 config.getName(),
                 config.getDisplayName(false) + " / " + config.getDisplayName(true),
