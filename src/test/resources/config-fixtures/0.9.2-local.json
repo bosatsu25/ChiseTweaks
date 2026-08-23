@@ -1,0 +1,13 @@
+{
+  "lavaHighlightEnabled": true,
+  "ancientDebrisAnalyzerEnabled": true,
+  "fireVisibilityEnabled": true,
+  "lavaAnalyzerHorizontalRadius": 7,
+  "lavaAnalyzerVerticalRadius": 2,
+  "lavaAnalyzerIntervalTicks": 30,
+  "lavaAnalyzerMaxOverlayResults": 21,
+  "ancientDebrisAnalyzerRangeBlocks": 192,
+  "ancientDebrisAnalyzerMaxMarkers": 96,
+  "visualTargetMask": 1073739776,
+  "visualTargetSchemaVersion": 3
+}
