@@ -36,9 +36,7 @@ final class UiAvailabilityPolicy {
         return switch (resolved) {
             case MAIN -> action == ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS
                     || action == ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS
-                    || action == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS
-                    || action == ChiseTweaksSettingRowDefinition.Action.COPY_DIAGNOSTICS
-                    || action == ChiseTweaksSettingRowDefinition.Action.EXPORT_DIAGNOSTICS;
+                    || action == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS;
             case HIGHLIGHT_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
             case VISUAL_FILTER_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
                     || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER;
