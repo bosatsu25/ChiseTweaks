@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Run the existing artifact audit with exact allowlists for Chise visibility packs."""
+"""Run the artifact audit with exact visibility-pack and runtime-size contracts."""
 from __future__ import annotations
+
+from pathlib import Path
 
 import artifact_audit_core as core
 
@@ -52,7 +54,40 @@ def audit_ore_highlights_with_visibility_packs(
     return details
 
 
-def update_summary() -> None:
+def gradle_properties() -> dict[str, str]:
+    result: dict[str, str] = {}
+    for raw in (core.ROOT / "gradle.properties").read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        result[key.strip()] = value.strip()
+    return result
+
+
+def audit_runtime_size() -> tuple[int, int, int]:
+    properties = gradle_properties()
+    version = properties["mod_version"]
+    base_name = properties["archives_base_name"]
+    runtime = core.ROOT / "build" / "libs" / f"{base_name}-{version}.jar"
+    if not runtime.is_file():
+        raise RuntimeError(f"runtime JAR is missing for size audit: {runtime.name}")
+
+    baseline = int(properties["runtime_jar_baseline_bytes"])
+    max_growth = int(properties["runtime_jar_max_growth_bytes"])
+    absolute_max = int(properties["runtime_jar_max_bytes"])
+    effective_max = min(absolute_max, baseline + max_growth)
+    size = runtime.stat().st_size
+    if size >= effective_max:
+        raise RuntimeError(
+            "runtime JAR size regression: "
+            f"size={size}, baseline={baseline}, max_growth={max_growth}, "
+            f"effective_max={effective_max}"
+        )
+    return size, baseline, effective_max
+
+
+def update_summary(size: int, baseline: int, effective_max: int) -> None:
     summary = core.CI_DIR / "artifact-summary.md"
     if not summary.is_file():
         return
@@ -62,15 +97,30 @@ def update_summary() -> None:
         "- Built-in resource packs: **Chest Visibility + White Concrete Visibility / 8 files**\n"
         "- Unexpected shaderpacks/resourcepacks: **none**",
     )
+    text += (
+        f"\n- Runtime JAR size: **{size} bytes**\n"
+        f"- Verified 0.9.3 size baseline: **{baseline} bytes**\n"
+        f"- Effective regression ceiling: **< {effective_max} bytes**\n"
+    )
     summary.write_text(text, encoding="utf-8")
 
 
 def main() -> int:
     core.audit_ore_highlights = audit_ore_highlights_with_visibility_packs
     result = core.main()
-    if result == 0:
-        update_summary()
-    return result
+    if result != 0:
+        return result
+    try:
+        size, baseline, effective_max = audit_runtime_size()
+    except (KeyError, ValueError, OSError, RuntimeError) as failure:
+        print(f"ARTIFACT AUDIT SIZE CONTRACT: FAIL: {failure}", file=core.sys.stderr)
+        return 1
+    update_summary(size, baseline, effective_max)
+    print(
+        "ARTIFACT SIZE CONTRACT: PASS "
+        f"size={size} baseline={baseline} effective_max={effective_max}"
+    )
+    return 0
 
 
 if __name__ == "__main__":
