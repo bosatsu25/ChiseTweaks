@@ -13,21 +13,24 @@ final class RepositoryRuntimeReviewContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void runtimeLifecycleUsesOneComponentContractAndQuarantineOwnsCleanup() throws IOException {
+    void runtimeLifecycleUsesOneSlotAndRuntimeComponentOwnsCleanupContract() throws IOException {
         String feature = source("src/main/java/dev/chise/chisetweaks/feature/Feature.java");
         String manager = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
+        String runtime = source("src/main/java/dev/chise/chisetweaks/runtime/RuntimeComponent.java");
         String ticking = source("src/main/java/dev/chise/chisetweaks/runtime/TickingRuntimeComponent.java");
         String worksite = source("src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java");
 
         assertTrue(feature.contains("public interface Feature extends RuntimeComponent"));
-        assertTrue(manager.contains("Map<String, RuntimeComponent> components"));
-        assertTrue(manager.contains("component.tick(client);"));
+        assertTrue(manager.contains("Map<String, ComponentSlot> componentSlots"));
+        assertTrue(manager.contains("for (ComponentSlot slot : sessionSchedule) slot.resetSession(client);"));
         assertTrue(manager.contains("component.onQuarantined(client);"));
-        assertTrue(manager.contains("removeFromSchedules(component);"));
-        assertTrue(ticking.contains("default void onQuarantined(Minecraft client)"));
+        assertTrue(manager.contains("removeFromSchedules(slot);"));
+        assertTrue(runtime.contains("default void onQuarantined(Minecraft client)"));
+        assertFalse(ticking.contains("onQuarantined"));
         assertTrue(worksite.contains("public void onQuarantined(Minecraft client)"));
-        assertFalse(manager.contains("Map<String, Feature>"));
-        assertFalse(manager.contains("runtimeComponents"));
+        assertFalse(manager.contains("tickSlotFor("));
+        assertFalse(manager.contains("initializationQuarantines"));
+        assertFalse(manager.contains("Map<String, RuntimeComponent>"));
         assertFalse(manager.contains("if (!active && !wasActive) return;"));
         assertFalse(Files.exists(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/SessionAwareFeature.java")));
@@ -60,7 +63,7 @@ final class RepositoryRuntimeReviewContractTest {
     void qualityAndRepositoryAuditsCoverRuntimeBoundaryAndTrackedResidue() throws IOException {
         String build = source("build.gradle");
         String audit = source("scripts/repository_audit.py");
-        assertTrue(build.contains("dev.chise.chisetweaks.runtime.FeatureManager$TickSlot*"));
+        assertTrue(build.contains("dev.chise.chisetweaks.runtime.FeatureManager$ComponentSlot*"));
         assertTrue(audit.contains("git\", \"ls-files\", \"-z"));
         assertTrue(audit.contains("FORBIDDEN_TRACKED_DIRECTORY_NAMES"));
     }
