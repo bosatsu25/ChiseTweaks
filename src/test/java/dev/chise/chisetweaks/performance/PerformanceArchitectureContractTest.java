@@ -38,16 +38,23 @@ final class PerformanceArchitectureContractTest {
     }
 
     @Test
-    void performanceSpecificationIsExecutableCodeNotTrackedDocsOrPython() {
+    void performanceSpecificationAndAcceptanceAreExecutableTestCode() throws IOException {
         assertFalse(Files.exists(ROOT.resolve("docs/PERFORMANCE_SQA.md")));
         assertFalse(Files.exists(ROOT.resolve("docs/performance-capture.example.json")));
         assertFalse(Files.exists(ROOT.resolve("scripts/performance_compare.py")));
         assertTrue(Files.exists(ROOT.resolve(
                 "src/test/java/dev/chise/chisetweaks/performance/PerformanceComparison.java")));
         assertTrue(Files.exists(ROOT.resolve(
-                "src/test/java/dev/chise/chisetweaks/performance/JfrPerformanceAnalyzer.java")));
+                "src/test/java/dev/chise/chisetweaks/performance/PerformanceAcceptancePolicy.java")));
         assertTrue(Files.exists(ROOT.resolve(
-                "src/test/java/dev/chise/chisetweaks/performance/PerformanceEvidenceCli.java")));
+                "src/test/java/dev/chise/chisetweaks/performance/JfrPerformanceAnalyzer.java")));
+        Path cli = ROOT.resolve(
+                "src/test/java/dev/chise/chisetweaks/performance/PerformanceEvidenceCli.java");
+        assertTrue(Files.exists(cli));
+        String cliSource = Files.readString(cli);
+        assertTrue(cliSource.contains("PerformanceAcceptancePolicy.evaluate"));
+        assertTrue(cliSource.contains("performance_acceptance=PASS"));
+        assertTrue(cliSource.contains("performance_acceptance=FAIL"));
     }
 
     @Test

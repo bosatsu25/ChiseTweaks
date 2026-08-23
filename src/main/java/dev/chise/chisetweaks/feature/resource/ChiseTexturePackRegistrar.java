@@ -8,11 +8,12 @@ import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
-/** Chise TextureをFabric組み込みリソースパックとして登録する。 */
+/** 高視認テクスチャを独立切替可能なbuilt-in resource packとして登録する。 */
 public final class ChiseTexturePackRegistrar {
-    private static final String PACK_PATH = "chise_texture";
-    private static final Identifier PACK_ID =
-            Identifier.fromNamespaceAndPath(ChiseTweaksClient.MOD_ID, PACK_PATH);
+    private static final Identifier CHEST_PACK_ID = Identifier.fromNamespaceAndPath(
+            ChiseTweaksClient.MOD_ID, "chise_chest_visibility");
+    private static final Identifier WHITE_CONCRETE_PACK_ID = Identifier.fromNamespaceAndPath(
+            ChiseTweaksClient.MOD_ID, "chise_white_concrete_visibility");
 
     private ChiseTexturePackRegistrar() {}
 
@@ -21,17 +22,36 @@ public final class ChiseTexturePackRegistrar {
                 .getModContainer(ChiseTweaksClient.MOD_ID)
                 .orElseThrow(() -> new IllegalStateException("ChiseTweaks mod container is unavailable"));
 
-        boolean registered = ResourceLoader.registerBuiltinPack(
-                PACK_ID,
+        registerPack(
+                CHEST_PACK_ID,
                 container,
-                Component.literal("ChiseTweaks: Chise Texture"),
-                PackActivationType.DEFAULT_ENABLED);
-        if (!registered) {
-            throw new IllegalStateException("Chise Texture built-in resource pack could not be registered");
-        }
+                "ChiseTweaks: Chest Visibility",
+                "Chest Visibility built-in resource pack could not be registered");
+        registerPack(
+                WHITE_CONCRETE_PACK_ID,
+                container,
+                "ChiseTweaks: White Concrete Visibility",
+                "White Concrete Visibility built-in resource pack could not be registered");
     }
 
-    static String repositoryPackId() {
-        return PACK_ID.toString();
+    private static void registerPack(
+            Identifier id,
+            ModContainer container,
+            String displayName,
+            String failureMessage) {
+        boolean registered = ResourceLoader.registerBuiltinPack(
+                id,
+                container,
+                Component.literal(displayName),
+                PackActivationType.DEFAULT_ENABLED);
+        if (!registered) throw new IllegalStateException(failureMessage);
+    }
+
+    static String chestRepositoryPackId() {
+        return CHEST_PACK_ID.toString();
+    }
+
+    static String whiteConcreteRepositoryPackId() {
+        return WHITE_CONCRETE_PACK_ID.toString();
     }
 }

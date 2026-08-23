@@ -5,6 +5,7 @@ import dev.chise.chisetweaks.config.ChiseTextureVisibilitySetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
+import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -23,7 +24,6 @@ final class ChiseTweaksSettingsControllerTest {
     void repeatedControllersUseTheSameStableMainStructure() {
         var first = new ChiseTweaksSettingsController();
         var second = new ChiseTweaksSettingsController();
-
         assertEquals(ids(first.rows()), ids(second.rows()));
         assertEquals(kinds(first.rows()), kinds(second.rows()));
         assertRowContracts(first.rows());
@@ -34,29 +34,14 @@ final class ChiseTweaksSettingsControllerTest {
     void mainSurfaceExposesAllReleasedVisualGroups() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
-
         assertEquals(List.of(
-                "header.highlight",
-                "materials",
-                "nether",
-                "thread",
-                "hidden",
-                "glass",
-                "kelp",
-                "header.visualFilter",
-                "focusBlocks",
-                "focusEntities",
-                "header.analyzer",
-                "lava",
-                "ancientDebrisAnalyzer",
-                "header.visibilityImprovement",
-                "fireVisibility",
-                "chestVisibility"), ids(rows));
-
+                "header.highlight", "materials", "nether", "thread", "hidden", "glass", "kelp",
+                "header.visualFilter", "focusBlocks", "focusEntities",
+                "header.analyzer", "lava", "ancientDebrisAnalyzer",
+                "header.visibilityImprovement", "fireVisibility", "chestVisibility",
+                "whiteConcreteVisibility"), ids(rows));
         assertEquals(List.of(
-                        "header.highlight",
-                        "header.visualFilter",
-                        "header.analyzer",
+                        "header.highlight", "header.visualFilter", "header.analyzer",
                         "header.visibilityImprovement"),
                 rows.stream()
                         .filter(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER)
@@ -70,7 +55,6 @@ final class ChiseTweaksSettingsControllerTest {
     void mainRowsRemainBoundToExpectedSettings() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
-
         assertSame(FeatureSwitches.MATERIAL_HIGHLIGHTS, row(rows, "materials").booleanConfig());
         assertSame(FeatureSwitches.NETHER_PALETTE, row(rows, "nether").booleanConfig());
         assertSame(FeatureSwitches.FINE_THREAD_TRACE, row(rows, "thread").booleanConfig());
@@ -84,14 +68,16 @@ final class ChiseTweaksSettingsControllerTest {
                 row(rows, "ancientDebrisAnalyzer").booleanConfig());
         assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, row(rows, "fireVisibility").booleanConfig());
         assertSame(ChiseTextureVisibilitySetting.INSTANCE, row(rows, "chestVisibility").booleanConfig());
+        assertSame(WhiteConcreteVisibilitySetting.INSTANCE,
+                row(rows, "whiteConcreteVisibility").booleanConfig());
         assertTrue(row(rows, "chestVisibility").booleanConfig().getDefaultBooleanValue());
+        assertTrue(row(rows, "whiteConcreteVisibility").booleanConfig().getDefaultBooleanValue());
     }
 
     @Test
     void sectionSettingsActionsOpenAllReleasedDetailSurfaces() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
-
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS,
                 row(rows, "header.highlight").action());
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS,
@@ -106,7 +92,6 @@ final class ChiseTweaksSettingsControllerTest {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
                 ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS);
-
         assertFalse(controller.surfaceTitle(
                 ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS).isBlank());
         assertSame(BuilderFocusConfig.REFRESH_RENDERER, row(rows, "refreshRenderer").booleanConfig());
@@ -121,7 +106,6 @@ final class ChiseTweaksSettingsControllerTest {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
-
         assertSame(LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY,
                 row(rows, "highlightWorldOverlay").booleanConfig());
         assertFalse(rows.stream().anyMatch(candidate -> "highlightExclusiveMode".equals(candidate.id())));
@@ -135,7 +119,6 @@ final class ChiseTweaksSettingsControllerTest {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
                 ChiseTweaksSettingsController.Surface.LAVA_DETAILS);
-
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 row(rows, "lavaRange").integerConfig());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
@@ -147,15 +130,17 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void visibilitySectionContainsLowFireAndChestVisibility() {
+    void visibilitySectionContainsLowFireChestAndWhiteConcrete() {
         var controller = new ChiseTweaksSettingsController();
         ChiseTweaksSettingRowDefinition fire = row(controller.rows(), "fireVisibility");
         ChiseTweaksSettingRowDefinition chest = row(controller.rows(), "chestVisibility");
-
+        ChiseTweaksSettingRowDefinition concrete = row(controller.rows(), "whiteConcreteVisibility");
         assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, fire.booleanConfig());
         assertFalse(fire.booleanConfig().getDefaultBooleanValue());
         assertSame(ChiseTextureVisibilitySetting.INSTANCE, chest.booleanConfig());
         assertTrue(chest.booleanConfig().getDefaultBooleanValue());
+        assertSame(WhiteConcreteVisibilitySetting.INSTANCE, concrete.booleanConfig());
+        assertTrue(concrete.booleanConfig().getDefaultBooleanValue());
     }
 
     @Test
@@ -176,8 +161,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     private static ChiseTweaksSettingRowDefinition row(
-            List<ChiseTweaksSettingRowDefinition> rows,
-            String id) {
+            List<ChiseTweaksSettingRowDefinition> rows, String id) {
         return rows.stream()
                 .filter(candidate -> candidate.id().equals(id))
                 .findFirst()

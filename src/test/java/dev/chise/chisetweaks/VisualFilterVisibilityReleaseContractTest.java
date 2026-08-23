@@ -48,26 +48,37 @@ final class VisualFilterVisibilityReleaseContractTest {
     }
 
     @Test
-    void chestVisibilityCoalescesReloadsAndRecoversAsynchronousFailures() throws IOException {
+    void visibilityPacksAreIndependentAndShareOneReloadQueue() throws IOException {
         String controller = source(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java");
+        String coordinator = source(
+                "src/main/java/dev/chise/chisetweaks/feature/resource/ResourceReloadCoordinator.java");
         String registrar = source(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackRegistrar.java");
         String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
 
-        assertTrue(registrar.contains("Identifier.fromNamespaceAndPath"));
-        assertTrue(registrar.contains("repositoryPackId()"));
+        assertTrue(registrar.contains("chise_chest_visibility"));
+        assertTrue(registrar.contains("chise_white_concrete_visibility"));
+        assertTrue(registrar.contains("chestRepositoryPackId()"));
+        assertTrue(registrar.contains("whiteConcreteRepositoryPackId()"));
+        assertTrue(controller.contains("setChestEnabled(boolean enabled)"));
+        assertTrue(controller.contains("setWhiteConcreteEnabled(boolean enabled)"));
         assertTrue(controller.contains("getSelectedIds()"));
         assertTrue(controller.contains("getAvailableIds()"));
         assertTrue(controller.contains("repository.setSelected(selected)"));
         assertTrue(controller.contains("options.updateResourcePacks(repository)"));
         assertTrue(controller.contains("reloadResourcePacks().whenComplete"));
         assertTrue(controller.contains("client.execute(() -> completeReload"));
-        assertTrue(controller.contains("reloadInFlight"));
-        assertTrue(controller.contains("reloadPending"));
+        assertTrue(controller.contains("ResourceReloadCoordinator RELOADS"));
+        assertTrue(controller.contains("RELOADS.markPending()"));
         assertTrue(controller.contains("restoreSelection"));
+        assertTrue(coordinator.contains("Action.RELOAD"));
+        assertTrue(coordinator.contains("Action.RESTORE"));
         assertTrue(catalog.contains("\"chestVisibility\""));
+        assertTrue(catalog.contains("\"whiteConcreteVisibility\""));
         assertTrue(catalog.contains("Chest Visibility / チェスト視認性"));
+        assertTrue(catalog.contains("White Concrete Visibility / 白色コンクリート視認性"));
+        assertFalse(catalog.contains("bundled white-concrete"));
     }
 
     private static String source(String relativePath) throws IOException {

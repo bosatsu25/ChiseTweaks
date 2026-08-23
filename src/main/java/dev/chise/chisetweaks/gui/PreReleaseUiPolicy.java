@@ -25,7 +25,8 @@ final class PreReleaseUiPolicy {
                     || "lava".equals(row.id())
                     || "ancientDebrisAnalyzer".equals(row.id())
                     || "fireVisibility".equals(row.id())
-                    || "chestVisibility".equals(row.id());
+                    || "chestVisibility".equals(row.id())
+                    || "whiteConcreteVisibility".equals(row.id());
             case HIGHLIGHT_DETAILS -> isReleasedHighlightDetail(row.id());
             case VISUAL_FILTER_DETAILS, LAVA_DETAILS -> true;
         };

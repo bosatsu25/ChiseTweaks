@@ -9,6 +9,7 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
+import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
 import java.util.List;
@@ -59,6 +60,7 @@ final class ChiseTweaksSettingsController {
         FeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
         LocalFeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
         ChiseTextureVisibilitySetting.INSTANCE.resetToDefault();
+        WhiteConcreteVisibilitySetting.INSTANCE.resetToDefault();
         resetHighlightDetails();
         resetAnalyzerDetails();
         resetBuilderFocusDetails();
