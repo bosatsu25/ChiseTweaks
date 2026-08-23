@@ -27,18 +27,28 @@ final class VisualFilterVisibilityReleaseContractTest {
     }
 
     @Test
-    void worksiteHighlightsHaveNoRuntimeMutualExclusionBinding() throws IOException {
+    void worksiteHighlightsHaveNoRuntimeOrConfigMutualExclusionResidue() throws IOException {
         String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
         String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
+        String localConfig = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
+        String localSettings = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
+        String featureDefinition = source("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
 
         assertFalse(bindings.contains("bindExclusiveWorksiteMode"));
         assertFalse(bindings.contains("applyWorksiteModesAtomically"));
         assertFalse(bindings.contains("worksiteVisibilityExclusiveMode"));
         assertFalse(catalog.contains("\"highlightExclusiveMode\""));
+        assertFalse(localConfig.contains("worksiteVisibilityExclusiveMode"));
+        assertFalse(localConfig.contains("worksiteVisibilityMaxResults"));
+        assertFalse(localSettings.contains("WORKSITE_VISIBILITY_EXCLUSIVE_MODE"));
+        assertFalse(localSettings.contains("setWorksiteVisibilityModeChangedCallback"));
+        assertFalse(featureDefinition.contains("WorksiteVisibilitySelectionPolicy"));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy.java")));
     }
 
     @Test
-    void chestVisibilityUsesMinecraftResourcePackStateAndReloads() throws IOException {
+    void chestVisibilityCoalescesReloadsAndRecoversAsynchronousFailures() throws IOException {
         String controller = source(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java");
         String registrar = source(
@@ -49,9 +59,13 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(registrar.contains("repositoryPackId()"));
         assertTrue(controller.contains("getSelectedIds()"));
         assertTrue(controller.contains("getAvailableIds()"));
-        assertTrue(controller.contains("setSelected(selected)"));
+        assertTrue(controller.contains("repository.setSelected(selected)"));
         assertTrue(controller.contains("options.updateResourcePacks(repository)"));
-        assertTrue(controller.contains("reloadResourcePacks()"));
+        assertTrue(controller.contains("reloadResourcePacks().whenComplete"));
+        assertTrue(controller.contains("client.execute(() -> completeReload"));
+        assertTrue(controller.contains("reloadInFlight"));
+        assertTrue(controller.contains("reloadPending"));
+        assertTrue(controller.contains("restoreSelection"));
         assertTrue(catalog.contains("\"chestVisibility\""));
         assertTrue(catalog.contains("Chest Visibility / チェスト視認性"));
     }
