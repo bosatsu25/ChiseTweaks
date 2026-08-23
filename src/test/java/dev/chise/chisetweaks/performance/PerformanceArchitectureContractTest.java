@@ -51,7 +51,7 @@ final class PerformanceArchitectureContractTest {
     }
 
     @Test
-    void ciAndOfficialReleaseUseTheSameSingleGradleQualityGateWithoutArtifactHandoff() throws IOException {
+    void ciExposesDiagnosticGatesWhileOfficialReleaseKeepsTheStrictAggregateGate() throws IOException {
         String build = Files.readString(ROOT.resolve("build.gradle"));
         String ci = Files.readString(ROOT.resolve(".github/workflows/ci.yml"));
         String verify = Files.readString(ROOT.resolve(".github/workflows/verify-build.yml"));
@@ -61,7 +61,11 @@ final class PerformanceArchitectureContractTest {
         assertTrue(build.contains("tasks.register('comparePerformanceEvidence', JavaExec)"));
         assertFalse(build.contains("tasks.register('performanceGate', Test)"));
 
-        assertTrue(verify.contains("./gradlew --no-daemon --stacktrace clean ciGate"));
+        assertTrue(verify.contains("clean assemble testClasses"));
+        assertTrue(verify.contains("--stacktrace test"));
+        assertTrue(verify.contains("jacocoTestReport jacocoTestCoverageVerification"));
+        assertTrue(verify.contains("--stacktrace pitest"));
+        assertTrue(verify.contains("Enforce aggregate quality gate"));
         assertFalse(verify.contains("actions/upload-artifact"));
         assertFalse(verify.contains("gh release"));
         assertFalse(ci.contains("gh release"));
