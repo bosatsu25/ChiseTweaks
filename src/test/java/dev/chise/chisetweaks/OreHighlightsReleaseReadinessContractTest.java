@@ -50,15 +50,14 @@ final class OreHighlightsReleaseReadinessContractTest {
     void oreHighlightsStayModelBackedAndCannotBecomeAWorldScanXrayPath() throws IOException {
         String engine = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java");
-        String worksitePolicy = source(
-                "src/main/java/dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy.java");
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
 
         assertFalse(engine.contains("BlockInspectionCategory.MATERIAL_HIGHLIGHT"));
-        assertFalse(worksitePolicy.contains("MATERIAL_HIGHLIGHT"));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/core/policy/WorksiteVisibilitySelectionPolicy.java")));
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
         assertTrue(plugin.contains("pluginContext.addModel("));

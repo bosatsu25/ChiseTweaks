@@ -16,8 +16,6 @@ import java.util.function.IntSupplier;
  */
 public final class LocalFeatureSettings {
     private static final Runnable NOOP = () -> {};
-
-    private static Runnable worksiteVisibilityModeChangedCallback = NOOP;
     private static Runnable oreHighlightChangedCallback = NOOP;
 
     public static final SimpleBooleanSetting ORE_HIGHLIGHT_ANIMATION = bool(
@@ -62,13 +60,6 @@ public final class LocalFeatureSettings {
             "見えている対象ブロックにChise独自の補助線を描画します。",
             () -> config().worksiteVisibilityWorldOverlay,
             value -> config().worksiteVisibilityWorldOverlay = value);
-    public static final SimpleBooleanSetting WORKSITE_VISIBILITY_EXCLUSIVE_MODE = bool(
-            "localWorksiteVisibilityExclusiveMode", false,
-            "Exclusive highlight mode", "ハイライト排他モード",
-            "Keep at most one scan-based highlight mode active at a time.",
-            "スキャン型ハイライトを同時に1つまでに制限します。",
-            () -> config().worksiteVisibilityExclusiveMode,
-            value -> config().worksiteVisibilityExclusiveMode = value);
     public static final SimpleBooleanSetting WORKSITE_VISIBILITY_DIMENSION_PRESETS = bool(
             "localWorksiteVisibilityDimensionPresets", false,
             "Automatic dimension preset", "ディメンション自動プリセット",
@@ -161,18 +152,12 @@ public final class LocalFeatureSettings {
     static {
         ORE_HIGHLIGHT_ANIMATION.setValueChangeCallback(
                 ignored -> oreHighlightChangedCallback.run());
-        WORKSITE_VISIBILITY_EXCLUSIVE_MODE.setValueChangeCallback(
-                ignored -> worksiteVisibilityModeChangedCallback.run());
     }
 
     private LocalFeatureSettings() {}
 
     /** 起動処理の境界を明示するため残している。直接bindingのため状態同期処理は不要。 */
     public static void init() {}
-
-    public static void setWorksiteVisibilityModeChangedCallback(Runnable callback) {
-        worksiteVisibilityModeChangedCallback = callbackOrNoop(callback);
-    }
 
     public static void setOreHighlightChangedCallback(Runnable callback) {
         oreHighlightChangedCallback = callbackOrNoop(callback);

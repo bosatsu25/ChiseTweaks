@@ -62,6 +62,15 @@ final class AncientDebrisAnalyzerPolicyTest {
     }
 
     @Test
+    void validationRefreshBudgetIsPositiveAndBelowTrackedChunkCapacity() {
+        assertTrue(AncientDebrisAnalyzerPolicy.MAX_VALIDATION_CHUNKS_PER_TICK > 0);
+        assertTrue(AncientDebrisAnalyzerPolicy.MAX_VALIDATION_CHUNKS_PER_TICK
+                < AncientDebrisAnalyzerPolicy.MAX_TRACKED_CHUNKS);
+        assertEquals(16, AncientDebrisAnalyzerPolicy.MAX_VALIDATION_CHUNKS_PER_TICK);
+        assertEquals(20, AncientDebrisAnalyzerPolicy.VALIDATION_INTERVAL_TICKS);
+    }
+
+    @Test
     void chunkRelevanceUsesSymmetricBoundariesIncludingNegativeCoordinates() {
         assertTrue(AncientDebrisAnalyzerPolicy.isChunkRelevant(10, -10, 15, -15, 64));
         assertTrue(AncientDebrisAnalyzerPolicy.isChunkRelevant(-10, 10, -15, 15, 64));
@@ -117,5 +126,14 @@ final class AncientDebrisAnalyzerPolicyTest {
         assertEquals(0.18f, AncientDebrisAnalyzerPolicy.boxInsetForDistance(128.0), 0.000001f);
         assertEquals(0.32f, AncientDebrisAnalyzerPolicy.boxInsetForDistance(128.01), 0.000001f);
         assertEquals(0.32f, AncientDebrisAnalyzerPolicy.boxInsetForDistance(200.0), 0.000001f);
+    }
+
+    @Test
+    void filledGeometryCannotInvertAtAnyDistanceLodBoundary() {
+        for (double distance : new double[] {0.0, 16.0, 16.01, 64.0, 64.01, 128.0, 128.01, 256.0}) {
+            float filledInset = AncientDebrisAnalyzerPolicy.boxInsetForDistance(distance)
+                    + AncientDebrisAnalyzerPolicy.edgeThicknessForDistance(distance);
+            assertTrue(filledInset > 0.0f && filledInset < 0.5f, "distance=" + distance);
+        }
     }
 }

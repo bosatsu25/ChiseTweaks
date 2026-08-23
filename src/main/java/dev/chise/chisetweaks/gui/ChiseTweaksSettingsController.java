@@ -78,7 +78,6 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL.resetToDefault();
         LocalFeatureSettings.WORKSITE_VISIBILITY_MAX_OVERLAYS.resetToDefault();
         LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY.resetToDefault();
-        LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE.resetToDefault();
         LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS.resetToDefault();
         LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET.resetToDefault();
         LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY.resetToDefault();

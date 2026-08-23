@@ -4,14 +4,12 @@ import dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
-import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -32,9 +30,6 @@ final class RetainedPolicyQualityGateTest {
         assertEquals(1, WorksiteVisibilityBudgetPolicy.clampOverlayResults(Integer.MIN_VALUE));
         assertEquals(12, WorksiteVisibilityBudgetPolicy.clampOverlayResults(12));
         assertEquals(24, WorksiteVisibilityBudgetPolicy.clampOverlayResults(Integer.MAX_VALUE));
-        assertEquals(1, WorksiteVisibilityBudgetPolicy.clampLegacyResults(Integer.MIN_VALUE));
-        assertEquals(6, WorksiteVisibilityBudgetPolicy.clampLegacyResults(6));
-        assertEquals(8, WorksiteVisibilityBudgetPolicy.clampLegacyResults(Integer.MAX_VALUE));
     }
 
     @Test
@@ -66,31 +61,6 @@ final class RetainedPolicyQualityGateTest {
         assertTrue(WorksiteScanThrottlePolicy.shouldScan(10, 10, false, true));
         assertFalse(WorksiteScanThrottlePolicy.shouldScan(39, 10, false, false));
         assertTrue(WorksiteScanThrottlePolicy.shouldScan(40, 10, false, false));
-    }
-
-    @Test
-    void worksiteModeTogglePreservesOrExcludesOtherModesAsRequested() {
-        var fine = WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD;
-        var nether = WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE;
-        var hidden = WorksiteVisibilitySelectionPolicy.Mode.HIDDEN_SURFACE;
-        assertEquals(Set.of(fine), WorksiteVisibilitySelectionPolicy.afterToggle(null, fine, true, false));
-        assertEquals(Set.of(), WorksiteVisibilitySelectionPolicy.afterToggle(null, fine, false, false));
-        assertEquals(Set.of(fine, nether), WorksiteVisibilitySelectionPolicy.afterToggle(
-                Set.of(fine), nether, true, false));
-        assertEquals(Set.of(nether), WorksiteVisibilitySelectionPolicy.afterToggle(
-                Set.of(fine, nether), fine, false, false));
-        assertEquals(Set.of(hidden), WorksiteVisibilitySelectionPolicy.afterToggle(
-                Set.of(fine, nether), hidden, true, true));
-    }
-
-    @Test
-    void worksiteExclusiveNormalizationCollapsesOnlyWhenNecessary() {
-        var fine = WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD;
-        var nether = WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE;
-        assertEquals(Set.of(), WorksiteVisibilitySelectionPolicy.normalize(null, true));
-        assertEquals(Set.of(fine), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine), true));
-        assertEquals(Set.of(fine, nether), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine, nether), false));
-        assertEquals(Set.of(fine), WorksiteVisibilitySelectionPolicy.normalize(Set.of(fine, nether), true));
     }
 
     @Test

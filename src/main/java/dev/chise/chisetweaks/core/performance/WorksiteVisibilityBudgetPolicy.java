@@ -10,8 +10,6 @@ public final class WorksiteVisibilityBudgetPolicy {
     public static final int MAX_SCAN_CANDIDATES = 128;
     public static final int MAX_OVERLAY_RESULTS = 24;
 
-    public static final int LEGACY_MAX_RESULTS = 8;
-
     /**
      * 1回の走査で行う視線判定にはCPU処理量と一時割り当ての上限を設ける。
      */
@@ -36,10 +34,6 @@ public final class WorksiteVisibilityBudgetPolicy {
 
     public static int clampOverlayResults(int requested) {
         return clamp(requested, 1, MAX_OVERLAY_RESULTS);
-    }
-
-    public static int clampLegacyResults(int requested) {
-        return clamp(requested, 1, LEGACY_MAX_RESULTS);
     }
 
     public static int maximumBlocksFor(int horizontalRadius, int verticalRadius) {

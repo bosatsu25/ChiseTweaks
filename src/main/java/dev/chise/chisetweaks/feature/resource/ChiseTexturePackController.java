@@ -9,6 +9,11 @@ import java.util.List;
 
 /** Chise Textureの選択状態をMinecraft標準のresource-pack repositoryへ反映する。 */
 public final class ChiseTexturePackController {
+    private static boolean reloadInFlight;
+    private static boolean reloadPending;
+    private static List<String> inFlightFallback = List.of();
+    private static List<String> inFlightTarget = List.of();
+
     private ChiseTexturePackController() {}
 
     public static boolean isEnabled() {
@@ -46,12 +51,83 @@ public final class ChiseTexturePackController {
         try {
             repository.setSelected(selected);
             client.options.updateResourcePacks(repository);
-            client.reloadResourcePacks();
         } catch (RuntimeException | LinkageError failure) {
-            repository.setSelected(previous);
-            ChiseTweaksClient.LOGGER.warn(
-                    "Chise Texture visibility change failed; previous resource-pack selection was restored",
-                    failure);
+            restoreSelection(client, repository, previous);
+            logFailure(failure);
+            return;
         }
+
+        if (reloadInFlight) {
+            reloadPending = true;
+            return;
+        }
+        startReload(client, previous, selected);
+    }
+
+    private static void startReload(
+            Minecraft client,
+            List<String> fallbackSelection,
+            List<String> targetSelection) {
+        reloadInFlight = true;
+        inFlightFallback = List.copyOf(fallbackSelection);
+        inFlightTarget = List.copyOf(targetSelection);
+        try {
+            client.reloadResourcePacks().whenComplete((ignored, failure) -> {
+                try {
+                    client.execute(() -> completeReload(client, failure));
+                } catch (RuntimeException | LinkageError schedulingFailure) {
+                    resetReloadState();
+                    logFailure(schedulingFailure);
+                }
+            });
+        } catch (RuntimeException | LinkageError failure) {
+            completeReload(client, failure);
+        }
+    }
+
+    private static void completeReload(Minecraft client, Throwable failure) {
+        PackRepository repository = client.getResourcePackRepository();
+        List<String> fallback = inFlightFallback;
+        List<String> completedTarget = inFlightTarget;
+        List<String> desired = new ArrayList<>(repository.getSelectedIds());
+        boolean pending = reloadPending;
+        resetReloadState();
+
+        if (failure != null) logFailure(failure);
+        List<String> active = failure == null ? completedTarget : fallback;
+        if (pending && !desired.equals(active)) {
+            startReload(client, active, desired);
+            return;
+        }
+        if (failure != null && !desired.equals(active)) {
+            restoreSelection(client, repository, active);
+        }
+    }
+
+    private static void restoreSelection(
+            Minecraft client,
+            PackRepository repository,
+            List<String> selection) {
+        try {
+            repository.setSelected(selection);
+            client.options.updateResourcePacks(repository);
+        } catch (RuntimeException | LinkageError rollbackFailure) {
+            ChiseTweaksClient.LOGGER.error(
+                    "Chise Texture selection rollback failed after {}",
+                    rollbackFailure.getClass().getSimpleName());
+        }
+    }
+
+    private static void resetReloadState() {
+        reloadInFlight = false;
+        reloadPending = false;
+        inFlightFallback = List.of();
+        inFlightTarget = List.of();
+    }
+
+    private static void logFailure(Throwable failure) {
+        ChiseTweaksClient.LOGGER.warn(
+                "Chise Texture resource reload failed after {}",
+                failure == null ? "unknown failure" : failure.getClass().getSimpleName());
     }
 }

@@ -3,7 +3,6 @@ package dev.chise.chisetweaks;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.core.definition.FeatureArea;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-import dev.chise.chisetweaks.core.policy.WorksiteVisibilitySelectionPolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -51,15 +49,15 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void scanBackedFeaturesUseOnlyTheThreeRetainedWorksiteModes() {
-        Set<WorksiteVisibilitySelectionPolicy.Mode> modes = FeatureDefinition.VALUES.stream()
+    void scanBackedFeaturesMapDirectlyToTheThreeInspectionCategories() {
+        Set<BlockInspectionCategory> categories = Set.copyOf(FeatureDefinition.VALUES.stream()
                 .filter(FeatureDefinition::isWorksiteVisibilityMode)
-                .map(FeatureDefinition::worksiteMode)
-                .collect(Collectors.toSet());
+                .map(FeatureDefinition::inspectionCategory)
+                .toList());
         assertEquals(Set.of(
-                WorksiteVisibilitySelectionPolicy.Mode.FINE_THREAD,
-                WorksiteVisibilitySelectionPolicy.Mode.HIDDEN_SURFACE,
-                WorksiteVisibilitySelectionPolicy.Mode.NETHER_PALETTE), modes);
+                BlockInspectionCategory.TECHNICAL_TRACE,
+                BlockInspectionCategory.HIDDEN_SURFACE,
+                BlockInspectionCategory.NETHER_PALETTE), categories);
 
         assertEquals(BlockInspectionCategory.TECHNICAL_TRACE,
                 FeatureDefinition.FINE_THREAD_TRACE.inspectionCategory());
