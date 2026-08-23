@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.gui;
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
+import dev.chise.chisetweaks.config.ChiseTextureVisibilitySetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.LocalFeatureSwitches;
@@ -81,6 +82,9 @@ final class ChiseTweaksSettingsCatalog {
         header(rows, "header.visibilityImprovement", "screen.chisetweaks.settings.section.visibility");
         compactFeature(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
                 FeatureDefinition.FIRE_VISIBILITY);
+        boolLiteral(rows, "chestVisibility", ChiseTextureVisibilitySetting.INSTANCE,
+                "Chest Visibility / チェスト視認性",
+                "Toggle the high-visibility white chest texture (and the bundled white-concrete texture) / 白いチェスト視認テクスチャと同梱の白色コンクリートを切り替えます");
     }
 
     private static void addHighlightDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
@@ -107,9 +111,6 @@ final class ChiseTweaksSettingsCatalog {
         bool(rows, "highlightWorldOverlay", LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY,
                 "config.option.localworksitevisibilityworldoverlay.name",
                 "config.option.localworksitevisibilityworldoverlay.comment");
-        bool(rows, "highlightExclusiveMode", LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE,
-                "config.option.localworksitevisibilityexclusivemode.name",
-                "config.option.localworksitevisibilityexclusivemode.comment");
         boolLiteral(rows, "highlightDimensionPresets",
                 LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS,
                 "Dimension preset / ディメンションプリセット",
