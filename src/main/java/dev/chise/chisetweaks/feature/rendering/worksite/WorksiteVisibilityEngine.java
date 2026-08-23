@@ -60,6 +60,12 @@ public final class WorksiteVisibilityEngine
         }
         active = true;
 
+        boolean levelChanged = lastLevel != null && lastLevel != client.level;
+        if (levelChanged) {
+            // dimension / world切替の1フレームだけ旧座標を描画することも避ける。
+            overlayRenderer.clear();
+        }
+
         long currentPlayerPos = client.player.blockPosition().asLong();
         if (lastObservedPlayerPos != Long.MIN_VALUE
                 && currentPlayerPos != lastObservedPlayerPos) {
@@ -123,6 +129,11 @@ public final class WorksiteVisibilityEngine
         result = 31 * result + config.worksiteVisibilityHorizontalRadius;
         result = 31 * result + config.worksiteVisibilityVerticalRadius;
         result = 31 * result + config.worksiteVisibilityMaxOverlayResults;
+        result = 31 * result + (config.worksiteVisibilityDimensionPresetsEnabled ? 1 : 0);
+        result = 31 * result + config.fineThreadTraceColorPreset;
+        result = 31 * result + config.fineThreadTraceOpacityPercent;
+        result = 31 * result + config.hiddenSurfaceTraceColorPreset;
+        result = 31 * result + config.hiddenSurfaceTraceOpacityPercent;
         return result;
     }
 

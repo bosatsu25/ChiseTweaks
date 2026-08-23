@@ -15,6 +15,7 @@ import java.util.List;
 /** 設定画面で使うlocalize済みimmutable row定義を構築する。 */
 final class ChiseTweaksSettingsCatalog {
     private static final List<ChiseBooleanSetting> RESOURCE_TARGETS = targets("visualTargetMaterial");
+    private static final List<ChiseBooleanSetting> TECHNICAL_TARGETS = targets("visualTargetTechnical");
     private static final List<ChiseBooleanSetting> VISIBILITY_TARGETS = targets("visualTargetHidden");
 
     List<ChiseTweaksSettingRowDefinition> rows(ChiseTweaksSettingsController.Surface surface) {
@@ -104,6 +105,31 @@ final class ChiseTweaksSettingsCatalog {
         bool(rows, "highlightExclusiveMode", LocalFeatureSettings.WORKSITE_VISIBILITY_EXCLUSIVE_MODE,
                 "config.option.localworksitevisibilityexclusivemode.name",
                 "config.option.localworksitevisibilityexclusivemode.comment");
+        boolLiteral(rows, "highlightDimensionPresets",
+                LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS,
+                "Dimension preset / ディメンションプリセット",
+                "Auto-switch to a smaller, higher-contrast Nether profile / ネザーでは範囲を少し抑えた高コントラスト表示へ自動切替");
+
+        headerLiteral(rows, "detail.highlight.traceAppearance", "Trace appearance / 表示スタイル");
+        integerLiteral(rows, "fineThreadColor",
+                LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET,
+                text(FeatureDefinition.FINE_THREAD_TRACE.nameKey()) + " - Color / 色",
+                "AUTO keeps the current Chise palette / AUTOは現在のChise配色を維持", 1);
+        integerLiteral(rows, "fineThreadOpacity",
+                LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
+                text(FeatureDefinition.FINE_THREAD_TRACE.nameKey()) + " - Opacity / 不透明度",
+                "20-100%", 5);
+        integerLiteral(rows, "hiddenSurfaceColor",
+                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
+                text(FeatureDefinition.HIDDEN_SURFACE_TRACE.nameKey()) + " - Color / 色",
+                "AUTO keeps per-target colors / AUTOは対象別の既定色を維持", 1);
+        integerLiteral(rows, "hiddenSurfaceOpacity",
+                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
+                text(FeatureDefinition.HIDDEN_SURFACE_TRACE.nameKey()) + " - Opacity / 不透明度",
+                "20-100%", 5);
+
+        headerLiteral(rows, "detail.highlight.technicalTargets", "Fine Thread targets / 細線対象");
+        for (ChiseBooleanSetting option : TECHNICAL_TARGETS) targetLiteral(rows, option);
 
         header(rows, "detail.highlight.materialTargets", "screen.chisetweaks.settings.section.material_targets");
         for (ChiseBooleanSetting option : RESOURCE_TARGETS) target(rows, option);
@@ -143,6 +169,13 @@ final class ChiseTweaksSettingsCatalog {
         rows.add(ChiseTweaksSettingRowDefinition.header(id, text(translationKey)));
     }
 
+    private static void headerLiteral(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String id,
+            String name) {
+        rows.add(ChiseTweaksSettingRowDefinition.header(id, name));
+    }
+
     private static void compactFeature(
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             String id,
@@ -177,6 +210,15 @@ final class ChiseTweaksSettingsCatalog {
                 id, text(nameKey), text(descriptionKey), config));
     }
 
+    private static void boolLiteral(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String id,
+            ChiseBooleanSetting config,
+            String name,
+            String description) {
+        rows.add(ChiseTweaksSettingRowDefinition.bool(id, name, description, config));
+    }
+
     private static void integer(
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             String id,
@@ -186,6 +228,16 @@ final class ChiseTweaksSettingsCatalog {
             int step) {
         rows.add(ChiseTweaksSettingRowDefinition.integer(
                 id, text(nameKey), text(descriptionKey), config, step));
+    }
+
+    private static void integerLiteral(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String id,
+            ChiseIntegerSetting config,
+            String name,
+            String description,
+            int step) {
+        rows.add(ChiseTweaksSettingRowDefinition.integer(id, name, description, config, step));
     }
 
     private static void action(
@@ -208,6 +260,16 @@ final class ChiseTweaksSettingsCatalog {
         String base = "screen.chisetweaks.settings.target." + config.getName();
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 config.getName(), text(base + ".name"), text(base + ".description"), config));
+    }
+
+    private static void targetLiteral(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            ChiseBooleanSetting config) {
+        rows.add(ChiseTweaksSettingRowDefinition.bool(
+                config.getName(),
+                config.getDisplayName(false) + " / " + config.getDisplayName(true),
+                config.getComment(false) + " / " + config.getComment(true),
+                config));
     }
 
     private static List<ChiseBooleanSetting> targets(String prefix) {

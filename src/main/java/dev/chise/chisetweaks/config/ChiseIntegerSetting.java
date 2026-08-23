@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.config;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
 import java.util.function.IntSupplier;
 
 public final class ChiseIntegerSetting {
@@ -16,6 +17,7 @@ public final class ChiseIntegerSetting {
     private final String japaneseComment;
     private final IntSupplier reader;
     private final IntConsumer writer;
+    private final IntFunction<String> valueFormatter;
     private Consumer<ChiseIntegerSetting> callback = ignored -> {};
     private int value;
 
@@ -39,6 +41,7 @@ public final class ChiseIntegerSetting {
                 japaneseComment,
                 null,
                 null,
+                value -> Integer.toString(value),
                 false);
     }
 
@@ -64,6 +67,34 @@ public final class ChiseIntegerSetting {
                 japaneseComment,
                 reader,
                 writer,
+                value -> Integer.toString(value),
+                true);
+    }
+
+    ChiseIntegerSetting(
+            String name,
+            int defaultValue,
+            int minValue,
+            int maxValue,
+            String englishName,
+            String japaneseName,
+            String englishComment,
+            String japaneseComment,
+            IntSupplier reader,
+            IntConsumer writer,
+            IntFunction<String> valueFormatter) {
+        this(
+                name,
+                defaultValue,
+                minValue,
+                maxValue,
+                englishName,
+                japaneseName,
+                englishComment,
+                japaneseComment,
+                reader,
+                writer,
+                valueFormatter,
                 true);
     }
 
@@ -78,6 +109,7 @@ public final class ChiseIntegerSetting {
             String japaneseComment,
             IntSupplier reader,
             IntConsumer writer,
+            IntFunction<String> valueFormatter,
             boolean bound) {
         if (minValue > maxValue) throw new IllegalArgumentException("minValue > maxValue");
         this.name = requireText(name, "name");
@@ -88,6 +120,7 @@ public final class ChiseIntegerSetting {
         this.japaneseName = requireText(japaneseName, "japaneseName");
         this.englishComment = Objects.requireNonNullElse(englishComment, "");
         this.japaneseComment = Objects.requireNonNullElse(japaneseComment, this.englishComment);
+        this.valueFormatter = Objects.requireNonNull(valueFormatter, "valueFormatter");
         this.value = this.defaultValue;
         if (bound) {
             this.reader = Objects.requireNonNull(reader, "reader");
@@ -105,6 +138,11 @@ public final class ChiseIntegerSetting {
     public int getMaxIntegerValue() { return maxValue; }
     public String getDisplayName(boolean japanese) { return japanese ? japaneseName : englishName; }
     public String getComment(boolean japanese) { return japanese ? japaneseComment : englishComment; }
+    public String getFormattedValue() {
+        return Objects.requireNonNullElse(
+                valueFormatter.apply(getIntegerValue()),
+                Integer.toString(getIntegerValue()));
+    }
 
     public void setIntegerValue(int requested) {
         int next = clamp(requested, minValue, maxValue);

@@ -16,7 +16,7 @@ final class PreReleaseUiPolicyTest {
         for (ChiseTweaksSettingRowDefinition row : rows) {
             boolean expected = switch (row.id()) {
                 case "header.highlight", "header.visualFilter", "header.analyzer", "header.visibilityImprovement",
-                        "materials", "kelp", "glass", "lava", "ancientDebrisAnalyzer" -> true;
+                        "materials", "thread", "hidden", "kelp", "glass", "lava", "ancientDebrisAnalyzer" -> true;
                 default -> false;
             };
             assertTrue(
@@ -39,16 +39,17 @@ final class PreReleaseUiPolicyTest {
     }
 
     @Test
-    void releasedAncientDebrisAnalyzerCannotRegressToADisabledMainToggle() {
+    void releasedWorksiteHighlightsCannotRegressToDisabledMainToggles() {
         var controller = new ChiseTweaksSettingsController();
-        ChiseTweaksSettingRowDefinition ancient = controller.rows().stream()
-                .filter(row -> "ancientDebrisAnalyzer".equals(row.id()))
-                .findFirst()
-                .orElseThrow();
-
-        assertTrue(PreReleaseUiPolicy.isRowInteractive(
-                ChiseTweaksSettingsController.Surface.MAIN,
-                ancient));
+        for (String id : List.of("thread", "hidden", "ancientDebrisAnalyzer")) {
+            ChiseTweaksSettingRowDefinition row = controller.rows().stream()
+                    .filter(candidate -> id.equals(candidate.id()))
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(PreReleaseUiPolicy.isRowInteractive(
+                    ChiseTweaksSettingsController.Surface.MAIN,
+                    row), id);
+        }
     }
 
     @Test
@@ -72,16 +73,12 @@ final class PreReleaseUiPolicyTest {
     }
 
     @Test
-    void highlightDetailsOnlyAllowOreSpecificControls() {
+    void highlightDetailsExposeReleasedOreAndWorksiteControls() {
         var controller = new ChiseTweaksSettingsController();
         for (ChiseTweaksSettingRowDefinition row : controller.rows(
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS)) {
-            boolean expected = row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER
-                    || row.id().equals("oreMotion")
-                    || row.id().equals("moddedOreTargets")
-                    || row.id().startsWith("visualTargetMaterial");
             assertTrue(PreReleaseUiPolicy.isRowInteractive(
-                    ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS, row) == expected, row.id());
+                    ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS, row), row.id());
         }
         assertTrue(PreReleaseUiPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS,

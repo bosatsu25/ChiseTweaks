@@ -17,14 +17,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class VisualTargetSelectionPolicyTest {
     @Test
-    void retainedTargetBitsKeepHistoricalPositionsWithoutPlacementBits() {
-        assertEquals(17, Target.values().length);
+    void retainedTargetBitsKeepHistoricalPositionsAndAppendTechnicalBits() {
+        assertEquals(19, Target.values().length);
         assertEquals(1 << 11, Target.MATERIAL_OBSIDIAN.bitMask());
         assertEquals(1 << 20, Target.MATERIAL_REDSTONE_ORE.bitMask());
         assertEquals(1 << 21, Target.HIDDEN_BLUE_ICE.bitMask());
         assertEquals(1 << 24, Target.HIDDEN_SCULK_CATALYST.bitMask());
         assertEquals(1 << 25, Target.MATERIAL_CRYING_OBSIDIAN.bitMask());
         assertEquals(1 << 27, Target.MATERIAL_NETHER_QUARTZ_ORE.bitMask());
+        assertEquals(1 << 28, Target.TECHNICAL_TRIPWIRE.bitMask());
+        assertEquals(1 << 29, Target.TECHNICAL_TRIPWIRE_HOOK.bitMask());
         assertEquals(0, VisualTargetSelectionPolicy.ALL_TARGETS_MASK & ((1 << 11) - 1));
     }
 
@@ -32,111 +34,149 @@ final class VisualTargetSelectionPolicyTest {
     void masksAreCompleteDisjointAndSanitized() {
         assertEquals(0, VisualTargetSelectionPolicy.ORE_HIGHLIGHT_TARGETS_MASK
                 & VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK);
+        assertEquals(0, VisualTargetSelectionPolicy.ORE_HIGHLIGHT_TARGETS_MASK
+                & VisualTargetSelectionPolicy.TECHNICAL_TRACE_TARGETS_MASK);
+        assertEquals(0, VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK
+                & VisualTargetSelectionPolicy.TECHNICAL_TRACE_TARGETS_MASK);
         assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
                 VisualTargetSelectionPolicy.ORE_HIGHLIGHT_TARGETS_MASK
-                        | VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK);
+                        | VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK
+                        | VisualTargetSelectionPolicy.TECHNICAL_TRACE_TARGETS_MASK);
         assertEquals((1 << 25) | (1 << 26) | (1 << 27),
                 VisualTargetSelectionPolicy.NEW_NETHER_TARGETS_MASK);
+        assertEquals((1 << 28) | (1 << 29),
+                VisualTargetSelectionPolicy.NEW_TECHNICAL_TARGETS_MASK);
         assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
                 VisualTargetSelectionPolicy.sanitizeMask(-1));
         assertEquals(0, VisualTargetSelectionPolicy.sanitizeMask((1 << 0) | (1 << 5) | (1 << 10)));
     }
 
     @Test
-    void schemaMigrationOnlyAddsPostLegacyNetherTargetsForOldDocuments() {
+    void schemaMigrationAddsOnlyTargetsIntroducedAfterTheStoredSchema() {
         int diamondOnly = Target.MATERIAL_DIAMOND_ORE.bitMask();
-        assertEquals(diamondOnly | VisualTargetSelectionPolicy.NEW_NETHER_TARGETS_MASK,
-                VisualTargetSelectionPolicy.migrateMask(diamondOnly,
-                        VisualTargetSelectionPolicy.LEGACY_SCHEMA_VERSION));
-        assertEquals(diamondOnly | VisualTargetSelectionPolicy.NEW_NETHER_TARGETS_MASK,
+        int legacyExpected = diamondOnly
+                | VisualTargetSelectionPolicy.NEW_NETHER_TARGETS_MASK
+                | VisualTargetSelectionPolicy.NEW_TECHNICAL_TARGETS_MASK;
+        assertEquals(legacyExpected,
+                VisualTargetSelectionPolicy.migrateMask(
+                        diamondOnly, VisualTargetSelectionPolicy.LEGACY_SCHEMA_VERSION));
+        assertEquals(legacyExpected,
                 VisualTargetSelectionPolicy.migrateMask(diamondOnly, 0));
+        assertEquals(diamondOnly | VisualTargetSelectionPolicy.NEW_TECHNICAL_TARGETS_MASK,
+                VisualTargetSelectionPolicy.migrateMask(
+                        diamondOnly, VisualTargetSelectionPolicy.NETHER_TARGET_SCHEMA_VERSION));
         assertEquals(diamondOnly,
-                VisualTargetSelectionPolicy.migrateMask(diamondOnly,
-                        VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION));
+                VisualTargetSelectionPolicy.migrateMask(
+                        diamondOnly, VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION));
         assertEquals(diamondOnly,
-                VisualTargetSelectionPolicy.migrateMask(diamondOnly,
-                        VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION + 1));
-        assertEquals(VisualTargetSelectionPolicy.NEW_NETHER_TARGETS_MASK,
-                VisualTargetSelectionPolicy.migrateMask(1, VisualTargetSelectionPolicy.LEGACY_SCHEMA_VERSION));
+                VisualTargetSelectionPolicy.migrateMask(
+                        diamondOnly, VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION + 1));
+        assertEquals(VisualTargetSelectionPolicy.NEW_NETHER_TARGETS_MASK
+                        | VisualTargetSelectionPolicy.NEW_TECHNICAL_TARGETS_MASK,
+                VisualTargetSelectionPolicy.migrateMask(
+                        1, VisualTargetSelectionPolicy.LEGACY_SCHEMA_VERSION));
     }
 
     @Test
     void individualTargetOperationsAreNullSafeAndPreserveOtherGroups() {
-        int hidden = VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK;
-        assertFalse(VisualTargetSelectionPolicy.isEnabled(hidden, Target.MATERIAL_DIAMOND_ORE));
-        assertFalse(VisualTargetSelectionPolicy.isEnabled(hidden, null));
+        int hiddenAndTechnical = VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK
+                | VisualTargetSelectionPolicy.TECHNICAL_TRACE_TARGETS_MASK;
+        assertFalse(VisualTargetSelectionPolicy.isEnabled(
+                hiddenAndTechnical, Target.MATERIAL_DIAMOND_ORE));
+        assertFalse(VisualTargetSelectionPolicy.isEnabled(hiddenAndTechnical, null));
 
-        int withDiamond = VisualTargetSelectionPolicy.withEnabled(hidden, Target.MATERIAL_DIAMOND_ORE, true);
+        int withDiamond = VisualTargetSelectionPolicy.withEnabled(
+                hiddenAndTechnical, Target.MATERIAL_DIAMOND_ORE, true);
         assertTrue(VisualTargetSelectionPolicy.isEnabled(withDiamond, Target.MATERIAL_DIAMOND_ORE));
-        assertEquals(hidden, withDiamond & VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK);
+        assertEquals(hiddenAndTechnical, withDiamond & hiddenAndTechnical);
 
-        int withoutDiamond = VisualTargetSelectionPolicy.withEnabled(withDiamond, Target.MATERIAL_DIAMOND_ORE, false);
+        int withoutDiamond = VisualTargetSelectionPolicy.withEnabled(
+                withDiamond, Target.MATERIAL_DIAMOND_ORE, false);
         assertFalse(VisualTargetSelectionPolicy.isEnabled(withoutDiamond, Target.MATERIAL_DIAMOND_ORE));
-        assertEquals(hidden, withoutDiamond);
-        assertEquals(hidden, VisualTargetSelectionPolicy.withEnabled(hidden | 1, null, true));
+        assertEquals(hiddenAndTechnical, withoutDiamond);
+        assertEquals(hiddenAndTechnical,
+                VisualTargetSelectionPolicy.withEnabled(hiddenAndTechnical | 1, null, true));
     }
 
     @Test
-    void oreBulkOperationsNeverAlterHiddenSurfaceSelections() {
-        int hidden = VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK;
-        int enabled = VisualTargetSelectionPolicy.withAllOreHighlightTargets(hidden, true);
+    void oreBulkOperationsNeverAlterTechnicalOrHiddenSelections() {
+        int nonOre = VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK
+                | VisualTargetSelectionPolicy.TECHNICAL_TRACE_TARGETS_MASK;
+        int enabled = VisualTargetSelectionPolicy.withAllOreHighlightTargets(nonOre, true);
         assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK, enabled);
-        assertEquals(hidden, VisualTargetSelectionPolicy.withAllOreHighlightTargets(enabled, false));
+        assertEquals(nonOre, VisualTargetSelectionPolicy.withAllOreHighlightTargets(enabled, false));
 
         int diamondOnly = VisualTargetSelectionPolicy.withOnlyOreHighlightTarget(
                 enabled, Target.MATERIAL_DIAMOND_ORE);
-        assertEquals(hidden | Target.MATERIAL_DIAMOND_ORE.bitMask(), diamondOnly);
+        assertEquals(nonOre | Target.MATERIAL_DIAMOND_ORE.bitMask(), diamondOnly);
         assertEquals(enabled, VisualTargetSelectionPolicy.withOnlyOreHighlightTarget(
                 enabled, Target.HIDDEN_BLUE_ICE));
+        assertEquals(enabled, VisualTargetSelectionPolicy.withOnlyOreHighlightTarget(
+                enabled, Target.TECHNICAL_TRIPWIRE));
         assertEquals(enabled, VisualTargetSelectionPolicy.withOnlyOreHighlightTarget(enabled, null));
 
         assertTrue(VisualTargetSelectionPolicy.isOreHighlightTarget(Target.MATERIAL_OBSIDIAN));
         assertTrue(VisualTargetSelectionPolicy.isOreHighlightTarget(Target.MATERIAL_NETHER_QUARTZ_ORE));
         assertFalse(VisualTargetSelectionPolicy.isOreHighlightTarget(Target.HIDDEN_BLUE_ICE));
+        assertFalse(VisualTargetSelectionPolicy.isOreHighlightTarget(Target.TECHNICAL_TRIPWIRE));
         assertFalse(VisualTargetSelectionPolicy.isOreHighlightTarget(null));
     }
 
     @Test
-    void enabledMatchingUsesFineGrainedMasksOnlyForMaterialAndHiddenCategories() {
+    void enabledMatchingUsesFineGrainedMasksForTechnicalMaterialAndHiddenCategories() {
         int all = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
-        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:diamond_ore", null));
-        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:diamond_ore", BlockInspectionCategory.NONE));
-        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(all, null, BlockInspectionCategory.MATERIAL_HIGHLIGHT));
-        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(all, "   ", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:diamond_ore", null));
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:diamond_ore", BlockInspectionCategory.NONE));
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                all, null, BlockInspectionCategory.MATERIAL_HIGHLIGHT));
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "   ", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
 
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:tripwire",
-                BlockInspectionCategory.TECHNICAL_TRACE));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:netherrack",
-                BlockInspectionCategory.NETHER_PALETTE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:tripwire", BlockInspectionCategory.TECHNICAL_TRACE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:tripwire_hook", BlockInspectionCategory.TECHNICAL_TRACE));
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                VisualTargetSelectionPolicy.withEnabled(all, Target.TECHNICAL_TRIPWIRE, false),
+                "minecraft:tripwire", BlockInspectionCategory.TECHNICAL_TRACE));
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                VisualTargetSelectionPolicy.withEnabled(all, Target.TECHNICAL_TRIPWIRE_HOOK, false),
+                "minecraft:tripwire_hook", BlockInspectionCategory.TECHNICAL_TRACE));
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:string", BlockInspectionCategory.TECHNICAL_TRACE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:netherrack", BlockInspectionCategory.NETHER_PALETTE));
 
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:obsidian",
-                BlockInspectionCategory.MATERIAL_HIGHLIGHT));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:crying_obsidian",
-                BlockInspectionCategory.MATERIAL_HIGHLIGHT));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "  MINECRAFT:DIAMOND_ORE  ",
-                BlockInspectionCategory.MATERIAL_HIGHLIGHT));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:obsidian", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:crying_obsidian", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "  MINECRAFT:DIAMOND_ORE  ", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
         assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
                 VisualTargetSelectionPolicy.withEnabled(all, Target.MATERIAL_DIAMOND_ORE, false),
                 "minecraft:diamond_ore", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
-        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:stone",
-                BlockInspectionCategory.MATERIAL_HIGHLIGHT));
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:stone", BlockInspectionCategory.MATERIAL_HIGHLIGHT));
 
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:blue_ice",
-                BlockInspectionCategory.HIDDEN_SURFACE));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:powder_snow",
-                BlockInspectionCategory.HIDDEN_SURFACE));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:sculk_catalyst",
-                BlockInspectionCategory.HIDDEN_SURFACE));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:dead_brain_coral_block",
-                BlockInspectionCategory.HIDDEN_SURFACE));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:dead_brain_coral",
-                BlockInspectionCategory.HIDDEN_SURFACE));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:dead_brain_coral_fan",
-                BlockInspectionCategory.HIDDEN_SURFACE));
-        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:dead_brain_coral_wall_fan",
-                BlockInspectionCategory.HIDDEN_SURFACE));
-        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(all, "minecraft:brain_coral_block",
-                BlockInspectionCategory.HIDDEN_SURFACE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:blue_ice", BlockInspectionCategory.HIDDEN_SURFACE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:powder_snow", BlockInspectionCategory.HIDDEN_SURFACE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:sculk_catalyst", BlockInspectionCategory.HIDDEN_SURFACE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:dead_brain_coral_block", BlockInspectionCategory.HIDDEN_SURFACE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:dead_brain_coral", BlockInspectionCategory.HIDDEN_SURFACE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:dead_brain_coral_fan", BlockInspectionCategory.HIDDEN_SURFACE));
+        assertTrue(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:dead_brain_coral_wall_fan", BlockInspectionCategory.HIDDEN_SURFACE));
+        assertFalse(VisualTargetSelectionPolicy.matchesEnabled(
+                all, "minecraft:brain_coral_block", BlockInspectionCategory.HIDDEN_SURFACE));
     }
 
     @Test
@@ -187,6 +227,8 @@ final class VisualTargetSelectionPolicyTest {
                 VanillaOreVisualCatalog.TARGET_MASK | specials);
         assertEquals(0, VanillaOreVisualCatalog.TARGET_MASK
                 & VisualTargetSelectionPolicy.HIDDEN_SURFACE_TARGETS_MASK);
+        assertEquals(0, VanillaOreVisualCatalog.TARGET_MASK
+                & VisualTargetSelectionPolicy.TECHNICAL_TRACE_TARGETS_MASK);
     }
 
     @Test

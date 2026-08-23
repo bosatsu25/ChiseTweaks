@@ -9,6 +9,7 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.PreReleaseFeaturePolicy;
+import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
@@ -33,6 +34,11 @@ public final class LocalFeatureConfig {
     public int worksiteVisibilityMaxOverlayResults = 12;
     public boolean worksiteVisibilityWorldOverlay = true;
     public boolean worksiteVisibilityExclusiveMode = false;
+    public boolean worksiteVisibilityDimensionPresetsEnabled = false;
+    public int fineThreadTraceColorPreset = WorksiteHighlightProfilePolicy.DEFAULT_COLOR_PRESET;
+    public int fineThreadTraceOpacityPercent = WorksiteHighlightProfilePolicy.DEFAULT_OPACITY_PERCENT;
+    public int hiddenSurfaceTraceColorPreset = WorksiteHighlightProfilePolicy.DEFAULT_COLOR_PRESET;
+    public int hiddenSurfaceTraceOpacityPercent = WorksiteHighlightProfilePolicy.DEFAULT_OPACITY_PERCENT;
 
     public int lavaAnalyzerHorizontalRadius = 5;
     public int lavaAnalyzerVerticalRadius = 3;
@@ -152,6 +158,14 @@ public final class LocalFeatureConfig {
                 WorksiteVisibilityBudgetPolicy.clampLegacyResults(worksiteVisibilityMaxResults);
         worksiteVisibilityMaxOverlayResults =
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(worksiteVisibilityMaxOverlayResults);
+        fineThreadTraceColorPreset =
+                WorksiteHighlightProfilePolicy.clampColorPreset(fineThreadTraceColorPreset);
+        fineThreadTraceOpacityPercent =
+                WorksiteHighlightProfilePolicy.clampOpacityPercent(fineThreadTraceOpacityPercent);
+        hiddenSurfaceTraceColorPreset =
+                WorksiteHighlightProfilePolicy.clampColorPreset(hiddenSurfaceTraceColorPreset);
+        hiddenSurfaceTraceOpacityPercent =
+                WorksiteHighlightProfilePolicy.clampOpacityPercent(hiddenSurfaceTraceOpacityPercent);
         lavaAnalyzerHorizontalRadius =
                 WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(lavaAnalyzerHorizontalRadius);
         lavaAnalyzerVerticalRadius =
@@ -180,6 +194,11 @@ public final class LocalFeatureConfig {
         worksiteVisibilityMaxOverlayResults = loaded.worksiteVisibilityMaxOverlayResults;
         worksiteVisibilityWorldOverlay = loaded.worksiteVisibilityWorldOverlay;
         worksiteVisibilityExclusiveMode = loaded.worksiteVisibilityExclusiveMode;
+        worksiteVisibilityDimensionPresetsEnabled = loaded.worksiteVisibilityDimensionPresetsEnabled;
+        fineThreadTraceColorPreset = loaded.fineThreadTraceColorPreset;
+        fineThreadTraceOpacityPercent = loaded.fineThreadTraceOpacityPercent;
+        hiddenSurfaceTraceColorPreset = loaded.hiddenSurfaceTraceColorPreset;
+        hiddenSurfaceTraceOpacityPercent = loaded.hiddenSurfaceTraceOpacityPercent;
         lavaAnalyzerHorizontalRadius = loaded.lavaAnalyzerHorizontalRadius;
         lavaAnalyzerVerticalRadius = loaded.lavaAnalyzerVerticalRadius;
         lavaAnalyzerIntervalTicks = loaded.lavaAnalyzerIntervalTicks;

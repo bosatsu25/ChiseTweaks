@@ -23,11 +23,13 @@ final class PreReleaseUiPolicy {
 
         return switch (resolved) {
             case MAIN -> "materials".equals(row.id())
+                    || "thread".equals(row.id())
+                    || "hidden".equals(row.id())
                     || "kelp".equals(row.id())
                     || "glass".equals(row.id())
                     || "lava".equals(row.id())
                     || "ancientDebrisAnalyzer".equals(row.id());
-            case HIGHLIGHT_DETAILS -> isOreHighlightDetail(row.id());
+            case HIGHLIGHT_DETAILS -> isReleasedHighlightDetail(row.id());
             case LAVA_DETAILS -> true;
         };
     }
@@ -47,10 +49,23 @@ final class PreReleaseUiPolicy {
         };
     }
 
-    private static boolean isOreHighlightDetail(String id) {
+    private static boolean isReleasedHighlightDetail(String id) {
         if (id == null) return false;
         return "oreMotion".equals(id)
                 || "moddedOreTargets".equals(id)
-                || id.startsWith("visualTargetMaterial");
+                || "highlightRange".equals(id)
+                || "highlightVerticalRange".equals(id)
+                || "highlightInterval".equals(id)
+                || "highlightMaxOverlays".equals(id)
+                || "highlightWorldOverlay".equals(id)
+                || "highlightExclusiveMode".equals(id)
+                || "highlightDimensionPresets".equals(id)
+                || "fineThreadColor".equals(id)
+                || "fineThreadOpacity".equals(id)
+                || "hiddenSurfaceColor".equals(id)
+                || "hiddenSurfaceOpacity".equals(id)
+                || id.startsWith("visualTargetMaterial")
+                || id.startsWith("visualTargetTechnical")
+                || id.startsWith("visualTargetHidden");
     }
 }
