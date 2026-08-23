@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep README compatibility metadata synchronized with release properties."""
+"""Keep README compatibility metadata and runtime-size policy synchronized with release properties."""
 from __future__ import annotations
 
 import json
@@ -37,6 +37,10 @@ def main() -> int:
     minecraft = props["minecraft_version"]
     loader = props["loader_version"]
     fabric_api = props["fabric_api_version"]
+    jar_goal = props["runtime_jar_target_bytes"]
+    jar_baseline = props["runtime_jar_baseline_bytes"]
+    jar_growth = props["runtime_jar_max_growth_bytes"]
+    jar_max = props["runtime_jar_max_bytes"]
 
     require(
         rf"^\| ChiseTweaks \| `{re.escape(version)}` \|$",
@@ -80,6 +84,30 @@ def main() -> int:
         "README must name the current runtime JAR exactly",
         failures,
     )
+    require(
+        rf"^- runtime JAR最終目標: `{re.escape(jar_goal)} bytes` 以下（350 KiB）$",
+        readme,
+        f"README runtime JAR goal must be {jar_goal} bytes",
+        failures,
+    )
+    require(
+        rf"^- M0 frozen size baseline: `{re.escape(jar_baseline)} bytes`$",
+        readme,
+        f"README runtime JAR baseline must be {jar_baseline} bytes",
+        failures,
+    )
+    require(
+        rf"^- 軽量化中に許容する容量増加: `{re.escape(jar_growth)} bytes`$",
+        readme,
+        f"README runtime JAR growth allowance must be {jar_growth} bytes",
+        failures,
+    )
+    require(
+        rf"^- absolute / effective CI上限: `{re.escape(jar_max)} bytes`$",
+        readme,
+        f"README runtime JAR hard ceiling must be {jar_max} bytes",
+        failures,
+    )
 
     if fabric.get("version") != "${version}":
         failures.append("fabric.mod.json version must remain ${version}")
@@ -103,6 +131,10 @@ def main() -> int:
     print("DOCUMENTATION CONSISTENCY AUDIT: PASS")
     print(f"version={version}")
     print(f"minecraft={minecraft}")
+    print(f"runtime_jar_goal={jar_goal}")
+    print(f"runtime_jar_baseline={jar_baseline}")
+    print(f"runtime_jar_growth={jar_growth}")
+    print(f"runtime_jar_max={jar_max}")
     print("metadata_placeholders=true")
     return 0
 

@@ -9,30 +9,30 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** 実行時性能を犠牲にせず、配布用JARの軽量性を固定する契約テスト。 */
+/** 実行時性能・機能等価性を犠牲にせず、配布用JARの軽量性を固定する契約テスト。 */
 final class LightweightRuntimeBudgetContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void runtimeJarUsesVerifiedBaselineAndBoundedGrowthBudget() throws IOException {
+    void runtimeJarUsesFrozen094BaselineAnd350KibGoal() throws IOException {
         String budget = source("gradle/chise-lightweight-budget.gradle");
         String jarSize = source("gradle/chise-jar-size.gradle");
         String properties = source("gradle.properties");
         String build = source("build.gradle");
         String settings = source("settings.gradle");
 
-        assertTrue(properties.contains("runtime_jar_target_bytes=400000"));
-        assertTrue(properties.contains("runtime_jar_baseline_bytes=441198"));
-        assertTrue(properties.contains("runtime_jar_max_growth_bytes=40000"));
-        assertTrue(properties.contains("runtime_jar_max_bytes=500000"));
+        assertTrue(properties.contains("runtime_jar_target_bytes=358400"));
+        assertTrue(properties.contains("runtime_jar_baseline_bytes=446814"));
+        assertTrue(properties.contains("runtime_jar_max_growth_bytes=0"));
+        assertTrue(properties.contains("runtime_jar_max_bytes=446814"));
         assertTrue(properties.contains("runtime_icon_target_pixels=128"));
         assertTrue(budget.contains("project.property('runtime_jar_target_bytes')"));
         assertTrue(budget.contains("project.property('runtime_jar_baseline_bytes')"));
         assertTrue(budget.contains("project.property('runtime_jar_max_growth_bytes')"));
         assertTrue(budget.contains("project.property('runtime_jar_max_bytes')"));
         assertTrue(budget.contains("CHISE_RUNTIME_JAR_EFFECTIVE_MAX_BYTES = Math.min("));
-        assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_TARGET_BYTES)"));
-        assertTrue(budget.contains("if (size >= CHISE_RUNTIME_JAR_EFFECTIVE_MAX_BYTES)"));
+        assertTrue(budget.contains("if (size > CHISE_RUNTIME_JAR_TARGET_BYTES)"));
+        assertTrue(budget.contains("if (size > CHISE_RUNTIME_JAR_EFFECTIVE_MAX_BYTES)"));
         assertTrue(budget.contains("CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'"));
         assertTrue(budget.contains("iconImage.width != CHISE_RUNTIME_ICON_PIXELS"));
         assertTrue(budget.contains("dependsOn 'jar'"));
@@ -45,32 +45,44 @@ final class LightweightRuntimeBudgetContractTest {
     }
 
     @Test
-    void mandatoryArtifactAuditAlsoEnforcesRuntimeJarGrowth() throws IOException {
+    void mandatoryArtifactAuditAlsoEnforcesNoGrowthAndReportsGoalProgress() throws IOException {
         String audit = source("scripts/artifact_audit.py");
         String verify = source(".github/workflows/verify-build.yml");
         String release = source(".github/workflows/release.yml");
 
+        assertTrue(audit.contains("runtime_jar_target_bytes"));
         assertTrue(audit.contains("runtime_jar_baseline_bytes"));
         assertTrue(audit.contains("runtime_jar_max_growth_bytes"));
         assertTrue(audit.contains("effective_max = min(absolute_max, baseline + max_growth)"));
-        assertTrue(audit.contains("if size >= effective_max:"));
+        assertTrue(audit.contains("if size > effective_max:"));
+        assertTrue(audit.contains("info.flag_bits & 0x08"));
+        assertTrue(audit.contains("if info.extra"));
+        assertTrue(audit.contains("Remaining to goal"));
         assertTrue(verify.contains("python scripts/artifact_audit.py"));
         assertTrue(release.contains("python scripts/artifact_audit.py"));
     }
 
     @Test
-    void sizeBudgetDoesNotRewriteOrMinifyTheRuntimeJar() throws IOException {
-        String budget = source("gradle/chise-lightweight-budget.gradle");
+    void runtimeJarUsesDeterministicContainerCompressionWithoutShrinkingOrMinifyingPayloads() throws IOException {
+        String jarSize = source("gradle/chise-jar-size.gradle");
         String build = source("build.gradle");
 
-        assertFalse(budget.contains("ZipOutputStream"));
-        assertFalse(budget.contains("output.setLevel"));
-        assertFalse(budget.contains("StandardCopyOption"));
-        assertFalse(budget.contains("recompressRuntimeJar"));
-        assertFalse(budget.contains("proguard"));
-        assertFalse(budget.contains("shadowJar"));
-        assertFalse(budget.contains("HttpClient"));
-        assertFalse(budget.contains("URL("));
+        assertTrue(jarSize.contains("ZipOutputStream"));
+        assertTrue(jarSize.contains("output.setLevel(9)"));
+        assertTrue(jarSize.contains("if (!sourceEntry.directory)"));
+        assertTrue(jarSize.contains("stream.readAllBytes()"));
+        assertTrue(jarSize.contains("new Deflater(9, true)"));
+        assertTrue(jarSize.contains("new CRC32()"));
+        assertTrue(jarSize.contains("setTimeLocal(LocalDateTime.of(1980, 1, 2, 0, 0))"));
+        assertTrue(jarSize.contains("targetEntry.setCompressedSize"));
+        assertTrue(jarSize.contains("targetEntry.setCrc"));
+        assertTrue(jarSize.contains("ZipEntry.STORED : ZipEntry.DEFLATED"));
+        assertTrue(jarSize.contains("task.name == 'jar' || task.name == 'remapJar'"));
+        assertTrue(jarSize.contains("StandardCopyOption.REPLACE_EXISTING"));
+        assertFalse(jarSize.toLowerCase().contains("proguard"));
+        assertFalse(jarSize.toLowerCase().contains("shadowjar"));
+        assertFalse(jarSize.contains("HttpClient"));
+        assertFalse(jarSize.contains("URL("));
         assertFalse(build.contains("-g:none"));
     }
 

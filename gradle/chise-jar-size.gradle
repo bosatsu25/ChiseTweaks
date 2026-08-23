@@ -1,6 +1,109 @@
-// Runtime JAR size optimization that preserves actionable stack traces.
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.time.LocalDateTime
+import java.util.zip.CRC32
+import java.util.zip.Deflater
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
+// Runtime JAR size optimization that preserves gameplay/resource bytes and actionable stack traces.
 // Keep source/line metadata for diagnostics while dropping local-variable debug tables.
 tasks.withType(org.gradle.api.tasks.compile.JavaCompile).configureEach {
     options.debug = true
     options.debugOptions.debugLevel = 'source,lines'
+}
+
+// ZipOutputStream normally emits a 16-byte data descriptor for DEFLATED entries when CRC/size values
+// are unknown. Pre-compute the exact raw-DEFLATE size and CRC so every local header is complete.
+// This only removes ZIP container overhead; entry payload bytes remain unchanged.
+def compressedSizeFor = { byte[] payload ->
+    Deflater deflater = new Deflater(9, true)
+    try {
+        deflater.setInput(payload)
+        deflater.finish()
+        byte[] buffer = new byte[8192]
+        long compressedSize = 0L
+        while (!deflater.finished()) {
+            compressedSize += deflater.deflate(buffer)
+        }
+        return compressedSize
+    } finally {
+        deflater.end()
+    }
+}
+
+// JAR/ZIP directory entries are optional metadata. Re-emit only real files with maximum DEFLATE
+// compression after Loom has produced each runtime archive. Already-compressed payloads are STORED
+// when DEFLATE would be larger. There is no class shrinking, resource minification, renaming or
+// semantic transformation here.
+def recompressRuntimeArchive = { File archive ->
+    if (!archive.isFile()) {
+        throw new GradleException("Runtime archive does not exist: ${archive}")
+    }
+
+    List<Map<String, Object>> entries = []
+    new ZipFile(archive).withCloseable { input ->
+        input.entries().each { sourceEntry ->
+            if (!sourceEntry.directory) {
+                byte[] payload
+                input.getInputStream(sourceEntry).withCloseable { stream ->
+                    payload = stream.readAllBytes()
+                }
+
+                CRC32 crc32 = new CRC32()
+                crc32.update(payload)
+                long deflatedSize = compressedSizeFor(payload)
+                boolean storeUncompressed = deflatedSize >= payload.length
+                entries.add([
+                        name          : sourceEntry.name,
+                        payload       : payload,
+                        method        : storeUncompressed ? ZipEntry.STORED : ZipEntry.DEFLATED,
+                        compressedSize: storeUncompressed ? (long) payload.length : deflatedSize,
+                        crc           : crc32.value,
+                ])
+            }
+        }
+    }
+
+    File temporary = new File(archive.parentFile, archive.name + '.recompress.tmp')
+    if (temporary.exists() && !temporary.delete()) {
+        throw new GradleException("Unable to clear temporary archive: ${temporary}")
+    }
+
+    try {
+        temporary.withOutputStream { fileOutput ->
+            new ZipOutputStream(new BufferedOutputStream(fileOutput)).withCloseable { output ->
+                output.setLevel(9)
+                entries.each { record ->
+                    byte[] payload = (byte[]) record.payload
+                    ZipEntry targetEntry = new ZipEntry((String) record.name)
+                    // 1980-01-01 is the DOS ZIP epoch boundary and makes the JDK add an extended
+                    // timestamp field. 1980-01-02 remains timezone-independent with setTimeLocal,
+                    // while fitting directly in the DOS timestamp and therefore needs no extra field.
+                    targetEntry.setTimeLocal(LocalDateTime.of(1980, 1, 2, 0, 0))
+                    targetEntry.setMethod((int) record.method)
+                    targetEntry.setSize(payload.length)
+                    targetEntry.setCompressedSize((long) record.compressedSize)
+                    targetEntry.setCrc((long) record.crc)
+                    output.putNextEntry(targetEntry)
+                    output.write(payload)
+                    output.closeEntry()
+                }
+            }
+        }
+        Files.move(
+                temporary.toPath(),
+                archive.toPath(),
+                StandardCopyOption.REPLACE_EXISTING)
+    } finally {
+        if (temporary.exists()) temporary.delete()
+    }
+}
+
+// `jar` is kept compact for the local budget task; `remapJar` is the Fabric-distributable artifact.
+tasks.matching { task -> task.name == 'jar' || task.name == 'remapJar' }.configureEach {
+    doLast {
+        recompressRuntimeArchive(archiveFile.get().asFile)
+    }
 }

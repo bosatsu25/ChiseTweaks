@@ -55,9 +55,12 @@ final class AcceptanceObservabilityContractTest {
         assertTrue(runtime.contains("MAX_TRACKED_CHUNKS = 4096"));
         assertTrue(compatibility.contains("FORBIDDEN_METADATA_RELATIONS = (\"depends\", \"breaks\", \"conflicts\")"));
         assertTrue(compatibility.contains("runtime_performance_contract_audit.audit()"));
+        assertTrue(artifact.contains("runtime_jar_target_bytes"));
         assertTrue(artifact.contains("runtime_jar_baseline_bytes"));
         assertTrue(artifact.contains("runtime_jar_max_growth_bytes"));
-        assertTrue(properties.contains("runtime_jar_baseline_bytes=441198"));
+        assertTrue(properties.contains("runtime_jar_target_bytes=358400"));
+        assertTrue(properties.contains("runtime_jar_baseline_bytes=446814"));
+        assertTrue(properties.contains("runtime_jar_max_growth_bytes=0"));
     }
 
     @Test
