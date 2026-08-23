@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Reject hard renderer-mod coupling that would break optional compatibility."""
+"""Reject optional-renderer coupling and deterministic runtime performance regressions."""
 from __future__ import annotations
 
 import json
 import sys
 from pathlib import Path
+
+import runtime_performance_contract_audit
 
 ROOT = Path(__file__).resolve().parents[1]
 OPTIONAL_RENDERER_MODS = {"sodium", "iris", "immediatelyfast", "entityculling"}
@@ -75,19 +77,24 @@ def main() -> int:
                 failures.append(f"{relative}: hard renderer implementation reference detected: {token}")
 
     scan_resource_namespaces(failures)
+    failures.extend(
+        f"runtime-performance: {failure}"
+        for failure in runtime_performance_contract_audit.audit()
+    )
 
     if failures:
-        print("COMPATIBILITY CONTRACT AUDIT: FAIL", file=sys.stderr)
+        print("COMPATIBILITY / RUNTIME CONTRACT AUDIT: FAIL", file=sys.stderr)
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
         return 1
 
-    print("COMPATIBILITY CONTRACT AUDIT: PASS")
+    print("COMPATIBILITY / RUNTIME CONTRACT AUDIT: PASS")
     print("optional_renderer_hard_dependencies=false")
     print("optional_renderer_conflicts=false")
     print("resource_namespace_coupling=false")
     print("mixin_fail_soft=true")
     print("canonical_mixin_plugin=true")
+    print("blocking_runtime_regressions=false")
     return 0
 
 
