@@ -31,7 +31,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void mainSurfaceExposesAllReleasedVisualGroups() {
+    void mainSurfaceExposesAllReleasedVisualGroupsAndDiagnostics() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
         assertEquals(List.of(
@@ -39,10 +39,10 @@ final class ChiseTweaksSettingsControllerTest {
                 "header.visualFilter", "focusBlocks", "focusEntities",
                 "header.analyzer", "lava", "ancientDebrisAnalyzer",
                 "header.visibilityImprovement", "fireVisibility", "chestVisibility",
-                "whiteConcreteVisibility"), ids(rows));
+                "whiteConcreteVisibility", "header.diagnostics", "copyDiagnostics", "exportDiagnostics"), ids(rows));
         assertEquals(List.of(
                         "header.highlight", "header.visualFilter", "header.analyzer",
-                        "header.visibilityImprovement"),
+                        "header.visibilityImprovement", "header.diagnostics"),
                 rows.stream()
                         .filter(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER)
                         .map(ChiseTweaksSettingRowDefinition::id)
@@ -75,7 +75,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void sectionSettingsActionsOpenAllReleasedDetailSurfaces() {
+    void sectionAndDiagnosticActionsAreBoundToExpectedCommands() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows();
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS,
@@ -85,6 +85,11 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS,
                 row(rows, "header.analyzer").action());
         assertNull(row(rows, "header.visibilityImprovement").action());
+        assertNull(row(rows, "header.diagnostics").action());
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.COPY_DIAGNOSTICS,
+                row(rows, "copyDiagnostics").action());
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.EXPORT_DIAGNOSTICS,
+                row(rows, "exportDiagnostics").action());
     }
 
     @Test
