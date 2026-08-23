@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Applies compatibility-sensitive mixins only when the owning released feature is available. */
+/** 互換性影響の大きいMixinを、対応する現行featureが利用可能な場合だけ適用する。 */
 public final class FeatureAvailabilityMixinConfigPlugin implements IMixinConfigPlugin {
     private static final Map<String, FeatureDefinition> MIXIN_FEATURES = Map.of(
             "dev.chise.chisetweaks.mixin.rendering.BuilderFocusBlockMixin",
@@ -20,13 +20,8 @@ public final class FeatureAvailabilityMixinConfigPlugin implements IMixinConfigP
             "dev.chise.chisetweaks.mixin.rendering.FireVisibilityMixin",
             FeatureDefinition.FIRE_VISIBILITY);
 
-    @Override
-    public void onLoad(String mixinPackage) {}
-
-    @Override
-    public String getRefMapperConfig() {
-        return null;
-    }
+    @Override public void onLoad(String mixinPackage) {}
+    @Override public String getRefMapperConfig() { return null; }
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
@@ -34,25 +29,8 @@ public final class FeatureAvailabilityMixinConfigPlugin implements IMixinConfigP
         return feature != null && FeatureAvailabilityPolicy.isAvailable(feature);
     }
 
-    @Override
-    public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {}
-
-    @Override
-    public List<String> getMixins() {
-        return null;
-    }
-
-    @Override
-    public void preApply(
-            String targetClassName,
-            ClassNode targetClass,
-            String mixinClassName,
-            IMixinInfo mixinInfo) {}
-
-    @Override
-    public void postApply(
-            String targetClassName,
-            ClassNode targetClass,
-            String mixinClassName,
-            IMixinInfo mixinInfo) {}
+    @Override public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {}
+    @Override public List<String> getMixins() { return null; }
+    @Override public void preApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
+    @Override public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
 }
