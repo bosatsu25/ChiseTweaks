@@ -10,6 +10,7 @@ import dev.chise.chisetweaks.feature.resource.VisibilityPackMigrationService;
 import dev.chise.chisetweaks.runtime.ClientSessionState;
 import dev.chise.chisetweaks.runtime.FeatureControlBindings;
 import dev.chise.chisetweaks.runtime.FeatureManager;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticEvent;
 import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import dev.chise.chisetweaks.runtime.SafeStartup;
 import net.fabricmc.api.ClientModInitializer;
@@ -48,6 +49,6 @@ public final class ChiseTweaksClient implements ClientModInitializer {
                 "ChiseTweaks {} standalone client initialized with {} isolated startup failure(s)",
                 ChiseTweaksMetadata.MOD_VERSION,
                 SafeStartup.failures().size());
-        RuntimeDiagnostics.log("startup", Minecraft.getInstance());
+        RuntimeDiagnostics.log(RuntimeDiagnosticEvent.CLIENT_STARTUP, Minecraft.getInstance());
     }
 }
