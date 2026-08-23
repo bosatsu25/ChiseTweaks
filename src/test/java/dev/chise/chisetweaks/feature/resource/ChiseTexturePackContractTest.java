@@ -93,7 +93,7 @@ final class ChiseTexturePackContractTest {
     }
 
     @Test
-    void settingsPersistenceIsScopedAndBrightPacksRemainExternal() throws IOException {
+    void settingsPersistenceIsDomainScopedAndBrightPacksRemainExternal() throws IOException {
         String chest = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java"));
         String concrete = Files.readString(ROOT.resolve(
@@ -104,18 +104,23 @@ final class ChiseTexturePackContractTest {
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
         String settingsController = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java"));
+        String persistenceCoordinator = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/SettingPersistenceCoordinator.java"));
         assertTrue(chest.contains("SettingPersistence.EXTERNAL"));
         assertTrue(concrete.contains("SettingPersistence.EXTERNAL"));
         assertTrue(localSwitch.contains("SettingPersistence.LOCAL_CONFIG"));
         assertTrue(screen.contains("EnumSet<SettingPersistence> dirtyDomains"));
         assertTrue(screen.contains("config.persistence()"));
-        assertTrue(screen.contains("result.featureSaved()"));
-        assertTrue(screen.contains("result.localSaved()"));
+        assertTrue(screen.contains("persistence.isApplyManaged()"));
+        assertTrue(screen.contains("dirtyDomains.retainAll(result.failedDomains())"));
         assertTrue(screen.contains("public void tick()"));
         assertTrue(screen.contains("refreshRowButtons();"));
-        assertTrue(settingsController.contains("record SaveResult"));
-        assertTrue(settingsController.contains("!dirty.contains(SettingPersistence.FEATURE_CONFIG)"));
-        assertTrue(settingsController.contains("!dirty.contains(SettingPersistence.LOCAL_CONFIG)"));
+        assertTrue(settingsController.contains("SettingPersistenceCoordinator.production()"));
+        assertTrue(settingsController.contains("return persistence.save(dirtyDomains);"));
+        assertTrue(persistenceCoordinator.contains("FeatureConfig::saveToFile"));
+        assertTrue(persistenceCoordinator.contains("LocalFeatureConfig.getInstance().save()"));
+        assertTrue(persistenceCoordinator.contains("for (SettingPersistence domain : requested)"));
+        assertTrue(persistenceCoordinator.contains("failed.add(domain)"));
     }
 
     @Test
