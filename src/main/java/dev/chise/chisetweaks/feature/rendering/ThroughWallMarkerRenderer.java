@@ -27,7 +27,6 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
                             "chisetweaks", "pipeline/analyzer_through_walls"))
                     .withDepthStencilState(Optional.empty())
                     .build());
-    private static final float LAVA_BOX_INSET = 0.018f;
 
     private final Style style;
     private final ThroughWallPositionSnapshot.Capture capture;
@@ -134,7 +133,7 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
 
     private float boxInsetForDistance(double distance) {
         return switch (style) {
-            case LAVA_SOURCE -> LAVA_BOX_INSET;
+            case LAVA_SOURCE -> LavaVisionPalettePolicy.ANALYZER_BOX_INSET;
             case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.boxInsetForDistance(distance);
         };
     }
