@@ -139,7 +139,7 @@ jobs:
           printf -- '- PIT: `%s`\n' "${{ steps.pit.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           printf -- '- Artifact audits: `%s`\n' "${{ steps.artifacts.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           printf -- '- Diagnostic summary: `%s`\n' "${{ steps.summary.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          printf '\n- Distribution policy: CI verifies only. It creates no tag, no GitHub Release, and uploads no ZIP artifact.\n' >> "$GITHUB_STEP_SUMMARY"
+          printf '\n- Distribution policy: CI verifies and retains only the verified runtime JAR temporarily. It creates no tag, no GitHub Release, and no ZIP bundle.\n' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Enforce aggregate quality gate
         if: ${{ always() }}
@@ -179,3 +179,12 @@ jobs:
             fi
           fi
           exit "$failed"
+
+      - name: Upload verified runtime JAR
+        if: ${{ success() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 14

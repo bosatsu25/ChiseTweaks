@@ -4,13 +4,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-EXPECTED = {
+COMMON_EXPECTED = {
     "checkout": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1",
     "setup_java": "actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0",
     "setup_python": "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0",
     "setup_gradle": "gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0",
     "python": "python-version: '3.14'",
     "java": "java-version: '25'",
+}
+VERIFY_ONLY_EXPECTED = {
+    "upload_artifact": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1",
+    "direct_upload": "archive: false",
+    "verified_runtime_path": "path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}",
 }
 EXPECTED_GRADLE_URL = "gradle-9.7.1-bin.zip"
 EXPECTED_GRADLE_SHA256 = "acd53f1edaf02f1a8ff99879f8a34b302661a057d9b063ae9e35b552f804d20a"
@@ -27,9 +32,12 @@ def main() -> None:
     wrapper = (ROOT / "gradle/wrapper/gradle-wrapper.properties").read_text(encoding="utf-8")
 
     for source, text in (("verify-build.yml", verify), ("release.yml", release)):
-        for needle in EXPECTED.values():
+        for needle in COMMON_EXPECTED.values():
             require(text, needle, source)
         require(text, "runs-on: ubuntu-24.04", source)
+
+    for needle in VERIFY_ONLY_EXPECTED.values():
+        require(verify, needle, "verify-build.yml")
 
     require(wrapper, EXPECTED_GRADLE_URL, "gradle-wrapper.properties")
     require(wrapper, f"distributionSha256Sum={EXPECTED_GRADLE_SHA256}", "gradle-wrapper.properties")
@@ -40,6 +48,7 @@ def main() -> None:
     print("python=3.14")
     print("gradle=9.7.1")
     print("actions=pinned_full_sha")
+    print("verified_runtime_artifact=direct_jar")
 
 
 if __name__ == "__main__":
