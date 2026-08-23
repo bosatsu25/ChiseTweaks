@@ -15,7 +15,8 @@ final class ChiseIntegerSettingStateTest {
                 "bounded", 5, 0, 10,
                 "Bounded", "境界値", "Bounded", "境界値",
                 stored::get,
-                ignored -> {});
+                ignored -> {},
+                SettingPersistence.LOCAL_CONFIG);
         setting.setValueChangeCallback(ignored -> callbacks.incrementAndGet());
 
         setting.setIntegerValue(8);
@@ -33,7 +34,8 @@ final class ChiseIntegerSettingStateTest {
                 "bounded", 5, 0, 10,
                 "Bounded", "境界値", "Bounded", "境界値",
                 stored::get,
-                stored::set);
+                stored::set,
+                SettingPersistence.LOCAL_CONFIG);
         setting.setValueChangeCallback(ignored -> callbacks.incrementAndGet());
 
         setting.setIntegerValue(8);
