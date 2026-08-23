@@ -35,7 +35,7 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(budget.contains("if (size > CHISE_RUNTIME_JAR_EFFECTIVE_MAX_BYTES)"));
         assertTrue(budget.contains("CHISE_RUNTIME_ICON_PATH = 'assets/chisetweaks/icon.png'"));
         assertTrue(budget.contains("iconImage.width != CHISE_RUNTIME_ICON_PIXELS"));
-        assertTrue(budget.contains("dependsOn 'jar'"));
+        assertTrue(budget.contains("dependsOn 'compactRuntimeJar'"));
         assertTrue(budget.contains("it.name == 'check' || it.name == 'qualityGate'"));
         assertTrue(build.contains("new File(outputs.files.singleFile, runtimeIconRelativePath)"));
         assertTrue(settings.contains("gradle/chise-lightweight-budget.gradle"));
@@ -77,7 +77,10 @@ final class LightweightRuntimeBudgetContractTest {
         assertTrue(jarSize.contains("targetEntry.setCompressedSize"));
         assertTrue(jarSize.contains("targetEntry.setCrc"));
         assertTrue(jarSize.contains("ZipEntry.STORED : ZipEntry.DEFLATED"));
-        assertTrue(jarSize.contains("task.name == 'jar' || task.name == 'remapJar'"));
+        assertTrue(jarSize.contains("tasks.register('compactRuntimeJar')"));
+        assertTrue(jarSize.contains("dependsOn 'jar'"));
+        assertTrue(jarSize.contains("task.name == 'assemble'"));
+        assertTrue(jarSize.contains("finalizedBy compactRuntimeJar"));
         assertTrue(jarSize.contains("StandardCopyOption.REPLACE_EXISTING"));
         assertFalse(jarSize.toLowerCase().contains("proguard"));
         assertFalse(jarSize.toLowerCase().contains("shadowjar"));
