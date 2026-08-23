@@ -8,7 +8,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseBooleanSettingListenerTest {
     @Test
@@ -38,11 +37,9 @@ final class ChiseBooleanSettingListenerTest {
     }
 
     @Test
-    void featurePersistenceIsDefaultButCanBeOwnedExternally() {
+    void persistenceDomainIsExplicitForApplyManagedAndExternalSettings() {
         assertEquals(SettingPersistence.FEATURE_CONFIG, new TestSetting().persistence());
-        assertTrue(new TestSetting().requiresApplyPersistence());
         assertEquals(SettingPersistence.EXTERNAL, new ImmediateSetting().persistence());
-        assertFalse(new ImmediateSetting().requiresApplyPersistence());
     }
 
     @Test
@@ -90,7 +87,11 @@ final class ChiseBooleanSettingListenerTest {
         private boolean value;
 
         TestSetting() {
-            super("test", false, "Test", "テスト", "test", "テスト");
+            this(SettingPersistence.FEATURE_CONFIG);
+        }
+
+        TestSetting(SettingPersistence persistence) {
+            super("test", false, "Test", "テスト", "test", "テスト", persistence);
         }
 
         @Override
@@ -111,9 +112,8 @@ final class ChiseBooleanSettingListenerTest {
     }
 
     private static final class ImmediateSetting extends TestSetting {
-        @Override
-        public SettingPersistence persistence() {
-            return SettingPersistence.EXTERNAL;
+        ImmediateSetting() {
+            super(SettingPersistence.EXTERNAL);
         }
     }
 }
