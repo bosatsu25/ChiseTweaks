@@ -8,6 +8,7 @@ import net.minecraft.server.packs.repository.PackRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** Chise管理Visibility packのMinecraft resource reloadを1本のqueueへ直列化する。 */
@@ -18,26 +19,38 @@ public final class ChiseTexturePackController {
 
     private ChiseTexturePackController() {}
 
+    public static boolean isEnabled(VisibilityPack pack) {
+        VisibilityPack checked = Objects.requireNonNull(pack, "pack");
+        return isEnabled(checked.repositoryPackId());
+    }
+
+    public static void setEnabled(VisibilityPack pack, boolean enabled) {
+        VisibilityPack checked = Objects.requireNonNull(pack, "pack");
+        setEnabled(checked.repositoryPackId(), checked.displayName(), enabled);
+    }
+
+    /** @deprecated pack種別を明示する{@link #isEnabled(VisibilityPack)}を使用する。 */
+    @Deprecated(forRemoval = true)
     public static boolean isChestEnabled() {
-        return isEnabled(ChiseTexturePackRegistrar.chestRepositoryPackId());
+        return isEnabled(VisibilityPack.CHEST);
     }
 
+    /** @deprecated pack種別を明示する{@link #setEnabled(VisibilityPack, boolean)}を使用する。 */
+    @Deprecated(forRemoval = true)
     public static void setChestEnabled(boolean enabled) {
-        setEnabled(
-                ChiseTexturePackRegistrar.chestRepositoryPackId(),
-                "Chest Visibility",
-                enabled);
+        setEnabled(VisibilityPack.CHEST, enabled);
     }
 
+    /** @deprecated pack種別を明示する{@link #isEnabled(VisibilityPack)}を使用する。 */
+    @Deprecated(forRemoval = true)
     public static boolean isWhiteConcreteEnabled() {
-        return isEnabled(ChiseTexturePackRegistrar.whiteConcreteRepositoryPackId());
+        return isEnabled(VisibilityPack.WHITE_CONCRETE);
     }
 
+    /** @deprecated pack種別を明示する{@link #setEnabled(VisibilityPack, boolean)}を使用する。 */
+    @Deprecated(forRemoval = true)
     public static void setWhiteConcreteEnabled(boolean enabled) {
-        setEnabled(
-                ChiseTexturePackRegistrar.whiteConcreteRepositoryPackId(),
-                "White Concrete Visibility",
-                enabled);
+        setEnabled(VisibilityPack.WHITE_CONCRETE, enabled);
     }
 
     public static boolean isReloadInFlight() {
@@ -51,11 +64,11 @@ public final class ChiseTexturePackController {
     public static List<String> selectedVisibilityPackIds(Minecraft client) {
         if (client == null) return List.of();
         List<String> selected = List.copyOf(client.getResourcePackRepository().getSelectedIds());
-        ArrayList<String> result = new ArrayList<>(2);
-        String chest = ChiseTexturePackRegistrar.chestRepositoryPackId();
-        String concrete = ChiseTexturePackRegistrar.whiteConcreteRepositoryPackId();
-        if (selected.contains(chest)) result.add(chest);
-        if (selected.contains(concrete)) result.add(concrete);
+        ArrayList<String> result = new ArrayList<>(VisibilityPack.values().length);
+        for (VisibilityPack pack : VisibilityPack.values()) {
+            String packId = pack.repositoryPackId();
+            if (selected.contains(packId)) result.add(packId);
+        }
         return List.copyOf(result);
     }
 

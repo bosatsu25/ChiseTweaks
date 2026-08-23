@@ -65,10 +65,11 @@ public final class VisibilityPackMigrationPolicy {
     static boolean optionPackSelected(String optionsDocument, String packId) {
         if (optionsDocument == null || optionsDocument.isBlank()) return false;
         String requiredId = requireId(packId);
+        String exactToken = "\"" + requiredId + "\"";
         for (String line : optionsDocument.split("\\R", -1)) {
             String trimmed = line.trim();
             if (!trimmed.startsWith("resourcePacks:")) continue;
-            return trimmed.contains(requiredId);
+            return trimmed.contains(exactToken);
         }
         return false;
     }

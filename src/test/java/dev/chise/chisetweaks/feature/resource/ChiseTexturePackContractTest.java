@@ -25,15 +25,18 @@ final class ChiseTexturePackContractTest {
 
     @Test
     void registersTwoUserControllableDefaultEnabledBuiltinPacks() throws IOException {
-        String source = Files.readString(ROOT.resolve(
+        String registrar = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackRegistrar.java"));
+        String packType = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/resource/VisibilityPack.java"));
         String client = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/ChiseTweaksClient.java"));
 
-        assertTrue(source.contains("chise_chest_visibility"));
-        assertTrue(source.contains("chise_white_concrete_visibility"));
-        assertTrue(source.contains("ResourceLoader.registerBuiltinPack"));
-        assertTrue(source.contains("PackActivationType.DEFAULT_ENABLED"));
+        assertTrue(packType.contains("CHEST(\"chise_chest_visibility\""));
+        assertTrue(packType.contains("WHITE_CONCRETE(\"chise_white_concrete_visibility\""));
+        assertTrue(registrar.contains("for (VisibilityPack pack : VisibilityPack.values())"));
+        assertTrue(registrar.contains("ResourceLoader.registerBuiltinPack"));
+        assertTrue(registrar.contains("PackActivationType.DEFAULT_ENABLED"));
         assertTrue(client.contains("SafeStartup.run(\"chise-texture-pack\", ChiseTexturePackRegistrar::register)"));
         assertTrue(client.contains("SafeStartup.run(\"visibility-pack-migration\""));
         assertTrue(Files.readString(CHEST_PACK.resolve("pack.mcmeta")).contains("\"min_format\": 84"));
@@ -46,23 +49,19 @@ final class ChiseTexturePackContractTest {
     void gameplayTexturesRemainByteExactAndPhysicallySeparated() throws Exception {
         assertPng(
                 WHITE_CONCRETE_PACK.resolve("assets/minecraft/textures/block/white_concrete.png"),
-                16,
-                16,
+                16, 16,
                 "9002be7c6d6a1e0cda4a056f503d7992110defadda4722f85c21a0656d79b5f4");
         assertPng(
                 CHEST_PACK.resolve("assets/minecraft/textures/entity/chest/normal.png"),
-                64,
-                64,
+                64, 64,
                 "3eceee354a860e9248ebb445c4791e41cbc5fa7d05168da68f3d1a7a735cf0e0");
         assertPng(
                 CHEST_PACK.resolve("assets/minecraft/textures/entity/chest/normal_left.png"),
-                64,
-                64,
+                64, 64,
                 "d062c5ae62eb9cac74434fe6874ae6c2fc88eda822fd2a8ac406649c42e42d62");
         assertPng(
                 CHEST_PACK.resolve("assets/minecraft/textures/entity/chest/normal_right.png"),
-                64,
-                64,
+                64, 64,
                 "22bed5c9a841c9d403c666850a9bd84ab131e616a93e205d7d5442e3f70b17be");
 
         assertFalse(Files.exists(CHEST_PACK.resolve("assets/minecraft/textures/block/white_concrete.png")));
@@ -77,10 +76,8 @@ final class ChiseTexturePackContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java"));
         String coordinator = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ResourceReloadCoordinator.java"));
-        assertTrue(controller.contains("isChestEnabled()"));
-        assertTrue(controller.contains("isWhiteConcreteEnabled()"));
-        assertTrue(controller.contains("setChestEnabled(boolean enabled)"));
-        assertTrue(controller.contains("setWhiteConcreteEnabled(boolean enabled)"));
+        assertTrue(controller.contains("isEnabled(VisibilityPack pack)"));
+        assertTrue(controller.contains("setEnabled(VisibilityPack pack, boolean enabled)"));
         assertTrue(controller.contains("ResourceReloadCoordinator RELOADS"));
         assertTrue(controller.contains("RELOADS.markPending(selected)"));
         assertTrue(controller.contains("client.reloadResourcePacks().whenComplete"));
@@ -103,6 +100,8 @@ final class ChiseTexturePackContractTest {
         assertTrue(migration.contains("chisetweaks-visibility-pack-migration-v1.txt"));
         assertTrue(migration.contains("VisibilityPackMigrationPolicy.plan"));
         assertTrue(migration.contains("applyMigrationSelection"));
+        assertTrue(migration.contains("VisibilityPack.CHEST.repositoryPackId()"));
+        assertTrue(migration.contains("VisibilityPack.WHITE_CONCRETE.repositoryPackId()"));
     }
 
     @Test

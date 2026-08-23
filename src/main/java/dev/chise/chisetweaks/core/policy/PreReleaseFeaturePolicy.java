@@ -2,23 +2,12 @@ package dev.chise.chisetweaks.core.policy;
 
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
-import java.util.Objects;
-
+/** @deprecated 正式な判定APIとして{@link FeatureAvailabilityPolicy}を使用する。 */
+@Deprecated(forRemoval = true)
 public final class PreReleaseFeaturePolicy {
     private PreReleaseFeaturePolicy() {}
 
     public static boolean isAvailable(FeatureDefinition definition) {
-        FeatureDefinition checked = Objects.requireNonNull(definition, "definition");
-        return checked == FeatureDefinition.BUILDER_FOCUS_BLOCKS
-                || checked == FeatureDefinition.BUILDER_FOCUS_ENTITIES
-                || checked == FeatureDefinition.MATERIAL_HIGHLIGHTS
-                || checked == FeatureDefinition.NETHER_PALETTE
-                || checked == FeatureDefinition.KELP_HIGHLIGHT
-                || checked == FeatureDefinition.GLASS_INSPECTION
-                || checked == FeatureDefinition.FINE_THREAD_TRACE
-                || checked == FeatureDefinition.HIDDEN_SURFACE_TRACE
-                || checked == FeatureDefinition.FIRE_VISIBILITY
-                || checked == FeatureDefinition.LAVA_HIGHLIGHT
-                || checked == FeatureDefinition.ANCIENT_DEBRIS_ANALYZER;
+        return FeatureAvailabilityPolicy.isAvailable(definition);
     }
 }

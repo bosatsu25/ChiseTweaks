@@ -10,11 +10,6 @@ import net.minecraft.resources.Identifier;
 
 /** 高視認テクスチャを独立切替可能なbuilt-in resource packとして登録する。 */
 public final class ChiseTexturePackRegistrar {
-    private static final Identifier CHEST_PACK_ID = Identifier.fromNamespaceAndPath(
-            ChiseTweaksClient.MOD_ID, "chise_chest_visibility");
-    private static final Identifier WHITE_CONCRETE_PACK_ID = Identifier.fromNamespaceAndPath(
-            ChiseTweaksClient.MOD_ID, "chise_white_concrete_visibility");
-
     private ChiseTexturePackRegistrar() {}
 
     public static void register() {
@@ -22,36 +17,27 @@ public final class ChiseTexturePackRegistrar {
                 .getModContainer(ChiseTweaksClient.MOD_ID)
                 .orElseThrow(() -> new IllegalStateException("ChiseTweaks mod container is unavailable"));
 
-        registerPack(
-                CHEST_PACK_ID,
-                container,
-                "ChiseTweaks: Chest Visibility",
-                "Chest Visibility built-in resource pack could not be registered");
-        registerPack(
-                WHITE_CONCRETE_PACK_ID,
-                container,
-                "ChiseTweaks: White Concrete Visibility",
-                "White Concrete Visibility built-in resource pack could not be registered");
+        for (VisibilityPack pack : VisibilityPack.values()) {
+            registerPack(pack, container);
+        }
     }
 
-    private static void registerPack(
-            Identifier id,
-            ModContainer container,
-            String displayName,
-            String failureMessage) {
+    private static void registerPack(VisibilityPack pack, ModContainer container) {
         boolean registered = ResourceLoader.registerBuiltinPack(
-                id,
+                Identifier.fromNamespaceAndPath(ChiseTweaksClient.MOD_ID, pack.path()),
                 container,
-                Component.literal(displayName),
+                Component.literal("ChiseTweaks: " + pack.displayName()),
                 PackActivationType.DEFAULT_ENABLED);
-        if (!registered) throw new IllegalStateException(failureMessage);
+        if (!registered) {
+            throw new IllegalStateException(pack.displayName() + " built-in resource pack could not be registered");
+        }
     }
 
     static String chestRepositoryPackId() {
-        return CHEST_PACK_ID.toString();
+        return VisibilityPack.CHEST.repositoryPackId();
     }
 
     static String whiteConcreteRepositoryPackId() {
-        return WHITE_CONCRETE_PACK_ID.toString();
+        return VisibilityPack.WHITE_CONCRETE.repositoryPackId();
     }
 }
