@@ -38,6 +38,8 @@ Prism Launcherで Minecraft `26.1.2` / Fabric / Java `25` のインスタンス�
 chise-tweaks-0.9.4+mc26.1.2.jar
 ```
 
+現在の配布runtime JARは `chise-tweaks-0.9.4+mc26.1.2.jar` です。
+
 ChiseTweaksはクライアント専用です。サーバーの `mods` フォルダへ入れる必要はありません。
 
 ### 3. 設定を開く
