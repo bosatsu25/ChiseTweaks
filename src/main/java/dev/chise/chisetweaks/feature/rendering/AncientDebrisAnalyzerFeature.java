@@ -89,17 +89,17 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     @Override
     public void tick(Minecraft client) {
         if (!isEnabled()) {
-            clearSessionData();
+            resetState(null);
             return;
         }
         if (isSessionQuarantined()) return;
         if (client == null || client.player == null || client.level == null || !isNether(client.level)) {
-            clearSessionData();
+            resetState(null);
             return;
         }
 
         if (lastLevel != client.level) {
-            resetForLevel(client.level);
+            resetState(client.level);
         }
 
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
@@ -369,7 +369,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         }
     }
 
-    private void resetForLevel(ClientLevel level) {
+    private void resetState(ClientLevel level) {
         positionsByChunk.clear();
         visibleMarkers.clear();
         nearestMarkers.clear();
@@ -381,22 +381,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         lastRangeBlocks = Integer.MIN_VALUE;
         lastMaxMarkers = Integer.MIN_VALUE;
         ticksUntilValidation = 0;
-        selectionDirty = true;
-    }
-
-    private void clearSessionData() {
-        positionsByChunk.clear();
-        visibleMarkers.clear();
-        nearestMarkers.clear();
-        clearPendingBootstrap();
-        clearPendingValidation();
-        lastLevel = null;
-        lastPlayerBlock = Long.MIN_VALUE;
-        lastPlayerChunk = Long.MIN_VALUE;
-        lastRangeBlocks = Integer.MIN_VALUE;
-        lastMaxMarkers = Integer.MIN_VALUE;
-        ticksUntilValidation = 0;
-        selectionDirty = false;
+        selectionDirty = level != null;
     }
 
     private void clearPendingBootstrap() {
@@ -440,7 +425,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     @Override
     public void onQuarantined(Minecraft client) {
         runtimeQuarantined = true;
-        clearSessionData();
+        resetState(null);
         try {
             renderer.close();
         } catch (RuntimeException | LinkageError cleanupFailure) {
@@ -452,7 +437,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
 
     @Override
     public void resetSession(Minecraft client) {
-        clearSessionData();
+        resetState(null);
         renderQuarantined = false;
     }
 
