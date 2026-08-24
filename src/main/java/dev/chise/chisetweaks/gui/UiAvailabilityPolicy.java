@@ -13,16 +13,17 @@ final class UiAvailabilityPolicy {
             ChiseTweaksSettingRowDefinition row) {
         if (row == null) return false;
         ChiseTweaksSettingsController.Surface resolved = surface == null
-                ? ChiseTweaksSettingsController.Surface.MAIN
+                ? ChiseTweaksSettingsController.Surface.HIGHLIGHT
                 : surface;
         if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) return true;
+        if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO) return false;
         if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.ACTION) {
             return isActionInteractive(resolved, row.action());
         }
         return switch (resolved) {
-            case MAIN -> SettingRowIds.MAIN_INTERACTIVE.contains(row.settingId());
-            case HIGHLIGHT_DETAILS -> isReleasedHighlightDetail(row.settingId());
-            case VISUAL_FILTER_DETAILS, LAVA_DETAILS -> true;
+            case HIGHLIGHT -> isReleasedHighlightRow(row.settingId());
+            case VISUAL_FILTER, ANALYZER, VISIBILITY -> true;
+            case HELP -> false;
         };
     }
 
@@ -31,22 +32,20 @@ final class UiAvailabilityPolicy {
             ChiseTweaksSettingRowDefinition.Action action) {
         if (action == null) return false;
         ChiseTweaksSettingsController.Surface resolved = surface == null
-                ? ChiseTweaksSettingsController.Surface.MAIN
+                ? ChiseTweaksSettingsController.Surface.HIGHLIGHT
                 : surface;
         return switch (resolved) {
-            case MAIN -> action == ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS
-                    || action == ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS
-                    || action == ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS;
-            case HIGHLIGHT_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
-            case VISUAL_FILTER_DETAILS -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
+            case HIGHLIGHT -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
+            case VISUAL_FILTER -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
                     || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER;
-            case LAVA_DETAILS -> false;
+            case ANALYZER, VISIBILITY, HELP -> false;
         };
     }
 
-    private static boolean isReleasedHighlightDetail(SettingRowId id) {
+    private static boolean isReleasedHighlightRow(SettingRowId id) {
         if (id == null) return false;
-        return SettingRowIds.HIGHLIGHT_DETAIL_INTERACTIVE.contains(id)
+        return SettingRowIds.HIGHLIGHT_FEATURES.contains(id)
+                || SettingRowIds.HIGHLIGHT_DETAIL_INTERACTIVE.contains(id)
                 || id.startsWith(MATERIAL_PREFIX)
                 || id.startsWith(TECHNICAL_PREFIX)
                 || id.startsWith(HIDDEN_PREFIX);
