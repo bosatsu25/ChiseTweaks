@@ -55,8 +55,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          previous_tag="$(gh release list --repo "$GH_REPO" --limit 100 --json tagName,isDraft,isPrerelease,publishedAt \
-            --jq '[.[] | select(.isDraft == false and .isPrerelease == false and (.tagName | test("^v[0-9]+\\.")))] | sort_by(.publishedAt) | last | .tagName // ""')"
+          previous_tag="$(gh api "repos/${GH_REPO}/releases?per_page=100" \
+            --jq '[.[] | select(.draft == false and .prerelease == false and (.tag_name | test("^v[0-9]+\\.")))] | sort_by(.published_at) | last | .tag_name // ""')"
           if [[ -z "$previous_tag" ]]; then
             echo 'No previous official SemVer release; progression check skipped.'
           else
