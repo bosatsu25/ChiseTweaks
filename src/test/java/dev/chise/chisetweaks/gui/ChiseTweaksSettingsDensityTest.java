@@ -17,7 +17,7 @@ final class ChiseTweaksSettingsDensityTest {
     }
 
     @Test
-    void narrowLayoutAddsTouchHeightOnlyWhereHelpNeedsTwoLines() {
+    void narrowLayoutProvidesAMinimumInfoHeightBeforeWrappedTextExpandsIt() {
         var geometry = ChiseTweaksSettingsLayout.calculate(320, 240);
         assertEquals(34, geometry.rowHeight());
         assertEquals(48, geometry.infoRowHeight());

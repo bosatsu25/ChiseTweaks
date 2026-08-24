@@ -1,6 +1,7 @@
 package dev.chise.chisetweaks.gui;
 
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.util.FormattedCharSequence;
 
 final class ChiseTweaksSettingRowView {
     final ChiseTweaksSettingRowDefinition definition;
@@ -8,6 +9,7 @@ final class ChiseTweaksSettingRowView {
     final Button minus;
     final Button value;
     final Button plus;
+    ChiseTweaksInfoTextLayout.Layout<FormattedCharSequence> infoTextLayout;
     int screenY;
     boolean renderVisible;
 
