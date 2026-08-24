@@ -21,10 +21,10 @@ import java.util.Set;
 final class ChiseTweaksSettingsController {
     enum Surface {
         HIGHLIGHT,
-        VISUAL_FILTER,
+        FILTER,
+        INSPECTOR,
         ANALYZER,
-        VISIBILITY,
-        HELP
+        VISIBILITY
     }
 
     private final ChiseTweaksSettingsCatalog catalog = new ChiseTweaksSettingsCatalog();
@@ -47,6 +47,12 @@ final class ChiseTweaksSettingsController {
         return catalog.rows(surface == null ? Surface.HIGHLIGHT : surface);
     }
 
+    List<ChiseTweaksSettingRowDefinition> inspectorRows(
+            CrosshairInspector.Snapshot snapshot,
+            boolean includeHelp) {
+        return catalog.inspectorRows(snapshot, includeHelp);
+    }
+
     String surfaceTitle(Surface surface) {
         return catalog.surfaceTitle(surface);
     }
@@ -58,12 +64,13 @@ final class ChiseTweaksSettingsController {
                 resetHighlightDetails();
                 yield EnumSet.of(SettingPersistence.FEATURE_CONFIG, SettingPersistence.LOCAL_CONFIG);
             }
-            case VISUAL_FILTER -> {
+            case FILTER -> {
                 FeatureSwitches.BUILDER_FOCUS_BLOCKS.resetToDefault();
                 FeatureSwitches.BUILDER_FOCUS_ENTITIES.resetToDefault();
                 resetBuilderFocusDetails();
                 yield EnumSet.of(SettingPersistence.FEATURE_CONFIG);
             }
+            case INSPECTOR -> EnumSet.noneOf(SettingPersistence.class);
             case ANALYZER -> {
                 LocalFeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
                 LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER.resetToDefault();
@@ -76,7 +83,6 @@ final class ChiseTweaksSettingsController {
                 WhiteConcreteVisibilitySetting.INSTANCE.resetToDefault();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
-            case HELP -> EnumSet.noneOf(SettingPersistence.class);
         };
     }
 

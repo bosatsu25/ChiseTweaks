@@ -6,6 +6,7 @@ import dev.chise.chisetweaks.config.SettingPersistence;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -23,6 +24,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
             new EnumMap<>(ChiseTweaksSettingsController.Surface.class);
     private final EnumSet<SettingPersistence> dirtyDomains = EnumSet.noneOf(SettingPersistence.class);
     private final ArrayList<Button> tabButtons = new ArrayList<>();
+    private final CrosshairInspector inspector = new CrosshairInspector();
     private Screen parent;
     private ChiseTweaksSettingsController.Surface surface = ChiseTweaksSettingsController.Surface.HIGHLIGHT;
     private ChiseTweaksSettingsLayout.Geometry geometry;
@@ -30,6 +32,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private String persistenceFeedback = "";
     private int scrollOffset;
     private int maxScroll;
+    private boolean inspectorHelpVisible;
 
     public ChiseTweaksConfigScreen() {
         super(Component.literal(ChiseTweaksMetadata.MOD_NAME));
@@ -44,6 +47,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     protected void init() {
         super.init();
         controller.initialize();
+        inspector.refresh(minecraft);
         geometry = ChiseTweaksSettingsLayout.calculate(width, height);
         createTabs();
         createFooter();
@@ -54,6 +58,10 @@ public final class ChiseTweaksConfigScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
+        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR
+                && inspector.refresh(minecraft)) {
+            rebuildInspectorRows();
+        }
         refreshRowButtons();
     }
 
@@ -92,7 +100,11 @@ public final class ChiseTweaksConfigScreen extends Screen {
         rowsBySurface.clear();
         for (ChiseTweaksSettingsController.Surface candidate : ChiseTweaksSettingsController.Surface.values()) {
             ArrayList<ChiseTweaksSettingRowView> views = new ArrayList<>();
-            for (ChiseTweaksSettingRowDefinition definition : controller.rows(candidate)) {
+            List<ChiseTweaksSettingRowDefinition> definitions =
+                    candidate == ChiseTweaksSettingsController.Surface.INSPECTOR
+                            ? controller.inspectorRows(inspector.snapshot(), inspectorHelpVisible)
+                            : controller.rows(candidate);
+            for (ChiseTweaksSettingRowDefinition definition : definitions) {
                 ChiseTweaksSettingRowView row = createRow(candidate, definition);
                 row.renderVisible = false;
                 row.setWidgetsVisible(false);
@@ -121,8 +133,18 @@ public final class ChiseTweaksConfigScreen extends Screen {
                     geometry.infoRowHeight(),
                     (text, availableWidth) -> font.split(Component.literal(text), availableWidth));
         }
+        applyTooltip(row);
         applyAvailabilityInteractivity(owner, row);
         return row;
+    }
+
+    private static void applyTooltip(ChiseTweaksSettingRowView row) {
+        if (row == null || row.definition.description().isBlank()) return;
+        Tooltip tooltip = Tooltip.create(Component.literal(row.definition.description()));
+        if (row.primary != null) row.primary.setTooltip(tooltip);
+        if (row.minus != null) row.minus.setTooltip(tooltip);
+        if (row.value != null) row.value.setTooltip(tooltip);
+        if (row.plus != null) row.plus.setTooltip(tooltip);
     }
 
     private void applyAvailabilityInteractivity(
@@ -211,6 +233,11 @@ public final class ChiseTweaksConfigScreen extends Screen {
         }
         surface = target;
         if (resetScroll) scrollOffset = 0;
+        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) {
+            inspector.invalidate();
+            inspector.refresh(minecraft);
+            rebuildInspectorRows();
+        }
         maxScroll = 0;
         for (int index = 0; index < tabButtons.size(); index++) {
             tabButtons.get(index).active = ChiseTweaksSettingsController.Surface.values()[index] != surface;
@@ -224,7 +251,31 @@ public final class ChiseTweaksConfigScreen extends Screen {
             applyChanges();
             return;
         }
+        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) {
+            inspectorHelpVisible = !inspectorHelpVisible;
+            rebuildInspectorRows();
+            refreshRowButtons();
+            return;
+        }
         resetCurrentSurface();
+    }
+
+    private void rebuildInspectorRows() {
+        ArrayList<ChiseTweaksSettingRowView> previous = rowsBySurface.get(
+                ChiseTweaksSettingsController.Surface.INSPECTOR);
+        if (previous != null) {
+            for (ChiseTweaksSettingRowView row : previous) {
+                row.renderVisible = false;
+                row.setWidgetsVisible(false);
+            }
+        }
+        ArrayList<ChiseTweaksSettingRowView> next = new ArrayList<>();
+        for (ChiseTweaksSettingRowDefinition definition
+                : controller.inspectorRows(inspector.snapshot(), inspectorHelpVisible)) {
+            next.add(createRow(ChiseTweaksSettingsController.Surface.INSPECTOR, definition));
+        }
+        rowsBySurface.put(ChiseTweaksSettingsController.Surface.INSPECTOR, next);
+        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) updateRowPositions();
     }
 
     private void resetCurrentSurface() {
@@ -469,9 +520,19 @@ public final class ChiseTweaksConfigScreen extends Screen {
         }
         if (contextButton != null) {
             boolean dirty = hasDirtyDomains();
-            contextButton.setMessage(Component.literal(dirty ? "設定を適用" : "設定をリセット"));
-            contextButton.visible = dirty || surface != ChiseTweaksSettingsController.Surface.HELP;
-            contextButton.active = contextButton.visible;
+            String label;
+            if (dirty) {
+                label = "設定を適用";
+            } else if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) {
+                label = text(inspectorHelpVisible
+                        ? "screen.chisetweaks.settings.help.hide"
+                        : "screen.chisetweaks.settings.help.show");
+            } else {
+                label = "設定をリセット";
+            }
+            contextButton.setMessage(Component.literal(label));
+            contextButton.visible = true;
+            contextButton.active = true;
         }
     }
 

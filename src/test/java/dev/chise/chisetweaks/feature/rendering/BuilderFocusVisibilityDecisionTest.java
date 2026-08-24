@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -67,5 +68,26 @@ final class BuilderFocusVisibilityDecisionTest {
                 true, ChiseRuleMode.NONE, true, false));
         assertFalse(BuilderFocusVisibility.shouldHideByRule(
                 true, null, true, false));
+    }
+
+    @Test
+    void inspectorReasonDistinguishesMatchesFromAllowListExclusion() {
+        var hiddenByList = BuilderFocusVisibility.inspectByRule(
+                true, ChiseRuleMode.BLACKLIST, true, false, "minecraft:oak_trapdoor");
+        assertTrue(hiddenByList.hidden());
+        assertEquals(BuilderFocusVisibility.REASON_HIDE_LIST_MATCH, hiddenByList.reason());
+        assertEquals("minecraft:oak_trapdoor", hiddenByList.matchedRule());
+
+        var hiddenByAbsence = BuilderFocusVisibility.inspectByRule(
+                true, ChiseRuleMode.WHITELIST, false, false, "minecraft:oak_trapdoor");
+        assertTrue(hiddenByAbsence.hidden());
+        assertEquals(BuilderFocusVisibility.REASON_ALLOW_LIST_NO_MATCH, hiddenByAbsence.reason());
+        assertTrue(hiddenByAbsence.matchedRule().isEmpty());
+
+        var allowed = BuilderFocusVisibility.inspectByRule(
+                true, ChiseRuleMode.WHITELIST, false, true, "minecraft:oak_trapdoor");
+        assertFalse(allowed.hidden());
+        assertEquals(BuilderFocusVisibility.REASON_ALLOW_LIST_MATCH, allowed.reason());
+        assertEquals("minecraft:oak_trapdoor", allowed.matchedRule());
     }
 }

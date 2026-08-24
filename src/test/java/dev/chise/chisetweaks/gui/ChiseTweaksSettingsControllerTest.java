@@ -35,20 +35,22 @@ final class ChiseTweaksSettingsControllerTest {
         var controller = new ChiseTweaksSettingsController();
 
         assertEquals("Highlight", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
-        assertEquals("Visual Filter", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.VISUAL_FILTER));
+        assertEquals("Filter", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.FILTER));
+        assertEquals("Inspector", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INSPECTOR));
         assertEquals("Analyzer", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.ANALYZER));
         assertEquals("Visibility", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.VISIBILITY));
-        assertEquals("使い方", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.HELP));
 
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT)).containsAll(
                 List.of("materials", "nether", "thread", "hidden", "glass", "kelp")));
-        assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.VISUAL_FILTER)).containsAll(
+        assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.FILTER)).containsAll(
                 List.of("focusBlocks", "focusEntities", "editBlockFilter", "editEntityFilter")));
+        assertEquals(List.of("inspector.title", "inspector.noTarget"),
+                ids(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR)));
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER)).containsAll(
                 List.of("lava", "ancientDebrisAnalyzer", "lavaRange", "ancientDebrisRange")));
         assertEquals(List.of("header.visibility", "fireVisibility", "chestVisibility", "whiteConcreteVisibility"),
                 ids(controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY)));
-        assertTrue(controller.rows(ChiseTweaksSettingsController.Surface.HELP).stream()
+        assertTrue(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR).stream()
                 .anyMatch(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO));
     }
 
@@ -56,7 +58,7 @@ final class ChiseTweaksSettingsControllerTest {
     void readmeNamesAreTheCanonicalUiNames() {
         var controller = new ChiseTweaksSettingsController();
         var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
-        var visual = controller.rows(ChiseTweaksSettingsController.Surface.VISUAL_FILTER);
+        var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
         var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
 
@@ -79,7 +81,7 @@ final class ChiseTweaksSettingsControllerTest {
     void rowsRemainBoundToExpectedSettings() {
         var controller = new ChiseTweaksSettingsController();
         var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
-        var visual = controller.rows(ChiseTweaksSettingsController.Surface.VISUAL_FILTER);
+        var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
         var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
 
@@ -103,7 +105,7 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void visualFilterTabOwnsBothTargetEditors() {
-        var rows = new ChiseTweaksSettingsController().rows(ChiseTweaksSettingsController.Surface.VISUAL_FILTER);
+        var rows = new ChiseTweaksSettingsController().rows(ChiseTweaksSettingsController.Surface.FILTER);
         assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER,
                 row(rows, "editBlockFilter").action());
         assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER,

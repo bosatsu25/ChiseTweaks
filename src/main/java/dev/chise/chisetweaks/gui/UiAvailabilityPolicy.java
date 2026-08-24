@@ -22,8 +22,8 @@ final class UiAvailabilityPolicy {
         }
         return switch (resolved) {
             case HIGHLIGHT -> isReleasedHighlightRow(row.settingId());
-            case VISUAL_FILTER, ANALYZER, VISIBILITY -> true;
-            case HELP -> false;
+            case FILTER, ANALYZER, VISIBILITY -> true;
+            case INSPECTOR -> false;
         };
     }
 
@@ -36,9 +36,9 @@ final class UiAvailabilityPolicy {
                 : surface;
         return switch (resolved) {
             case HIGHLIGHT -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
-            case VISUAL_FILTER -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
+            case FILTER -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
                     || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER;
-            case ANALYZER, VISIBILITY, HELP -> false;
+            case INSPECTOR, ANALYZER, VISIBILITY -> false;
         };
     }
 
