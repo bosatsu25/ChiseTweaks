@@ -93,7 +93,7 @@ final class OreHighlightCompatibilityArchitectureContractTest {
         assertTrue(screen.contains("OreHighlightCompatibilityConfig.clear()"));
         assertTrue(screen.contains("OreHighlightModelReload.request()"));
         assertTrue(screen.contains("BuiltInRegistries.BLOCK"));
-        assertTrue(configScreen.contains("case EDIT_ORE_COMPAT"));
+        assertTrue(configScreen.contains("action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT"));
         assertTrue(configScreen.contains("new ChiseOreCompatibilityScreen"));
         assertTrue(api.contains("registerBlock"));
         assertTrue(api.contains("registerTag"));

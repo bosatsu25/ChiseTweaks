@@ -125,11 +125,9 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
     private void cycleMode() {
         ChiseRuleModeSetting setting = modeSetting();
         ChiseRuleMode previous = setting.getValue();
-        ChiseRuleMode next = switch (previous) {
-            case NONE -> ChiseRuleMode.BLACKLIST;
-            case BLACKLIST -> ChiseRuleMode.WHITELIST;
-            case WHITELIST -> ChiseRuleMode.NONE;
-        };
+        ChiseRuleMode next = previous == ChiseRuleMode.NONE
+                ? ChiseRuleMode.BLACKLIST
+                : previous == ChiseRuleMode.BLACKLIST ? ChiseRuleMode.WHITELIST : ChiseRuleMode.NONE;
         if (!setting.setValue(next)) return;
         if (!persist(setting.persistence())) {
             setting.setValue(previous);
@@ -283,20 +281,24 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
         Component targetName = Component.translatable(target == Target.BLOCKS
                 ? "screen.chisetweaks.scene_filter.target.blocks"
                 : "screen.chisetweaks.scene_filter.target.entities");
-        Component modeName = Component.translatable(switch (modeSetting().getValue()) {
-            case NONE -> "screen.chisetweaks.scene_filter.mode.disabled";
-            case WHITELIST -> "screen.chisetweaks.scene_filter.mode.allow";
-            case BLACKLIST -> "screen.chisetweaks.scene_filter.mode.hide";
-        });
+        ChiseRuleMode mode = modeSetting().getValue();
+        String modeKey = mode == ChiseRuleMode.NONE
+                ? "screen.chisetweaks.scene_filter.mode.disabled"
+                : mode == ChiseRuleMode.WHITELIST
+                        ? "screen.chisetweaks.scene_filter.mode.allow"
+                        : "screen.chisetweaks.scene_filter.mode.hide";
+        Component modeName = Component.translatable(modeKey);
         return Component.translatable("screen.chisetweaks.scene_filter.mode.label", targetName, modeName);
     }
 
     private String modeDescription() {
-        return text(switch (modeSetting().getValue()) {
-            case NONE -> "screen.chisetweaks.scene_filter.mode.description.disabled";
-            case WHITELIST -> "screen.chisetweaks.scene_filter.mode.description.allow";
-            case BLACKLIST -> "screen.chisetweaks.scene_filter.mode.description.hide";
-        });
+        ChiseRuleMode mode = modeSetting().getValue();
+        if (mode == ChiseRuleMode.NONE) {
+            return text("screen.chisetweaks.scene_filter.mode.description.disabled");
+        }
+        return text(mode == ChiseRuleMode.WHITELIST
+                ? "screen.chisetweaks.scene_filter.mode.description.allow"
+                : "screen.chisetweaks.scene_filter.mode.description.hide");
     }
 
     private ChiseRuleModeSetting modeSetting() {
@@ -306,15 +308,16 @@ public final class ChiseSceneFilterEditorScreen extends Screen {
     }
 
     private ChiseStringListSetting activeListSetting() {
-        return switch (modeSetting().getValue()) {
-            case NONE -> null;
-            case WHITELIST -> target == Target.BLOCKS
+        ChiseRuleMode mode = modeSetting().getValue();
+        if (mode == ChiseRuleMode.NONE) return null;
+        if (mode == ChiseRuleMode.WHITELIST) {
+            return target == Target.BLOCKS
                     ? BuilderFocusConfig.BLOCK_WHITELIST
                     : BuilderFocusConfig.ENTITY_WHITELIST;
-            case BLACKLIST -> target == Target.BLOCKS
-                    ? BuilderFocusConfig.BLOCK_BLACKLIST
-                    : BuilderFocusConfig.ENTITY_BLACKLIST;
-        };
+        }
+        return target == Target.BLOCKS
+                ? BuilderFocusConfig.BLOCK_BLACKLIST
+                : BuilderFocusConfig.ENTITY_BLACKLIST;
     }
 
     private List<String> currentEntries() {

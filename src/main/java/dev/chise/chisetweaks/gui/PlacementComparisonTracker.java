@@ -5,7 +5,6 @@ import dev.chise.chisetweaks.runtime.TickingRuntimeComponent;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -28,13 +27,11 @@ public final class PlacementComparisonTracker
 
     private static volatile PlacementComparisonTracker active;
 
-    private ResourceKey<Level> dimension;
+    private Level pendingLevel;
     private BlockPos targetPos;
     BlockState predictedState;
-    private BlockState stateBeforePlacement;
     BlockState actualState;
     private long creationTick;
-    long revision;
     private boolean acceptingCallbacks;
 
     @Override
@@ -102,20 +99,18 @@ public final class PlacementComparisonTracker
         BlockPos target = context.getClickedPos();
         if (!level.isLoaded(target)) return false;
 
-        dimension = level.dimension();
+        pendingLevel = level;
         targetPos = target;
         predictedState = predicted;
-        stateBeforePlacement = level.getBlockState(target);
         actualState = null;
         creationTick = tick;
-        revision++;
         return true;
     }
 
     void observe(Level level, long tick) {
         if (targetPos == null) return;
         if (level == null
-                || !dimension.equals(level.dimension())
+                || pendingLevel != level
                 || tick < creationTick
                 || tick - creationTick > EXPIRY_TICKS) {
             clear();
@@ -123,11 +118,9 @@ public final class PlacementComparisonTracker
         }
         if (actualState != null || tick - creationTick < SETTLE_TICKS || !level.isLoaded(targetPos)) return;
         BlockState observed = level.getBlockState(targetPos);
-        if (observed == stateBeforePlacement) return;
         int observedResult = compare(predictedState, observed);
         if (observedResult == DIFFERENT || observedResult == UNAVAILABLE) return;
         actualState = observed;
-        revision++;
     }
 
     static int compare(BlockState predicted, BlockState actual) {
@@ -136,22 +129,20 @@ public final class PlacementComparisonTracker
         return predicted.equals(actual) ? MATCH : ADJUSTED;
     }
 
-    static PlacementComparisonTracker activeAt(ResourceKey<Level> dimension, BlockPos pos) {
+    static PlacementComparisonTracker activeAt(Level level, BlockPos pos) {
         PlacementComparisonTracker tracker = active;
         return tracker != null
                 && tracker.targetPos != null
-                && tracker.dimension.equals(dimension)
+                && tracker.pendingLevel == level
                 && tracker.targetPos.equals(pos) ? tracker : null;
     }
 
     void clear() {
         if (targetPos == null) return;
-        dimension = null;
+        pendingLevel = null;
         targetPos = null;
         predictedState = null;
-        stateBeforePlacement = null;
         actualState = null;
         creationTick = 0L;
-        revision++;
     }
 }

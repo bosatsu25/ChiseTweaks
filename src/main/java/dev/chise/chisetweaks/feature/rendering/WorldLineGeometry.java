@@ -34,14 +34,12 @@ public final class WorldLineGeometry {
         float dx = 0.0f;
         float dy = 0.0f;
         float dz = 0.0f;
-        switch (facing) {
-            case DOWN -> dy = -1.0f;
-            case UP -> dy = 1.0f;
-            case NORTH -> dz = -1.0f;
-            case SOUTH -> dz = 1.0f;
-            case WEST -> dx = -1.0f;
-            case EAST -> dx = 1.0f;
-        }
+        if (facing == OrientationOverlayPolicy.Facing.DOWN) dy = -1.0f;
+        else if (facing == OrientationOverlayPolicy.Facing.UP) dy = 1.0f;
+        else if (facing == OrientationOverlayPolicy.Facing.NORTH) dz = -1.0f;
+        else if (facing == OrientationOverlayPolicy.Facing.SOUTH) dz = 1.0f;
+        else if (facing == OrientationOverlayPolicy.Facing.WEST) dx = -1.0f;
+        else dx = 1.0f;
         float endX = centerX + dx * 0.68f;
         float endY = centerY + dy * 0.68f;
         float endZ = centerZ + dz * 0.68f;

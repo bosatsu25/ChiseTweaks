@@ -263,7 +263,6 @@
   "screen.chisetweaks.placement.result.different": "Different",
   "screen.chisetweaks.placement.result.unavailable": "Unavailable",
   "screen.chisetweaks.placement.changed": "Changed",
-  "screen.chisetweaks.placement.changed.other": "Another state property changed",
   "screen.chisetweaks.placement.reason.upper": "clicked face=%s\nheight=upper half",
   "screen.chisetweaks.placement.reason.lower": "clicked face=%s\nheight=lower half",
   "screen.chisetweaks.help.title": "Quick Help",
