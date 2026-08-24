@@ -20,6 +20,7 @@ final class VisualFilterVisibilityReleaseContractTest {
 
         assertTrue(policy.contains("EnumSet.allOf(FeatureDefinition.class)"));
         assertTrue(plugin.contains("BuilderFocusBlockMixin"));
+        assertTrue(plugin.contains("BuilderFocusBlockEntityMixin"));
         assertTrue(plugin.contains("BuilderFocusEntityMixin"));
         assertTrue(plugin.contains("FireVisibilityMixin"));
         assertTrue(plugin.contains("FeatureAvailabilityPolicy.isAvailable(feature)"));

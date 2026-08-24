@@ -1,5 +1,5 @@
 {
-  "config.comment.builderfocusblocks": "Default OFF. Applies an explicit keep/hide rule set to block rendering for inspection tasks.",
+  "config.comment.builderfocusblocks": "Default OFF. Applies explicit allow/hide rules to normal blocks, block entities and Chise overlays. Hide takes precedence over highlights.",
   "config.comment.builderfocusentities": "Default OFF. Applies an explicit keep/hide rule set to entity rendering for inspection tasks.",
   "config.comment.finethreadtrace": "Highlight nearby visible tripwire and hooks within a bounded local radius.",
   "config.comment.glassinspection": "Adds sparse full-bright markers to glass blocks and panes while preserving the active resource-pack model and stained color.",
@@ -51,7 +51,7 @@
   "help.chisetweaks.ancient_debris_analyzer.summary": "Reveals Ancient Debris already present in loaded Nether chunks with distance-faded retained analyzer markers.",
   "help.chisetweaks.ancient_debris_analyzer.usage": "Under Visibility Improvements, enable Ancient Debris Analyzer and choose a 16–256 block range. Near debris uses a stronger exact outline while distant debris fades into a smaller signal marker.",
   "help.chisetweaks.builder_focus_blocks.requirement": "Large list changes can request a chunk-render refresh.",
-  "help.chisetweaks.builder_focus_blocks.summary": "Creates a temporary block-focused scene by applying an explicit visibility list.",
+  "help.chisetweaks.builder_focus_blocks.summary": "Creates a temporary block-focused scene across normal blocks, block entities and Chise overlays. Hidden blocks stay hidden even when a highlight is enabled.",
   "help.chisetweaks.builder_focus_blocks.usage": "Under Visual Filter, open Block targets, choose Allow list or Hide list, register block IDs, then enable Block Filter.",
   "help.chisetweaks.builder_focus_entities.requirement": "General occlusion and performance culling remain delegated to dedicated rendering mods.",
   "help.chisetweaks.builder_focus_entities.summary": "Builds a temporary entity-focused scene from a declared visibility list.",

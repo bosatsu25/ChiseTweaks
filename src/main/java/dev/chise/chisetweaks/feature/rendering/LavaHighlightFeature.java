@@ -18,6 +18,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
@@ -223,7 +224,10 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
     }
 
     private void render(LevelRenderContext context) {
-        if (!isEnabled() || isSessionQuarantined() || highlightedSources.isEmpty()) return;
+        if (!isEnabled()
+                || isSessionQuarantined()
+                || highlightedSources.isEmpty()
+                || BuilderFocusVisibility.shouldHide(Blocks.LAVA)) return;
         try {
             renderSafely(context);
         } catch (RuntimeException | LinkageError failure) {

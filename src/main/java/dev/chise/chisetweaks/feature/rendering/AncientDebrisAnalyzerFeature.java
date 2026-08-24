@@ -342,7 +342,10 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     }
 
     private void render(LevelRenderContext context) {
-        if (!isEnabled() || isSessionQuarantined() || visibleMarkers.isEmpty()) return;
+        if (!isEnabled()
+                || isSessionQuarantined()
+                || visibleMarkers.isEmpty()
+                || BuilderFocusVisibility.shouldHide(Blocks.ANCIENT_DEBRIS)) return;
         try {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null || client.level == null || client.level != lastLevel || client.screen != null) return;

@@ -65,7 +65,7 @@ Mod Menuを導入している場合は、Mod Menu → **ChiseTweaks** から設�
 |  | Hidden Block Highlight | Powder Snow / Blue Ice / Dead Coral / Sculk Catalystなどを強調 | OFF |
 |  | Glass Highlight | Glass / Glass Paneを形状別に強調 | OFF |
 |  | Kelp Highlight | Kelp / Kelp Plantへ視認性オーバーレイを追加 | OFF |
-| **Visual Filter** | Block Filter | Block IDのAllow / Hide listでローカル描画を制御 | OFF |
+| **Visual Filter** | Block Filter | Block IDのAllow / Hide listで通常ブロック・BlockEntity・Chiseオーバーレイを制御 | OFF |
 |  | Entity Filter | Entity IDのAllow / Hide listでローカル描画を制御 | OFF |
 | **Analyzer** | Lava Analyzer | 読み込み済み範囲の**溶岩源**を輪郭＋半透明面で表示 | OFF |
 |  | Ancient Debris Analyzer | Netherの読み込み済みチャンクから古代の残骸を検出 | OFF |
@@ -90,7 +90,7 @@ Fine Line / Hidden Block / Nether Highlightは**同時にON**にできます。�
 
 ### Visual Filter
 
-- **Block Filter** — Block IDのAllow / Hide listでローカル描画を制御
+- **Block Filter** — Block IDのAllow / Hide listを通常ブロックとBlockEntityの共通描画経路へ適用。HideはBright ChestやChiseのHighlight / Overlayより優先
 - **Entity Filter** — Entity IDのAllow / Hide listでローカル描画を制御。プレイヤー自身は保護
 
 Visual Filterが変更するのは**クライアント描画だけ**です。サーバー側のblock / entity状態は変更しません。
