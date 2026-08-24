@@ -144,7 +144,7 @@ Capacity Recoveryはsafe reductionを優先し、maintainability / testability�
 
 `.github/workflows/release.yml`は、成功した`main` pushのCI runが保持した**exact CI-verified runtime JAR**を取得して公開します。
 
-Release publicationはruntime JARを再build・再pack・version rewriteしません。
+Release publicationはruntime JARを再build・再pack・version rewriteしません。Only one-step PATCH, MINOR, or MAJOR incrementを許可し、検証済みartifactと公開artifactを同一byte列に保ちます。
 
 公開前後に次を検証します。
 
@@ -167,15 +167,30 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - Crosshair Inspector / Placement Previewが読める
 - unsupported itemでmisleading previewを出さない
 - Block FilterがBlockEntity / Bright Chestを正しく抑制
+- Bright Chest / Bright Concrete（White Concrete）が独立して切り替わる
 - all-features-onをOverworld / Netherでsmoke
 - Lava / Ancient Debris Analyzerに強制chunk loadや長時間停止がない
 - disconnect / dimension changeでstale session stateが残らない
+
+ログ監査には次を使用します。
+
+```bash
+python scripts/prism_acceptance_audit.py <instance-root>/logs/latest.log
+```
 
 ログやevidenceへserver address、username、absolute local path、UUIDを追加しません。
 
 ## 11. Performance evidence
 
 実FPS / frametimeはCI wall-clockで代用せず、同一Prism環境の実測値で比較します。
+
+代表scenario:
+
+- `chise-absent`
+- `chise-all-off`
+- `analyzers-on`
+- `highlights-on`
+- `maximum-supported-load`
 
 主要metric:
 
@@ -186,7 +201,7 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - render-thread CPU
 - average FPS
 
-必要なperformance-sensitive milestoneでJFRを取得します。機能実装ごとに固定本数のJFRを義務化しません。
+比較にはGradleの`comparePerformanceEvidence`を使います。必要なperformance-sensitive milestoneでJFRを取得しますが、機能実装ごとに固定本数のJFRを義務化しません。
 
 CIでは決定的contractとして、blocking wait禁止、Analyzer force-load禁止、scan budget / cache上限、artifact sizeなどを監査します。
 
