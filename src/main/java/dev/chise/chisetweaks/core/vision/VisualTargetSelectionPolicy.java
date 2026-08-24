@@ -125,13 +125,16 @@ public final class VisualTargetSelectionPolicy {
         String id = normalize(rawBlockId);
         if (id.isEmpty()) return false;
 
-        return switch (category) {
-            case TECHNICAL_TRACE -> technicalEnabled(mask, id);
-            case NETHER_PALETTE -> true;
-            case MATERIAL_HIGHLIGHT -> materialEnabled(mask, id);
-            case HIDDEN_SURFACE -> hiddenEnabled(mask, id);
-            case NONE -> false;
-        };
+        if (category == BlockInspectionCategory.TECHNICAL_TRACE) {
+            return technicalEnabled(mask, id);
+        }
+        if (category == BlockInspectionCategory.MATERIAL_HIGHLIGHT) {
+            return materialEnabled(mask, id);
+        }
+        if (category == BlockInspectionCategory.HIDDEN_SURFACE) {
+            return hiddenEnabled(mask, id);
+        }
+        return true;
     }
 
     private static boolean technicalEnabled(int mask, String id) {

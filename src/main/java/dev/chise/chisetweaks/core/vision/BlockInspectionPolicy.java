@@ -73,11 +73,9 @@ public final class BlockInspectionPolicy {
             return InspectionPresentation.none(blockId);
         }
 
-        Set<String> allowed = switch (category) {
-            case TECHNICAL_TRACE -> TECHNICAL_PROPERTIES;
-            case HIDDEN_SURFACE -> HIDDEN_PROPERTIES;
-            case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> Set.of();
-        };
+        Set<String> allowed = category == BlockInspectionCategory.TECHNICAL_TRACE
+                ? TECHNICAL_PROPERTIES
+                : category == BlockInspectionCategory.HIDDEN_SURFACE ? HIDDEN_PROPERTIES : Set.of();
 
         ArrayList<String> details = new ArrayList<>();
         for (Map.Entry<String, String> entry : properties.entrySet()) {
@@ -123,13 +121,13 @@ public final class BlockInspectionPolicy {
 
     private static boolean matchesNormalized(String id, BlockInspectionCategory category) {
         if (id.isEmpty()) return false;
-        return switch (category) {
-            case TECHNICAL_TRACE -> isTechnical(id);
-            case HIDDEN_SURFACE -> isHiddenSurface(id);
-            case MATERIAL_HIGHLIGHT -> MATERIAL_HIGHLIGHT_IDS.contains(id);
-            case NETHER_PALETTE -> NETHER_PALETTE_IDS.contains(id);
-            case NONE -> false;
-        };
+        if (category == BlockInspectionCategory.TECHNICAL_TRACE) return isTechnical(id);
+        if (category == BlockInspectionCategory.HIDDEN_SURFACE) return isHiddenSurface(id);
+        if (category == BlockInspectionCategory.MATERIAL_HIGHLIGHT) {
+            return MATERIAL_HIGHLIGHT_IDS.contains(id);
+        }
+        return category == BlockInspectionCategory.NETHER_PALETTE
+                && NETHER_PALETTE_IDS.contains(id);
     }
 
     public static boolean isScanCategory(BlockInspectionCategory category) {

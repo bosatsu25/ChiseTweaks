@@ -280,6 +280,8 @@ Sodium / Iris / ImmediatelyFast / EntityCullingを `depends / breaks / conflicts
 - M0 frozen size baseline: `446814 bytes`
 - 軽量化中に許容する容量増加: `0 bytes`
 - absolute / effective CI上限: `446814 bytes`
+- Build Inspector拡張前のCapacity Recovery後: `439632 bytes`、hard ceilingまで `7182 bytes`
+- production class entry: `212 → 204`。SourceFile / LineNumberを維持し、shrinker・難読化・機能削除は使用しない
 
 ### Prism性能比較
 
@@ -354,6 +356,7 @@ CIでは次をRelease Candidateの必須条件として扱います。
 
 ```bash
 ./gradlew clean test jacocoTestCoverageVerification pitest assemble
+./gradlew runClientGameTest
 python scripts/repository_audit.py
 python scripts/source_usage_audit.py
 python scripts/documentation_consistency_audit.py

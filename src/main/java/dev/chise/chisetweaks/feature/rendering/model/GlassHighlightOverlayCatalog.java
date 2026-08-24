@@ -25,10 +25,9 @@ final class GlassHighlightOverlayCatalog {
     private GlassHighlightOverlayCatalog() {}
 
     static ExtraModelKey<BlockStateModel> keyFor(GlassHighlightTargetPolicy.Shape shape) {
-        return switch (shape) {
-            case BLOCK -> BLOCK_KEY;
-            case PANE -> PANE_KEY;
-            case NONE -> throw new IllegalArgumentException("No Glass Highlight overlay for NONE");
-        };
+        if (shape == null) throw new NullPointerException();
+        if (shape == GlassHighlightTargetPolicy.Shape.BLOCK) return BLOCK_KEY;
+        if (shape == GlassHighlightTargetPolicy.Shape.PANE) return PANE_KEY;
+        throw new IllegalArgumentException("No Glass Highlight overlay for NONE");
     }
 }

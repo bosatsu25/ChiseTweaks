@@ -20,11 +20,10 @@ final class UiAvailabilityPolicy {
         if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.ACTION) {
             return isActionInteractive(resolved, row.action());
         }
-        return switch (resolved) {
-            case HIGHLIGHT -> isReleasedHighlightRow(row.settingId());
-            case FILTER, ANALYZER, VISIBILITY -> true;
-            case INSPECTOR -> false;
-        };
+        if (resolved == ChiseTweaksSettingsController.Surface.HIGHLIGHT) {
+            return isReleasedHighlightRow(row.settingId());
+        }
+        return resolved != ChiseTweaksSettingsController.Surface.INSPECTOR;
     }
 
     static boolean isActionInteractive(
@@ -34,12 +33,12 @@ final class UiAvailabilityPolicy {
         ChiseTweaksSettingsController.Surface resolved = surface == null
                 ? ChiseTweaksSettingsController.Surface.HIGHLIGHT
                 : surface;
-        return switch (resolved) {
-            case HIGHLIGHT -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
-            case FILTER -> action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
-                    || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER;
-            case INSPECTOR, ANALYZER, VISIBILITY -> false;
-        };
+        if (resolved == ChiseTweaksSettingsController.Surface.HIGHLIGHT) {
+            return action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
+        }
+        return resolved == ChiseTweaksSettingsController.Surface.FILTER
+                && (action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
+                || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
     }
 
     private static boolean isReleasedHighlightRow(SettingRowId id) {

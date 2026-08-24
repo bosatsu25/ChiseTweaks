@@ -191,21 +191,17 @@ public final class ChiseTexturePackController {
         PackRepository repository = client.getResourcePackRepository();
         if (failure != null) logFailure("Chise visibility texture reload", failure);
 
-        switch (completion.action()) {
-            case RELOAD -> startReload(
+        if (completion.action() == ResourceReloadCoordinator.Action.RELOAD) {
+            startReload(
                     client,
                     completion.activeSelection(),
                     completion.targetSelection(),
                     null);
-            case RESTORE -> {
-                if (!restoreSelection(client, repository, completion.activeSelection())) {
-                    TERMINAL_RECOVERY.set(new ResourceReloadCoordinator.Recovery(
-                            completion.activeSelection(),
-                            completion.activeSelection()));
-                }
-            }
-            case NONE -> {
-            }
+        } else if (completion.action() == ResourceReloadCoordinator.Action.RESTORE
+                && !restoreSelection(client, repository, completion.activeSelection())) {
+            TERMINAL_RECOVERY.set(new ResourceReloadCoordinator.Recovery(
+                    completion.activeSelection(),
+                    completion.activeSelection()));
         }
         notifyReloadCompletion(reloadCompletion, failure == null);
         if (failure != null) {

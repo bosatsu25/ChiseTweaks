@@ -32,11 +32,9 @@ public final class SettingPersistenceCoordinator {
     }
 
     private boolean saveDomain(SettingPersistence domain) {
-        BooleanSupplier saver = switch (domain) {
-            case FEATURE_CONFIG -> featureSaver;
-            case LOCAL_CONFIG -> localSaver;
-            case EXTERNAL -> null;
-        };
+        BooleanSupplier saver = domain == SettingPersistence.FEATURE_CONFIG
+                ? featureSaver
+                : domain == SettingPersistence.LOCAL_CONFIG ? localSaver : null;
         if (saver == null) return true;
         try {
             return saver.getAsBoolean();
