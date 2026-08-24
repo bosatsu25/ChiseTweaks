@@ -7,19 +7,24 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class FeatureManagerInitializationTest {
     @Test
-    void failedInitializationRemovesComponentFromSessionSchedule() throws Exception {
+    void failedInitializationRemovesSessionScheduleAndUsesCommonCleanup() throws Exception {
         FeatureManager manager = newManager();
         FailingSessionComponent component = new FailingSessionComponent();
         manager.registerComponent(component);
+        FeatureManager.ComponentSlot slot = componentSlot(manager, component.getId());
 
-        initialize(manager, component);
+        initialize(manager, slot);
 
-        assertEquals(0, pendingSessionComponents(manager).size());
+        assertEquals(0, pendingSessionSlots(manager).size());
+        assertTrue(slot.isQuarantined());
+        assertEquals(1, component.cleanupCalls);
     }
 
     private static FeatureManager newManager() throws Exception {
@@ -28,24 +33,37 @@ final class FeatureManagerInitializationTest {
         return constructor.newInstance();
     }
 
-    private static void initialize(FeatureManager manager, RuntimeComponent component) throws Exception {
-        Method method = FeatureManager.class.getDeclaredMethod("initializeComponent", RuntimeComponent.class);
+    private static void initialize(FeatureManager manager, FeatureManager.ComponentSlot slot) throws Exception {
+        Method method = FeatureManager.class.getDeclaredMethod(
+                "initializeComponent", FeatureManager.ComponentSlot.class);
         method.setAccessible(true);
-        method.invoke(manager, component);
+        method.invoke(manager, slot);
     }
 
     @SuppressWarnings("unchecked")
-    private static List<SessionAwareRuntimeComponent> pendingSessionComponents(FeatureManager manager)
-            throws Exception {
-        Field field = FeatureManager.class.getDeclaredField("mutableSessionComponents");
+    private static FeatureManager.ComponentSlot componentSlot(FeatureManager manager, String id) throws Exception {
+        Field field = FeatureManager.class.getDeclaredField("componentSlots");
         field.setAccessible(true);
-        return (List<SessionAwareRuntimeComponent>) field.get(manager);
+        Map<String, FeatureManager.ComponentSlot> slots =
+                (Map<String, FeatureManager.ComponentSlot>) field.get(manager);
+        return slots.get(id);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<FeatureManager.ComponentSlot> pendingSessionSlots(FeatureManager manager)
+            throws Exception {
+        Field field = FeatureManager.class.getDeclaredField("mutableSessionSlots");
+        field.setAccessible(true);
+        return (List<FeatureManager.ComponentSlot>) field.get(manager);
     }
 
     private static final class FailingSessionComponent
             implements RuntimeComponent, SessionAwareRuntimeComponent {
+        private int cleanupCalls;
+
         @Override public String getId() { return "failing-session"; }
         @Override public void init() { throw new IllegalStateException("boom"); }
         @Override public void resetSession(Minecraft client) {}
+        @Override public void onQuarantined(Minecraft client) { cleanupCalls++; }
     }
 }

@@ -25,7 +25,8 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
                 japaneseComment,
                 null,
                 null,
-                false);
+                false,
+                SettingPersistence.FEATURE_CONFIG);
     }
 
     SimpleBooleanSetting(
@@ -36,7 +37,8 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
             String englishComment,
             String japaneseComment,
             BooleanSupplier reader,
-            Consumer<Boolean> writer) {
+            Consumer<Boolean> writer,
+            SettingPersistence persistence) {
         this(
                 name,
                 defaultValue,
@@ -46,7 +48,8 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
                 japaneseComment,
                 reader,
                 writer,
-                true);
+                true,
+                persistence);
     }
 
     private SimpleBooleanSetting(
@@ -58,8 +61,9 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
             String japaneseComment,
             BooleanSupplier reader,
             Consumer<Boolean> writer,
-            boolean bound) {
-        super(name, defaultValue, englishName, japaneseName, englishComment, japaneseComment);
+            boolean bound,
+            SettingPersistence persistence) {
+        super(name, defaultValue, englishName, japaneseName, englishComment, japaneseComment, persistence);
         this.value = defaultValue;
         if (bound) {
             this.reader = Objects.requireNonNull(reader, "reader");

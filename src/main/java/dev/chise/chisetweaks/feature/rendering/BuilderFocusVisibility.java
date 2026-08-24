@@ -29,29 +29,33 @@ public final class BuilderFocusVisibility {
 
     public static void applyConfig() {
         BlockConfigFingerprint next = currentBlockFingerprint();
+        BlockRules nextRules = compileBlockRules(next);
+        blockRules = nextRules;
         blockFingerprint = next;
-        blockRules = compileBlockRules(next);
         buildEntityLists();
     }
 
     public static void buildLists() {
         BlockConfigFingerprint next = currentBlockFingerprint();
         if (next.equals(blockFingerprint)) return;
+
+        // compile完了前にfingerprintを進めると、失敗後の同一設定再試行が抑止されるためcommitは最後に行う。
+        BlockRules nextRules = compileBlockRules(next);
+        blockRules = nextRules;
         blockFingerprint = next;
-        blockRules = compileBlockRules(next);
 
         if (BuilderFocusConfig.REFRESH_RENDERER.getBooleanValue()) {
-            Minecraft client = Minecraft.getInstance();
-            if (client.level != null) client.levelRenderer.allChanged();
+            ChunkRenderInvalidation.request();
         }
     }
 
     public static void buildEntityLists() {
         ChiseRuleMode mode = BuilderFocusConfig.ENTITY_RULE_MODE.getValue();
-        entityRules = new EntityRules(
+        EntityRules nextRules = new EntityRules(
                 mode,
                 resolveEntityTypes(BuilderFocusConfig.ENTITY_BLACKLIST.getStrings()),
                 resolveEntityTypes(BuilderFocusConfig.ENTITY_WHITELIST.getStrings()));
+        entityRules = nextRules;
     }
 
     public static boolean shouldHide(Block block) {

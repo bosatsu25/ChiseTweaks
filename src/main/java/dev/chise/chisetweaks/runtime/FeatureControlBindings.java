@@ -9,7 +9,7 @@ import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
-import dev.chise.chisetweaks.feature.rendering.model.OreHighlightRenderInvalidation;
+import dev.chise.chisetweaks.feature.rendering.ChunkRenderInvalidation;
 import dev.chise.chisetweaks.feature.rendering.model.VisualRenderState;
 
 public final class FeatureControlBindings {
@@ -40,7 +40,7 @@ public final class FeatureControlBindings {
 
     private static void refreshVisualStateAndInvalidate() {
         VisualRenderState.refreshFromConfig();
-        OreHighlightRenderInvalidation.request();
+        ChunkRenderInvalidation.request();
     }
 
     private static void bindSceneFilterRefresh() {

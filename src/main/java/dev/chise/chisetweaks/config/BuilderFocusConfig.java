@@ -12,18 +12,18 @@ public final class BuilderFocusConfig {
             "ブロック表示ルール変更後に表示中チャンクを更新します。");
 
     public static final ChiseRuleModeSetting BLOCK_RULE_MODE = new ChiseRuleModeSetting(
-            "builderFocusBlockRuleMode", ChiseRuleMode.NONE);
+            "builderFocusBlockRuleMode", ChiseRuleMode.NONE, SettingPersistence.FEATURE_CONFIG);
     public static final ChiseStringListSetting BLOCK_WHITELIST = new ChiseStringListSetting(
-            "builderFocusBlockWhitelist", List.of());
+            "builderFocusBlockWhitelist", List.of(), SettingPersistence.FEATURE_CONFIG);
     public static final ChiseStringListSetting BLOCK_BLACKLIST = new ChiseStringListSetting(
-            "builderFocusBlockBlacklist", List.of());
+            "builderFocusBlockBlacklist", List.of(), SettingPersistence.FEATURE_CONFIG);
 
     public static final ChiseRuleModeSetting ENTITY_RULE_MODE = new ChiseRuleModeSetting(
-            "builderFocusEntityRuleMode", ChiseRuleMode.NONE);
+            "builderFocusEntityRuleMode", ChiseRuleMode.NONE, SettingPersistence.FEATURE_CONFIG);
     public static final ChiseStringListSetting ENTITY_WHITELIST = new ChiseStringListSetting(
-            "builderFocusEntityWhitelist", List.of());
+            "builderFocusEntityWhitelist", List.of(), SettingPersistence.FEATURE_CONFIG);
     public static final ChiseStringListSetting ENTITY_BLACKLIST = new ChiseStringListSetting(
-            "builderFocusEntityBlacklist", List.of());
+            "builderFocusEntityBlacklist", List.of(), SettingPersistence.FEATURE_CONFIG);
 
     static final List<ChiseStringListSetting> STRING_LIST_OPTIONS = List.of(
             BLOCK_WHITELIST,

@@ -26,7 +26,8 @@ public final class LocalFeatureSwitch extends ChiseBooleanSetting {
                 definition.englishName(),
                 definition.englishName(),
                 "ChiseTweaks local visual feature.",
-                "ChiseTweaks のローカル描画機能です。");
+                "ChiseTweaks のローカル描画機能です。",
+                SettingPersistence.LOCAL_CONFIG);
         this.definition = Objects.requireNonNull(definition, "definition");
         this.getter = Objects.requireNonNull(getter, "getter");
         this.setter = Objects.requireNonNull(setter, "setter");

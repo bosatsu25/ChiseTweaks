@@ -12,11 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /** Chise管理Visibility packの軽量なtexture reloadを1本のqueueへ直列化する。 */
 public final class ChiseTexturePackController {
     private static final ResourceReloadCoordinator RELOADS = new ResourceReloadCoordinator();
     private static final AtomicReference<ResourceReloadCoordinator.Recovery> TERMINAL_RECOVERY =
+            new AtomicReference<>();
+    private static final AtomicReference<Consumer<Boolean>> ACTIVE_RELOAD_COMPLETION =
             new AtomicReference<>();
 
     private ChiseTexturePackController() {}
@@ -55,6 +58,8 @@ public final class ChiseTexturePackController {
     }
 
     public static void onSessionEnd(Minecraft client) {
+        Consumer<Boolean> completion = ACTIVE_RELOAD_COMPLETION.getAndSet(null);
+        notifyReloadCompletion(completion, false);
         if (client == null) {
             RELOADS.reset();
             return;
@@ -64,10 +69,17 @@ public final class ChiseTexturePackController {
         if (recovery != null) TERMINAL_RECOVERY.set(recovery);
     }
 
-    static boolean applyMigrationSelection(Minecraft client, List<String> selection) {
+    static boolean applyMigrationSelection(
+            Minecraft client,
+            List<String> selection,
+            Consumer<Boolean> completion) {
         if (client == null || selection == null) return false;
-        if (!recoverTerminalFailure(client)) return false;
-        return applySelection(client, "visibility-pack-migration", List.copyOf(selection));
+        if (!recoverTerminalFailure(client) || RELOADS.isInFlight()) return false;
+        return applySelection(
+                client,
+                "visibility-pack-migration",
+                List.copyOf(selection),
+                completion);
     }
 
     private static boolean isEnabled(String packId) {
@@ -91,19 +103,28 @@ public final class ChiseTexturePackController {
 
         List<String> previous = List.copyOf(repository.getSelectedIds());
         List<String> selected = ResourcePackSelectionPolicy.withPack(previous, packId, enabled);
-        applySelection(client, label, selected);
+        applySelection(client, label, selected, null);
     }
 
-    private static boolean applySelection(Minecraft client, String label, List<String> selected) {
+    private static boolean applySelection(
+            Minecraft client,
+            String label,
+            List<String> selected,
+            Consumer<Boolean> completion) {
         PackRepository repository = client.getResourcePackRepository();
         List<String> previous = List.copyOf(repository.getSelectedIds());
-        if (selected.equals(previous)) return true;
+        if (selected.equals(previous)) {
+            notifyReloadCompletion(completion, true);
+            return true;
+        }
+        if (completion != null && RELOADS.isInFlight()) return false;
 
         try {
             repository.setSelected(selected);
             client.options.updateResourcePacks(repository);
         } catch (RuntimeException | LinkageError failure) {
             restoreSelection(client, repository, previous);
+            notifyReloadCompletion(completion, false);
             logFailure(label, failure);
             RuntimeDiagnostics.log(
                     RuntimeDiagnosticEvent.RESOURCE_PACK_SELECTION_FAILURE,
@@ -117,15 +138,21 @@ public final class ChiseTexturePackController {
             RELOADS.markPending(selected);
             return true;
         }
-        startReload(client, previous, selected);
+        startReload(client, previous, selected, completion);
         return true;
     }
 
     private static void startReload(
             Minecraft client,
             List<String> fallbackSelection,
-            List<String> targetSelection) {
+            List<String> targetSelection,
+            Consumer<Boolean> completion) {
         RELOADS.begin(fallbackSelection, targetSelection);
+        if (completion != null && !ACTIVE_RELOAD_COMPLETION.compareAndSet(null, completion)) {
+            RELOADS.reset();
+            notifyReloadCompletion(completion, false);
+            throw new IllegalStateException("resource reload completion callback is already active");
+        }
         try {
             // Bright Chest / Bright Concreteは前面の全resource reloadを直接呼ばず、
             // Minecraftが提供する遅延・並行texture reload経路で軽量に反映する。
@@ -133,9 +160,11 @@ public final class ChiseTexturePackController {
                 try {
                     client.execute(() -> completeReload(client, failure));
                 } catch (RuntimeException | LinkageError schedulingFailure) {
+                    Consumer<Boolean> reloadCompletion = ACTIVE_RELOAD_COMPLETION.getAndSet(null);
                     ResourceReloadCoordinator.Recovery recovery =
                             RELOADS.terminalFailure(failure == null);
                     if (recovery != null) TERMINAL_RECOVERY.set(recovery);
+                    notifyReloadCompletion(reloadCompletion, false);
                     ChiseTweaksClient.LOGGER.error(
                             "Chise visibility texture reload completion could not reach the client thread after {}",
                             schedulingFailure.getClass().getSimpleName());
@@ -153,8 +182,12 @@ public final class ChiseTexturePackController {
     }
 
     private static void completeReload(Minecraft client, Throwable failure) {
+        Consumer<Boolean> reloadCompletion = ACTIVE_RELOAD_COMPLETION.getAndSet(null);
         ResourceReloadCoordinator.Completion completion = RELOADS.complete(failure == null);
-        if (completion == null) return;
+        if (completion == null) {
+            notifyReloadCompletion(reloadCompletion, false);
+            return;
+        }
         PackRepository repository = client.getResourcePackRepository();
         if (failure != null) logFailure("Chise visibility texture reload", failure);
 
@@ -162,7 +195,8 @@ public final class ChiseTexturePackController {
             case RELOAD -> startReload(
                     client,
                     completion.activeSelection(),
-                    completion.targetSelection());
+                    completion.targetSelection(),
+                    null);
             case RESTORE -> {
                 if (!restoreSelection(client, repository, completion.activeSelection())) {
                     TERMINAL_RECOVERY.set(new ResourceReloadCoordinator.Recovery(
@@ -173,6 +207,7 @@ public final class ChiseTexturePackController {
             case NONE -> {
             }
         }
+        notifyReloadCompletion(reloadCompletion, failure == null);
         if (failure != null) {
             RuntimeDiagnostics.log(
                     RuntimeDiagnosticEvent.RESOURCE_RELOAD_FAILURE,
@@ -208,7 +243,7 @@ public final class ChiseTexturePackController {
         }
 
         if (recovery.requiresReload()) {
-            startReload(client, recovery.activeSelection(), recovery.desiredSelection());
+            startReload(client, recovery.activeSelection(), recovery.desiredSelection(), null);
         }
         RuntimeDiagnostics.log(
                 RuntimeDiagnosticEvent.RESOURCE_RELOAD_RECOVERY,
@@ -235,6 +270,17 @@ public final class ChiseTexturePackController {
                     RuntimeDiagnosticDetail.of(
                             "failure", rollbackFailure.getClass().getSimpleName()));
             return false;
+        }
+    }
+
+    private static void notifyReloadCompletion(Consumer<Boolean> completion, boolean succeeded) {
+        if (completion == null) return;
+        try {
+            completion.accept(succeeded);
+        } catch (RuntimeException | LinkageError callbackFailure) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Chise visibility reload completion callback failed after {}",
+                    callbackFailure.getClass().getSimpleName());
         }
     }
 

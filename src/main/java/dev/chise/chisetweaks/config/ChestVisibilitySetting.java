@@ -14,7 +14,8 @@ public final class ChestVisibilitySetting extends ChiseBooleanSetting {
                 "Bright Chest",
                 "Bright Chest",
                 "Toggle the Bright Chest built-in resource pack independently.",
-                "Toggle the Bright Chest built-in resource pack independently.");
+                "Toggle the Bright Chest built-in resource pack independently.",
+                SettingPersistence.EXTERNAL);
     }
 
     @Override

@@ -22,6 +22,18 @@ public final class VisibilityPackMigrationPolicy {
         }
     }
 
+    /** async reload失敗後も、旧optionsの証拠へ依存せず同じ移行を再開するための最小状態。 */
+    public record PendingIntent(Source source, List<String> fallbackIds, List<String> targetIds) {
+        public PendingIntent {
+            source = Objects.requireNonNull(source, "source");
+            if (source == Source.ALREADY_MIGRATED) {
+                throw new IllegalArgumentException("completed migration cannot be pending");
+            }
+            fallbackIds = sanitize(fallbackIds);
+            targetIds = sanitize(targetIds);
+        }
+    }
+
     private VisibilityPackMigrationPolicy() {}
 
     public static Plan plan(
@@ -60,6 +72,45 @@ public final class VisibilityPackMigrationPolicy {
 
         List<String> cleaned = without(current, legacy);
         return new Plan(Source.NEW_INSTALL, cleaned, !cleaned.equals(current));
+    }
+
+    public static PendingIntent pendingIntent(Plan plan, List<String> currentSelection) {
+        Objects.requireNonNull(plan, "plan");
+        if (!plan.selectionChanged() || plan.source() == Source.ALREADY_MIGRATED) {
+            throw new IllegalArgumentException("only an incomplete selection change can be pending");
+        }
+        return new PendingIntent(plan.source(), currentSelection, plan.selectedIds());
+    }
+
+    /**
+     * 前回reloadが失敗してoptionsの旧pack証拠が消えても、保存済みintentから同じ移行を再構成する。
+     * unrelated packが変更されていた場合はその現行状態を維持し、Chise管理packだけをtarget状態へ合わせる。
+     */
+    public static Plan resumePending(
+            PendingIntent intent,
+            List<String> currentSelection,
+            String legacyPackId,
+            String chestPackId,
+            String whiteConcretePackId) {
+        Objects.requireNonNull(intent, "intent");
+        String legacy = requireId(legacyPackId);
+        String chest = requireId(chestPackId);
+        String concrete = requireId(whiteConcretePackId);
+        List<String> current = sanitize(currentSelection);
+        if (current.equals(intent.targetIds())) {
+            return new Plan(intent.source(), current, false);
+        }
+        if (current.equals(intent.fallbackIds())) {
+            return new Plan(intent.source(), intent.targetIds(), true);
+        }
+
+        List<String> merged = mergeManagedState(
+                current,
+                intent.targetIds(),
+                legacy,
+                chest,
+                concrete);
+        return new Plan(intent.source(), merged, !merged.equals(current));
     }
 
     static boolean optionPackSelected(String optionsDocument, String packId) {
@@ -110,6 +161,94 @@ public final class VisibilityPackMigrationPolicy {
             result.add(id);
         }
         return List.copyOf(result);
+    }
+
+    private static List<String> mergeManagedState(
+            List<String> current,
+            List<String> target,
+            String legacy,
+            String chest,
+            String concrete) {
+        ArrayList<String> base = new ArrayList<>();
+        for (String id : current) {
+            if (!isManaged(id, legacy, chest, concrete)) base.add(id);
+        }
+
+        ArrayList<String> desiredManaged = new ArrayList<>(2);
+        for (String id : target) {
+            if ((id.equals(chest) || id.equals(concrete)) && !desiredManaged.contains(id)) {
+                desiredManaged.add(id);
+            }
+        }
+        if (desiredManaged.isEmpty()) return List.copyOf(base);
+
+        int firstManaged = firstManagedIndex(target, legacy, chest, concrete);
+        String before = nearestUnmanagedBefore(target, firstManaged, legacy, chest, concrete);
+        String after = nearestUnmanagedAfter(target, firstManaged, legacy, chest, concrete);
+        int insertionIndex;
+        if (before != null && base.contains(before)) {
+            insertionIndex = base.indexOf(before) + 1;
+        } else if (after != null && base.contains(after)) {
+            insertionIndex = base.indexOf(after);
+        } else {
+            insertionIndex = Math.min(unmanagedCountBefore(target, firstManaged, legacy, chest, concrete), base.size());
+        }
+        base.addAll(insertionIndex, desiredManaged);
+        return List.copyOf(base);
+    }
+
+    private static int firstManagedIndex(
+            List<String> values,
+            String legacy,
+            String chest,
+            String concrete) {
+        for (int index = 0; index < values.size(); index++) {
+            if (isManaged(values.get(index), legacy, chest, concrete)) return index;
+        }
+        return values.size();
+    }
+
+    private static String nearestUnmanagedBefore(
+            List<String> values,
+            int index,
+            String legacy,
+            String chest,
+            String concrete) {
+        for (int cursor = Math.min(index, values.size()) - 1; cursor >= 0; cursor--) {
+            String id = values.get(cursor);
+            if (!isManaged(id, legacy, chest, concrete)) return id;
+        }
+        return null;
+    }
+
+    private static String nearestUnmanagedAfter(
+            List<String> values,
+            int index,
+            String legacy,
+            String chest,
+            String concrete) {
+        for (int cursor = Math.max(0, index); cursor < values.size(); cursor++) {
+            String id = values.get(cursor);
+            if (!isManaged(id, legacy, chest, concrete)) return id;
+        }
+        return null;
+    }
+
+    private static int unmanagedCountBefore(
+            List<String> values,
+            int index,
+            String legacy,
+            String chest,
+            String concrete) {
+        int count = 0;
+        for (int cursor = 0; cursor < Math.min(index, values.size()); cursor++) {
+            if (!isManaged(values.get(cursor), legacy, chest, concrete)) count++;
+        }
+        return count;
+    }
+
+    private static boolean isManaged(String id, String legacy, String chest, String concrete) {
+        return id.equals(legacy) || id.equals(chest) || id.equals(concrete);
     }
 
     private static List<String> without(List<String> current, String removedId) {

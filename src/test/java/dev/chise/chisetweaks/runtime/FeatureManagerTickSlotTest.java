@@ -13,7 +13,7 @@ final class FeatureManagerTickSlotTest {
     @Test
     void initiallyInactiveRuntimeComponentStillGetsOpportunityToActivate() {
         FakeRuntimeComponent component = new FakeRuntimeComponent();
-        FeatureManager.TickSlot slot = new FeatureManager.TickSlot(component);
+        FeatureManager.ComponentSlot slot = new FeatureManager.ComponentSlot(component);
         assertFalse(component.isActive());
         slot.runForTick(null);
         assertEquals(1, component.ticks);
@@ -24,7 +24,7 @@ final class FeatureManagerTickSlotTest {
     @Test
     void firstRuntimeFailureQuarantinesCleansUpAndFutureTicksAreSkipped() {
         FailingRuntimeComponent component = new FailingRuntimeComponent();
-        FeatureManager.TickSlot slot = new FeatureManager.TickSlot(component);
+        FeatureManager.ComponentSlot slot = new FeatureManager.ComponentSlot(component);
         slot.runForTick(null);
         slot.runForTick(null);
         assertTrue(slot.isQuarantined());
@@ -33,11 +33,24 @@ final class FeatureManagerTickSlotTest {
     }
 
     @Test
+    void lifecycleFailureQuarantinesBeforeAnyFutureTickCanUseStaleState() {
+        FailingSessionRuntimeComponent component = new FailingSessionRuntimeComponent();
+        FeatureManager.ComponentSlot slot = new FeatureManager.ComponentSlot(component);
+
+        slot.resetSession(null);
+        slot.runForTick(null);
+
+        assertTrue(slot.isQuarantined());
+        assertEquals(0, component.ticks);
+        assertEquals(1, component.cleanupCalls());
+    }
+
+    @Test
     void oneFailingSlotDoesNotQuarantineOrStopAnotherSlot() {
         FailingRuntimeComponent failing = new FailingRuntimeComponent();
         FakeRuntimeComponent healthy = new FakeRuntimeComponent();
-        FeatureManager.TickSlot failingSlot = new FeatureManager.TickSlot(failing);
-        FeatureManager.TickSlot healthySlot = new FeatureManager.TickSlot(healthy);
+        FeatureManager.ComponentSlot failingSlot = new FeatureManager.ComponentSlot(failing);
+        FeatureManager.ComponentSlot healthySlot = new FeatureManager.ComponentSlot(healthy);
 
         failingSlot.runForTick(null);
         healthySlot.runForTick(null);
@@ -53,7 +66,7 @@ final class FeatureManagerTickSlotTest {
     @Test
     void cleanupFailureDoesNotEscapeQuarantineBoundary() {
         FailingCleanupRuntimeComponent component = new FailingCleanupRuntimeComponent();
-        FeatureManager.TickSlot slot = new FeatureManager.TickSlot(component);
+        FeatureManager.ComponentSlot slot = new FeatureManager.ComponentSlot(component);
         assertDoesNotThrow(() -> slot.runForTick(null));
         assertTrue(slot.isQuarantined());
         assertEquals(1, component.cleanupCalls());
@@ -62,7 +75,7 @@ final class FeatureManagerTickSlotTest {
     @Test
     void failingFeatureIsQuarantinedWithoutMutatingUserConfiguration() {
         FailingFeature feature = new FailingFeature();
-        FeatureManager.TickSlot slot = new FeatureManager.TickSlot(feature);
+        FeatureManager.ComponentSlot slot = new FeatureManager.ComponentSlot(feature);
         slot.runForTick(null);
         assertTrue(slot.isQuarantined());
         assertEquals(1, feature.quarantineCalls);
@@ -80,7 +93,7 @@ final class FeatureManagerTickSlotTest {
     }
 
     private static class FailingRuntimeComponent implements TickingRuntimeComponent {
-        private int ticks;
+        protected int ticks;
         private int cleanupCalls;
 
         @Override public String getId() { return "failing-runtime"; }
@@ -88,6 +101,12 @@ final class FeatureManagerTickSlotTest {
         @Override public void tick(Minecraft client) { ticks++; throw new IllegalStateException("boom"); }
         @Override public void onQuarantined(Minecraft client) { cleanupCalls++; }
         int cleanupCalls() { return cleanupCalls; }
+    }
+
+    private static final class FailingSessionRuntimeComponent extends FailingRuntimeComponent
+            implements SessionAwareRuntimeComponent {
+        @Override public String getId() { return "failing-session-runtime"; }
+        @Override public void resetSession(Minecraft client) { throw new IllegalStateException("reset"); }
     }
 
     private static final class FailingCleanupRuntimeComponent extends FailingRuntimeComponent {

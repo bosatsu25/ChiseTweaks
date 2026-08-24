@@ -138,8 +138,10 @@ def audit() -> list[str]:
         re.DOTALL,
     ):
         builder[name] = mode
+    # Only the first two constructor arguments define the frozen default. Additional metadata
+    # such as persistence domain must not make the parity audit depend on constructor shape.
     for name in re.findall(
-        r"new\s+ChiseStringListSetting\(\s*\"([^\"]+)\"\s*,\s*List\.of\(\)\s*\)",
+        r"new\s+ChiseStringListSetting\(\s*\"([^\"]+)\"\s*,\s*List\.of\(\)",
         builder_text,
         re.DOTALL,
     ):

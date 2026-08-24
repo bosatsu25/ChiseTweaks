@@ -11,6 +11,7 @@ public abstract class ChiseBooleanSetting {
     private final String japaneseName;
     private final String englishComment;
     private final String japaneseComment;
+    private final SettingPersistence persistence;
     private final CopyOnWriteArrayList<Consumer<ChiseBooleanSetting>> additionalListeners =
             new CopyOnWriteArrayList<>();
     private Consumer<ChiseBooleanSetting> callback = ignored -> {};
@@ -21,13 +22,15 @@ public abstract class ChiseBooleanSetting {
             String englishName,
             String japaneseName,
             String englishComment,
-            String japaneseComment) {
+            String japaneseComment,
+            SettingPersistence persistence) {
         this.name = requireText(name, "name");
         this.defaultValue = defaultValue;
         this.englishName = requireText(englishName, "englishName");
         this.japaneseName = requireText(japaneseName, "japaneseName");
         this.englishComment = Objects.requireNonNullElse(englishComment, "");
         this.japaneseComment = Objects.requireNonNullElse(japaneseComment, this.englishComment);
+        this.persistence = Objects.requireNonNull(persistence, "persistence");
     }
 
     protected abstract boolean readValue();
@@ -53,22 +56,30 @@ public abstract class ChiseBooleanSetting {
         return japanese ? japaneseComment : englishComment;
     }
 
-    public final void setBooleanValue(boolean value) {
-        if (readValue() == value) return;
+    public final SettingPersistence persistence() {
+        return persistence;
+    }
+
+    /** 実効値が変化した場合だけtrueを返す。変更後callbackの失敗は値変更を取り消さない。 */
+    public final boolean setBooleanValue(boolean value) {
+        boolean previous = readValue();
+        if (previous == value) return false;
         writeValue(value);
+        if (readValue() == previous) return false;
         notifyChangeListeners();
+        return true;
     }
 
     public final void setBooleanValueSilently(boolean value) {
         if (readValue() != value) writeValue(value);
     }
 
-    public final void toggleBooleanValue() {
-        setBooleanValue(!readValue());
+    public final boolean toggleBooleanValue() {
+        return setBooleanValue(!readValue());
     }
 
-    public final void resetToDefault() {
-        setBooleanValue(defaultValue);
+    public final boolean resetToDefault() {
+        return setBooleanValue(defaultValue);
     }
 
     public final void resetSilently() {
@@ -84,22 +95,10 @@ public abstract class ChiseBooleanSetting {
     }
 
     private void notifyChangeListeners() {
-        Throwable firstFailure = null;
-        try {
-            callback.accept(this);
-        } catch (RuntimeException | LinkageError failure) {
-            firstFailure = failure;
-        }
+        SettingChangeDispatcher.notifySafely(name, this, callback);
         for (Consumer<ChiseBooleanSetting> listener : additionalListeners) {
-            try {
-                listener.accept(this);
-            } catch (RuntimeException | LinkageError failure) {
-                if (firstFailure == null) firstFailure = failure;
-                else firstFailure.addSuppressed(failure);
-            }
+            SettingChangeDispatcher.notifySafely(name, this, listener);
         }
-        if (firstFailure instanceof RuntimeException runtimeFailure) throw runtimeFailure;
-        if (firstFailure instanceof LinkageError linkageFailure) throw linkageFailure;
     }
 
     private static String requireText(String value, String field) {

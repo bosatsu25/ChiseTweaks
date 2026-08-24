@@ -18,6 +18,7 @@ public final class ChiseIntegerSetting {
     private final IntSupplier reader;
     private final IntConsumer writer;
     private final IntFunction<String> valueFormatter;
+    private final SettingPersistence persistence;
     private Consumer<ChiseIntegerSetting> callback = ignored -> {};
     private int value;
 
@@ -31,44 +32,10 @@ public final class ChiseIntegerSetting {
             String englishComment,
             String japaneseComment) {
         this(
-                name,
-                defaultValue,
-                minValue,
-                maxValue,
-                englishName,
-                japaneseName,
-                englishComment,
-                japaneseComment,
-                null,
-                null,
-                value -> Integer.toString(value),
-                false);
-    }
-
-    ChiseIntegerSetting(
-            String name,
-            int defaultValue,
-            int minValue,
-            int maxValue,
-            String englishName,
-            String japaneseName,
-            String englishComment,
-            String japaneseComment,
-            IntSupplier reader,
-            IntConsumer writer) {
-        this(
-                name,
-                defaultValue,
-                minValue,
-                maxValue,
-                englishName,
-                japaneseName,
-                englishComment,
-                japaneseComment,
-                reader,
-                writer,
-                value -> Integer.toString(value),
-                true);
+                name, defaultValue, minValue, maxValue,
+                englishName, japaneseName, englishComment, japaneseComment,
+                null, null, value -> Integer.toString(value), false,
+                SettingPersistence.FEATURE_CONFIG);
     }
 
     ChiseIntegerSetting(
@@ -82,20 +49,30 @@ public final class ChiseIntegerSetting {
             String japaneseComment,
             IntSupplier reader,
             IntConsumer writer,
-            IntFunction<String> valueFormatter) {
+            SettingPersistence persistence) {
         this(
-                name,
-                defaultValue,
-                minValue,
-                maxValue,
-                englishName,
-                japaneseName,
-                englishComment,
-                japaneseComment,
-                reader,
-                writer,
-                valueFormatter,
-                true);
+                name, defaultValue, minValue, maxValue,
+                englishName, japaneseName, englishComment, japaneseComment,
+                reader, writer, value -> Integer.toString(value), true, persistence);
+    }
+
+    ChiseIntegerSetting(
+            String name,
+            int defaultValue,
+            int minValue,
+            int maxValue,
+            String englishName,
+            String japaneseName,
+            String englishComment,
+            String japaneseComment,
+            IntSupplier reader,
+            IntConsumer writer,
+            IntFunction<String> valueFormatter,
+            SettingPersistence persistence) {
+        this(
+                name, defaultValue, minValue, maxValue,
+                englishName, japaneseName, englishComment, japaneseComment,
+                reader, writer, valueFormatter, true, persistence);
     }
 
     private ChiseIntegerSetting(
@@ -110,7 +87,8 @@ public final class ChiseIntegerSetting {
             IntSupplier reader,
             IntConsumer writer,
             IntFunction<String> valueFormatter,
-            boolean bound) {
+            boolean bound,
+            SettingPersistence persistence) {
         if (minValue > maxValue) throw new IllegalArgumentException("minValue > maxValue");
         this.name = requireText(name, "name");
         this.defaultValue = clamp(defaultValue, minValue, maxValue);
@@ -121,6 +99,7 @@ public final class ChiseIntegerSetting {
         this.englishComment = Objects.requireNonNullElse(englishComment, "");
         this.japaneseComment = Objects.requireNonNullElse(japaneseComment, this.englishComment);
         this.valueFormatter = Objects.requireNonNull(valueFormatter, "valueFormatter");
+        this.persistence = Objects.requireNonNull(persistence, "persistence");
         this.value = this.defaultValue;
         if (bound) {
             this.reader = Objects.requireNonNull(reader, "reader");
@@ -138,17 +117,21 @@ public final class ChiseIntegerSetting {
     public int getMaxIntegerValue() { return maxValue; }
     public String getDisplayName(boolean japanese) { return japanese ? japaneseName : englishName; }
     public String getComment(boolean japanese) { return japanese ? japaneseComment : englishComment; }
+    public SettingPersistence persistence() { return persistence; }
     public String getFormattedValue() {
-        return Objects.requireNonNullElse(
-                valueFormatter.apply(getIntegerValue()),
-                Integer.toString(getIntegerValue()));
+        int current = getIntegerValue();
+        return Objects.requireNonNullElse(valueFormatter.apply(current), Integer.toString(current));
     }
 
-    public void setIntegerValue(int requested) {
+    /** 実効値が変化した場合だけtrueを返す。変更後callbackはfail-softで実行する。 */
+    public boolean setIntegerValue(int requested) {
         int next = clamp(requested, minValue, maxValue);
-        if (getIntegerValue() == next) return;
+        int previous = getIntegerValue();
+        if (previous == next) return false;
         writer.accept(next);
-        callback.accept(this);
+        if (getIntegerValue() == previous) return false;
+        SettingChangeDispatcher.notifySafely(name, this, callback);
+        return true;
     }
 
     public void setIntegerValueSilently(int requested) {
@@ -156,8 +139,8 @@ public final class ChiseIntegerSetting {
         if (getIntegerValue() != next) writer.accept(next);
     }
 
-    public void resetToDefault() {
-        setIntegerValue(defaultValue);
+    public boolean resetToDefault() {
+        return setIntegerValue(defaultValue);
     }
 
     public void setValueChangeCallback(Consumer<ChiseIntegerSetting> value) {

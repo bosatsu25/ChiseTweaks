@@ -188,7 +188,8 @@ public final class LocalFeatureSettings {
                 englishComment,
                 japaneseComment,
                 reader,
-                writer);
+                writer,
+                SettingPersistence.LOCAL_CONFIG);
     }
 
     private static ChiseIntegerSetting integer(
@@ -210,7 +211,8 @@ public final class LocalFeatureSettings {
                 englishName,
                 japaneseName,
                 reader,
-                writer);
+                writer,
+                SettingPersistence.LOCAL_CONFIG);
     }
 
     private static ChiseIntegerSetting integer(
@@ -234,6 +236,7 @@ public final class LocalFeatureSettings {
                 japaneseName,
                 reader,
                 writer,
-                valueFormatter);
+                valueFormatter,
+                SettingPersistence.LOCAL_CONFIG);
     }
 }

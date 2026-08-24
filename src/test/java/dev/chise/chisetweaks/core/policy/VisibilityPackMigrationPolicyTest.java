@@ -102,6 +102,83 @@ final class VisibilityPackMigrationPolicyTest {
     }
 
     @Test
+    void pendingIntentRetriesExactTargetAfterReloadRollbackErasedLegacyEvidence() {
+        List<String> fallback = List.of("vanilla", "user-pack");
+        var original = VisibilityPackMigrationPolicy.plan(
+                fallback,
+                false,
+                true,
+                "resourcePacks:[\"vanilla\",\"" + LEGACY + "\"]",
+                LEGACY,
+                CHEST,
+                CONCRETE);
+        var pending = VisibilityPackMigrationPolicy.pendingIntent(original, fallback);
+
+        var resumed = VisibilityPackMigrationPolicy.resumePending(
+                pending, fallback, LEGACY, CHEST, CONCRETE);
+
+        assertEquals(VisibilityPackMigrationPolicy.Source.LEGACY_ENABLED, resumed.source());
+        assertTrue(resumed.selectionChanged());
+        assertEquals(original.selectedIds(), resumed.selectedIds());
+    }
+
+    @Test
+    void pendingIntentCompletesWhenTargetWasPersistedSuccessfully() {
+        List<String> fallback = List.of("vanilla", LEGACY, "after");
+        var original = VisibilityPackMigrationPolicy.plan(
+                fallback,
+                false,
+                true,
+                "resourcePacks:[\"" + LEGACY + "\"]",
+                LEGACY,
+                CHEST,
+                CONCRETE);
+        var pending = VisibilityPackMigrationPolicy.pendingIntent(original, fallback);
+
+        var resumed = VisibilityPackMigrationPolicy.resumePending(
+                pending, original.selectedIds(), LEGACY, CHEST, CONCRETE);
+
+        assertFalse(resumed.selectionChanged());
+        assertEquals(original.selectedIds(), resumed.selectedIds());
+    }
+
+    @Test
+    void pendingIntentPreservesNewUnrelatedPacksWhileRestoringManagedPackPlacement() {
+        List<String> fallback = List.of("vanilla", LEGACY, "after");
+        var original = VisibilityPackMigrationPolicy.plan(
+                fallback,
+                false,
+                true,
+                "resourcePacks:[\"" + LEGACY + "\"]",
+                LEGACY,
+                CHEST,
+                CONCRETE);
+        var pending = VisibilityPackMigrationPolicy.pendingIntent(original, fallback);
+
+        var resumed = VisibilityPackMigrationPolicy.resumePending(
+                pending,
+                List.of("vanilla", "new-user-pack", "after"),
+                LEGACY,
+                CHEST,
+                CONCRETE);
+
+        assertTrue(resumed.selectionChanged());
+        assertEquals(
+                List.of("vanilla", CHEST, CONCRETE, "new-user-pack", "after"),
+                resumed.selectedIds());
+    }
+
+    @Test
+    void completedPlanCannotBecomePendingIntent() {
+        var complete = new VisibilityPackMigrationPolicy.Plan(
+                VisibilityPackMigrationPolicy.Source.ALREADY_MIGRATED,
+                List.of("vanilla"),
+                false);
+        assertThrows(IllegalArgumentException.class,
+                () -> VisibilityPackMigrationPolicy.pendingIntent(complete, List.of("vanilla")));
+    }
+
+    @Test
     void packIdMentionOutsideResourcePackOptionDoesNotCountAsSelected() {
         String options = "lastServer:" + LEGACY + "\nresourcePacks:[\"vanilla\"]";
         assertFalse(VisibilityPackMigrationPolicy.optionPackSelected(options, LEGACY));

@@ -82,6 +82,7 @@ final class RepositoryScopeContractTest {
     void lavaSourceHighlightGuardsSessionConfigChunkEdgesAndRuntimeFailures() throws IOException {
         String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
         String manager = read("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
+        String runtime = read("src/main/java/dev/chise/chisetweaks/runtime/RuntimeComponent.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
         String retained = read("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
 
@@ -100,8 +101,12 @@ final class RepositoryScopeContractTest {
                 "local.lavaHighlightEnabled = false",
                 ".save()");
         assertContainsAll(manager,
-                "notifyInitializationQuarantine(component.getId(), ticking)",
-                "removeFromSchedules(component)");
+                "slot.quarantineDuringInitialization(Minecraft.getInstance(), failure)",
+                "removeFromSchedules(slot)",
+                "component.onQuarantined(client)",
+                "for (ComponentSlot slot : sessionSchedule) slot.resetSession(client)");
+        assertContainsAll(runtime,
+                "default void onQuarantined(Minecraft client)");
         assertContainsAll(renderer,
                 "resetAfterFailure()",
                 "uploadedRevision = Long.MIN_VALUE");

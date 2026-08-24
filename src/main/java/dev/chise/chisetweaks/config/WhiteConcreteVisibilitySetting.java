@@ -14,7 +14,8 @@ public final class WhiteConcreteVisibilitySetting extends ChiseBooleanSetting {
                 "Bright Concrete",
                 "Bright Concrete",
                 "Toggle the Bright Concrete built-in resource pack independently.",
-                "Toggle the Bright Concrete built-in resource pack independently.");
+                "Toggle the Bright Concrete built-in resource pack independently.",
+                SettingPersistence.EXTERNAL);
     }
 
     @Override

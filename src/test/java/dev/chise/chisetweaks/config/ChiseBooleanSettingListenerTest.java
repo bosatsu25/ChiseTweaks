@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseBooleanSettingListenerTest {
     @Test
@@ -16,10 +17,29 @@ final class ChiseBooleanSettingListenerTest {
         setting.setValueChangeCallback(ignored -> calls.add("primary"));
         setting.addValueChangeListener(ignored -> calls.add("listener"));
 
-        setting.setBooleanValue(true);
-        setting.setBooleanValue(true);
+        assertTrue(setting.setBooleanValue(true));
+        assertFalse(setting.setBooleanValue(true));
 
         assertEquals(List.of("primary", "listener"), calls);
+    }
+
+    @Test
+    void refusedWriteDoesNotEmitFalseChangeNotification() {
+        RefusingSetting setting = new RefusingSetting();
+        ArrayList<String> calls = new ArrayList<>();
+        setting.setValueChangeCallback(ignored -> calls.add("primary"));
+        setting.addValueChangeListener(ignored -> calls.add("listener"));
+
+        assertFalse(setting.setBooleanValue(true));
+
+        assertFalse(setting.getBooleanValue());
+        assertEquals(List.of(), calls);
+    }
+
+    @Test
+    void persistenceDomainIsExplicitForApplyManagedAndExternalSettings() {
+        assertEquals(SettingPersistence.FEATURE_CONFIG, new TestSetting().persistence());
+        assertEquals(SettingPersistence.EXTERNAL, new ImmediateSetting().persistence());
     }
 
     @Test
@@ -30,13 +50,13 @@ final class ChiseBooleanSettingListenerTest {
         setting.setValueChangeCallback(ignored -> calls.add("first"));
         setting.setValueChangeCallback(ignored -> calls.add("replacement"));
 
-        setting.setBooleanValue(true);
+        assertTrue(setting.setBooleanValue(true));
 
         assertEquals(List.of("replacement", "listener"), calls);
     }
 
     @Test
-    void primaryFailureDoesNotPreventIndependentListenerNotification() {
+    void primaryFailureIsContainedAndDoesNotPreventIndependentListenerNotification() {
         TestSetting setting = new TestSetting();
         ArrayList<String> calls = new ArrayList<>();
         setting.setValueChangeCallback(ignored -> {
@@ -45,12 +65,13 @@ final class ChiseBooleanSettingListenerTest {
         });
         setting.addValueChangeListener(ignored -> calls.add("listener"));
 
-        assertThrows(IllegalStateException.class, () -> setting.setBooleanValue(true));
+        assertTrue(setting.setBooleanValue(true));
+        assertTrue(setting.getBooleanValue());
         assertEquals(List.of("primary", "listener"), calls);
     }
 
     @Test
-    void failingIndependentListenerDoesNotBlockLaterListeners() {
+    void failingIndependentListenerIsContainedAndDoesNotBlockLaterListeners() {
         TestSetting setting = new TestSetting();
         ArrayList<String> calls = new ArrayList<>();
         setting.addValueChangeListener(ignored -> {
@@ -59,15 +80,20 @@ final class ChiseBooleanSettingListenerTest {
         });
         setting.addValueChangeListener(ignored -> calls.add("second"));
 
-        assertThrows(IllegalStateException.class, () -> setting.setBooleanValue(true));
+        assertTrue(setting.setBooleanValue(true));
+        assertTrue(setting.getBooleanValue());
         assertEquals(List.of("first", "second"), calls);
     }
 
-    private static final class TestSetting extends ChiseBooleanSetting {
+    private static class TestSetting extends ChiseBooleanSetting {
         private boolean value;
 
         TestSetting() {
-            super("test", false, "Test", "テスト", "test", "テスト");
+            this(SettingPersistence.FEATURE_CONFIG);
+        }
+
+        TestSetting(SettingPersistence persistence) {
+            super("test", false, "Test", "テスト", "test", "テスト", persistence);
         }
 
         @Override
@@ -78,6 +104,18 @@ final class ChiseBooleanSettingListenerTest {
         @Override
         protected void writeValue(boolean value) {
             this.value = value;
+        }
+    }
+
+    private static final class RefusingSetting extends TestSetting {
+        @Override
+        protected void writeValue(boolean value) {
+        }
+    }
+
+    private static final class ImmediateSetting extends TestSetting {
+        ImmediateSetting() {
+            super(SettingPersistence.EXTERNAL);
         }
     }
 }

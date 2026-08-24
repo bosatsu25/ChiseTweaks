@@ -19,16 +19,14 @@ import java.util.Objects;
 
 public final class FeatureManager {
     private static final FeatureManager INSTANCE = new FeatureManager();
-    private static final TickSlot[] NO_TICK_SLOTS = new TickSlot[0];
-    private static final SessionAwareRuntimeComponent[] NO_SESSION_COMPONENTS =
-            new SessionAwareRuntimeComponent[0];
+    private static final ComponentSlot[] NO_SLOTS = new ComponentSlot[0];
 
-    private final Map<String, RuntimeComponent> components = new LinkedHashMap<>();
-    private final List<TickSlot> mutableTickSlots = new ArrayList<>();
-    private final List<SessionAwareRuntimeComponent> mutableSessionComponents = new ArrayList<>();
-    private final LinkedHashSet<String> initializationQuarantines = new LinkedHashSet<>();
-    private volatile TickSlot[] tickSchedule = NO_TICK_SLOTS;
-    private volatile SessionAwareRuntimeComponent[] sessionSchedule = NO_SESSION_COMPONENTS;
+    /** component identity・capability・quarantine状態を1 slotに集約する。 */
+    private final Map<String, ComponentSlot> componentSlots = new LinkedHashMap<>();
+    private final List<ComponentSlot> mutableTickSlots = new ArrayList<>();
+    private final List<ComponentSlot> mutableSessionSlots = new ArrayList<>();
+    private volatile ComponentSlot[] tickSchedule = NO_SLOTS;
+    private volatile ComponentSlot[] sessionSchedule = NO_SLOTS;
     private boolean initialized;
 
     private FeatureManager() {}
@@ -48,14 +46,14 @@ public final class FeatureManager {
             registerComponent(new WorksiteVisibilityEngine());
         }
 
-        for (RuntimeComponent component : components.values()) initializeComponent(component);
+        for (ComponentSlot slot : componentSlots.values()) initializeComponent(slot);
 
-        tickSchedule = mutableTickSlots.toArray(TickSlot[]::new);
-        sessionSchedule = mutableSessionComponents.toArray(SessionAwareRuntimeComponent[]::new);
+        tickSchedule = mutableTickSlots.toArray(ComponentSlot[]::new);
+        sessionSchedule = mutableSessionSlots.toArray(ComponentSlot[]::new);
 
         if (tickSchedule.length != 0) {
             ClientTickEvents.END_CLIENT_TICK.register(client -> {
-                for (TickSlot slot : tickSchedule) slot.runForTick(client);
+                for (ComponentSlot slot : tickSchedule) slot.runForTick(client);
             });
         }
         initialized = true;
@@ -63,29 +61,22 @@ public final class FeatureManager {
 
     public synchronized void registerComponent(RuntimeComponent component) {
         requireMutableRegistration();
-        Objects.requireNonNull(component, "component");
-        String id = requireId(component.getId());
-        if (components.putIfAbsent(id, component) != null) {
+        RuntimeComponent checked = Objects.requireNonNull(component, "component");
+        String id = requireId(checked.getId());
+        ComponentSlot slot = new ComponentSlot(checked);
+        if (componentSlots.putIfAbsent(id, slot) != null) {
             throw new IllegalStateException("Duplicate component id: " + id);
         }
-        registerSchedules(component);
+        registerSchedules(slot);
     }
 
     public void resetSessionState(Minecraft client) {
-        for (SessionAwareRuntimeComponent component : sessionSchedule) {
-            try {
-                component.resetSession(client);
-            } catch (RuntimeException | LinkageError failure) {
-                ChiseTweaksClient.LOGGER.error(
-                        "Client session reset skipped after {}",
-                        failure.getClass().getSimpleName());
-            }
-        }
+        for (ComponentSlot slot : sessionSchedule) slot.resetSession(client);
     }
 
     public synchronized List<String> diagnosticQuarantinedComponentIds() {
-        LinkedHashSet<String> result = new LinkedHashSet<>(initializationQuarantines);
-        for (TickSlot slot : tickSchedule) {
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+        for (ComponentSlot slot : componentSlots.values()) {
             if (slot.isQuarantined()) result.add(slot.componentId());
         }
         return List.copyOf(result);
@@ -101,50 +92,23 @@ public final class FeatureManager {
         return false;
     }
 
-    private void registerSchedules(RuntimeComponent component) {
-        if (component instanceof TickingRuntimeComponent ticking) {
-            mutableTickSlots.add(new TickSlot(ticking));
-        }
-        if (component instanceof SessionAwareRuntimeComponent sessionAware) {
-            mutableSessionComponents.add(sessionAware);
-        }
+    private void registerSchedules(ComponentSlot slot) {
+        if (slot.isTicking()) mutableTickSlots.add(slot);
+        if (slot.isSessionAware()) mutableSessionSlots.add(slot);
     }
 
-    private void initializeComponent(RuntimeComponent component) {
+    private void initializeComponent(ComponentSlot slot) {
         try {
-            component.init();
+            slot.initialize();
         } catch (RuntimeException | LinkageError failure) {
-            removeFromSchedules(component);
-            initializationQuarantines.add(component.getId());
-            if (component instanceof TickingRuntimeComponent ticking) {
-                notifyInitializationQuarantine(component.getId(), ticking);
-            }
-            ChiseTweaksClient.LOGGER.error(
-                    "Runtime component '{}' was quarantined during initialization after {}",
-                    component.getId(),
-                    failure.getClass().getSimpleName());
-            RuntimeDiagnostics.log(
-                    RuntimeDiagnosticEvent.COMPONENT_INIT_QUARANTINE,
-                    Minecraft.getInstance(),
-                    RuntimeDiagnosticDetail.of("componentId", component.getId()),
-                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
+            removeFromSchedules(slot);
+            slot.quarantineDuringInitialization(Minecraft.getInstance(), failure);
         }
     }
 
-    private void removeFromSchedules(RuntimeComponent component) {
-        mutableTickSlots.removeIf(slot -> slot.component == component);
-        mutableSessionComponents.removeIf(sessionAware -> sessionAware == (Object) component);
-    }
-
-    private static void notifyInitializationQuarantine(String id, TickingRuntimeComponent component) {
-        try {
-            component.onQuarantined(Minecraft.getInstance());
-        } catch (RuntimeException | LinkageError cleanupFailure) {
-            ChiseTweaksClient.LOGGER.warn(
-                    "Runtime component '{}' initialization cleanup failed after {}",
-                    id,
-                    cleanupFailure.getClass().getSimpleName());
-        }
+    private void removeFromSchedules(ComponentSlot slot) {
+        mutableTickSlots.remove(slot);
+        mutableSessionSlots.remove(slot);
     }
 
     private void requireMutableRegistration() {
@@ -161,37 +125,80 @@ public final class FeatureManager {
         return value;
     }
 
-    static final class TickSlot {
-        private final TickingRuntimeComponent component;
-        private int recoverableFailures;
+    static final class ComponentSlot {
+        private final RuntimeComponent component;
+        private final TickingRuntimeComponent ticking;
+        private final SessionAwareRuntimeComponent sessionAware;
+        private int recoverableTickFailures;
         private volatile boolean quarantined;
 
-        TickSlot(TickingRuntimeComponent component) {
-            this.component = component;
+        ComponentSlot(RuntimeComponent component) {
+            this.component = Objects.requireNonNull(component, "component");
+            this.ticking = component instanceof TickingRuntimeComponent value ? value : null;
+            this.sessionAware = component instanceof SessionAwareRuntimeComponent value ? value : null;
+        }
+
+        void initialize() {
+            component.init();
         }
 
         void runForTick(Minecraft client) {
-            if (quarantined) return;
+            if (quarantined || ticking == null) return;
             try {
-                component.tick(client);
+                ticking.tick(client);
             } catch (RuntimeException | LinkageError failure) {
-                recoverableFailures++;
-                if (!FailureIsolationPolicy.shouldQuarantine(recoverableFailures)) return;
-                quarantined = true;
-                quarantineComponent(client);
-                ChiseTweaksClient.LOGGER.error(
-                        "Runtime component '{}' was quarantined after {}",
-                        component.getId(),
-                        failure.getClass().getSimpleName());
-                RuntimeDiagnostics.log(
-                        RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
-                        client,
-                        RuntimeDiagnosticDetail.of("componentId", component.getId()),
-                        RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
+                recoverableTickFailures++;
+                if (!FailureIsolationPolicy.shouldQuarantine(recoverableTickFailures)) return;
+                quarantineRuntime(client, failure, "tick");
             }
         }
 
-        private void quarantineComponent(Minecraft client) {
+        void resetSession(Minecraft client) {
+            if (quarantined || sessionAware == null) return;
+            try {
+                sessionAware.resetSession(client);
+            } catch (RuntimeException | LinkageError failure) {
+                quarantineRuntime(client, failure, "session-reset");
+            }
+        }
+
+        void quarantineDuringInitialization(Minecraft client, Throwable failure) {
+            if (!markQuarantined()) return;
+            cleanup(client);
+            ChiseTweaksClient.LOGGER.error(
+                    "Runtime component '{}' was quarantined during initialization after {}",
+                    component.getId(),
+                    failure.getClass().getSimpleName());
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.COMPONENT_INIT_QUARANTINE,
+                    client,
+                    RuntimeDiagnosticDetail.of("componentId", component.getId()),
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
+        }
+
+        private void quarantineRuntime(Minecraft client, Throwable failure, String stage) {
+            if (!markQuarantined()) return;
+            cleanup(client);
+            ChiseTweaksClient.LOGGER.error(
+                    "Runtime component '{}' was quarantined during {} after {}",
+                    component.getId(),
+                    stage,
+                    failure.getClass().getSimpleName());
+            RuntimeDiagnostics.log(
+                    RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
+                    client,
+                    RuntimeDiagnosticDetail.of("componentId", component.getId()),
+                    RuntimeDiagnosticDetail.of("stage", stage),
+                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
+        }
+
+        private boolean markQuarantined() {
+            if (quarantined) return false;
+            quarantined = true;
+            return true;
+        }
+
+        private void cleanup(Minecraft client) {
             try {
                 component.onQuarantined(client);
             } catch (RuntimeException | LinkageError cleanupFailure) {
@@ -200,6 +207,14 @@ public final class FeatureManager {
                         component.getId(),
                         cleanupFailure.getClass().getSimpleName());
             }
+        }
+
+        boolean isTicking() {
+            return ticking != null;
+        }
+
+        boolean isSessionAware() {
+            return sessionAware != null;
         }
 
         boolean isQuarantined() {

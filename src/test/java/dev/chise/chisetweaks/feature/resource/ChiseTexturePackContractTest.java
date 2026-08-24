@@ -93,16 +93,62 @@ final class ChiseTexturePackContractTest {
     }
 
     @Test
-    void migrationReadsLegacyEvidenceBeforeConfigsAreCreated() throws IOException {
+    void settingsPersistenceIsDomainScopedAndBrightPacksRemainExternal() throws IOException {
+        String chest = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java"));
+        String concrete = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java"));
+        String localSwitch = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitch.java"));
+        String screen = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java"));
+        String settingsController = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java"));
+        String persistenceCoordinator = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/SettingPersistenceCoordinator.java"));
+        assertTrue(chest.contains("SettingPersistence.EXTERNAL"));
+        assertTrue(concrete.contains("SettingPersistence.EXTERNAL"));
+        assertTrue(localSwitch.contains("SettingPersistence.LOCAL_CONFIG"));
+        assertTrue(screen.contains("EnumSet<SettingPersistence> dirtyDomains"));
+        assertTrue(screen.contains("config.persistence()"));
+        assertTrue(screen.contains("persistence.isApplyManaged()"));
+        assertTrue(screen.contains("dirtyDomains.retainAll(result.failedDomains())"));
+        assertTrue(screen.contains("public void tick()"));
+        assertTrue(screen.contains("refreshRowButtons();"));
+        assertTrue(settingsController.contains("SettingPersistenceCoordinator.production()"));
+        assertTrue(settingsController.contains("return persistence.save(dirtyDomains);"));
+        assertTrue(persistenceCoordinator.contains("FeatureConfig::saveToFile"));
+        assertTrue(persistenceCoordinator.contains("LocalFeatureConfig.getInstance().save()"));
+        assertTrue(persistenceCoordinator.contains("for (SettingPersistence domain : requested)"));
+        assertTrue(persistenceCoordinator.contains("failed.add(domain)"));
+    }
+
+    @Test
+    void migrationPersistsIntentBeforeReloadAndCompletesOnlyAfterReloadSuccess() throws IOException {
         String migration = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/VisibilityPackMigrationService.java"));
+        String controller = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java"));
         assertTrue(migration.contains("chisetweaks:chise_texture"));
         assertTrue(migration.contains("options.txt"));
         assertTrue(migration.contains("chisetweaks-visibility-pack-migration-v1.txt"));
-        assertTrue(migration.contains("VisibilityPackMigrationPolicy.plan"));
-        assertTrue(migration.contains("applyMigrationSelection"));
-        assertTrue(migration.contains("VisibilityPack.CHEST.repositoryPackId()"));
-        assertTrue(migration.contains("VisibilityPack.WHITE_CONCRETE.repositoryPackId()"));
+        assertTrue(migration.contains("VisibilityPackMigrationPolicy.resumePending"));
+        assertTrue(migration.contains("VisibilityPackMigrationPolicy.pendingIntent"));
+        assertTrue(migration.contains("StrictJsonSecurityPolicy.validateObjectDocument"));
+        assertTrue(migration.contains("writePendingIntent(configDir, nextIntent)"));
+        assertTrue(migration.contains("completeAsyncMigration("));
+        assertTrue(migration.contains("persisted intent will be retried on the next startup"));
+        assertTrue(controller.contains("ACTIVE_RELOAD_COMPLETION"));
+        assertTrue(controller.contains("notifyReloadCompletion(reloadCompletion, failure == null)"));
+
+        int changed = migration.indexOf("if (plan.selectionChanged())");
+        int pendingWrite = migration.indexOf("writePendingIntent(configDir, nextIntent)", changed);
+        int apply = migration.indexOf("applyMigrationSelection", pendingWrite);
+        int completion = migration.indexOf("completeAsyncMigration(", apply);
+        assertTrue(changed >= 0);
+        assertTrue(pendingWrite > changed);
+        assertTrue(apply > pendingWrite);
+        assertTrue(completion > apply);
     }
 
     @Test

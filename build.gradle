@@ -144,7 +144,7 @@ jacoco {
     toolVersion = project.jacoco_version
 }
 
-// JaCoCoは決定的policy、描画budget、UI geometry/availability、diagnostics、critical tick dispatchを広く監視する。
+// JaCoCoは決定的policy、描画budget、UI geometry/availability、diagnostics、critical runtime dispatchを広く監視する。
 def coverageGateClasses = [
         'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
@@ -163,7 +163,7 @@ def coverageGateClasses = [
         'dev/chise/chisetweaks/gui/UiAvailabilityPolicy*.class',
         'dev/chise/chisetweaks/runtime/RuntimeDiagnosticDetail*.class',
         'dev/chise/chisetweaks/runtime/RuntimeDiagnosticSnapshot*.class',
-        'dev/chise/chisetweaks/runtime/FeatureManager$TickSlot*.class'
+        'dev/chise/chisetweaks/runtime/FeatureManager$ComponentSlot*.class'
 ]
 
 // PITは意味的な分岐・状態遷移を持つpolicyとdiagnostic snapshotへ限定する。
@@ -185,7 +185,7 @@ def mutationGateClasses = [
         'dev.chise.chisetweaks.gui.UiAvailabilityPolicy',
         'dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail',
         'dev.chise.chisetweaks.runtime.RuntimeDiagnosticSnapshot',
-        'dev.chise.chisetweaks.runtime.FeatureManager$TickSlot*'
+        'dev.chise.chisetweaks.runtime.FeatureManager$ComponentSlot*'
 ]
 
 def coverageGateClassDirectories = providers.provider {
