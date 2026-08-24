@@ -41,13 +41,19 @@ final class CrosshairInspectorTest {
                 "minecraft:oak_trapdoor",
                 List.of("facing=north", "half=top", "open=false", "waterlogged=true"),
                 VISIBLE,
-                List.of(FeatureDefinition.NETHER_PALETTE));
+                List.of(FeatureDefinition.NETHER_PALETTE),
+                null,
+                null,
+                false);
         var entity = new CrosshairInspector.Snapshot(
                 HitResult.Type.ENTITY,
                 "minecraft:armor_stand",
                 List.of(),
                 VISIBLE,
-                List.of());
+                List.of(),
+                null,
+                null,
+                false);
 
         assertEquals("minecraft:oak_trapdoor", block.targetId());
         assertEquals(List.of("facing=north", "half=top", "open=false", "waterlogged=true"),
@@ -59,7 +65,10 @@ final class CrosshairInspectorTest {
                 "minecraft:armor_stand",
                 List.of("hidden=value"),
                 VISIBLE,
-                List.of()));
+                List.of(),
+                null,
+                null,
+                false));
     }
 
     @Test
@@ -147,7 +156,8 @@ final class CrosshairInspectorTest {
     @Test
     void snapshotAndFilterRecordsHaveAPrivacyAllowlistByConstruction() {
         assertEquals(Set.of(
-                        "targetKind", "targetId", "stateProperties", "filterDecision", "responsibleFeatures"),
+                        "targetKind", "targetId", "stateProperties", "filterDecision", "responsibleFeatures",
+                        "predictedPlacement", "clickedFace", "upperClick"),
                 recordComponents(CrosshairInspector.Snapshot.class));
         assertEquals(Set.of("hidden", "reason", "matchedRule"),
                 recordComponents(BuilderFocusVisibility.FilterDecision.class));

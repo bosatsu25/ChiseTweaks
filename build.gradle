@@ -42,6 +42,15 @@ loom {
     }
 }
 
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'chisetweaks-gametest'
+        enableGameTests = false
+        enableClientGameTests = true
+    }
+}
+
 def fabricMetadata = [
         version              : version.toString(),
         minecraft_version    : project.minecraft_version,

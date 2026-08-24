@@ -28,7 +28,10 @@ final class ChiseTweaksSettingsCatalog {
         switch (surface == null ? ChiseTweaksSettingsController.Surface.HIGHLIGHT : surface) {
             case HIGHLIGHT -> addHighlightRows(rows);
             case FILTER -> addFilterRows(rows);
-            case INSPECTOR -> addInspectorRows(rows, CrosshairInspector.Snapshot.noTarget(), false);
+            case INSPECTOR -> addInspectorRows(
+                    rows,
+                    CrosshairInspector.Snapshot.noTarget(),
+                    false);
             case ANALYZER -> addAnalyzerRows(rows);
             case VISIBILITY -> addVisibilityRows(rows);
         }
@@ -226,20 +229,50 @@ final class ChiseTweaksSettingsCatalog {
                     text("screen.chisetweaks.inspector.responsible_feature"),
                     resolved.responsibleFeatures().isEmpty()
                             ? text("screen.chisetweaks.inspector.none")
-                            : resolved.responsibleFeatures().stream()
-                                    .map(FeatureDefinition::englishName)
-                                    .reduce((left, right) -> left + "\n" + right)
-                                    .orElse(text("screen.chisetweaks.inspector.none")));
+                            : joinFeatures(resolved.responsibleFeatures(), false, false));
             info(rows, "inspector.renderMode",
                     text("screen.chisetweaks.inspector.render_mode"),
                     resolved.responsibleFeatures().isEmpty()
                             ? text("screen.chisetweaks.inspector.none")
-                            : resolved.responsibleFeatures().stream()
-                                    .map(feature -> renderMode(feature, resolved.filterDecision().hidden()))
-                                    .reduce((left, right) -> left + "\n" + right)
-                                    .orElse(text("screen.chisetweaks.inspector.none")));
+                            : joinFeatures(
+                                    resolved.responsibleFeatures(),
+                                    true,
+                                    resolved.filterDecision().hidden()));
         }
+        addPlacementRows(rows, resolved);
         if (includeHelp) addCommonHelpRows(rows);
+    }
+
+    private static void addPlacementRows(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            CrosshairInspector.Snapshot placement) {
+        header(rows, "placement.title", "screen.chisetweaks.placement.title");
+        if (placement.clickedFace() == null) {
+            info(rows, "placement.none",
+                    text("screen.chisetweaks.inspector.none"),
+                    "");
+            return;
+        }
+        if (placement.predictedPlacement() == null) {
+            info(rows, "placement.impossible",
+                    text("screen.chisetweaks.placement.impossible"),
+                    placementReason(placement));
+            return;
+        }
+        var state = placement.predictedPlacement();
+        info(rows, "placement.predicted",
+                text("screen.chisetweaks.placement.predicted"),
+                String.join("\n", CrosshairInspector.stateProperties(state)));
+        info(rows, "placement.reason",
+                text("screen.chisetweaks.inspector.matched_rule"),
+                placementReason(placement));
+    }
+
+    private static String placementReason(CrosshairInspector.Snapshot placement) {
+        return Component.translatable(placement.upperClick()
+                        ? "screen.chisetweaks.placement.reason.upper"
+                        : "screen.chisetweaks.placement.reason.lower",
+                placement.clickedFace().getName()).getString();
     }
 
     private static String filterReason(BuilderFocusVisibility.FilterDecision decision) {
@@ -248,8 +281,16 @@ final class ChiseTweaksSettingsCatalog {
         return decision.matchedRule().isEmpty() ? reason : reason + ": " + decision.matchedRule();
     }
 
-    private static String renderMode(FeatureDefinition feature, boolean hidden) {
-        return text(renderModeKey(feature, hidden));
+    private static String joinFeatures(
+            List<FeatureDefinition> features,
+            boolean modes,
+            boolean hidden) {
+        StringBuilder result = new StringBuilder();
+        for (FeatureDefinition feature : features) {
+            if (!result.isEmpty()) result.append('\n');
+            result.append(modes ? text(renderModeKey(feature, hidden)) : feature.englishName());
+        }
+        return result.toString();
     }
 
     static String renderModeKey(FeatureDefinition feature, boolean hidden) {
@@ -338,4 +379,5 @@ final class ChiseTweaksSettingsCatalog {
     private static String text(String key) {
         return Component.translatable(key).getString();
     }
+
 }

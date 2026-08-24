@@ -329,8 +329,8 @@ public final class BuilderFocusVisibility {
 
     public record FilterDecision(boolean hidden, String reason, String matchedRule) {
         public FilterDecision {
-            reason = Objects.requireNonNull(reason, "reason");
-            if (reason.isBlank()) throw new IllegalArgumentException("reason must not be blank");
+            reason = Objects.requireNonNull(reason);
+            if (reason.isBlank()) throw new IllegalArgumentException();
             matchedRule = matchedRule == null ? "" : matchedRule;
         }
 
