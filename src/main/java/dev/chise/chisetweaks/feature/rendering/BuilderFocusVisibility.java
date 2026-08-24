@@ -91,11 +91,7 @@ public final class BuilderFocusVisibility {
             boolean blacklistMatch,
             boolean whitelistMatch) {
         if (!enabled || mode == null || mode == ChiseRuleMode.NONE) return false;
-        return switch (mode) {
-            case BLACKLIST -> blacklistMatch;
-            case WHITELIST -> !whitelistMatch;
-            case NONE -> false;
-        };
+        return mode == ChiseRuleMode.BLACKLIST ? blacklistMatch : !whitelistMatch;
     }
 
     static FilterDecision inspectByRule(
@@ -109,15 +105,14 @@ public final class BuilderFocusVisibility {
             return FilterDecision.visible(REASON_NO_RULE);
         }
         String matchedRule = targetId == null ? "" : targetId;
-        return switch (mode) {
-            case BLACKLIST -> blacklistMatch
+        if (mode == ChiseRuleMode.BLACKLIST) {
+            return blacklistMatch
                     ? FilterDecision.hidden(REASON_HIDE_LIST_MATCH, matchedRule)
                     : FilterDecision.visible(REASON_HIDE_LIST_NO_MATCH);
-            case WHITELIST -> whitelistMatch
-                    ? FilterDecision.visible(REASON_ALLOW_LIST_MATCH, matchedRule)
-                    : FilterDecision.hidden(REASON_ALLOW_LIST_NO_MATCH, "");
-            case NONE -> FilterDecision.visible(REASON_NO_RULE);
-        };
+        }
+        return whitelistMatch
+                ? FilterDecision.visible(REASON_ALLOW_LIST_MATCH, matchedRule)
+                : FilterDecision.hidden(REASON_ALLOW_LIST_NO_MATCH, "");
     }
 
     public static boolean shouldHide(EntityType<?> type) {
@@ -310,11 +305,8 @@ public final class BuilderFocusVisibility {
         }
 
         boolean hides(EntityType<?> type) {
-            return switch (mode) {
-                case BLACKLIST -> blacklist.contains(type);
-                case WHITELIST -> !whitelist.contains(type);
-                case NONE -> false;
-            };
+            if (mode == ChiseRuleMode.BLACKLIST) return blacklist.contains(type);
+            return mode == ChiseRuleMode.WHITELIST && !whitelist.contains(type);
         }
 
         FilterDecision inspect(EntityType<?> type, String targetId) {

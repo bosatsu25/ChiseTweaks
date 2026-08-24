@@ -163,57 +163,50 @@ final class WorksiteOverlayRenderer {
         int phase = (int) Math.floorMod(pulseFrame + target.pulseSeed(), 8L);
         boolean compact = target.detail() == WorksiteOverlayDetailPolicy.Detail.COMPACT;
 
-        switch (target.presentation().category()) {
-            case TECHNICAL_TRACE -> {
-                int stateColor = target.powered()
-                        ? adjustBrightness(primary, 26)
-                        : primary;
-                int accent = target.powered()
-                        ? adjustBrightness(primary, -42)
-                        : adjustBrightness(primary, 30);
-                if (compact) {
-                    SurfaceLineVisualGeometry.drawCompactFrame(
-                            vertices, pose, target.position(), stateColor, 1.8f);
-                    if (target.tripwireHook()) {
-                        WorldLineGeometry.drawOrientation(
-                                vertices, pose, target.position(), target.orientation(), accent, 1.6f);
-                    }
-                } else {
-                    SurfaceLineVisualGeometry.drawThreadSkin(
-                            vertices,
-                            pose,
-                            target.position(),
-                            target.presentation().details(),
-                            stateColor,
-                            accent,
-                            4.6f);
-                    if (target.tripwireHook()) {
-                        WorldLineGeometry.drawOrientation(
-                                vertices, pose, target.position(), target.orientation(), accent, 2.3f);
-                    }
+        BlockInspectionCategory category = target.presentation().category();
+        if (category == BlockInspectionCategory.TECHNICAL_TRACE) {
+            int stateColor = target.powered() ? adjustBrightness(primary, 26) : primary;
+            int accent = target.powered()
+                    ? adjustBrightness(primary, -42)
+                    : adjustBrightness(primary, 30);
+            if (compact) {
+                SurfaceLineVisualGeometry.drawCompactFrame(
+                        vertices, pose, target.position(), stateColor, 1.8f);
+                if (target.tripwireHook()) {
+                    WorldLineGeometry.drawOrientation(
+                            vertices, pose, target.position(), target.orientation(), accent, 1.6f);
+                }
+            } else {
+                SurfaceLineVisualGeometry.drawThreadSkin(
+                        vertices,
+                        pose,
+                        target.position(),
+                        target.presentation().details(),
+                        stateColor,
+                        accent,
+                        4.6f);
+                if (target.tripwireHook()) {
+                    WorldLineGeometry.drawOrientation(
+                            vertices, pose, target.position(), target.orientation(), accent, 2.3f);
                 }
             }
-            case HIDDEN_SURFACE -> {
-                int accent = adjustBrightness(primary, -44);
-                if (compact) {
-                    SurfaceLineVisualGeometry.drawCompactFrame(
-                            vertices, pose, target.position(), primary, 2.2f);
-                } else {
-                    SurfaceLineVisualGeometry.drawHiddenSurfaceSkin(
-                            vertices, pose, target.position(), primary, accent, 3.0f);
-                }
+        } else if (category == BlockInspectionCategory.HIDDEN_SURFACE) {
+            int accent = adjustBrightness(primary, -44);
+            if (compact) {
+                SurfaceLineVisualGeometry.drawCompactFrame(
+                        vertices, pose, target.position(), primary, 2.2f);
+            } else {
+                SurfaceLineVisualGeometry.drawHiddenSurfaceSkin(
+                        vertices, pose, target.position(), primary, accent, 3.0f);
             }
-            case MATERIAL_HIGHLIGHT -> { }
-            case NETHER_PALETTE -> {
-                if (compact) {
-                    SurfaceLineVisualGeometry.drawCompactFrame(
-                            vertices, pose, target.position(), primary, 1.9f);
-                } else {
-                    SurfaceLineVisualGeometry.drawNetherSkin(
-                            vertices, pose, target.position(), primary, ACCENT_DARK, phase, 2.3f);
-                }
+        } else if (category == BlockInspectionCategory.NETHER_PALETTE) {
+            if (compact) {
+                SurfaceLineVisualGeometry.drawCompactFrame(
+                        vertices, pose, target.position(), primary, 1.9f);
+            } else {
+                SurfaceLineVisualGeometry.drawNetherSkin(
+                        vertices, pose, target.position(), primary, ACCENT_DARK, phase, 2.3f);
             }
-            case NONE -> { }
         }
     }
 

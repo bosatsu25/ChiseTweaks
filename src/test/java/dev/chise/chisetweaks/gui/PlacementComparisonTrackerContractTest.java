@@ -32,8 +32,7 @@ final class PlacementComparisonTrackerContractTest {
         assertTrue(source.contains("hand != InteractionHand.MAIN_HAND"));
         assertTrue(source.contains("level.isLoaded(targetPos)"));
         assertTrue(source.contains("tick - creationTick > EXPIRY_TICKS"));
-        assertTrue(source.contains("!dimension.equals(level.dimension())"));
-        assertTrue(source.contains("stateBeforePlacement"));
+        assertTrue(source.contains("pendingLevel != level"));
         assertFalse(source.contains("List<"));
         assertFalse(source.contains("Map<"));
         for (String forbidden : new String[]{

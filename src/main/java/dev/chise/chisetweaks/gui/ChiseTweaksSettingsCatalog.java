@@ -20,23 +20,30 @@ import java.util.List;
 
 /** 設定画面で使うlocalize済みimmutable row定義を構築する。 */
 final class ChiseTweaksSettingsCatalog {
-    private static final List<String> PROPERTY_GROUPS = List.of(
-            "orientation", "shape", "connection", "interaction", "fluid", "other");
+    private static final String[] PROPERTY_GROUPS = {
+            "orientation", "shape", "connection", "interaction", "fluid", "other"};
     private static final List<ChiseBooleanSetting> RESOURCE_TARGETS = targets("visualTargetMaterial");
     private static final List<ChiseBooleanSetting> TECHNICAL_TARGETS = targets("visualTargetTechnical");
     private static final List<ChiseBooleanSetting> VISIBILITY_TARGETS = targets("visualTargetHidden");
 
     List<ChiseTweaksSettingRowDefinition> rows(ChiseTweaksSettingsController.Surface surface) {
         ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
-        switch (surface == null ? ChiseTweaksSettingsController.Surface.HIGHLIGHT : surface) {
-            case HIGHLIGHT -> addHighlightRows(rows);
-            case FILTER -> addFilterRows(rows);
-            case INSPECTOR -> addInspectorRows(
+        ChiseTweaksSettingsController.Surface resolved = surface == null
+                ? ChiseTweaksSettingsController.Surface.HIGHLIGHT
+                : surface;
+        if (resolved == ChiseTweaksSettingsController.Surface.HIGHLIGHT) {
+            addHighlightRows(rows);
+        } else if (resolved == ChiseTweaksSettingsController.Surface.FILTER) {
+            addFilterRows(rows);
+        } else if (resolved == ChiseTweaksSettingsController.Surface.INSPECTOR) {
+            addInspectorRows(
                     rows,
                     CrosshairInspector.Snapshot.noTarget(),
                     false);
-            case ANALYZER -> addAnalyzerRows(rows);
-            case VISIBILITY -> addVisibilityRows(rows);
+        } else if (resolved == ChiseTweaksSettingsController.Surface.ANALYZER) {
+            addAnalyzerRows(rows);
+        } else {
+            addVisibilityRows(rows);
         }
         return List.copyOf(rows);
     }
@@ -50,13 +57,12 @@ final class ChiseTweaksSettingsCatalog {
     }
 
     String surfaceTitle(ChiseTweaksSettingsController.Surface surface) {
-        return switch (surface == null ? ChiseTweaksSettingsController.Surface.HIGHLIGHT : surface) {
-            case HIGHLIGHT -> "Highlight";
-            case FILTER -> "Filter";
-            case INSPECTOR -> "Inspector";
-            case ANALYZER -> "Analyzer";
-            case VISIBILITY -> "Visibility";
-        };
+        if (surface == ChiseTweaksSettingsController.Surface.FILTER) return "Filter";
+        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) return "Inspector";
+        if (surface == ChiseTweaksSettingsController.Surface.ANALYZER) return "Analyzer";
+        return surface == ChiseTweaksSettingsController.Surface.VISIBILITY
+                ? "Visibility"
+                : "Highlight";
     }
 
     private static void addHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
@@ -246,33 +252,8 @@ final class ChiseTweaksSettingsCatalog {
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             CrosshairInspector.Snapshot placement) {
         header(rows, "placement.title", "screen.chisetweaks.placement.title");
-        if (placement.placementResult() != PlacementComparisonTracker.NONE) {
-            info(rows, "placement.predicted",
-                    text("screen.chisetweaks.placement.predicted"),
-                    semanticProperties(CrosshairInspector.placementStateProperties(
-                            placement.predictedPlacement())));
-            if (placement.actualPlacement() == null) {
-                info(rows, "placement.actual",
-                        text("screen.chisetweaks.placement.actual"),
-                        text("screen.chisetweaks.placement.awaiting_actual"));
-            } else {
-                info(rows, "placement.actual",
-                        text("screen.chisetweaks.placement.actual"),
-                        semanticProperties(CrosshairInspector.placementStateProperties(
-                                placement.actualPlacement())));
-                info(rows, "placement.result",
-                        text("screen.chisetweaks.placement.result"),
-                        text(comparisonResultKey(placement.placementResult())));
-                if (placement.placementResult() == PlacementComparisonTracker.ADJUSTED) {
-                    info(rows, "placement.changed",
-                            text("screen.chisetweaks.placement.changed"),
-                            changedPlacementProperties(
-                                    placement.predictedPlacement(), placement.actualPlacement()));
-                }
-            }
-            return;
-        }
-        if (placement.clickedFace() == null) {
+        boolean comparison = placement.placementResult() != PlacementComparisonTracker.NONE;
+        if (!comparison && placement.clickedFace() == null) {
             info(rows, "placement.none",
                     text("screen.chisetweaks.inspector.none"),
                     "");
@@ -288,9 +269,28 @@ final class ChiseTweaksSettingsCatalog {
         info(rows, "placement.predicted",
                 text("screen.chisetweaks.placement.predicted"),
                 semanticProperties(CrosshairInspector.placementStateProperties(state)));
-        info(rows, "placement.reason",
-                text("screen.chisetweaks.inspector.matched_rule"),
-                placementReason(placement));
+        if (!comparison) {
+            info(rows, "placement.reason",
+                    text("screen.chisetweaks.inspector.matched_rule"),
+                    placementReason(placement));
+        } else if (placement.actualPlacement() == null) {
+            info(rows, "placement.actual",
+                    text("screen.chisetweaks.placement.actual"),
+                    text("screen.chisetweaks.placement.awaiting_actual"));
+        } else {
+            info(rows, "placement.actual",
+                    text("screen.chisetweaks.placement.actual"),
+                    semanticProperties(CrosshairInspector.placementStateProperties(
+                            placement.actualPlacement())));
+            info(rows, "placement.result",
+                    text("screen.chisetweaks.placement.result"),
+                    text(comparisonResultKey(placement.placementResult())));
+            if (placement.placementResult() == PlacementComparisonTracker.ADJUSTED) {
+                info(rows, "placement.changed",
+                        text("screen.chisetweaks.placement.changed"),
+                        changedPlacementProperties(state, placement.actualPlacement()));
+            }
+        }
     }
 
     private static String placementReason(CrosshairInspector.Snapshot placement) {
@@ -347,7 +347,6 @@ final class ChiseTweaksSettingsCatalog {
         StringBuilder result = new StringBuilder();
         for (String property : properties) {
             int separator = property.indexOf('=');
-            if (separator <= 0 || separator == property.length() - 1) continue;
             String name = property.substring(0, separator);
             if (requiredGroup != null && !requiredGroup.equals(semanticPropertyGroup(name))) continue;
             if (!result.isEmpty()) result.append('\n');
@@ -364,7 +363,6 @@ final class ChiseTweaksSettingsCatalog {
         StringBuilder changed = new StringBuilder();
         for (String property : before) {
             int separator = property.indexOf('=');
-            if (separator <= 0) continue;
             String name = property.substring(0, separator);
             String actualProperty = findProperty(after, name);
             if (actualProperty == null || property.equals(actualProperty)) continue;
@@ -375,9 +373,7 @@ final class ChiseTweaksSettingsCatalog {
                     .append(" → ")
                     .append(humanize(actualProperty.substring(actualProperty.indexOf('=') + 1)));
         }
-        return changed.isEmpty()
-                ? text("screen.chisetweaks.placement.changed.other")
-                : changed.toString();
+        return changed.toString();
     }
 
     private static String findProperty(List<String> properties, String name) {
@@ -389,10 +385,8 @@ final class ChiseTweaksSettingsCatalog {
     }
 
     private static String humanize(String token) {
-        String value = token == null ? "" : token.replace('_', ' ');
-        return value.isEmpty()
-                ? value
-                : Character.toUpperCase(value.charAt(0)) + value.substring(1);
+        String value = token.replace('_', ' ');
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
     }
 
     private static String filterReason(BuilderFocusVisibility.FilterDecision decision) {

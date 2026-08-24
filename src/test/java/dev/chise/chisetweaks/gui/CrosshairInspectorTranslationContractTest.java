@@ -54,7 +54,6 @@ final class CrosshairInspectorTranslationContractTest {
             "screen.chisetweaks.placement.result.different",
             "screen.chisetweaks.placement.result.unavailable",
             "screen.chisetweaks.placement.changed",
-            "screen.chisetweaks.placement.changed.other",
             "screen.chisetweaks.placement.reason.upper",
             "screen.chisetweaks.placement.reason.lower",
             "screen.chisetweaks.settings.help.show",

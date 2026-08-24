@@ -65,7 +65,6 @@ final class CrosshairInspector {
     private boolean cachedInNether;
     private long cachedFilterRevision = Long.MIN_VALUE;
     private long cachedOreRevision = Long.MIN_VALUE;
-    private long cachedComparisonRevision = Long.MIN_VALUE;
     private Snapshot snapshot = NO_TARGET;
 
     Snapshot snapshot() {
@@ -124,8 +123,7 @@ final class CrosshairInspector {
         long filterRevision = BuilderFocusVisibility.revision();
         long oreRevision = OreHighlightResolver.revision();
         PlacementComparisonTracker comparison = PlacementComparisonTracker.activeAt(
-                client.level.dimension(), hit.getBlockPos());
-        long comparisonRevision = comparison == null ? Long.MIN_VALUE : comparison.revision;
+                client.level, hit.getBlockPos());
         ItemStack stack = client.player == null ? null : client.player.getMainHandItem();
         boolean placementAvailable = stack != null
                 && stack.getItem() instanceof BlockItem item
@@ -155,7 +153,6 @@ final class CrosshairInspector {
                 && cachedInNether == inNether
                 && cachedFilterRevision == filterRevision
                 && cachedOreRevision == oreRevision
-                && cachedComparisonRevision == comparisonRevision
                 && snapshot.predictedPlacement() == predictedPlacement
                 && snapshot.actualPlacement() == actualPlacement
                 && snapshot.placementResult() == placementResult
@@ -173,7 +170,6 @@ final class CrosshairInspector {
         cachedInNether = inNether;
         cachedFilterRevision = filterRevision;
         cachedOreRevision = oreRevision;
-        cachedComparisonRevision = comparisonRevision;
         snapshot = blockSnapshot(
                 state,
                 featureMask,

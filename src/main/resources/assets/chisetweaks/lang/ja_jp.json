@@ -263,7 +263,6 @@
   "screen.chisetweaks.placement.result.different": "異なる状態",
   "screen.chisetweaks.placement.result.unavailable": "比較不可",
   "screen.chisetweaks.placement.changed": "変化した項目",
-  "screen.chisetweaks.placement.changed.other": "その他の状態プロパティが変化しました",
   "screen.chisetweaks.placement.reason.upper": "クリック面=%s\n高さ=上半分",
   "screen.chisetweaks.placement.reason.lower": "クリック面=%s\n高さ=下半分",
   "screen.chisetweaks.help.title": "クイックヘルプ",
