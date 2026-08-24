@@ -33,14 +33,9 @@ record ChiseTweaksSettingRowDefinition(
                 Kind.HEADER, SettingRowId.of(id), name, "", null, null, 0, null, "");
     }
 
-    static ChiseTweaksSettingRowDefinition headerAction(
-            String id,
-            String name,
-            Action action,
-            String actionLabel) {
+    static ChiseTweaksSettingRowDefinition info(String id, String name, String description) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.HEADER, SettingRowId.of(id), name, "", null, null, 0, action,
-                actionLabel == null ? "" : actionLabel);
+                Kind.INFO, SettingRowId.of(id), name, description, null, null, 0, null, "");
     }
 
     static ChiseTweaksSettingRowDefinition bool(
@@ -84,15 +79,13 @@ record ChiseTweaksSettingRowDefinition(
 
     enum Kind {
         HEADER,
+        INFO,
         BOOLEAN,
         INTEGER,
         ACTION
     }
 
     enum Action {
-        OPEN_HIGHLIGHT_DETAILS,
-        OPEN_VISUAL_FILTER_DETAILS,
-        OPEN_LAVA_DETAILS,
         EDIT_BLOCK_FILTER,
         EDIT_ENTITY_FILTER,
         EDIT_ORE_COMPAT

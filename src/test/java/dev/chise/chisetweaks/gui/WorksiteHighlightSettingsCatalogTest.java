@@ -28,10 +28,10 @@ final class WorksiteHighlightSettingsCatalogTest {
     }
 
     @Test
-    void highlightDetailsExposePhaseTwoAppearanceAndDimensionControls() {
+    void highlightTabExposesAppearanceAndDimensionControls() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
-                ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
+                ChiseTweaksSettingsController.Surface.HIGHLIGHT);
 
         assertSame(LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS,
                 row(rows, "highlightDimensionPresets").booleanConfig());
@@ -54,7 +54,7 @@ final class WorksiteHighlightSettingsCatalogTest {
     void fineThreadAndHiddenSurfaceTargetSelectionRemainAvailable() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
-                ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
+                ChiseTweaksSettingsController.Surface.HIGHLIGHT);
 
         assertTrue(rows.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwire")));
         assertTrue(rows.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwireHook")));
@@ -65,7 +65,7 @@ final class WorksiteHighlightSettingsCatalogTest {
     }
 
     @Test
-    void highlightResetRestoresPhaseTwoControlsAndTraceTargetsToSafeDefaults() {
+    void highlightResetRestoresControlsAndTraceTargetsToSafeDefaults() {
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
         config.worksiteVisibilityDimensionPresetsEnabled = true;
         config.fineThreadTraceColorPreset = 7;
@@ -80,7 +80,7 @@ final class WorksiteHighlightSettingsCatalogTest {
                 config.visualTargetMask, Target.HIDDEN_BLUE_ICE, false);
 
         var controller = new ChiseTweaksSettingsController();
-        controller.reset(ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
+        controller.reset(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
 
         assertFalse(config.worksiteVisibilityDimensionPresetsEnabled);
         assertEquals(-1, config.fineThreadTraceColorPreset);

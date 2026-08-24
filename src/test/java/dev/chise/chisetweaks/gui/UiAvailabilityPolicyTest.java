@@ -8,39 +8,55 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class UiAvailabilityPolicyTest {
     @Test
-    void mainSurfaceAllowsAllReleasedRows() {
+    void releasedSettingTabsAllowTheirInteractiveRows() {
         var controller = new ChiseTweaksSettingsController();
-        for (ChiseTweaksSettingRowDefinition row : controller.rows()) {
-            assertTrue(UiAvailabilityPolicy.isRowInteractive(
-                    ChiseTweaksSettingsController.Surface.MAIN, row), row.id());
+        for (ChiseTweaksSettingsController.Surface surface : new ChiseTweaksSettingsController.Surface[]{
+                ChiseTweaksSettingsController.Surface.HIGHLIGHT,
+                ChiseTweaksSettingsController.Surface.VISUAL_FILTER,
+                ChiseTweaksSettingsController.Surface.ANALYZER,
+                ChiseTweaksSettingsController.Surface.VISIBILITY}) {
+            for (ChiseTweaksSettingRowDefinition row : controller.rows(surface)) {
+                if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) continue;
+                assertTrue(UiAvailabilityPolicy.isRowInteractive(surface, row), row.id());
+            }
         }
     }
 
     @Test
-    void detailSurfacesKeepTheirActionBoundaries() {
+    void helpRowsAreDisplayOnly() {
+        var controller = new ChiseTweaksSettingsController();
+        for (ChiseTweaksSettingRowDefinition row : controller.rows(ChiseTweaksSettingsController.Surface.HELP)) {
+            if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) continue;
+            assertFalse(UiAvailabilityPolicy.isRowInteractive(
+                    ChiseTweaksSettingsController.Surface.HELP, row), row.id());
+        }
+    }
+
+    @Test
+    void tabActionsStayInsideTheirOwningCategory() {
         assertTrue(UiAvailabilityPolicy.isActionInteractive(
-                ChiseTweaksSettingsController.Surface.MAIN,
-                ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS));
+                ChiseTweaksSettingsController.Surface.HIGHLIGHT,
+                ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT));
         assertFalse(UiAvailabilityPolicy.isActionInteractive(
-                ChiseTweaksSettingsController.Surface.MAIN,
+                ChiseTweaksSettingsController.Surface.HIGHLIGHT,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER));
         assertTrue(UiAvailabilityPolicy.isActionInteractive(
-                ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS,
-                ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT));
+                ChiseTweaksSettingsController.Surface.VISUAL_FILTER,
+                ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER));
         assertTrue(UiAvailabilityPolicy.isActionInteractive(
-                ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS,
+                ChiseTweaksSettingsController.Surface.VISUAL_FILTER,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER));
         assertFalse(UiAvailabilityPolicy.isActionInteractive(
-                ChiseTweaksSettingsController.Surface.LAVA_DETAILS,
+                ChiseTweaksSettingsController.Surface.ANALYZER,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT));
     }
 
     @Test
     void nullRowsAndActionsAreNotInteractive() {
         assertFalse(UiAvailabilityPolicy.isRowInteractive(
-                ChiseTweaksSettingsController.Surface.MAIN, null));
+                ChiseTweaksSettingsController.Surface.HIGHLIGHT, null));
         assertFalse(UiAvailabilityPolicy.isActionInteractive(
-                ChiseTweaksSettingsController.Surface.MAIN, null));
+                ChiseTweaksSettingsController.Surface.HIGHLIGHT, null));
     }
 
     @Test

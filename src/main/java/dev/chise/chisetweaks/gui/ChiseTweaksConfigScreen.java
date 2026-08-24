@@ -11,29 +11,27 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 public final class ChiseTweaksConfigScreen extends Screen {
     private final ChiseTweaksSettingsController controller;
-    private final ChiseTweaksSettingsController.Surface surface;
-    private final ArrayList<ChiseTweaksSettingRowView> rows = new ArrayList<>();
-    private final EnumSet<SettingPersistence> dirtyDomains =
-            EnumSet.noneOf(SettingPersistence.class);
+    private final EnumMap<ChiseTweaksSettingsController.Surface, ArrayList<ChiseTweaksSettingRowView>> rowsBySurface =
+            new EnumMap<>(ChiseTweaksSettingsController.Surface.class);
+    private final EnumSet<SettingPersistence> dirtyDomains = EnumSet.noneOf(SettingPersistence.class);
+    private final ArrayList<Button> tabButtons = new ArrayList<>();
     private Screen parent;
+    private ChiseTweaksSettingsController.Surface surface = ChiseTweaksSettingsController.Surface.HIGHLIGHT;
     private ChiseTweaksSettingsLayout.Geometry geometry;
-    private Button applyButton;
+    private Button contextButton;
     private String persistenceFeedback = "";
     private int scrollOffset;
     private int maxScroll;
 
     public ChiseTweaksConfigScreen() {
-        this(ChiseTweaksSettingsController.Surface.MAIN);
-    }
-
-    private ChiseTweaksConfigScreen(ChiseTweaksSettingsController.Surface surface) {
         super(Component.literal(ChiseTweaksMetadata.MOD_NAME));
-        this.surface = surface == null ? ChiseTweaksSettingsController.Surface.MAIN : surface;
         this.controller = ChiseTweaksSettingsController.forCurrentLanguage();
     }
 
@@ -46,50 +44,42 @@ public final class ChiseTweaksConfigScreen extends Screen {
         super.init();
         controller.initialize();
         geometry = ChiseTweaksSettingsLayout.calculate(width, height);
+        createTabs();
         createFooter();
-        createRows();
-        updateRowPositions();
-        refreshRowButtons();
+        createAllRows();
+        selectSurface(surface, false);
     }
 
     @Override
     public void tick() {
         super.tick();
-        // 非同期resource reloadのrollbackなど、画面外で変化した実効値も次tickでUIへ反映する。
         refreshRowButtons();
     }
 
-    private void createFooter() {
-        var help = geometry.helpButton();
-        var reset = geometry.resetButton();
-        var apply = geometry.applyButton();
-        var done = geometry.doneButton();
-        if (surface == ChiseTweaksSettingsController.Surface.MAIN) {
-            addRenderableWidget(Button.builder(
-                    Component.translatable("screen.chisetweaks.settings.guide"),
-                    ignored -> openHelp())
-                    .bounds(help.x(), help.y(), help.width(), help.height())
+    private void createTabs() {
+        tabButtons.clear();
+        ChiseTweaksSettingsController.Surface[] surfaces = ChiseTweaksSettingsController.Surface.values();
+        List<ChiseTweaksSettingsLayout.Rect> tabs = geometry.tabs();
+        for (int index = 0; index < surfaces.length; index++) {
+            ChiseTweaksSettingsController.Surface target = surfaces[index];
+            ChiseTweaksSettingsLayout.Rect bounds = tabs.get(index);
+            Button tab = addRenderableWidget(Button.builder(
+                    Component.literal(controller.surfaceTitle(target)),
+                    ignored -> selectSurface(target, true))
+                    .bounds(bounds.x(), bounds.y(), bounds.width(), bounds.height())
                     .build());
-        } else {
-            addRenderableWidget(Button.builder(
-                    Component.translatable("screen.chisetweaks.common.back"),
-                    ignored -> onClose())
-                    .bounds(help.x(), help.y(), help.width(), help.height())
-                    .build());
+            tabButtons.add(tab);
         }
-        addRenderableWidget(Button.builder(
-                Component.translatable(surface == ChiseTweaksSettingsController.Surface.MAIN
-                        ? "screen.chisetweaks.settings.reset_all"
-                        : "screen.chisetweaks.settings.reset"),
-                ignored -> resetCurrentSurface())
-                .bounds(reset.x(), reset.y(), reset.width(), reset.height())
+    }
+
+    private void createFooter() {
+        var context = geometry.contextButton();
+        var done = geometry.doneButton();
+        contextButton = addRenderableWidget(Button.builder(
+                Component.literal("設定をリセット"),
+                ignored -> runContextAction())
+                .bounds(context.x(), context.y(), context.width(), context.height())
                 .build());
-        applyButton = addRenderableWidget(Button.builder(
-                Component.translatable("screen.chisetweaks.settings.apply"),
-                ignored -> applyChanges())
-                .bounds(apply.x(), apply.y(), apply.width(), apply.height())
-                .build());
-        applyButton.active = hasDirtyDomains();
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.chisetweaks.settings.done"),
                 ignored -> onClose())
@@ -97,31 +87,43 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 .build());
     }
 
-    private void createRows() {
-        rows.clear();
-        for (ChiseTweaksSettingRowDefinition definition : controller.rows(surface)) {
-            rows.add(createRow(definition));
+    private void createAllRows() {
+        rowsBySurface.clear();
+        for (ChiseTweaksSettingsController.Surface candidate : ChiseTweaksSettingsController.Surface.values()) {
+            ArrayList<ChiseTweaksSettingRowView> views = new ArrayList<>();
+            for (ChiseTweaksSettingRowDefinition definition : controller.rows(candidate)) {
+                ChiseTweaksSettingRowView row = createRow(candidate, definition);
+                row.renderVisible = false;
+                row.setWidgetsVisible(false);
+                views.add(row);
+            }
+            rowsBySurface.put(candidate, views);
         }
     }
 
-    private ChiseTweaksSettingRowView createRow(ChiseTweaksSettingRowDefinition definition) {
+    private ChiseTweaksSettingRowView createRow(
+            ChiseTweaksSettingsController.Surface owner,
+            ChiseTweaksSettingRowDefinition definition) {
         ChiseTweaksSettingRowView row = switch (definition.kind()) {
-            case HEADER -> createHeaderRow(definition);
+            case HEADER -> ChiseTweaksSettingRowView.header(definition, null);
+            case INFO -> new ChiseTweaksSettingRowView(definition, null, null, null, null);
             case BOOLEAN -> createBooleanRow(definition);
             case INTEGER -> createIntegerRow(definition);
             case ACTION -> createActionRow(definition);
         };
-        applyAvailabilityInteractivity(row);
+        applyAvailabilityInteractivity(owner, row);
         return row;
     }
 
-    private void applyAvailabilityInteractivity(ChiseTweaksSettingRowView row) {
-        boolean rowInteractive = UiAvailabilityPolicy.isRowInteractive(surface, row.definition);
+    private void applyAvailabilityInteractivity(
+            ChiseTweaksSettingsController.Surface owner,
+            ChiseTweaksSettingRowView row) {
+        boolean rowInteractive = UiAvailabilityPolicy.isRowInteractive(owner, row.definition);
         boolean actionInteractive = row.definition.action() != null
-                && UiAvailabilityPolicy.isActionInteractive(surface, row.definition.action());
+                && UiAvailabilityPolicy.isActionInteractive(owner, row.definition.action());
         switch (row.definition.kind()) {
-            case HEADER -> {
-                if (row.primary != null) row.primary.active = actionInteractive;
+            case HEADER, INFO -> {
+                // 描画のみ。
             }
             case BOOLEAN -> {
                 if (row.primary != null) row.primary.active = rowInteractive;
@@ -135,15 +137,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 if (row.primary != null) row.primary.active = actionInteractive;
             }
         }
-    }
-
-    private ChiseTweaksSettingRowView createHeaderRow(ChiseTweaksSettingRowDefinition definition) {
-        Button actionButton = definition.action() == null ? null : addRenderableWidget(Button.builder(
-                Component.literal(definition.actionLabel()), ignored -> runRowAction(definition.action()))
-                .bounds(0, 0, geometry.headerAction().width(), 18)
-                .build());
-        if (actionButton != null) actionButton.visible = false;
-        return ChiseTweaksSettingRowView.header(definition, actionButton);
     }
 
     private ChiseTweaksSettingRowView createBooleanRow(ChiseTweaksSettingRowDefinition definition) {
@@ -190,9 +183,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
         if (!UiAvailabilityPolicy.isActionInteractive(surface, action)) return;
         if (minecraft == null || action == null || !applyChanges()) return;
         switch (action) {
-            case OPEN_HIGHLIGHT_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.HIGHLIGHT_DETAILS);
-            case OPEN_VISUAL_FILTER_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.VISUAL_FILTER_DETAILS);
-            case OPEN_LAVA_DETAILS -> openDetail(ChiseTweaksSettingsController.Surface.LAVA_DETAILS);
             case EDIT_BLOCK_FILTER -> minecraft.setScreen(new ChiseSceneFilterEditorScreen(
                     this, ChiseSceneFilterEditorScreen.Target.BLOCKS));
             case EDIT_ENTITY_FILTER -> minecraft.setScreen(new ChiseSceneFilterEditorScreen(
@@ -201,16 +191,30 @@ public final class ChiseTweaksConfigScreen extends Screen {
         }
     }
 
-    private void openDetail(ChiseTweaksSettingsController.Surface target) {
-        if (minecraft == null) return;
-        ChiseTweaksConfigScreen detail = new ChiseTweaksConfigScreen(target);
-        detail.setParent(this);
-        minecraft.setScreen(detail);
+    private void selectSurface(ChiseTweaksSettingsController.Surface target, boolean resetScroll) {
+        if (target == null) return;
+        for (ArrayList<ChiseTweaksSettingRowView> views : rowsBySurface.values()) {
+            for (ChiseTweaksSettingRowView row : views) {
+                row.renderVisible = false;
+                row.setWidgetsVisible(false);
+            }
+        }
+        surface = target;
+        if (resetScroll) scrollOffset = 0;
+        maxScroll = 0;
+        for (int index = 0; index < tabButtons.size(); index++) {
+            tabButtons.get(index).active = ChiseTweaksSettingsController.Surface.values()[index] != surface;
+        }
+        updateRowPositions();
+        refreshRowButtons();
     }
 
-    private void openHelp() {
-        if (minecraft == null || !applyChanges()) return;
-        minecraft.setScreen(new ChiseTweaksHelpScreen(this));
+    private void runContextAction() {
+        if (hasDirtyDomains()) {
+            applyChanges();
+            return;
+        }
+        resetCurrentSurface();
     }
 
     private void resetCurrentSurface() {
@@ -286,21 +290,12 @@ public final class ChiseTweaksConfigScreen extends Screen {
         extractor.fill(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xC8121212);
         extractor.fill(panel.x(), panel.y(), panel.right(), panel.y() + 1, 0xFF808080);
         extractor.fill(panel.x(), panel.bottom() - 1, panel.right(), panel.bottom(), 0xFF4C4C4C);
-        for (ChiseTweaksSettingRowView row : rows) {
+        for (ChiseTweaksSettingRowView row : selectedRows()) {
             if (!row.renderVisible || row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) continue;
             int y = row.screenY;
-            extractor.fill(
-                    panel.x() + 8,
-                    y,
-                    panel.right() - 24,
-                    y + geometry.rowHeight() - 2,
-                    0x8A202020);
-            extractor.fill(
-                    panel.x() + 8,
-                    y + geometry.rowHeight() - 3,
-                    panel.right() - 24,
-                    y + geometry.rowHeight() - 2,
-                    0x553F3F3F);
+            int height = rowHeight(row.definition);
+            extractor.fill(panel.x() + 8, y, panel.right() - 24, y + height - 2, 0x8A202020);
+            extractor.fill(panel.x() + 8, y + height - 3, panel.right() - 24, y + height - 2, 0x553F3F3F);
         }
     }
 
@@ -308,19 +303,17 @@ public final class ChiseTweaksConfigScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float delta) {
         super.extractRenderState(extractor, mouseX, mouseY, delta);
         if (geometry == null) return;
-        String detailTitle = controller.surfaceTitle(surface);
-        String title = ChiseTweaksMetadata.MOD_NAME + " " + ChiseTweaksMetadata.MOD_VERSION
-                + (detailTitle.isEmpty() ? "" : " - " + detailTitle);
-        extractor.text(font, title, geometry.content().x(), 14, 0xFFFFFFFF);
-        for (ChiseTweaksSettingRowView row : rows) {
+        extractor.text(font, ChiseTweaksMetadata.MOD_NAME, geometry.content().x(), 14, 0xFFFFFFFF);
+        for (ChiseTweaksSettingRowView row : selectedRows()) {
             if (!row.renderVisible) continue;
             if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
-                extractor.text(
-                        font,
-                        row.definition.name(),
-                        geometry.panel().x() + 12,
-                        row.screenY + 7,
-                        0xFF78AFFF);
+                extractor.text(font, row.definition.name(), geometry.panel().x() + 12,
+                        row.screenY + 7, 0xFF78AFFF);
+                continue;
+            }
+            if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO) {
+                extractor.text(font, row.definition.name(), geometry.nameX(), row.screenY + 6, 0xFFFFFFFF);
+                extractor.text(font, row.definition.description(), geometry.nameX(), row.screenY + 20, 0xFFB8B8B8);
                 continue;
             }
             int y = row.screenY + Math.max(0, (geometry.rowHeight() - font.lineHeight) / 2);
@@ -328,17 +321,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
             extractor.text(font, row.definition.name(), geometry.nameX(), y, color);
         }
         if (!persistenceFeedback.isEmpty()) {
-            extractor.centeredText(
-                    font,
-                    Component.literal(persistenceFeedback),
-                    width / 2,
-                    Math.max(24, height - 48),
-                    0xFFFFD166);
+            extractor.centeredText(font, Component.literal(persistenceFeedback), width / 2,
+                    Math.max(24, height - 48), 0xFFFFD166);
         }
         renderScrollbar(extractor);
     }
 
     private boolean rowTextInteractive(ChiseTweaksSettingRowDefinition definition) {
+        if (definition.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO) return true;
         if (definition.kind() == ChiseTweaksSettingRowDefinition.Kind.ACTION) {
             return UiAvailabilityPolicy.isActionInteractive(surface, definition.action());
         }
@@ -367,41 +357,42 @@ public final class ChiseTweaksConfigScreen extends Screen {
         int contentHeight = contentHeight();
         maxScroll = Math.max(0, contentHeight - viewport);
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
-        for (ChiseTweaksSettingRowView row : rows) {
+        for (ChiseTweaksSettingRowView row : selectedRows()) {
             row.renderVisible = false;
             row.setWidgetsVisible(false);
         }
         int offset = 0;
-        for (ChiseTweaksSettingRowView row : rows) {
-            int rowHeight = row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER
-                    ? geometry.headerHeight()
-                    : geometry.rowHeight();
+        for (ChiseTweaksSettingRowView row : selectedRows()) {
+            int height = rowHeight(row.definition);
             int y = viewportTop + offset - scrollOffset;
             row.screenY = y;
-            row.renderVisible = y >= viewportTop && y + rowHeight <= viewportBottom;
+            row.renderVisible = y >= viewportTop && y + height <= viewportBottom;
             if (row.renderVisible) positionWidgets(row, y);
-            offset += rowHeight;
+            offset += height;
         }
     }
 
     private int contentHeight() {
         int contentHeight = 0;
-        for (ChiseTweaksSettingRowView row : rows) {
-            contentHeight += row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER
-                    ? geometry.headerHeight()
-                    : geometry.rowHeight();
+        for (ChiseTweaksSettingRowView row : selectedRows()) {
+            contentHeight += rowHeight(row.definition);
         }
         return contentHeight;
+    }
+
+    private int rowHeight(ChiseTweaksSettingRowDefinition definition) {
+        return switch (definition.kind()) {
+            case HEADER -> geometry.headerHeight();
+            case INFO -> geometry.infoRowHeight();
+            case BOOLEAN, INTEGER, ACTION -> geometry.rowHeight();
+        };
     }
 
     private void positionWidgets(ChiseTweaksSettingRowView row, int y) {
         int controlY = y + Math.max(0, (geometry.rowHeight() - 18) / 2);
         switch (row.definition.kind()) {
-            case HEADER -> {
-                if (row.primary != null) {
-                    row.primary.setPosition(geometry.headerAction().x(), y + 3);
-                    row.primary.visible = true;
-                }
+            case HEADER, INFO -> {
+                // 表示テキストのみ。
             }
             case BOOLEAN -> {
                 row.primary.setPosition(geometry.toggleX(), controlY);
@@ -425,7 +416,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private void refreshRowButtons() {
-        for (ChiseTweaksSettingRowView row : rows) {
+        for (ChiseTweaksSettingRowView row : selectedRows()) {
             if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.BOOLEAN
                     && row.primary != null
                     && row.definition.booleanConfig() != null) {
@@ -433,11 +424,20 @@ public final class ChiseTweaksConfigScreen extends Screen {
             } else if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.INTEGER
                     && row.value != null
                     && row.definition.integerConfig() != null) {
-                row.value.setMessage(Component.literal(
-                        row.definition.integerConfig().getFormattedValue()));
+                row.value.setMessage(Component.literal(row.definition.integerConfig().getFormattedValue()));
             }
         }
-        if (applyButton != null) applyButton.active = hasDirtyDomains();
+        if (contextButton != null) {
+            boolean dirty = hasDirtyDomains();
+            contextButton.setMessage(Component.literal(dirty ? "設定を適用" : "設定をリセット"));
+            contextButton.visible = dirty || surface != ChiseTweaksSettingsController.Surface.HELP;
+            contextButton.active = contextButton.visible;
+        }
+    }
+
+    private List<ChiseTweaksSettingRowView> selectedRows() {
+        ArrayList<ChiseTweaksSettingRowView> rows = rowsBySurface.get(surface);
+        return rows == null ? List.of() : rows;
     }
 
     private static String text(String key) {

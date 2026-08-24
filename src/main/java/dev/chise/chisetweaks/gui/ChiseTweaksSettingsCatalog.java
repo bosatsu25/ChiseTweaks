@@ -23,73 +23,41 @@ final class ChiseTweaksSettingsCatalog {
 
     List<ChiseTweaksSettingRowDefinition> rows(ChiseTweaksSettingsController.Surface surface) {
         ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
-        switch (surface == null ? ChiseTweaksSettingsController.Surface.MAIN : surface) {
-            case MAIN -> addMainRows(rows);
-            case HIGHLIGHT_DETAILS -> addHighlightDetailRows(rows);
-            case VISUAL_FILTER_DETAILS -> addVisualFilterDetailRows(rows);
-            case LAVA_DETAILS -> addAnalyzerDetailRows(rows);
+        switch (surface == null ? ChiseTweaksSettingsController.Surface.HIGHLIGHT : surface) {
+            case HIGHLIGHT -> addHighlightRows(rows);
+            case VISUAL_FILTER -> addVisualFilterRows(rows);
+            case ANALYZER -> addAnalyzerRows(rows);
+            case VISIBILITY -> addVisibilityRows(rows);
+            case HELP -> addHelpRows(rows);
         }
         return List.copyOf(rows);
     }
 
     String surfaceTitle(ChiseTweaksSettingsController.Surface surface) {
-        return switch (surface == null ? ChiseTweaksSettingsController.Surface.MAIN : surface) {
-            case MAIN -> "";
-            case HIGHLIGHT_DETAILS -> text("screen.chisetweaks.settings.title.highlight");
-            case VISUAL_FILTER_DETAILS -> text("screen.chisetweaks.settings.section.visual_filter");
-            case LAVA_DETAILS -> text("screen.chisetweaks.settings.title.analyzer");
+        return switch (surface == null ? ChiseTweaksSettingsController.Surface.HIGHLIGHT : surface) {
+            case HIGHLIGHT -> "Highlight";
+            case VISUAL_FILTER -> "Visual Filter";
+            case ANALYZER -> "Analyzer";
+            case VISIBILITY -> "Visibility";
+            case HELP -> "使い方";
         };
     }
 
-    private static void addMainRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        rows.add(ChiseTweaksSettingRowDefinition.headerAction(
-                "header.highlight",
-                "Highlight",
-                ChiseTweaksSettingRowDefinition.Action.OPEN_HIGHLIGHT_DETAILS,
-                text("screen.chisetweaks.settings.action.settings")));
-        compactFeature(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
-                FeatureDefinition.MATERIAL_HIGHLIGHTS);
-        compactFeature(rows, "nether", FeatureSwitches.NETHER_PALETTE,
-                FeatureDefinition.NETHER_PALETTE);
-        compactFeature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE,
-                FeatureDefinition.FINE_THREAD_TRACE);
-        compactFeature(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
-                FeatureDefinition.HIDDEN_SURFACE_TRACE);
-        compactFeature(rows, "glass", FeatureSwitches.GLASS_INSPECTION,
-                FeatureDefinition.GLASS_INSPECTION);
-        compactFeature(rows, "kelp", FeatureSwitches.KELP_HIGHLIGHT,
-                FeatureDefinition.KELP_HIGHLIGHT);
+    private static void addHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "header.highlight", "Highlight");
+        feature(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
+                FeatureDefinition.MATERIAL_HIGHLIGHTS, "config.comment.materialhighlights");
+        feature(rows, "nether", FeatureSwitches.NETHER_PALETTE,
+                FeatureDefinition.NETHER_PALETTE, "config.comment.netherpalette");
+        feature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE,
+                FeatureDefinition.FINE_THREAD_TRACE, "config.comment.finethreadtrace");
+        feature(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
+                FeatureDefinition.HIDDEN_SURFACE_TRACE, "config.comment.hiddensurfacetrace");
+        feature(rows, "glass", FeatureSwitches.GLASS_INSPECTION,
+                FeatureDefinition.GLASS_INSPECTION, "config.comment.glassinspection");
+        feature(rows, "kelp", FeatureSwitches.KELP_HIGHLIGHT,
+                FeatureDefinition.KELP_HIGHLIGHT, "config.comment.kelphighlight");
 
-        rows.add(ChiseTweaksSettingRowDefinition.headerAction(
-                "header.visualFilter",
-                "Visual Filter",
-                ChiseTweaksSettingRowDefinition.Action.OPEN_VISUAL_FILTER_DETAILS,
-                text("screen.chisetweaks.settings.action.settings")));
-        compactFeature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
-                FeatureDefinition.BUILDER_FOCUS_BLOCKS);
-        compactFeature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
-                FeatureDefinition.BUILDER_FOCUS_ENTITIES);
-
-        rows.add(ChiseTweaksSettingRowDefinition.headerAction(
-                "header.analyzer",
-                "Analyzer",
-                ChiseTweaksSettingRowDefinition.Action.OPEN_LAVA_DETAILS,
-                text("screen.chisetweaks.settings.action.settings")));
-        boolLiteral(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
-                "Lava Analyzer", "Analyze nearby lava source blocks in already-loaded chunks");
-        boolLiteral(rows, "ancientDebrisAnalyzer", LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
-                "Ancient Debris Analyzer", "Analyze Ancient Debris in already-loaded Nether chunks");
-
-        headerLiteral(rows, "header.visibilityImprovement", "Visibility");
-        boolLiteral(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
-                "Low Fire", "Lower the first-person fire overlay");
-        boolLiteral(rows, "chestVisibility", ChestVisibilitySetting.INSTANCE,
-                "Bright Chest", "Use the bright high-visibility chest texture");
-        boolLiteral(rows, "whiteConcreteVisibility", WhiteConcreteVisibilitySetting.INSTANCE,
-                "Bright Concrete", "Use the high-visibility white concrete texture");
-    }
-
-    private static void addHighlightDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         header(rows, "detail.highlight.general", "screen.chisetweaks.settings.section.shared");
         bool(rows, "oreMotion", LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION,
                 "screen.chisetweaks.settings.ore_motion.name",
@@ -115,29 +83,29 @@ final class ChiseTweaksSettingsCatalog {
                 "config.option.localworksitevisibilityworldoverlay.comment");
         boolLiteral(rows, "highlightDimensionPresets",
                 LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS,
-                "Dimension preset / ディメンションプリセット",
-                "Auto-switch to a smaller, higher-contrast Nether profile / ネザーでは範囲を少し抑えた高コントラスト表示へ自動切替");
+                "Dimension Preset",
+                "Automatically use the bounded Nether visibility profile when appropriate.");
 
-        headerLiteral(rows, "detail.highlight.traceAppearance", "Trace appearance / 表示スタイル");
+        headerLiteral(rows, "detail.highlight.traceAppearance", "Trace Appearance");
         integerLiteral(rows, "fineThreadColor",
                 LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET,
-                text(FeatureDefinition.FINE_THREAD_TRACE.nameKey()) + " - Color / 色",
-                "AUTO keeps the current Chise palette / AUTOは現在のChise配色を維持", 1);
+                "Fine Line Highlight - Color",
+                "AUTO keeps the current Chise palette.", 1);
         integerLiteral(rows, "fineThreadOpacity",
                 LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
-                text(FeatureDefinition.FINE_THREAD_TRACE.nameKey()) + " - Opacity / 不透明度",
+                "Fine Line Highlight - Opacity",
                 "20-100%", 5);
         integerLiteral(rows, "hiddenSurfaceColor",
                 LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
-                text(FeatureDefinition.HIDDEN_SURFACE_TRACE.nameKey()) + " - Color / 色",
-                "AUTO keeps per-target colors / AUTOは対象別の既定色を維持", 1);
+                "Hidden Block Highlight - Color",
+                "AUTO keeps per-target colors.", 1);
         integerLiteral(rows, "hiddenSurfaceOpacity",
                 LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
-                text(FeatureDefinition.HIDDEN_SURFACE_TRACE.nameKey()) + " - Opacity / 不透明度",
+                "Hidden Block Highlight - Opacity",
                 "20-100%", 5);
 
-        headerLiteral(rows, "detail.highlight.technicalTargets", "Fine Thread targets / 細線対象");
-        for (ChiseBooleanSetting option : TECHNICAL_TARGETS) targetLiteral(rows, option);
+        headerLiteral(rows, "detail.highlight.technicalTargets", "Fine Line Targets");
+        for (ChiseBooleanSetting option : TECHNICAL_TARGETS) target(rows, option);
 
         header(rows, "detail.highlight.materialTargets", "screen.chisetweaks.settings.section.material_targets");
         for (ChiseBooleanSetting option : RESOURCE_TARGETS) target(rows, option);
@@ -146,23 +114,39 @@ final class ChiseTweaksSettingsCatalog {
         for (ChiseBooleanSetting option : VISIBILITY_TARGETS) target(rows, option);
     }
 
-    private static void addVisualFilterDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "detail.visualFilter.behavior", "Visual Filter / 表示フィルター");
+    private static void addVisualFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "header.visualFilter", "Visual Filter");
+        feature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
+                FeatureDefinition.BUILDER_FOCUS_BLOCKS, "config.comment.builderfocusblocks");
+        feature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
+                FeatureDefinition.BUILDER_FOCUS_ENTITIES, "config.comment.builderfocusentities");
+
+        headerLiteral(rows, "detail.visualFilter.behavior", "Filter Settings");
         bool(rows, "refreshRenderer", BuilderFocusConfig.REFRESH_RENDERER,
                 "config.option.refreshbuilderfocusrenderer.name",
                 "config.option.refreshbuilderfocusrenderer.comment");
         action(rows, "editBlockFilter",
-                FeatureDefinition.BUILDER_FOCUS_BLOCKS.nameKey(),
-                "config.comment.builderfocusblocks",
-                ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER);
+                FeatureDefinition.BUILDER_FOCUS_BLOCKS.englishName(),
+                text("config.comment.builderfocusblocks"),
+                ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER,
+                text("screen.chisetweaks.settings.action.settings"));
         action(rows, "editEntityFilter",
-                FeatureDefinition.BUILDER_FOCUS_ENTITIES.nameKey(),
-                "config.comment.builderfocusentities",
-                ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
+                FeatureDefinition.BUILDER_FOCUS_ENTITIES.englishName(),
+                text("config.comment.builderfocusentities"),
+                ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER,
+                text("screen.chisetweaks.settings.action.settings"));
     }
 
-    private static void addAnalyzerDetailRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "detail.analyzer.lava", "Lava Analyzer");
+    private static void addAnalyzerRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "header.analyzer", "Analyzer");
+        boolLiteral(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
+                FeatureDefinition.LAVA_HIGHLIGHT.englishName(),
+                text("config.comment.locallavahighlight"));
+        boolLiteral(rows, "ancientDebrisAnalyzer", LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
+                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.englishName(),
+                text("config.comment.localancientdebrisanalyzer"));
+
+        headerLiteral(rows, "detail.analyzer.lava", "Lava Analyzer Settings");
         integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 "screen.chisetweaks.settings.lava_range.name",
                 "screen.chisetweaks.settings.lava_range.description", 1);
@@ -176,13 +160,40 @@ final class ChiseTweaksSettingsCatalog {
                 "screen.chisetweaks.settings.lava_max.name",
                 "screen.chisetweaks.settings.lava_max.description", 1);
 
-        headerLiteral(rows, "detail.analyzer.ancientDebris", "Ancient Debris Analyzer");
+        headerLiteral(rows, "detail.analyzer.ancientDebris", "Ancient Debris Analyzer Settings");
         integer(rows, "ancientDebrisRange", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE,
                 "screen.chisetweaks.settings.debris_range.name",
                 "screen.chisetweaks.settings.debris_range.description", 16);
         integer(rows, "ancientDebrisMaxMarkers", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS,
                 "screen.chisetweaks.settings.debris_max.name",
                 "screen.chisetweaks.settings.debris_max.description", 8);
+    }
+
+    private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "header.visibility", "Visibility");
+        boolLiteral(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
+                FeatureDefinition.FIRE_VISIBILITY.englishName(),
+                "Lower only the first-person fire overlay.");
+        boolLiteral(rows, "chestVisibility", ChestVisibilitySetting.INSTANCE,
+                "Bright Chest", "Improve Chest and Double Chest visibility.");
+        boolLiteral(rows, "whiteConcreteVisibility", WhiteConcreteVisibilitySetting.INSTANCE,
+                "Bright Concrete", "Improve White Concrete visibility.");
+    }
+
+    private static void addHelpRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "help.title", "ChiseTweaks の使い方");
+        info(rows, "help.highlight", "Highlight",
+                "鉱石・細線・隠れブロック・ガラス・昆布などを見つけやすくします。各Highlightは同時にONにできます。");
+        info(rows, "help.visualFilter", "Visual Filter",
+                "指定したBlock / Entityの描画をローカルだけで整理します。サーバー上の状態は変更しません。");
+        info(rows, "help.analyzer", "Analyzer",
+                "Lava SourceとAncient Debrisを読み込み済みチャンクだけから解析します。未ロードチャンクを強制ロードしません。");
+        info(rows, "help.visibility", "Visibility",
+                "Low Fireとbuilt-in Resource Packで、炎・Chest・White Concreteの見やすさを改善します。");
+        info(rows, "help.settings", "設定",
+                "変更があると下部ボタンは「設定を適用」に変わります。未変更時の「設定をリセット」は現在のタブを初期値へ戻します。");
+        info(rows, "help.troubleshooting", "トラブルシューティング",
+                "問題が起きた場合はPrism Launcherのコンソールまたはlogs/latest.logを確認してください。診断情報は設定画面へ重複表示しません。");
     }
 
     private static void header(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id, String translationKey) {
@@ -193,9 +204,15 @@ final class ChiseTweaksSettingsCatalog {
         rows.add(ChiseTweaksSettingRowDefinition.header(id, name));
     }
 
-    private static void compactFeature(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
-            ChiseBooleanSetting config, FeatureDefinition definition) {
-        rows.add(ChiseTweaksSettingRowDefinition.bool(id, definition.englishName(), "", config));
+    private static void info(ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String id, String name, String description) {
+        rows.add(ChiseTweaksSettingRowDefinition.info(id, name, description));
+    }
+
+    private static void feature(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+            ChiseBooleanSetting config, FeatureDefinition definition, String descriptionKey) {
+        rows.add(ChiseTweaksSettingRowDefinition.bool(
+                id, definition.englishName(), text(descriptionKey), config));
     }
 
     private static void bool(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
@@ -220,23 +237,19 @@ final class ChiseTweaksSettingsCatalog {
 
     private static void action(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
             String nameKey, String descriptionKey, ChiseTweaksSettingRowDefinition.Action action) {
-        rows.add(ChiseTweaksSettingRowDefinition.action(
-                id, text(nameKey), text(descriptionKey), action,
-                text("screen.chisetweaks.settings.action.settings")));
+        action(rows, id, text(nameKey), text(descriptionKey), action,
+                text("screen.chisetweaks.settings.action.settings"));
+    }
+
+    private static void action(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+            String name, String description, ChiseTweaksSettingRowDefinition.Action action, String actionLabel) {
+        rows.add(ChiseTweaksSettingRowDefinition.action(id, name, description, action, actionLabel));
     }
 
     private static void target(ArrayList<ChiseTweaksSettingRowDefinition> rows, ChiseBooleanSetting config) {
         String base = "screen.chisetweaks.settings.target." + config.getName();
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 config.getName(), text(base + ".name"), text(base + ".description"), config));
-    }
-
-    private static void targetLiteral(ArrayList<ChiseTweaksSettingRowDefinition> rows, ChiseBooleanSetting config) {
-        rows.add(ChiseTweaksSettingRowDefinition.bool(
-                config.getName(),
-                config.getDisplayName(false) + " / " + config.getDisplayName(true),
-                config.getComment(false) + " / " + config.getComment(true),
-                config));
     }
 
     private static List<ChiseBooleanSetting> targets(String prefix) {

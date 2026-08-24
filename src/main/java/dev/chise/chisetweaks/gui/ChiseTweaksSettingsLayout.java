@@ -1,16 +1,21 @@
 package dev.chise.chisetweaks.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class ChiseTweaksSettingsLayout {
     private static final int OUTER_MARGIN = 12;
     private static final int MAX_CONTENT_WIDTH = 960;
-    private static final int PANEL_Y = 38;
+    private static final int TAB_Y = 30;
+    private static final int TAB_HEIGHT = 20;
+    private static final int TAB_GAP = 4;
+    private static final int TAB_COUNT = 5;
+    private static final int PANEL_Y = 56;
     private static final int CONTROL_GAP = 6;
     private static final int TEXT_CONTROL_GAP = 12;
     private static final int INTEGER_CONTROL_WIDTH = 110;
     private static final int FOOTER_GAP = 6;
-    private static final int HELP_WIDTH = 92;
-    private static final int RESET_WIDTH = 112;
-    private static final int APPLY_WIDTH = 92;
+    private static final int CONTEXT_WIDTH = 132;
     private static final int DONE_WIDTH = 132;
 
     private ChiseTweaksSettingsLayout() {}
@@ -24,6 +29,7 @@ public final class ChiseTweaksSettingsLayout {
         int contentX = Math.max(0, (safeWidth - contentWidth) / 2);
         Rect content = new Rect(contentX, 0, contentWidth, safeHeight);
 
+        List<Rect> tabs = tabButtons(content);
         int footerY = Math.max(0, safeHeight - 26);
         int panelHeight = Math.max(1, footerY - PANEL_Y - 6);
         Rect panel = new Rect(contentX, PANEL_Y, contentWidth, panelHeight);
@@ -43,19 +49,15 @@ public final class ChiseTweaksSettingsLayout {
         int nameX = panel.x() + panelPadding;
         int nameWidth = Math.max(1, actionX - TEXT_CONTROL_GAP - nameX);
         int rowHeight = contentWidth < 480 ? 34 : 30;
+        int infoRowHeight = contentWidth < 480 ? 48 : 42;
         int headerHeight = 24;
-
-        int headerInset = Math.min(8, Math.max(0, panel.height() / 4));
-        Rect headerAction = new Rect(toggleX, panel.y() + headerInset + 3, toggleWidth, 18);
 
         return new Geometry(
                 content,
-                headerAction,
+                tabs,
                 panel,
                 footer,
-                footerButtons.help(),
-                footerButtons.reset(),
-                footerButtons.apply(),
+                footerButtons.context(),
                 footerButtons.done(),
                 toggleWidth,
                 actionWidth,
@@ -65,45 +67,53 @@ public final class ChiseTweaksSettingsLayout {
                 toggleX,
                 integerX,
                 rowHeight,
+                infoRowHeight,
                 headerHeight);
     }
 
+    private static List<Rect> tabButtons(Rect content) {
+        int usable = Math.max(TAB_COUNT, content.width() - TAB_GAP * (TAB_COUNT - 1));
+        int baseWidth = Math.max(1, usable / TAB_COUNT);
+        int remainder = Math.max(0, usable - baseWidth * TAB_COUNT);
+        ArrayList<Rect> result = new ArrayList<>(TAB_COUNT);
+        int x = content.x();
+        for (int index = 0; index < TAB_COUNT; index++) {
+            int width = baseWidth + (index < remainder ? 1 : 0);
+            result.add(new Rect(x, TAB_Y, width, TAB_HEIGHT));
+            x += width + TAB_GAP;
+        }
+        return List.copyOf(result);
+    }
+
     private static FooterButtons footerButtons(Rect footer) {
-        int preferred = HELP_WIDTH + RESET_WIDTH + APPLY_WIDTH + DONE_WIDTH + FOOTER_GAP * 3;
+        int preferred = CONTEXT_WIDTH + FOOTER_GAP + DONE_WIDTH;
         if (footer.width() >= preferred) {
-            Rect help = new Rect(footer.x(), footer.y(), HELP_WIDTH, footer.height());
-            Rect reset = new Rect(help.right() + FOOTER_GAP, footer.y(), RESET_WIDTH, footer.height());
-            Rect apply = new Rect(reset.right() + FOOTER_GAP, footer.y(), APPLY_WIDTH, footer.height());
             Rect done = new Rect(footer.right() - DONE_WIDTH, footer.y(), DONE_WIDTH, footer.height());
-            return new FooterButtons(help, reset, apply, done);
+            Rect context = new Rect(done.x() - FOOTER_GAP - CONTEXT_WIDTH,
+                    footer.y(), CONTEXT_WIDTH, footer.height());
+            return new FooterButtons(context, done);
         }
 
-        int usable = Math.max(4, footer.width() - FOOTER_GAP * 3);
-        int helpWidth = usable / 4;
-        int resetWidth = usable / 4;
-        int applyWidth = usable / 4;
-        int doneWidth = usable - helpWidth - resetWidth - applyWidth;
-        Rect help = new Rect(footer.x(), footer.y(), helpWidth, footer.height());
-        Rect reset = new Rect(help.right() + FOOTER_GAP, footer.y(), resetWidth, footer.height());
-        Rect apply = new Rect(reset.right() + FOOTER_GAP, footer.y(), applyWidth, footer.height());
-        Rect done = new Rect(apply.right() + FOOTER_GAP, footer.y(), doneWidth, footer.height());
-        return new FooterButtons(help, reset, apply, done);
+        int usable = Math.max(2, footer.width() - FOOTER_GAP);
+        int contextWidth = usable / 2;
+        int doneWidth = usable - contextWidth;
+        Rect context = new Rect(footer.x(), footer.y(), contextWidth, footer.height());
+        Rect done = new Rect(context.right() + FOOTER_GAP, footer.y(), doneWidth, footer.height());
+        return new FooterButtons(context, done);
     }
 
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }
 
-    private record FooterButtons(Rect help, Rect reset, Rect apply, Rect done) {}
+    private record FooterButtons(Rect context, Rect done) {}
 
     public record Geometry(
             Rect content,
-            Rect headerAction,
+            List<Rect> tabs,
             Rect panel,
             Rect footer,
-            Rect helpButton,
-            Rect resetButton,
-            Rect applyButton,
+            Rect contextButton,
             Rect doneButton,
             int toggleWidth,
             int actionWidth,
@@ -113,6 +123,7 @@ public final class ChiseTweaksSettingsLayout {
             int toggleX,
             int integerX,
             int rowHeight,
+            int infoRowHeight,
             int headerHeight) {
 
         public int panelContentTop() { return panel.y() + Math.min(8, Math.max(0, panel.height() / 4)); }
