@@ -2,7 +2,7 @@
 
 > 大規模建築・技術施設の見落としを減らす、Fabric クライアント専用 Build Inspector / Visual QA MOD。
 
-ChiseTweaks は、視認性向上、Block / Entity Filter、Crosshair Inspector、Placement State Preview、Lava / Ancient Debris Analyzer を1つにまとめます。サーバー導入や独自通信、自動操作は不要です。
+ChiseTweaks は、視認性向上、Block / Entity Filter、Crosshair Inspector、Placement Preview / Actual Comparison、Lava / Ancient Debris Analyzer を1つにまとめます。サーバー導入や独自通信、自動操作は不要です。
 
 ## 必要環境
 
@@ -51,14 +51,15 @@ Built-in Resource Packとして `Bright Chest` と `Bright Concrete` も提供�
 Crosshair InspectorはMinecraftがすでに保持している照準結果を読み取り、次を表示します。
 
 - Block / Entity ID
-- privacy-safeなBlockState properties
+- Orientation / Shape / Connection / Interaction / Fluidへ意味分類したprivacy-safeなBlockState properties
+- 未知のmodded propertyを保持するOther / Properties fallback
 - Filter判定とmatched rule
 - Responsible Feature
 - VISIBLE / THROUGH_WALLなどの描画モード
 
 NBT、看板本文、本、chat、inventory、container内容、UUIDは取得しません。追加raycast、packet送信、world変更も行いません。
 
-### Placement State Preview
+### Placement Preview / Actual Comparison
 
 配置前のBlockStateはvanilla `getStateForPlacement`を利用して最大1件だけ予測します。
 
@@ -66,7 +67,9 @@ NBT、看板本文、本、chat、inventory、container内容、UUIDは取得し
 - Log / Wood / Stem / Hyphae / Froglight: Axis
 - Slab: Type / Waterlogged
 
-表示は **Predicted before placement** であり、サーバーが承認したActual stateとは区別します。Stairsなど複雑block、3D ghost、offhand、配置履歴は今後のIssueで扱います。
+通常のvanilla配置後はその1座標だけを短時間観測し、PredictedとActualを `MATCH` または `ADJUSTED` として関連付け、変化したpropertyを表示します。別blockが置かれた場合は比較せず、timeout、disconnect、dimension変更でpending stateを破棄します。
+
+packet送信、world変更、click / key注入、追加raycast / scan、設定保存、配置履歴は行いません。Stairsなど複雑block、3D ghost、offhandは今後のIssueで扱います。
 
 ## Filter precedence
 

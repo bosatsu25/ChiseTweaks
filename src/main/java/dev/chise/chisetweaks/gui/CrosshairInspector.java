@@ -52,7 +52,8 @@ final class CrosshairInspector {
     private static final int MAX_STATE_PROPERTIES = 32;
     private static final int MAX_TOKEN_LENGTH = 64;
     private static final Snapshot NO_TARGET = new Snapshot(
-            HitResult.Type.MISS, "", List.of(), null, List.of(), null, null, false);
+            HitResult.Type.MISS, "", List.of(), null, List.of(), null, null,
+            PlacementComparisonTracker.NONE, null, false);
 
     private HitResult.Type cachedKind;
     private BlockState cachedBlockState;
@@ -64,6 +65,7 @@ final class CrosshairInspector {
     private boolean cachedInNether;
     private long cachedFilterRevision = Long.MIN_VALUE;
     private long cachedOreRevision = Long.MIN_VALUE;
+    private long cachedComparisonRevision = Long.MIN_VALUE;
     private Snapshot snapshot = NO_TARGET;
 
     Snapshot snapshot() {
@@ -121,6 +123,9 @@ final class CrosshairInspector {
         long featureMask = enabledFeatureMask();
         long filterRevision = BuilderFocusVisibility.revision();
         long oreRevision = OreHighlightResolver.revision();
+        PlacementComparisonTracker comparison = PlacementComparisonTracker.activeAt(
+                client.level.dimension(), hit.getBlockPos());
+        long comparisonRevision = comparison == null ? Long.MIN_VALUE : comparison.revision;
         ItemStack stack = client.player == null ? null : client.player.getMainHandItem();
         boolean placementAvailable = stack != null
                 && stack.getItem() instanceof BlockItem item
@@ -128,7 +133,7 @@ final class CrosshairInspector {
         Direction clickedFace = placementAvailable ? hit.getDirection() : null;
         boolean upperClick = placementAvailable
                 && hit.getLocation().y - hit.getBlockPos().getY() > 0.5D;
-        BlockState predictedPlacement = placementAvailable
+        BlockState livePrediction = placementAvailable
                 ? predictPlacementState(
                         client.level,
                         client.player,
@@ -137,6 +142,11 @@ final class CrosshairInspector {
                         hit,
                         true)
                 : null;
+        BlockState predictedPlacement = comparison == null ? livePrediction : comparison.predictedState;
+        BlockState actualPlacement = comparison == null ? null : comparison.actualState;
+        int placementResult = comparison == null
+                ? PlacementComparisonTracker.NONE
+                : PlacementComparisonTracker.compare(predictedPlacement, actualPlacement);
         if (cachedKind == HitResult.Type.BLOCK
                 && cachedBlockState == state
                 && cachedFeatureMask == featureMask
@@ -145,7 +155,10 @@ final class CrosshairInspector {
                 && cachedInNether == inNether
                 && cachedFilterRevision == filterRevision
                 && cachedOreRevision == oreRevision
+                && cachedComparisonRevision == comparisonRevision
                 && snapshot.predictedPlacement() == predictedPlacement
+                && snapshot.actualPlacement() == actualPlacement
+                && snapshot.placementResult() == placementResult
                 && snapshot.clickedFace() == clickedFace
                 && snapshot.upperClick() == upperClick) {
             return false;
@@ -160,6 +173,7 @@ final class CrosshairInspector {
         cachedInNether = inNether;
         cachedFilterRevision = filterRevision;
         cachedOreRevision = oreRevision;
+        cachedComparisonRevision = comparisonRevision;
         snapshot = blockSnapshot(
                 state,
                 featureMask,
@@ -167,6 +181,8 @@ final class CrosshairInspector {
                 local.worksiteVisibilityWorldOverlay,
                 inNether,
                 predictedPlacement,
+                actualPlacement,
+                placementResult,
                 clickedFace,
                 upperClick);
         return true;
@@ -200,6 +216,8 @@ final class CrosshairInspector {
                         List.of(),
                         null,
                         null,
+                        PlacementComparisonTracker.NONE,
+                        null,
                         false);
         return true;
     }
@@ -211,6 +229,8 @@ final class CrosshairInspector {
             boolean worldOverlay,
             boolean inNether,
             BlockState predictedPlacement,
+            BlockState actualPlacement,
+            int placementResult,
             Direction clickedFace,
             boolean upperClick) {
         if (state == null) return NO_TARGET;
@@ -240,6 +260,8 @@ final class CrosshairInspector {
                         worldOverlay,
                         enabledFeatures),
                 predictedPlacement,
+                actualPlacement,
+                placementResult,
                 clickedFace,
                 upperClick);
     }
@@ -439,6 +461,8 @@ final class CrosshairInspector {
             BuilderFocusVisibility.FilterDecision filterDecision,
             List<FeatureDefinition> responsibleFeatures,
             BlockState predictedPlacement,
+            BlockState actualPlacement,
+            int placementResult,
             Direction clickedFace,
             boolean upperClick) {
         Snapshot {
@@ -453,6 +477,12 @@ final class CrosshairInspector {
                 throw new IllegalArgumentException();
             }
             if (targetKind != HitResult.Type.BLOCK && !stateProperties.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
+            if (placementResult != PlacementComparisonTracker.NONE && predictedPlacement == null) {
+                throw new IllegalArgumentException();
+            }
+            if (actualPlacement != null && placementResult == PlacementComparisonTracker.NONE) {
                 throw new IllegalArgumentException();
             }
         }

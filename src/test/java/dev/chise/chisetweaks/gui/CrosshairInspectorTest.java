@@ -44,6 +44,8 @@ final class CrosshairInspectorTest {
                 List.of(FeatureDefinition.NETHER_PALETTE),
                 null,
                 null,
+                PlacementComparisonTracker.NONE,
+                null,
                 false);
         var entity = new CrosshairInspector.Snapshot(
                 HitResult.Type.ENTITY,
@@ -52,6 +54,8 @@ final class CrosshairInspectorTest {
                 VISIBLE,
                 List.of(),
                 null,
+                null,
+                PlacementComparisonTracker.NONE,
                 null,
                 false);
 
@@ -67,6 +71,8 @@ final class CrosshairInspectorTest {
                 VISIBLE,
                 List.of(),
                 null,
+                null,
+                PlacementComparisonTracker.NONE,
                 null,
                 false));
     }
@@ -86,6 +92,29 @@ final class CrosshairInspectorTest {
                 "facing", "north",
                 "unsafe", "line\nbreak",
                 "bad key", "value")));
+    }
+
+    @Test
+    void semanticPropertyGroupsPreserveKnownMeaningsAndUnknownFallback() {
+        assertEquals("orientation", ChiseTweaksSettingsCatalog.semanticPropertyGroup("facing"));
+        assertEquals("orientation", ChiseTweaksSettingsCatalog.semanticPropertyGroup("axis"));
+        assertEquals("shape", ChiseTweaksSettingsCatalog.semanticPropertyGroup("shape"));
+        assertEquals("connection", ChiseTweaksSettingsCatalog.semanticPropertyGroup("north"));
+        assertEquals("interaction", ChiseTweaksSettingsCatalog.semanticPropertyGroup("powered"));
+        assertEquals("fluid", ChiseTweaksSettingsCatalog.semanticPropertyGroup("waterlogged"));
+        assertEquals("other", ChiseTweaksSettingsCatalog.semanticPropertyGroup("modded_property"));
+    }
+
+    @Test
+    void comparisonResultKeysCoverEveryBoundedState() {
+        assertEquals("screen.chisetweaks.placement.result.match",
+                ChiseTweaksSettingsCatalog.comparisonResultKey(PlacementComparisonTracker.MATCH));
+        assertEquals("screen.chisetweaks.placement.result.adjusted",
+                ChiseTweaksSettingsCatalog.comparisonResultKey(PlacementComparisonTracker.ADJUSTED));
+        assertEquals("screen.chisetweaks.placement.result.different",
+                ChiseTweaksSettingsCatalog.comparisonResultKey(PlacementComparisonTracker.DIFFERENT));
+        assertEquals("screen.chisetweaks.placement.result.unavailable",
+                ChiseTweaksSettingsCatalog.comparisonResultKey(PlacementComparisonTracker.UNAVAILABLE));
     }
 
     @Test
@@ -157,7 +186,7 @@ final class CrosshairInspectorTest {
     void snapshotAndFilterRecordsHaveAPrivacyAllowlistByConstruction() {
         assertEquals(Set.of(
                         "targetKind", "targetId", "stateProperties", "filterDecision", "responsibleFeatures",
-                        "predictedPlacement", "clickedFace", "upperClick"),
+                        "predictedPlacement", "actualPlacement", "placementResult", "clickedFace", "upperClick"),
                 recordComponents(CrosshairInspector.Snapshot.class));
         assertEquals(Set.of("hidden", "reason", "matchedRule"),
                 recordComponents(BuilderFocusVisibility.FilterDecision.class));
