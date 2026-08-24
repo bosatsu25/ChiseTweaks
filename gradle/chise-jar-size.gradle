@@ -7,16 +7,59 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
-// Runtime JAR size optimization that preserves gameplay/resource bytes and actionable stack traces.
+// Runtime JAR size optimization that preserves gameplay semantics and actionable stack traces.
 // Keep source/line metadata for diagnostics while dropping local-variable debug tables.
 tasks.withType(org.gradle.api.tasks.compile.JavaCompile).configureEach {
     options.debug = true
     options.debugOptions.debugLevel = 'source,lines'
 }
 
+// Keep repository JSON readable, but remove insignificant whitespace from the processed runtime copy.
+// This is deliberately syntax-aware: whitespace inside strings and all escape sequences are preserved.
+def minifyJsonText = { String source ->
+    StringBuilder output = new StringBuilder(source.length())
+    boolean inString = false
+    boolean escaped = false
+    for (int index = 0; index < source.length(); index++) {
+        char value = source.charAt(index)
+        if (inString) {
+            output.append(value)
+            if (escaped) {
+                escaped = false
+            } else if (value == '\\'.charAt(0)) {
+                escaped = true
+            } else if (value == '"'.charAt(0)) {
+                inString = false
+            }
+        } else if (value == '"'.charAt(0)) {
+            inString = true
+            output.append(value)
+        } else if (!Character.isWhitespace(value)) {
+            output.append(value)
+        }
+    }
+    if (inString) {
+        throw new GradleException('Unterminated JSON string while compacting runtime resources')
+    }
+    return output.toString()
+}
+
+tasks.named('processResources').configure {
+    doLast {
+        File resourcesRoot = outputs.files.singleFile
+        fileTree(dir: resourcesRoot, include: '**/*.json').files.each { File jsonFile ->
+            String source = jsonFile.getText('UTF-8')
+            String compact = minifyJsonText(source)
+            if (compact.length() < source.length()) {
+                jsonFile.setText(compact, 'UTF-8')
+            }
+        }
+    }
+}
+
 // ZipOutputStream normally emits a 16-byte data descriptor for DEFLATED entries when CRC/size values
 // are unknown. Pre-compute the exact raw-DEFLATE size and CRC so every local header is complete.
-// This only removes ZIP container overhead; entry payload bytes remain unchanged.
+// This only removes ZIP container overhead; entry payload semantics remain unchanged.
 def compressedSizeFor = { byte[] payload ->
     Deflater deflater = new Deflater(9, true)
     try {
@@ -35,8 +78,7 @@ def compressedSizeFor = { byte[] payload ->
 
 // JAR/ZIP directory entries are optional metadata. Re-emit only real files with maximum DEFLATE
 // compression after Loom has produced the runtime archive. Already-compressed payloads are STORED
-// when DEFLATE would be larger. There is no class shrinking, resource minification, renaming or
-// semantic transformation here.
+// when DEFLATE would be larger. There is no class shrinking, renaming or semantic transformation here.
 def recompressRuntimeArchive = { File archive ->
     if (!archive.isFile()) {
         throw new GradleException("Runtime archive does not exist: ${archive}")
@@ -106,7 +148,7 @@ def recompressRuntimeArchive = { File archive ->
 // guarantees the file inspected by external Artifact Audit is the compacted runtime JAR.
 def compactRuntimeJar = tasks.register('compactRuntimeJar') {
     group = 'build'
-    description = 'Compacts the final runtime JAR container without changing entry payload bytes.'
+    description = 'Compacts the final runtime JAR container without changing entry payload semantics.'
     dependsOn 'jar'
 
     doLast {
