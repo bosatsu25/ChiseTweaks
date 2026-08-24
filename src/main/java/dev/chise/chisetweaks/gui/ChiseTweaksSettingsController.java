@@ -20,10 +20,11 @@ import java.util.Set;
 /** 設定操作だけを調整し、表示用メタデータは{@link ChiseTweaksSettingsCatalog}へ分離するcontroller。 */
 final class ChiseTweaksSettingsController {
     enum Surface {
-        MAIN,
-        HIGHLIGHT_DETAILS,
-        VISUAL_FILTER_DETAILS,
-        LAVA_DETAILS
+        HIGHLIGHT,
+        VISUAL_FILTER,
+        ANALYZER,
+        VISIBILITY,
+        HELP
     }
 
     private final ChiseTweaksSettingsCatalog catalog = new ChiseTweaksSettingsCatalog();
@@ -39,11 +40,11 @@ final class ChiseTweaksSettingsController {
     }
 
     List<ChiseTweaksSettingRowDefinition> rows() {
-        return rows(Surface.MAIN);
+        return rows(Surface.HIGHLIGHT);
     }
 
     List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
-        return catalog.rows(surface == null ? Surface.MAIN : surface);
+        return catalog.rows(surface == null ? Surface.HIGHLIGHT : surface);
     }
 
     String surfaceTitle(Surface surface) {
@@ -51,25 +52,31 @@ final class ChiseTweaksSettingsController {
     }
 
     EnumSet<SettingPersistence> reset(Surface surface) {
-        return switch (surface == null ? Surface.MAIN : surface) {
-            case MAIN -> {
-                resetAll();
-                yield EnumSet.of(
-                        SettingPersistence.FEATURE_CONFIG,
-                        SettingPersistence.LOCAL_CONFIG);
-            }
-            case HIGHLIGHT_DETAILS -> {
+        return switch (surface == null ? Surface.HIGHLIGHT : surface) {
+            case HIGHLIGHT -> {
+                resetHighlightFeatures();
                 resetHighlightDetails();
-                yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
+                yield EnumSet.of(SettingPersistence.FEATURE_CONFIG, SettingPersistence.LOCAL_CONFIG);
             }
-            case VISUAL_FILTER_DETAILS -> {
+            case VISUAL_FILTER -> {
+                FeatureSwitches.BUILDER_FOCUS_BLOCKS.resetToDefault();
+                FeatureSwitches.BUILDER_FOCUS_ENTITIES.resetToDefault();
                 resetBuilderFocusDetails();
                 yield EnumSet.of(SettingPersistence.FEATURE_CONFIG);
             }
-            case LAVA_DETAILS -> {
+            case ANALYZER -> {
+                LocalFeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
+                LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER.resetToDefault();
                 resetAnalyzerDetails();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
+            case VISIBILITY -> {
+                LocalFeatureSwitches.FIRE_VISIBILITY.resetToDefault();
+                ChestVisibilitySetting.INSTANCE.resetToDefault();
+                WhiteConcreteVisibilitySetting.INSTANCE.resetToDefault();
+                yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
+            }
+            case HELP -> EnumSet.noneOf(SettingPersistence.class);
         };
     }
 
@@ -77,14 +84,13 @@ final class ChiseTweaksSettingsController {
         return persistence.save(dirtyDomains);
     }
 
-    private void resetAll() {
-        FeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
-        LocalFeatureSwitches.VALUES.forEach(ChiseBooleanSetting::resetToDefault);
-        ChestVisibilitySetting.INSTANCE.resetToDefault();
-        WhiteConcreteVisibilitySetting.INSTANCE.resetToDefault();
-        resetHighlightDetails();
-        resetAnalyzerDetails();
-        resetBuilderFocusDetails();
+    private static void resetHighlightFeatures() {
+        FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
+        FeatureSwitches.NETHER_PALETTE.resetToDefault();
+        FeatureSwitches.FINE_THREAD_TRACE.resetToDefault();
+        FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
+        FeatureSwitches.GLASS_INSPECTION.resetToDefault();
+        FeatureSwitches.KELP_HIGHLIGHT.resetToDefault();
     }
 
     private void resetHighlightDetails() {
