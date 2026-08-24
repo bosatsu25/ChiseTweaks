@@ -12,6 +12,7 @@ import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ import java.util.List;
 
 /** 設定画面で使うlocalize済みimmutable row定義を構築する。 */
 final class ChiseTweaksSettingsCatalog {
+    private static final List<String> PROPERTY_GROUPS = List.of(
+            "orientation", "shape", "connection", "interaction", "fluid", "other");
     private static final List<ChiseBooleanSetting> RESOURCE_TARGETS = targets("visualTargetMaterial");
     private static final List<ChiseBooleanSetting> TECHNICAL_TARGETS = targets("visualTargetTechnical");
     private static final List<ChiseBooleanSetting> VISIBILITY_TARGETS = targets("visualTargetHidden");
@@ -211,11 +214,7 @@ final class ChiseTweaksSettingsCatalog {
                     : text("screen.chisetweaks.inspector.target.entity");
             info(rows, "inspector.target", targetLabel, resolved.targetId());
             if (resolved.targetKind() == HitResult.Type.BLOCK) {
-                info(rows, "inspector.blockState",
-                        text("screen.chisetweaks.inspector.block_state"),
-                        resolved.stateProperties().isEmpty()
-                                ? text("screen.chisetweaks.inspector.none")
-                                : String.join("\n", resolved.stateProperties()));
+                addSemanticStateRows(rows, resolved.stateProperties());
             }
             info(rows, "inspector.filter",
                     text("screen.chisetweaks.inspector.filter"),
@@ -247,6 +246,32 @@ final class ChiseTweaksSettingsCatalog {
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             CrosshairInspector.Snapshot placement) {
         header(rows, "placement.title", "screen.chisetweaks.placement.title");
+        if (placement.placementResult() != PlacementComparisonTracker.NONE) {
+            info(rows, "placement.predicted",
+                    text("screen.chisetweaks.placement.predicted"),
+                    semanticProperties(CrosshairInspector.placementStateProperties(
+                            placement.predictedPlacement())));
+            if (placement.actualPlacement() == null) {
+                info(rows, "placement.actual",
+                        text("screen.chisetweaks.placement.actual"),
+                        text("screen.chisetweaks.placement.awaiting_actual"));
+            } else {
+                info(rows, "placement.actual",
+                        text("screen.chisetweaks.placement.actual"),
+                        semanticProperties(CrosshairInspector.placementStateProperties(
+                                placement.actualPlacement())));
+                info(rows, "placement.result",
+                        text("screen.chisetweaks.placement.result"),
+                        text(comparisonResultKey(placement.placementResult())));
+                if (placement.placementResult() == PlacementComparisonTracker.ADJUSTED) {
+                    info(rows, "placement.changed",
+                            text("screen.chisetweaks.placement.changed"),
+                            changedPlacementProperties(
+                                    placement.predictedPlacement(), placement.actualPlacement()));
+                }
+            }
+            return;
+        }
         if (placement.clickedFace() == null) {
             info(rows, "placement.none",
                     text("screen.chisetweaks.inspector.none"),
@@ -262,7 +287,7 @@ final class ChiseTweaksSettingsCatalog {
         var state = placement.predictedPlacement();
         info(rows, "placement.predicted",
                 text("screen.chisetweaks.placement.predicted"),
-                String.join("\n", CrosshairInspector.placementStateProperties(state)));
+                semanticProperties(CrosshairInspector.placementStateProperties(state)));
         info(rows, "placement.reason",
                 text("screen.chisetweaks.inspector.matched_rule"),
                 placementReason(placement));
@@ -273,6 +298,101 @@ final class ChiseTweaksSettingsCatalog {
                         ? "screen.chisetweaks.placement.reason.upper"
                         : "screen.chisetweaks.placement.reason.lower",
                 placement.clickedFace().getName()).getString();
+    }
+
+    private static void addSemanticStateRows(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            List<String> properties) {
+        if (properties.isEmpty()) {
+            info(rows, "inspector.blockState",
+                    text("screen.chisetweaks.inspector.block_state"),
+                    text("screen.chisetweaks.inspector.none"));
+            return;
+        }
+        for (String group : PROPERTY_GROUPS) {
+            String description = semanticProperties(properties, group);
+            if (!description.isEmpty()) {
+                info(rows, "inspector.state." + group,
+                        text("screen.chisetweaks.inspector.state." + group),
+                        description);
+            }
+        }
+    }
+
+    static String semanticPropertyGroup(String property) {
+        return switch (property == null ? "" : property) {
+            case "facing", "axis" -> "orientation";
+            case "half", "type", "shape", "face" -> "shape";
+            case "north", "south", "east", "west", "up", "down", "in_wall" -> "connection";
+            case "open", "powered", "lit", "honey_level" -> "interaction";
+            case "waterlogged" -> "fluid";
+            default -> "other";
+        };
+    }
+
+    static String comparisonResultKey(int result) {
+        return switch (result) {
+            case PlacementComparisonTracker.MATCH -> "screen.chisetweaks.placement.result.match";
+            case PlacementComparisonTracker.ADJUSTED -> "screen.chisetweaks.placement.result.adjusted";
+            case PlacementComparisonTracker.DIFFERENT -> "screen.chisetweaks.placement.result.different";
+            default -> "screen.chisetweaks.placement.result.unavailable";
+        };
+    }
+
+    private static String semanticProperties(List<String> properties) {
+        return semanticProperties(properties, null);
+    }
+
+    private static String semanticProperties(List<String> properties, String requiredGroup) {
+        StringBuilder result = new StringBuilder();
+        for (String property : properties) {
+            int separator = property.indexOf('=');
+            if (separator <= 0 || separator == property.length() - 1) continue;
+            String name = property.substring(0, separator);
+            if (requiredGroup != null && !requiredGroup.equals(semanticPropertyGroup(name))) continue;
+            if (!result.isEmpty()) result.append('\n');
+            result.append(humanize(name))
+                    .append("  ")
+                    .append(humanize(property.substring(separator + 1)));
+        }
+        return result.toString();
+    }
+
+    private static String changedPlacementProperties(BlockState predicted, BlockState actual) {
+        List<String> before = CrosshairInspector.placementStateProperties(predicted);
+        List<String> after = CrosshairInspector.placementStateProperties(actual);
+        StringBuilder changed = new StringBuilder();
+        for (String property : before) {
+            int separator = property.indexOf('=');
+            if (separator <= 0) continue;
+            String name = property.substring(0, separator);
+            String actualProperty = findProperty(after, name);
+            if (actualProperty == null || property.equals(actualProperty)) continue;
+            if (!changed.isEmpty()) changed.append('\n');
+            changed.append(humanize(name))
+                    .append(": ")
+                    .append(humanize(property.substring(separator + 1)))
+                    .append(" → ")
+                    .append(humanize(actualProperty.substring(actualProperty.indexOf('=') + 1)));
+        }
+        return changed.isEmpty()
+                ? text("screen.chisetweaks.placement.changed.other")
+                : changed.toString();
+    }
+
+    private static String findProperty(List<String> properties, String name) {
+        String prefix = name + "=";
+        for (String property : properties) {
+            if (property.startsWith(prefix)) return property;
+        }
+        return null;
+    }
+
+    private static String humanize(String token) {
+        String value = token == null ? "" : token.replace('_', ' ');
+        return value.isEmpty()
+                ? value
+                : Character.toUpperCase(value.charAt(0)) + value.substring(1);
     }
 
     private static String filterReason(BuilderFocusVisibility.FilterDecision decision) {
