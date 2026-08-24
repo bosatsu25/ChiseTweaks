@@ -25,7 +25,7 @@ final class AcceptanceObservabilityContractTest {
     @Test
     void performanceTemplatesCoverEveryRequiredPrismScenario() throws IOException {
         String template = source("scripts/performance_evidence_template.py");
-        String guide = source("docs/performance/0.9.4-baseline.md");
+        String guide = source("DEVELOPMENT.md");
         for (String scenario : new String[] {
                 "chise-absent",
                 "chise-all-off",
@@ -65,7 +65,7 @@ final class AcceptanceObservabilityContractTest {
 
     @Test
     void acceptanceGuideExplicitlyKeepsPhysicalPrismChecksSeparateFromCi() throws IOException {
-        String guide = source("docs/acceptance/0.9.4-prism.md");
+        String guide = source("DEVELOPMENT.md");
         assertTrue(guide.contains("11"));
         assertTrue(guide.contains("Chest"));
         assertTrue(guide.contains("White Concrete"));

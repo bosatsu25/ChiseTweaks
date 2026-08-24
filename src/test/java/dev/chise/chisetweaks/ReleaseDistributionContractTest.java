@@ -24,6 +24,8 @@ final class ReleaseDistributionContractTest {
         assertContainsAll(ci,
                 "permissions:\n  contents: read",
                 "name: verify / Java 25 quality gate",
+                "python scripts/test_versioning_tools.py",
+                "--allow-any-one-step",
                 "python scripts/version_policy.py",
                 "python scripts/repository_audit.py",
                 "python scripts/functional_parity_audit.py",
@@ -87,7 +89,8 @@ final class ReleaseDistributionContractTest {
     @Test
     void newOfficialReleaseKeepsTheOneStepSemverGuardWithoutRebuilding() throws IOException {
         String release = read(".github/workflows/release.yml");
-        String policy = read("VERSIONING.md");
+        String policy = read("DEVELOPMENT.md");
+        String ci = read(".github/workflows/ci.yml");
 
         assertContainsAll(release,
                 "Enforce one-step SemVer increment",
@@ -97,8 +100,12 @@ final class ReleaseDistributionContractTest {
                 "release_type='major'",
                 "not an exact patch/minor/major increment");
         assertContainsAll(policy,
-                "promotes the exact runtime JAR retained by that successful CI run",
-                "Only one-step PATCH, MINOR, or MAJOR increments are accepted");
+                "exact CI-verified runtime JAR",
+                "Only one-step PATCH, MINOR, or MAJOR",
+                "同一versionを別main commitへ再利用しません");
+        assertContainsAll(ci,
+                "Verify release version progression",
+                "--allow-any-one-step");
         assertContainsNone(release,
                 "python scripts/version_policy.py",
                 "actions/checkout@",
@@ -116,17 +123,24 @@ final class ReleaseDistributionContractTest {
         assertTrue(version.matches("(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\+mc"
                 + Pattern.quote(minecraft)));
 
-        String policy = read("VERSIONING.md");
+        String policy = read("DEVELOPMENT.md");
         String script = read("scripts/version_policy.py");
+        String helper = read("scripts/bump_version.py");
         assertContainsAll(policy,
                 "PATCH",
                 "MINOR",
                 "MAJOR",
-                "Every official release must increase the SemVer core");
+                "mod_version",
+                "python scripts/bump_version.py");
         assertContainsAll(script,
                 "expected_bump",
                 "--release-type",
+                "--allow-any-one-step",
                 "current_minecraft != minecraft");
+        assertContainsAll(helper,
+                "compute_next_version",
+                "replace_property",
+                "--dry-run");
     }
 
     @Test
