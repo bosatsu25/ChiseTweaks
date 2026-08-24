@@ -43,6 +43,10 @@ final class ChiseTweaksSettingsLayoutTest {
 
         assertTrue(compact.nameWidth() > 0);
         assertTrue(desktop.nameWidth() > compact.nameWidth());
+        assertTrue(compact.infoTextWidth() > compact.nameWidth());
+        assertTrue(desktop.infoTextWidth() > desktop.nameWidth());
+        assertTrue(compact.infoTextRight() < compact.panel().right());
+        assertTrue(desktop.infoTextRight() < desktop.panel().right());
         assertTrue(compact.actionX() + compact.actionWidth() <= compact.toggleX());
         assertTrue(desktop.actionX() + desktop.actionWidth() <= desktop.toggleX());
         assertTrue(compact.toggleX() + compact.toggleWidth() <= compact.panel().right());

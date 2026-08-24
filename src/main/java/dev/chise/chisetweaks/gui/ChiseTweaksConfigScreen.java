@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
@@ -111,6 +112,15 @@ public final class ChiseTweaksConfigScreen extends Screen {
             case INTEGER -> createIntegerRow(definition);
             case ACTION -> createActionRow(definition);
         };
+        if (definition.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO) {
+            row.infoTextLayout = ChiseTweaksInfoTextLayout.create(
+                    definition.name(),
+                    definition.description(),
+                    geometry.infoTextWidth(),
+                    font.lineHeight,
+                    geometry.infoRowHeight(),
+                    (text, availableWidth) -> font.split(Component.literal(text), availableWidth));
+        }
         applyAvailabilityInteractivity(owner, row);
         return row;
     }
@@ -290,12 +300,20 @@ public final class ChiseTweaksConfigScreen extends Screen {
         extractor.fill(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xC8121212);
         extractor.fill(panel.x(), panel.y(), panel.right(), panel.y() + 1, 0xFF808080);
         extractor.fill(panel.x(), panel.bottom() - 1, panel.right(), panel.bottom(), 0xFF4C4C4C);
-        for (ChiseTweaksSettingRowView row : selectedRows()) {
-            if (!row.renderVisible || row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) continue;
-            int y = row.screenY;
-            int height = rowHeight(row.definition);
-            extractor.fill(panel.x() + 8, y, panel.right() - 24, y + height - 2, 0x8A202020);
-            extractor.fill(panel.x() + 8, y + height - 3, panel.right() - 24, y + height - 2, 0x553F3F3F);
+        extractor.enableScissor(panel.x(), geometry.panelContentTop(), panel.right(), geometry.panelContentBottom());
+        try {
+            for (ChiseTweaksSettingRowView row : selectedRows()) {
+                if (!row.renderVisible || row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
+                    continue;
+                }
+                int y = row.screenY;
+                int height = rowHeight(row);
+                extractor.fill(panel.x() + 8, y, geometry.infoTextRight(), y + height - 2, 0x8A202020);
+                extractor.fill(panel.x() + 8, y + height - 3,
+                        geometry.infoTextRight(), y + height - 2, 0x553F3F3F);
+            }
+        } finally {
+            extractor.disableScissor();
         }
     }
 
@@ -304,27 +322,48 @@ public final class ChiseTweaksConfigScreen extends Screen {
         super.extractRenderState(extractor, mouseX, mouseY, delta);
         if (geometry == null) return;
         extractor.text(font, ChiseTweaksMetadata.MOD_NAME, geometry.content().x(), 14, 0xFFFFFFFF);
-        for (ChiseTweaksSettingRowView row : selectedRows()) {
-            if (!row.renderVisible) continue;
-            if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
-                extractor.text(font, row.definition.name(), geometry.panel().x() + 12,
-                        row.screenY + 7, 0xFF78AFFF);
-                continue;
+        extractor.enableScissor(
+                geometry.panel().x(),
+                geometry.panelContentTop(),
+                geometry.panel().right(),
+                geometry.panelContentBottom());
+        try {
+            for (ChiseTweaksSettingRowView row : selectedRows()) {
+                if (!row.renderVisible) continue;
+                if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) {
+                    extractor.text(font, row.definition.name(), geometry.panel().x() + 12,
+                            row.screenY + 7, 0xFF78AFFF);
+                    continue;
+                }
+                if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO) {
+                    renderInfoText(extractor, row);
+                    continue;
+                }
+                int y = row.screenY + Math.max(0, (geometry.rowHeight() - font.lineHeight) / 2);
+                int color = rowTextInteractive(row.definition) ? 0xFFFFFFFF : 0xFF7A7A7A;
+                extractor.text(font, row.definition.name(), geometry.nameX(), y, color);
             }
-            if (row.definition.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO) {
-                extractor.text(font, row.definition.name(), geometry.nameX(), row.screenY + 6, 0xFFFFFFFF);
-                extractor.text(font, row.definition.description(), geometry.nameX(), row.screenY + 20, 0xFFB8B8B8);
-                continue;
-            }
-            int y = row.screenY + Math.max(0, (geometry.rowHeight() - font.lineHeight) / 2);
-            int color = rowTextInteractive(row.definition) ? 0xFFFFFFFF : 0xFF7A7A7A;
-            extractor.text(font, row.definition.name(), geometry.nameX(), y, color);
+        } finally {
+            extractor.disableScissor();
         }
         if (!persistenceFeedback.isEmpty()) {
             extractor.centeredText(font, Component.literal(persistenceFeedback), width / 2,
                     Math.max(24, height - 48), 0xFFFFD166);
         }
         renderScrollbar(extractor);
+    }
+
+    private void renderInfoText(GuiGraphicsExtractor extractor, ChiseTweaksSettingRowView row) {
+        ChiseTweaksInfoTextLayout.Layout<FormattedCharSequence> layout = row.infoTextLayout;
+        if (layout == null) return;
+        for (int index = 0; index < layout.nameLines().size(); index++) {
+            extractor.text(font, layout.nameLines().get(index), geometry.nameX(),
+                    row.screenY + layout.nameLineY(index), 0xFFFFFFFF);
+        }
+        for (int index = 0; index < layout.descriptionLines().size(); index++) {
+            extractor.text(font, layout.descriptionLines().get(index), geometry.nameX(),
+                    row.screenY + layout.descriptionLineY(index), 0xFFB8B8B8);
+        }
     }
 
     private boolean rowTextInteractive(ChiseTweaksSettingRowDefinition definition) {
@@ -363,11 +402,12 @@ public final class ChiseTweaksConfigScreen extends Screen {
         }
         int offset = 0;
         for (ChiseTweaksSettingRowView row : selectedRows()) {
-            int height = rowHeight(row.definition);
+            int height = rowHeight(row);
             int y = viewportTop + offset - scrollOffset;
             row.screenY = y;
-            row.renderVisible = y >= viewportTop && y + height <= viewportBottom;
-            if (row.renderVisible) positionWidgets(row, y);
+            row.renderVisible = y < viewportBottom && y + height > viewportTop;
+            boolean fullyVisible = y >= viewportTop && y + height <= viewportBottom;
+            if (fullyVisible) positionWidgets(row, y);
             offset += height;
         }
     }
@@ -375,15 +415,15 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private int contentHeight() {
         int contentHeight = 0;
         for (ChiseTweaksSettingRowView row : selectedRows()) {
-            contentHeight += rowHeight(row.definition);
+            contentHeight += rowHeight(row);
         }
         return contentHeight;
     }
 
-    private int rowHeight(ChiseTweaksSettingRowDefinition definition) {
-        return switch (definition.kind()) {
+    private int rowHeight(ChiseTweaksSettingRowView row) {
+        return switch (row.definition.kind()) {
             case HEADER -> geometry.headerHeight();
-            case INFO -> geometry.infoRowHeight();
+            case INFO -> row.infoTextLayout == null ? geometry.infoRowHeight() : row.infoTextLayout.rowHeight();
             case BOOLEAN, INTEGER, ACTION -> geometry.rowHeight();
         };
     }

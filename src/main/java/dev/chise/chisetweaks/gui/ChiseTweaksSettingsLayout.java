@@ -13,6 +13,7 @@ public final class ChiseTweaksSettingsLayout {
     private static final int PANEL_Y = 56;
     private static final int CONTROL_GAP = 6;
     private static final int TEXT_CONTROL_GAP = 12;
+    private static final int SCROLLBAR_GUTTER = 24;
     private static final int INTEGER_CONTROL_WIDTH = 110;
     private static final int FOOTER_GAP = 6;
     private static final int CONTEXT_WIDTH = 132;
@@ -128,6 +129,8 @@ public final class ChiseTweaksSettingsLayout {
 
         public int panelContentTop() { return panel.y() + Math.min(8, Math.max(0, panel.height() / 4)); }
         public int panelContentBottom() { return panel.bottom() - Math.min(8, Math.max(0, panel.height() / 4)); }
+        public int infoTextRight() { return Math.max(nameX + 1, panel.right() - SCROLLBAR_GUTTER); }
+        public int infoTextWidth() { return Math.max(1, infoTextRight() - nameX); }
         public int integerControlWidth() { return INTEGER_CONTROL_WIDTH; }
     }
 
