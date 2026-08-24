@@ -8,17 +8,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseTweaksSettingsLayoutTest {
     @Test
-    void compactMinecraftViewportKeepsAllPrimaryRegionsInsideTheScreen() {
+    void compactMinecraftViewportKeepsTabsPanelAndFooterInsideTheScreen() {
         var geometry = ChiseTweaksSettingsLayout.calculate(320, 240);
 
         assertTrue(geometry.content().x() >= 0);
         assertTrue(geometry.content().right() <= 320);
+        assertEquals(5, geometry.tabs().size());
+        for (var tab : geometry.tabs()) {
+            assertTrue(geometry.content().contains(tab));
+        }
         assertTrue(geometry.panel().right() <= geometry.content().right());
         assertTrue(geometry.footer().right() <= geometry.content().right());
         assertTrue(geometry.footer().bottom() <= 240);
-        assertTrue(geometry.panel().contains(geometry.headerAction()));
         assertTrue(geometry.panel().bottom() <= geometry.footer().y());
         assertFooterIsNonOverlappingAndContained(geometry);
+    }
+
+    @Test
+    void fiveTabsStayOrderedAndNonOverlapping() {
+        var geometry = ChiseTweaksSettingsLayout.calculate(854, 480);
+        assertEquals(5, geometry.tabs().size());
+        for (int index = 0; index < geometry.tabs().size() - 1; index++) {
+            var current = geometry.tabs().get(index);
+            var next = geometry.tabs().get(index + 1);
+            assertFalse(current.overlaps(next));
+            assertTrue(current.right() <= next.x());
+        }
     }
 
     @Test
@@ -35,18 +50,6 @@ final class ChiseTweaksSettingsLayoutTest {
     }
 
     @Test
-    void sectionSettingsButtonOccupiesFormerRightmostBulkSlot() {
-        var geometry = ChiseTweaksSettingsLayout.calculate(854, 480);
-
-        assertEquals(18, geometry.headerAction().height());
-        assertEquals(geometry.toggleX(), geometry.headerAction().x());
-        assertEquals(geometry.toggleWidth(), geometry.headerAction().width());
-        assertEquals(geometry.toggleX() + geometry.toggleWidth(), geometry.headerAction().right());
-        assertTrue(geometry.headerAction().bottom()
-                <= geometry.panelContentTop() + geometry.headerHeight());
-    }
-
-    @Test
     void wideViewportCentersAndCapsContentWithoutStretchingControlsIndefinitely() {
         var geometry = ChiseTweaksSettingsLayout.calculate(1920, 1080);
 
@@ -58,9 +61,8 @@ final class ChiseTweaksSettingsLayoutTest {
     }
 
     @Test
-    void footerCompressionKeepsGuideResetApplyAndDoneSeparateAtMinimumSupportedScale() {
+    void footerUsesOnlyContextActionAndDone() {
         var geometry = ChiseTweaksSettingsLayout.calculate(320, 240);
-
         assertFooterIsNonOverlappingAndContained(geometry);
     }
 
@@ -77,15 +79,8 @@ final class ChiseTweaksSettingsLayoutTest {
 
     private static void assertFooterIsNonOverlappingAndContained(
             ChiseTweaksSettingsLayout.Geometry geometry) {
-        assertTrue(geometry.footer().contains(geometry.helpButton()));
-        assertTrue(geometry.footer().contains(geometry.resetButton()));
-        assertTrue(geometry.footer().contains(geometry.applyButton()));
+        assertTrue(geometry.footer().contains(geometry.contextButton()));
         assertTrue(geometry.footer().contains(geometry.doneButton()));
-        assertFalse(geometry.helpButton().overlaps(geometry.resetButton()));
-        assertFalse(geometry.helpButton().overlaps(geometry.applyButton()));
-        assertFalse(geometry.helpButton().overlaps(geometry.doneButton()));
-        assertFalse(geometry.resetButton().overlaps(geometry.applyButton()));
-        assertFalse(geometry.resetButton().overlaps(geometry.doneButton()));
-        assertFalse(geometry.applyButton().overlaps(geometry.doneButton()));
+        assertFalse(geometry.contextButton().overlaps(geometry.doneButton()));
     }
 }
