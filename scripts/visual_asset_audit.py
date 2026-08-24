@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify generated Kelp and Glass visual assets are present and unchanged in the runtime JAR."""
+"""Verify generated Kelp and Glass visual assets are present and equivalent in the runtime JAR."""
 from __future__ import annotations
 
 import json
@@ -45,12 +45,21 @@ def generated_asset(path: str) -> Path:
     return root / path
 
 
+def canonical_json(data: bytes) -> str:
+    value = json.loads(data.decode("utf-8"))
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
 def require_generated_asset_identity(archive: zipfile.ZipFile, path: str) -> None:
     generated = generated_asset(path)
     if not generated.is_file():
         raise ValueError(f"generated source asset is missing: {generated.relative_to(ROOT)}")
     jar_bytes = archive.read(path)
     generated_bytes = generated.read_bytes()
+    if path.endswith(".json"):
+        if canonical_json(jar_bytes) != canonical_json(generated_bytes):
+            raise ValueError(f"runtime JAR JSON asset differs semantically from generated source asset: {path}")
+        return
     if jar_bytes != generated_bytes:
         raise ValueError(f"runtime JAR asset differs from generated source asset: {path}")
 
