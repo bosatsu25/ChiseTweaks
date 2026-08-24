@@ -98,17 +98,17 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void retainedEnglishNamesMatchCurrentProductTerminology() {
-        assertEquals("Scene Filter: Blocks", FeatureDefinition.BUILDER_FOCUS_BLOCKS.englishName());
-        assertEquals("Scene Filter: Entities", FeatureDefinition.BUILDER_FOCUS_ENTITIES.englishName());
-        assertEquals("Fine Thread Trace", FeatureDefinition.FINE_THREAD_TRACE.englishName());
-        assertEquals("Hidden Surface Trace", FeatureDefinition.HIDDEN_SURFACE_TRACE.englishName());
+    void retainedEnglishNamesMatchReadmeProductTerminology() {
+        assertEquals("Block Filter", FeatureDefinition.BUILDER_FOCUS_BLOCKS.englishName());
+        assertEquals("Entity Filter", FeatureDefinition.BUILDER_FOCUS_ENTITIES.englishName());
+        assertEquals("Fine Line Highlight", FeatureDefinition.FINE_THREAD_TRACE.englishName());
+        assertEquals("Hidden Block Highlight", FeatureDefinition.HIDDEN_SURFACE_TRACE.englishName());
         assertEquals("Glass Highlight", FeatureDefinition.GLASS_INSPECTION.englishName());
         assertEquals("Ore Highlights", FeatureDefinition.MATERIAL_HIGHLIGHTS.englishName());
-        assertEquals("Nether Palette", FeatureDefinition.NETHER_PALETTE.englishName());
+        assertEquals("Nether Highlight", FeatureDefinition.NETHER_PALETTE.englishName());
         assertEquals("Kelp Highlight", FeatureDefinition.KELP_HIGHLIGHT.englishName());
         assertEquals("Ancient Debris Analyzer", FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.englishName());
-        assertEquals("Fire Visibility", FeatureDefinition.FIRE_VISIBILITY.englishName());
-        assertEquals("Lava Source Highlight", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
+        assertEquals("Low Fire", FeatureDefinition.FIRE_VISIBILITY.englishName());
+        assertEquals("Lava Analyzer", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
     }
 }
