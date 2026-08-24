@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.gui;
 
-import net.minecraft.core.Direction;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -11,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-final class TrapdoorPlacementPreviewTest {
+final class SimplePlacementPreviewTest {
     @Test
     void disabledPreviewDoesNotReadRuntimeContext() {
-        var disabled = CrosshairInspector.predictTrapdoorState(
+        var disabled = CrosshairInspector.predictPlacementState(
                 null, null, null, null, null, false);
 
         assertNull(disabled);
@@ -30,12 +29,21 @@ final class TrapdoorPlacementPreviewTest {
     }
 
     @Test
-    void trapdoorFamilyIsSelectedByVanillaTypeRatherThanAnIdList() throws Exception {
+    void supportedFamiliesUseTypesTagsAndPropertiesInsteadOfBlockIdLists() throws Exception {
         String source = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/gui/CrosshairInspector.java"));
 
         assertTrue(source.contains("instanceof TrapDoorBlock"));
+        assertTrue(source.contains("instanceof SlabBlock"));
+        assertTrue(source.contains("state.is(BlockTags.LOGS)"));
+        assertTrue(source.contains("endsWith(\"_froglight\")"));
+        for (String property : new String[]{
+                "AXIS", "SLAB_TYPE", "HORIZONTAL_FACING", "HALF", "OPEN", "POWERED", "WATERLOGGED"}) {
+            assertTrue(source.contains("BlockStateProperties." + property), property);
+        }
         assertFalse(source.contains("oak_trapdoor\""));
+        assertFalse(source.contains("oak_log\""));
+        assertFalse(source.contains("ochre_froglight\""));
     }
 
     @Test
@@ -52,7 +60,7 @@ final class TrapdoorPlacementPreviewTest {
         assertTrue(source.contains("snapshot.upperClick() == upperClick"));
         String catalog = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java"));
-        assertTrue(catalog.contains("CrosshairInspector.stateProperties(state)"));
+        assertTrue(catalog.contains("CrosshairInspector.placementStateProperties(state)"));
         for (String forbidden : new String[]{
                 "setBlock(", "setBlockAndUpdate(", ".place(", "sendPacket", "send(",
                 "clickMouse", "pressMouse", "keyPress", ".clip(", "raycast(", "LOGGER"}) {
@@ -71,15 +79,19 @@ final class TrapdoorPlacementPreviewTest {
         for (String target : new String[]{"SOLID", "REPLACEABLE", "WATER", "BLOCKED"}) {
             assertTrue(source.contains("TargetKind." + target), target);
         }
+        for (String block : new String[]{
+                "OAK_TRAPDOOR", "IRON_TRAPDOOR", "OAK_LOG", "OAK_WOOD", "CRIMSON_STEM",
+                "CRIMSON_HYPHAE", "OCHRE_FROGLIGHT", "VERDANT_FROGLIGHT",
+                "PEARLESCENT_FROGLIGHT", "OAK_SLAB", "STONE", "QUARTZ_PILLAR"}) {
+            assertTrue(source.contains("Blocks." + block), block);
+        }
         assertTrue(source.contains("new ItemStack(Items.STICK)"));
-        assertTrue(source.contains("new ItemStack(Blocks.OAK_TRAPDOOR)"));
-        assertTrue(source.contains("Blocks.IRON_TRAPDOOR"));
         assertTrue(source.contains("setShiftKeyDown(sneaking)"));
-        assertTrue(source.contains("predictTrapdoorState"));
+        assertTrue(source.contains("predictPlacementState"));
         assertTrue(source.contains(".place(actualContext)"));
         assertTrue(source.contains("TrapDoorBlock.FACING"));
-        assertTrue(source.contains("TrapDoorBlock.HALF"));
-        assertTrue(source.contains("TrapDoorBlock.OPEN"));
-        assertTrue(source.contains("TrapDoorBlock.WATERLOGGED"));
+        assertTrue(source.contains("BlockStateProperties.AXIS"));
+        assertTrue(source.contains("BlockStateProperties.SLAB_TYPE"));
+        assertTrue(source.contains("BlockStateProperties.WATERLOGGED"));
     }
 }

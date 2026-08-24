@@ -262,7 +262,7 @@ final class ChiseTweaksSettingsCatalog {
         var state = placement.predictedPlacement();
         info(rows, "placement.predicted",
                 text("screen.chisetweaks.placement.predicted"),
-                String.join("\n", CrosshairInspector.stateProperties(state)));
+                String.join("\n", CrosshairInspector.placementStateProperties(state)));
         info(rows, "placement.reason",
                 text("screen.chisetweaks.inspector.matched_rule"),
                 placementReason(placement));

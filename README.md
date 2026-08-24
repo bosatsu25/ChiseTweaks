@@ -99,7 +99,7 @@ Filterが変更するのは**クライアント描画だけ**です。サーバ�
 
 Crosshair Inspectorは、Minecraftがすでに保持している照準結果を読み取り、Block / Entity ID、BlockState property、Filter判定理由、該当するChise機能と描画モードを表示します。追加raycast、packet送信、world変更は行わず、NBT・看板本文・本・inventory・chat・UUIDは取得しません。同一target / state / configでは表示snapshotを再構築しません。
 
-Inspector内の**Trapdoor Placement Preview**は、メインハンドのvanilla Trapdoor familyと現在のcrosshair hitだけを使い、配置前のFacing / Half / Open / Powered / Waterloggedを最大1件表示します。予測はvanillaの`getStateForPlacement`へ問い合わせますが、packet送信・world変更・click/key注入・追加scanは行いません。表示は**Predicted before placement**であり、サーバーが承認した**Actual after placement**とは明確に別です。初版はTrapdoorだけを対象とし、Stairs / Slab / Logへは拡張していません。
+Inspector内の**Simple Placement Preview**は、メインハンドの対応BlockItemと現在のcrosshair hitだけを使い、配置前のBlockStateを最大1件表示します。対応範囲はTrapdoor（Facing / Half / Open / Powered / Waterlogged）、Log / Wood / Stem / Hyphae / Froglight（Axis）、Slab（Type / Waterlogged）です。予測はvanillaの`getStateForPlacement`へ問い合わせますが、packet送信・world変更・click/key注入・追加raycast / scanは行いません。表示は**Predicted before placement**であり、サーバーが承認した**Actual after placement**とは明確に別です。Stairsや3D ghost、offhand、配置履歴は対象外です。
 
 ### Analyzer
 
@@ -281,6 +281,7 @@ Sodium / Iris / ImmediatelyFast / EntityCullingを `depends / breaks / conflicts
 - 軽量化中に許容する容量増加: `0 bytes`
 - absolute / effective CI上限: `446814 bytes`
 - Build Inspector拡張前のCapacity Recovery後: `439632 bytes`、hard ceilingまで `7182 bytes`
+- Simple Placement Preview追加後: `440252 bytes`、直前比 `+620 bytes`、hard ceilingまで `6562 bytes`
 - production class entry: `212 → 204`。SourceFile / LineNumberを維持し、shrinker・難読化・機能削除は使用しない
 
 ### Prism性能比較
@@ -343,7 +344,7 @@ CIでは次をRelease Candidateの必須条件として扱います。
 - Bright Chest / Bright Concrete高速ON/OFF
 - Lava Analyzer + Ancient Debris Analyzer同時利用
 - 古代の残骸の追加 / 削除反映
-- Trapdoor previewとvanilla実配置のClient GameTest比較
+- Simple Placement Preview（Trapdoor / Axis family / Slab）とvanilla実配置のClient GameTest比較
 - Overworld / Nether / End移動
 - disconnect / reconnect
 - Prism Launcher / `latest.log` のstructured diagnostics
