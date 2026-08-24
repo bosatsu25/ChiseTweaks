@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "chisetweaks-gametest",
+  "version": "1.0.0",
+  "name": "ChiseTweaks Client GameTests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "dev.chise.chisetweaks.gui.TrapdoorPlacementClientGameTest"
+    ]
+  },
+  "depends": {
+    "chisetweaks": "*",
+    "fabric-client-gametest-api-v1": "*"
+  }
+}

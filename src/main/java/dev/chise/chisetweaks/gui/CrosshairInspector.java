@@ -12,19 +12,28 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.BlockItemStateProperties;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
 
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -33,16 +42,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /** Minecraftが保持するcrosshair hitだけから、privacy-safeな読み取り専用snapshotを作る。 */
 final class CrosshairInspector {
     private static final int MAX_STATE_PROPERTIES = 32;
     private static final int MAX_TOKEN_LENGTH = 64;
-    private static final Pattern IDENTIFIER = Pattern.compile("[a-z0-9_.-]+:[a-z0-9_./-]+");
-    private static final Pattern STATE_TOKEN = Pattern.compile("[a-z0-9_.-]+");
     private static final Snapshot NO_TARGET = new Snapshot(
-            HitResult.Type.MISS, "", List.of(), null, List.of());
+            HitResult.Type.MISS, "", List.of(), null, List.of(), null, null, false);
 
     private HitResult.Type cachedKind;
     private BlockState cachedBlockState;
@@ -84,7 +90,7 @@ final class CrosshairInspector {
         HitResult hit = client.hitResult;
         if (hit.getType() == HitResult.Type.BLOCK && hit instanceof BlockHitResult blockHit) {
             BlockState state = client.level.getBlockState(blockHit.getBlockPos());
-            return updateBlock(state, Level.NETHER.equals(client.level.dimension()));
+            return updateBlock(client, blockHit, state, Level.NETHER.equals(client.level.dimension()));
         }
         if (hit.getType() == HitResult.Type.ENTITY && hit instanceof EntityHitResult entityHit) {
             Entity entity = entityHit.getEntity();
@@ -102,11 +108,31 @@ final class CrosshairInspector {
         return true;
     }
 
-    private boolean updateBlock(BlockState state, boolean inNether) {
+    private boolean updateBlock(
+            Minecraft client,
+            BlockHitResult hit,
+            BlockState state,
+            boolean inNether) {
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         long featureMask = enabledFeatureMask();
         long filterRevision = BuilderFocusVisibility.revision();
         long oreRevision = OreHighlightResolver.revision();
+        ItemStack stack = client.player == null ? null : client.player.getMainHandItem();
+        boolean placementAvailable = stack != null
+                && stack.getItem() instanceof BlockItem item
+                && item.getBlock() instanceof TrapDoorBlock;
+        Direction clickedFace = placementAvailable ? hit.getDirection() : null;
+        boolean upperClick = placementAvailable
+                && hit.getLocation().y - hit.getBlockPos().getY() > 0.5D;
+        BlockState predictedPlacement = placementAvailable
+                ? predictTrapdoorState(
+                        client.level,
+                        client.player,
+                        InteractionHand.MAIN_HAND,
+                        stack,
+                        hit,
+                        true)
+                : null;
         if (cachedKind == HitResult.Type.BLOCK
                 && cachedBlockState == state
                 && cachedFeatureMask == featureMask
@@ -114,7 +140,10 @@ final class CrosshairInspector {
                 && cachedWorldOverlay == local.worksiteVisibilityWorldOverlay
                 && cachedInNether == inNether
                 && cachedFilterRevision == filterRevision
-                && cachedOreRevision == oreRevision) {
+                && cachedOreRevision == oreRevision
+                && snapshot.predictedPlacement() == predictedPlacement
+                && snapshot.clickedFace() == clickedFace
+                && snapshot.upperClick() == upperClick) {
             return false;
         }
 
@@ -132,7 +161,10 @@ final class CrosshairInspector {
                 featureMask,
                 local.visualTargetMask,
                 local.worksiteVisibilityWorldOverlay,
-                inNether);
+                inNether,
+                predictedPlacement,
+                clickedFace,
+                upperClick);
         return true;
     }
 
@@ -161,7 +193,10 @@ final class CrosshairInspector {
                         targetId,
                         List.of(),
                         BuilderFocusVisibility.inspect(entity),
-                        List.of());
+                        List.of(),
+                        null,
+                        null,
+                        false);
         return true;
     }
 
@@ -170,7 +205,10 @@ final class CrosshairInspector {
             long enabledFeatures,
             int visualTargetMask,
             boolean worldOverlay,
-            boolean inNether) {
+            boolean inNether,
+            BlockState predictedPlacement,
+            Direction clickedFace,
+            boolean upperClick) {
         if (state == null) return NO_TARGET;
         Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         String targetId = id == null ? "" : safeIdentifier(id.toString());
@@ -196,7 +234,32 @@ final class CrosshairInspector {
                         inNether && "minecraft:ancient_debris".equals(targetId),
                         visualTargetMask,
                         worldOverlay,
-                        enabledFeatures));
+                        enabledFeatures),
+                predictedPlacement,
+                clickedFace,
+                upperClick);
+    }
+
+    static BlockState predictTrapdoorState(
+            Level level,
+            Player player,
+            InteractionHand hand,
+            ItemStack stack,
+            BlockHitResult hit,
+            boolean enabled) {
+        if (!enabled || !(stack.getItem() instanceof BlockItem item)
+                || !(item.getBlock() instanceof TrapDoorBlock trapdoor)) return null;
+        BlockPlaceContext context = new BlockPlaceContext(level, player, hand, stack, hit);
+        if (!context.canPlace()) return null;
+        BlockState state = trapdoor.getStateForPlacement(context);
+        if (state == null
+                || !level.isUnobstructed(
+                        state,
+                        context.getClickedPos(),
+                        CollisionContext.placementContext(player))) return null;
+        return stack.getOrDefault(
+                DataComponents.BLOCK_STATE,
+                BlockItemStateProperties.EMPTY).apply(state);
     }
 
     static List<FeatureDefinition> responsibleFeatures(
@@ -288,7 +351,7 @@ final class CrosshairInspector {
         return feature != null && (mask & (1L << feature.ordinal())) != 0L;
     }
 
-    private static List<String> stateProperties(BlockState state) {
+    static List<String> stateProperties(BlockState state) {
         LinkedHashMap<String, String> properties = new LinkedHashMap<>();
         for (Property<?> property : state.getProperties()) {
             addProperty(state, property, properties);
@@ -319,14 +382,15 @@ final class CrosshairInspector {
 
     private static String safeIdentifier(String raw) {
         if (raw == null) return "";
-        String value = Normalizer.normalize(raw.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFC);
-        return value.length() <= 256 && IDENTIFIER.matcher(value).matches() ? value : "";
+        String value = raw.trim();
+        Identifier parsed = value.length() <= 256 ? Identifier.tryParse(value) : null;
+        return parsed == null ? "" : parsed.toString();
     }
 
     private static String safeToken(String raw) {
         if (raw == null) return "";
-        String value = Normalizer.normalize(raw.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFC);
-        return value.length() <= MAX_TOKEN_LENGTH && STATE_TOKEN.matcher(value).matches() ? value : "";
+        String value = raw.trim().toLowerCase(Locale.ROOT);
+        return value.length() <= MAX_TOKEN_LENGTH && Identifier.isValidPath(value) ? value : "";
     }
 
     record Snapshot(
@@ -334,26 +398,29 @@ final class CrosshairInspector {
             String targetId,
             List<String> stateProperties,
             BuilderFocusVisibility.FilterDecision filterDecision,
-            List<FeatureDefinition> responsibleFeatures) {
+            List<FeatureDefinition> responsibleFeatures,
+            BlockState predictedPlacement,
+            Direction clickedFace,
+            boolean upperClick) {
         Snapshot {
-            Objects.requireNonNull(targetKind, "targetKind");
+            Objects.requireNonNull(targetKind);
             targetId = targetId == null ? "" : targetId;
-            stateProperties = List.copyOf(Objects.requireNonNull(stateProperties, "stateProperties"));
-            responsibleFeatures = List.copyOf(Objects.requireNonNull(
-                    responsibleFeatures, "responsibleFeatures"));
+            stateProperties = List.copyOf(Objects.requireNonNull(stateProperties));
+            responsibleFeatures = List.copyOf(Objects.requireNonNull(responsibleFeatures));
             if (targetKind == HitResult.Type.MISS && (!targetId.isEmpty() || filterDecision != null)) {
-                throw new IllegalArgumentException("no-target snapshot must not carry target data");
+                throw new IllegalArgumentException();
             }
             if (targetKind != HitResult.Type.MISS && (targetId.isEmpty() || filterDecision == null)) {
-                throw new IllegalArgumentException("target snapshot requires id and filter decision");
+                throw new IllegalArgumentException();
             }
             if (targetKind != HitResult.Type.BLOCK && !stateProperties.isEmpty()) {
-                throw new IllegalArgumentException("only blocks may carry state properties");
+                throw new IllegalArgumentException();
             }
         }
 
         static Snapshot noTarget() {
             return NO_TARGET;
         }
+
     }
 }

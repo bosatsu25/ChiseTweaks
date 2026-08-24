@@ -44,7 +44,8 @@ final class ChiseTweaksSettingsControllerTest {
                 List.of("materials", "nether", "thread", "hidden", "glass", "kelp")));
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.FILTER)).containsAll(
                 List.of("focusBlocks", "focusEntities", "editBlockFilter", "editEntityFilter")));
-        assertEquals(List.of("inspector.title", "inspector.noTarget"),
+        assertEquals(List.of(
+                        "inspector.title", "inspector.noTarget", "placement.title", "placement.none"),
                 ids(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR)));
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER)).containsAll(
                 List.of("lava", "ancientDebrisAnalyzer", "lavaRange", "ancientDebrisRange")));

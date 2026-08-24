@@ -25,9 +25,14 @@ final class CrosshairInspectorLayoutTest {
                         "minecraft:oak_trapdoor"),
                 List.of(
                         FeatureDefinition.FINE_THREAD_TRACE,
-                        FeatureDefinition.MATERIAL_HIGHLIGHTS));
+                        FeatureDefinition.MATERIAL_HIGHLIGHTS),
+                null,
+                null,
+                false);
         List<ChiseTweaksSettingRowDefinition> rows =
-                new ChiseTweaksSettingsCatalog().inspectorRows(snapshot, true);
+                new ChiseTweaksSettingsCatalog().inspectorRows(
+                        snapshot,
+                        true);
 
         for (int width : List.of(320, 480, 960)) {
             var geometry = ChiseTweaksSettingsLayout.calculate(width, 480);
