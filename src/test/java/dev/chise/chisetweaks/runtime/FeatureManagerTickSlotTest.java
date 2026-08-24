@@ -14,11 +14,50 @@ final class FeatureManagerTickSlotTest {
     void initiallyInactiveRuntimeComponentStillGetsOpportunityToActivate() {
         FakeRuntimeComponent component = new FakeRuntimeComponent();
         FeatureManager.ComponentSlot slot = new FeatureManager.ComponentSlot(component);
+        assertTrue(slot.isTicking());
+        assertFalse(slot.isSessionAware());
+        assertEquals("fake-runtime", slot.componentId());
         assertFalse(component.isActive());
         slot.runForTick(null);
         assertEquals(1, component.ticks);
         assertTrue(component.isActive());
         assertFalse(slot.isQuarantined());
+    }
+
+    @Test
+    void plainRuntimeComponentSkipsUnsupportedTickAndSessionLifecycles() {
+        PlainRuntimeComponent component = new PlainRuntimeComponent();
+        FeatureManager.ComponentSlot slot = new FeatureManager.ComponentSlot(component);
+
+        assertFalse(slot.isTicking());
+        assertFalse(slot.isSessionAware());
+        assertEquals("plain-runtime", slot.componentId());
+        assertDoesNotThrow(() -> slot.runForTick(null));
+        assertDoesNotThrow(() -> slot.resetSession(null));
+        assertFalse(slot.isQuarantined());
+    }
+
+    @Test
+    void sessionAwareComponentExposesCapabilityAndResetsWithoutQuarantine() {
+        SessionOnlyRuntimeComponent component = new SessionOnlyRuntimeComponent();
+        FeatureManager.ComponentSlot slot = new FeatureManager.ComponentSlot(component);
+
+        assertFalse(slot.isTicking());
+        assertTrue(slot.isSessionAware());
+        slot.resetSession(null);
+
+        assertEquals(1, component.resets);
+        assertFalse(slot.isQuarantined());
+    }
+
+    @Test
+    void initializeDelegatesToRuntimeComponent() {
+        PlainRuntimeComponent component = new PlainRuntimeComponent();
+        FeatureManager.ComponentSlot slot = new FeatureManager.ComponentSlot(component);
+
+        slot.initialize();
+
+        assertEquals(1, component.initializations);
     }
 
     @Test
@@ -80,6 +119,22 @@ final class FeatureManagerTickSlotTest {
         assertTrue(slot.isQuarantined());
         assertEquals(1, feature.quarantineCalls);
         assertTrue(feature.isEnabled());
+    }
+
+    private static final class PlainRuntimeComponent implements RuntimeComponent {
+        private int initializations;
+
+        @Override public String getId() { return "plain-runtime"; }
+        @Override public void init() { initializations++; }
+    }
+
+    private static final class SessionOnlyRuntimeComponent
+            implements RuntimeComponent, SessionAwareRuntimeComponent {
+        private int resets;
+
+        @Override public String getId() { return "session-runtime"; }
+        @Override public void init() {}
+        @Override public void resetSession(Minecraft client) { resets++; }
     }
 
     private static final class FakeRuntimeComponent implements TickingRuntimeComponent {
