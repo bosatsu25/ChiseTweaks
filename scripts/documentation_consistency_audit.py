@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep README compatibility metadata and runtime-size policy synchronized with release properties."""
+"""Keep the two-document ownership model and runtime metadata synchronized."""
 from __future__ import annotations
 
 import json
@@ -7,18 +7,25 @@ import re
 import sys
 from pathlib import Path
 
+from versioning_core import read_properties
+
 ROOT = Path(__file__).resolve().parents[1]
 
-
-def properties() -> dict[str, str]:
-    result: dict[str, str] = {}
-    for line in (ROOT / "gradle.properties").read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
-            continue
-        key, value = stripped.split("=", 1)
-        result[key.strip()] = value.strip()
-    return result
+RETIRED_DOCUMENTS = (
+    "AUDIT_2026-08-23.md",
+    "CI_ENVIRONMENT.md",
+    "TEST_DESIGN_JSTQB.md",
+    "VERSIONING.md",
+    "docs/CI_ACCEPTANCE.md",
+    "docs/CI_FIX_NOTES.md",
+    "docs/CI_JAR_POLICY.md",
+    "docs/CI_PIT_SCOPE.md",
+    "docs/CI_QUALITY_MODEL.md",
+    "docs/CI_RELEASE_FLOW.md",
+    "docs/CI_SCOPE_SUMMARY.md",
+    "docs/acceptance/0.9.4-prism.md",
+    "docs/performance/0.9.4-baseline.md",
+)
 
 
 def require(pattern: str, text: str, label: str, failures: list[str]) -> None:
@@ -28,26 +35,18 @@ def require(pattern: str, text: str, label: str, failures: list[str]) -> None:
 
 def main() -> int:
     failures: list[str] = []
-    props = properties()
+    props = read_properties(ROOT / "gradle.properties")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    development = (ROOT / "DEVELOPMENT.md").read_text(encoding="utf-8")
     fabric = json.loads((ROOT / "src/main/resources/fabric.mod.json").read_text(encoding="utf-8"))
 
-    version = props["mod_version"]
-    core_version = version.split("+", 1)[0]
     minecraft = props["minecraft_version"]
     loader = props["loader_version"]
     fabric_api = props["fabric_api_version"]
     jar_goal = props["runtime_jar_target_bytes"]
-    jar_baseline = props["runtime_jar_baseline_bytes"]
-    jar_growth = props["runtime_jar_max_growth_bytes"]
     jar_max = props["runtime_jar_max_bytes"]
 
-    require(
-        rf"^\| ChiseTweaks \| `{re.escape(version)}` \|$",
-        readme,
-        f"README ChiseTweaks row must be {version}",
-        failures,
-    )
+    require(r"^# ChiseTweaks$", readme, "README must remain the user-facing product document", failures)
     require(
         rf"^\| Minecraft \| `{re.escape(minecraft)}` \|$",
         readme,
@@ -66,48 +65,35 @@ def main() -> int:
         f"README Fabric API row must be {fabric_api} or newer",
         failures,
     )
+    require(r"^\| Java \| `25` 以上 \|$", readme, "README Java row must require Java 25 or newer", failures)
     require(
-        r"^\| Java \| `25` 以上 \|$",
+        r"chise-tweaks-<version>\.jar",
         readme,
-        "README Java row must require Java 25 or newer",
+        "README must document the version-derived runtime JAR naming contract",
         failures,
     )
     require(
-        rf"^## {re.escape(core_version)} の主な更新$",
+        r"\[`DEVELOPMENT\.md`\]\(DEVELOPMENT\.md\)",
         readme,
-        f"README must contain the {core_version} current-update section",
+        "README must link to DEVELOPMENT.md",
         failures,
     )
-    require(
-        rf"`chise-tweaks-{re.escape(version)}\.jar`",
-        readme,
-        "README must name the current runtime JAR exactly",
-        failures,
-    )
-    require(
-        rf"^- runtime JAR最終目標: `{re.escape(jar_goal)} bytes` 以下（350 KiB）$",
-        readme,
-        f"README runtime JAR goal must be {jar_goal} bytes",
-        failures,
-    )
-    require(
-        rf"^- M0 frozen size baseline: `{re.escape(jar_baseline)} bytes`$",
-        readme,
-        f"README runtime JAR baseline must be {jar_baseline} bytes",
-        failures,
-    )
-    require(
-        rf"^- 軽量化中に許容する容量増加: `{re.escape(jar_growth)} bytes`$",
-        readme,
-        f"README runtime JAR growth allowance must be {jar_growth} bytes",
-        failures,
-    )
-    require(
-        rf"^- absolute / effective CI上限: `{re.escape(jar_max)} bytes`$",
-        readme,
-        f"README runtime JAR hard ceiling must be {jar_max} bytes",
-        failures,
-    )
+
+    for marker in (
+        "python scripts/bump_version.py patch",
+        "python scripts/bump_version.py minor",
+        "exact CI-verified runtime JAR",
+        f"`{jar_goal} bytes`",
+        f"`{jar_max} bytes`",
+        "runtime featureは現在11個",
+        "GitHub Issues",
+    ):
+        if marker not in development:
+            failures.append(f"DEVELOPMENT.md is missing current contract marker: {marker}")
+
+    for relative in RETIRED_DOCUMENTS:
+        if (ROOT / relative).exists():
+            failures.append(f"retired duplicate documentation returned: {relative}")
 
     if fabric.get("version") != "${version}":
         failures.append("fabric.mod.json version must remain ${version}")
@@ -129,11 +115,11 @@ def main() -> int:
         return 1
 
     print("DOCUMENTATION CONSISTENCY AUDIT: PASS")
-    print(f"version={version}")
+    print("user_doc=README.md")
+    print("development_doc=DEVELOPMENT.md")
+    print("retired_duplicate_docs=false")
     print(f"minecraft={minecraft}")
     print(f"runtime_jar_goal={jar_goal}")
-    print(f"runtime_jar_baseline={jar_baseline}")
-    print(f"runtime_jar_growth={jar_growth}")
     print(f"runtime_jar_max={jar_max}")
     print("metadata_placeholders=true")
     return 0

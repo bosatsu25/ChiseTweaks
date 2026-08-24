@@ -47,6 +47,22 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
+      - name: Test version tooling
+        run: python scripts/test_versioning_tools.py
+
+      - name: Verify release version progression
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          previous_tag="$(gh release list --repo "$GH_REPO" --limit 100 --json tagName,isDraft,isPrerelease,publishedAt \
+            --jq '[.[] | select(.isDraft == false and .isPrerelease == false and (.tagName | test("^v[0-9]+\\.")))] | sort_by(.publishedAt) | last | .tagName // ""')"
+          if [[ -z "$previous_tag" ]]; then
+            echo 'No previous official SemVer release; progression check skipped.'
+          else
+            python scripts/version_policy.py --previous "${previous_tag#v}" --allow-any-one-step
+          fi
+
       - name: Audit repository contracts
         run: |
           python scripts/version_policy.py
@@ -59,7 +75,7 @@ jobs:
       - name: Build and verify
         run: ./gradlew --stacktrace ciGate
 
-      - name: Verify trapdoor placement oracle
+      - name: Verify placement oracle
         run: xvfb-run -a ./gradlew --stacktrace runClientGameTest
 
       - name: Audit distribution
