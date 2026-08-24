@@ -38,14 +38,17 @@ final class SettingsSectionActionRegressionTest {
         String layout = Files.readString(GUI_ROOT.resolve("ChiseTweaksSettingsLayout.java"));
 
         assertTrue(controller.contains("HIGHLIGHT"));
-        assertTrue(controller.contains("VISUAL_FILTER"));
+        assertTrue(controller.contains("FILTER"));
+        assertTrue(controller.contains("INSPECTOR"));
         assertTrue(controller.contains("ANALYZER"));
         assertTrue(controller.contains("VISIBILITY"));
-        assertTrue(controller.contains("HELP"));
+        assertFalse(controller.contains("VISUAL_FILTER"));
+        assertFalse(controller.contains("HELP"));
         assertTrue(layout.contains("TAB_COUNT = 5"));
         assertTrue(screen.contains("設定を適用"));
         assertTrue(screen.contains("設定をリセット"));
         assertTrue(screen.contains("ChiseTweaksMetadata.MOD_NAME"));
+        assertTrue(screen.contains("CrosshairInspector"));
         assertFalse(screen.contains("ChiseTweaksMetadata.MOD_VERSION"));
     }
 }

@@ -95,10 +95,10 @@ final class SettingsAndAnalyzerDesignContractTest {
         assertContainsAll(controller,
                 "ChiseTweaksSettingsCatalog",
                 "HIGHLIGHT",
-                "VISUAL_FILTER",
+                "FILTER",
+                "INSPECTOR",
                 "ANALYZER",
-                "VISIBILITY",
-                "HELP");
+                "VISIBILITY");
         assertContainsNone(controller,
                 "boolean japanese",
                 "japanese ?",
@@ -109,10 +109,10 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "Component.translatable(",
                 "definition.englishName()",
                 "\"Highlight\"",
-                "\"Visual Filter\"",
+                "\"Filter\"",
+                "\"Inspector\"",
                 "\"Analyzer\"",
                 "\"Visibility\"",
-                "\"使い方\"",
                 "\"Bright Chest\"",
                 "\"Bright Concrete\"");
         assertContainsAll(definition,

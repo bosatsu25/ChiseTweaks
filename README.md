@@ -2,10 +2,10 @@
 
 > **大規模建築・技術施設の「見落とし」を減らす、Fabric クライアント専用 MOD。**
 
-ChiseTweaks は、鉱石・細線・ガラス・危険物などの**視認性向上**、不要なブロックやエンティティを隠す**Visual Filter**、溶岩源や古代の残骸を確認する**Analyzer**を1つにまとめた Minecraft MOD です。
+ChiseTweaks は、鉱石・細線・ガラス・危険物などの**視認性向上**、不要なブロックやエンティティを隠す**Filter**、照準対象の状態と描画理由を説明する**Inspector**、溶岩源や古代の残骸を確認する**Analyzer**を1つにまとめた Minecraft MOD です。
 
 - ✅ **クライアントだけで動作** — サーバーへの導入不要
-- ✅ **11個の主要機能を個別にON/OFF** — Highlight / Visual Filter / Analyzer / Visibility
+- ✅ **11個の主要機能を個別にON/OFF** — Highlight / Filter / Analyzer / Visibility。Inspectorは読み取り専用
 - ✅ **全機能の同時利用を前提** — Fine Line / Hidden Block / Nether Highlight も同時ON可能
 - ✅ **loaded chunks only** — 未ロードチャンクを強制ロードしない
 - ✅ **Prism Launcherの標準ログで診断** — 独自診断画面を増やさない
@@ -65,7 +65,7 @@ Mod Menuを導入している場合は、Mod Menu → **ChiseTweaks** から設�
 |  | Hidden Block Highlight | Powder Snow / Blue Ice / Dead Coral / Sculk Catalystなどを強調 | OFF |
 |  | Glass Highlight | Glass / Glass Paneを形状別に強調 | OFF |
 |  | Kelp Highlight | Kelp / Kelp Plantへ視認性オーバーレイを追加 | OFF |
-| **Visual Filter** | Block Filter | Block IDのAllow / Hide listで通常ブロック・BlockEntity・Chiseオーバーレイを制御 | OFF |
+| **Filter** | Block Filter | Block IDのAllow / Hide listで通常ブロック・BlockEntity・Chiseオーバーレイを制御 | OFF |
 |  | Entity Filter | Entity IDのAllow / Hide listでローカル描画を制御 | OFF |
 | **Analyzer** | Lava Analyzer | 読み込み済み範囲の**溶岩源**を輪郭＋半透明面で表示 | OFF |
 |  | Ancient Debris Analyzer | Netherの読み込み済みチャンクから古代の残骸を検出 | OFF |
@@ -88,12 +88,16 @@ Fine Line / Hidden Block / Nether Highlightは**同時にON**にできます。�
 | 更新間隔 | `5–100 ticks` |
 | 最大オーバーレイ | `1–24` |
 
-### Visual Filter
+### Filter
 
 - **Block Filter** — Block IDのAllow / Hide listを通常ブロックとBlockEntityの共通描画経路へ適用。HideはBright ChestやChiseのHighlight / Overlayより優先
 - **Entity Filter** — Entity IDのAllow / Hide listでローカル描画を制御。プレイヤー自身は保護
 
-Visual Filterが変更するのは**クライアント描画だけ**です。サーバー側のblock / entity状態は変更しません。
+Filterが変更するのは**クライアント描画だけ**です。サーバー側のblock / entity状態は変更しません。
+
+### Inspector
+
+Crosshair Inspectorは、Minecraftがすでに保持している照準結果を読み取り、Block / Entity ID、BlockState property、Filter判定理由、該当するChise機能と描画モードを表示します。追加raycast、packet送信、world変更は行わず、NBT・看板本文・本・inventory・chat・UUIDは取得しません。同一target / state / configでは表示snapshotを再構築しません。
 
 ### Analyzer
 
@@ -331,7 +335,7 @@ CIでは次をRelease Candidateの必須条件として扱います。
 
 - 11 runtime features同時ON
 - Fine Line + Hidden Block + Nether Highlight同時ON
-- Block / Entity Visual Filter
+- Block / Entity Filter
 - Bright Chest / Bright Concrete高速ON/OFF
 - Lava Analyzer + Ancient Debris Analyzer同時利用
 - 古代の残骸の追加 / 削除反映

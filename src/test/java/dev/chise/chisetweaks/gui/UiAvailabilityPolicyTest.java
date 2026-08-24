@@ -12,7 +12,7 @@ final class UiAvailabilityPolicyTest {
         var controller = new ChiseTweaksSettingsController();
         for (ChiseTweaksSettingsController.Surface surface : new ChiseTweaksSettingsController.Surface[]{
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT,
-                ChiseTweaksSettingsController.Surface.VISUAL_FILTER,
+                ChiseTweaksSettingsController.Surface.FILTER,
                 ChiseTweaksSettingsController.Surface.ANALYZER,
                 ChiseTweaksSettingsController.Surface.VISIBILITY}) {
             for (ChiseTweaksSettingRowDefinition row : controller.rows(surface)) {
@@ -23,12 +23,13 @@ final class UiAvailabilityPolicyTest {
     }
 
     @Test
-    void helpRowsAreDisplayOnly() {
+    void inspectorRowsAreDisplayOnly() {
         var controller = new ChiseTweaksSettingsController();
-        for (ChiseTweaksSettingRowDefinition row : controller.rows(ChiseTweaksSettingsController.Surface.HELP)) {
+        for (ChiseTweaksSettingRowDefinition row
+                : controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR)) {
             if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) continue;
             assertFalse(UiAvailabilityPolicy.isRowInteractive(
-                    ChiseTweaksSettingsController.Surface.HELP, row), row.id());
+                    ChiseTweaksSettingsController.Surface.INSPECTOR, row), row.id());
         }
     }
 
@@ -41,10 +42,10 @@ final class UiAvailabilityPolicyTest {
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER));
         assertTrue(UiAvailabilityPolicy.isActionInteractive(
-                ChiseTweaksSettingsController.Surface.VISUAL_FILTER,
+                ChiseTweaksSettingsController.Surface.FILTER,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER));
         assertTrue(UiAvailabilityPolicy.isActionInteractive(
-                ChiseTweaksSettingsController.Surface.VISUAL_FILTER,
+                ChiseTweaksSettingsController.Surface.FILTER,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER));
         assertFalse(UiAvailabilityPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.ANALYZER,

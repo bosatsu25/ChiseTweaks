@@ -21,9 +21,18 @@ import java.util.Set;
  * ブロックとエンティティの可視性判定はランタイム用スナップショットとして保持し、描画中の設定再解釈を避ける。
  */
 public final class BuilderFocusVisibility {
+    public static final String REASON_FILTER_OFF = "filter_off";
+    public static final String REASON_NO_RULE = "no_rule";
+    public static final String REASON_HIDE_LIST_MATCH = "hide_list_match";
+    public static final String REASON_HIDE_LIST_NO_MATCH = "hide_list_no_match";
+    public static final String REASON_ALLOW_LIST_MATCH = "allow_list_match";
+    public static final String REASON_ALLOW_LIST_NO_MATCH = "allow_list_no_match";
+    public static final String REASON_SELF_PROTECTED = "self_protected";
+    public static final String REASON_UNREGISTERED = "unregistered";
     private static volatile BlockConfigFingerprint blockFingerprint = BlockConfigFingerprint.empty();
     private static volatile BlockRules blockRules = BlockRules.none();
     private static volatile EntityRules entityRules = EntityRules.none();
+    private static volatile long revision;
 
     private BuilderFocusVisibility() {}
 
@@ -32,6 +41,7 @@ public final class BuilderFocusVisibility {
         BlockRules nextRules = compileBlockRules(next);
         blockRules = nextRules;
         blockFingerprint = next;
+        revision++;
         buildEntityLists();
     }
 
@@ -43,6 +53,7 @@ public final class BuilderFocusVisibility {
         BlockRules nextRules = compileBlockRules(next);
         blockRules = nextRules;
         blockFingerprint = next;
+        revision++;
 
         if (BuilderFocusConfig.REFRESH_RENDERER.getBooleanValue()) {
             ChunkRenderInvalidation.request();
@@ -56,12 +67,22 @@ public final class BuilderFocusVisibility {
                 resolveEntityTypes(BuilderFocusConfig.ENTITY_BLACKLIST.getStrings()),
                 resolveEntityTypes(BuilderFocusConfig.ENTITY_WHITELIST.getStrings()));
         entityRules = nextRules;
+        revision++;
     }
 
     public static boolean shouldHide(Block block) {
         if (block == null || !FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue()) return false;
         if (BuiltInRegistries.BLOCK.getKey(block) == null) return false;
         return blockRules.hides(block);
+    }
+
+    public static FilterDecision inspect(Block block) {
+        if (!FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue()) {
+            return FilterDecision.visible(REASON_FILTER_OFF);
+        }
+        Identifier id = block == null ? null : BuiltInRegistries.BLOCK.getKey(block);
+        if (id == null) return FilterDecision.visible(REASON_UNREGISTERED);
+        return blockRules.inspect(block, id.toString());
     }
 
     static boolean shouldHideByRule(
@@ -74,6 +95,28 @@ public final class BuilderFocusVisibility {
             case BLACKLIST -> blacklistMatch;
             case WHITELIST -> !whitelistMatch;
             case NONE -> false;
+        };
+    }
+
+    static FilterDecision inspectByRule(
+            boolean enabled,
+            ChiseRuleMode mode,
+            boolean blacklistMatch,
+            boolean whitelistMatch,
+            String targetId) {
+        if (!enabled) return FilterDecision.visible(REASON_FILTER_OFF);
+        if (mode == null || mode == ChiseRuleMode.NONE) {
+            return FilterDecision.visible(REASON_NO_RULE);
+        }
+        String matchedRule = targetId == null ? "" : targetId;
+        return switch (mode) {
+            case BLACKLIST -> blacklistMatch
+                    ? FilterDecision.hidden(REASON_HIDE_LIST_MATCH, matchedRule)
+                    : FilterDecision.visible(REASON_HIDE_LIST_NO_MATCH);
+            case WHITELIST -> whitelistMatch
+                    ? FilterDecision.visible(REASON_ALLOW_LIST_MATCH, matchedRule)
+                    : FilterDecision.hidden(REASON_ALLOW_LIST_NO_MATCH, "");
+            case NONE -> FilterDecision.visible(REASON_NO_RULE);
         };
     }
 
@@ -90,6 +133,25 @@ public final class BuilderFocusVisibility {
         EntityType<?> type = entity.getType();
         if (BuiltInRegistries.ENTITY_TYPE.getKey(type) == null) return false;
         return entityRules.hides(type);
+    }
+
+    public static FilterDecision inspect(Entity entity) {
+        if (!FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue()) {
+            return FilterDecision.visible(REASON_FILTER_OFF);
+        }
+        if (entity == null) return FilterDecision.visible(REASON_UNREGISTERED);
+        Minecraft client = Minecraft.getInstance();
+        if (client.player != null && entity == client.player) {
+            return FilterDecision.visible(REASON_SELF_PROTECTED);
+        }
+        EntityType<?> type = entity.getType();
+        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+        if (id == null) return FilterDecision.visible(REASON_UNREGISTERED);
+        return entityRules.inspect(type, id.toString());
+    }
+
+    public static long revision() {
+        return revision;
     }
 
     public static boolean applyPreset(String presetId) {
@@ -222,6 +284,15 @@ public final class BuilderFocusVisibility {
                     blacklist.contains(block),
                     whitelist.contains(block));
         }
+
+        FilterDecision inspect(Block block, String targetId) {
+            return inspectByRule(
+                    enabled,
+                    mode,
+                    blacklist.contains(block),
+                    whitelist.contains(block),
+                    targetId);
+        }
     }
 
     private record EntityRules(
@@ -244,6 +315,35 @@ public final class BuilderFocusVisibility {
                 case WHITELIST -> !whitelist.contains(type);
                 case NONE -> false;
             };
+        }
+
+        FilterDecision inspect(EntityType<?> type, String targetId) {
+            return inspectByRule(
+                    true,
+                    mode,
+                    blacklist.contains(type),
+                    whitelist.contains(type),
+                    targetId);
+        }
+    }
+
+    public record FilterDecision(boolean hidden, String reason, String matchedRule) {
+        public FilterDecision {
+            reason = Objects.requireNonNull(reason, "reason");
+            if (reason.isBlank()) throw new IllegalArgumentException("reason must not be blank");
+            matchedRule = matchedRule == null ? "" : matchedRule;
+        }
+
+        private static FilterDecision visible(String reason) {
+            return new FilterDecision(false, reason, "");
+        }
+
+        private static FilterDecision visible(String reason, String matchedRule) {
+            return new FilterDecision(false, reason, matchedRule);
+        }
+
+        private static FilterDecision hidden(String reason, String matchedRule) {
+            return new FilterDecision(true, reason, matchedRule);
         }
     }
 }

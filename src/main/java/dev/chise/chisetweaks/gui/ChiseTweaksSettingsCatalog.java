@@ -10,7 +10,9 @@ import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
+import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.HitResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,21 +27,29 @@ final class ChiseTweaksSettingsCatalog {
         ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
         switch (surface == null ? ChiseTweaksSettingsController.Surface.HIGHLIGHT : surface) {
             case HIGHLIGHT -> addHighlightRows(rows);
-            case VISUAL_FILTER -> addVisualFilterRows(rows);
+            case FILTER -> addFilterRows(rows);
+            case INSPECTOR -> addInspectorRows(rows, CrosshairInspector.Snapshot.noTarget(), false);
             case ANALYZER -> addAnalyzerRows(rows);
             case VISIBILITY -> addVisibilityRows(rows);
-            case HELP -> addHelpRows(rows);
         }
+        return List.copyOf(rows);
+    }
+
+    List<ChiseTweaksSettingRowDefinition> inspectorRows(
+            CrosshairInspector.Snapshot snapshot,
+            boolean includeHelp) {
+        ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
+        addInspectorRows(rows, snapshot, includeHelp);
         return List.copyOf(rows);
     }
 
     String surfaceTitle(ChiseTweaksSettingsController.Surface surface) {
         return switch (surface == null ? ChiseTweaksSettingsController.Surface.HIGHLIGHT : surface) {
             case HIGHLIGHT -> "Highlight";
-            case VISUAL_FILTER -> "Visual Filter";
+            case FILTER -> "Filter";
+            case INSPECTOR -> "Inspector";
             case ANALYZER -> "Analyzer";
             case VISIBILITY -> "Visibility";
-            case HELP -> "使い方";
         };
     }
 
@@ -114,8 +124,8 @@ final class ChiseTweaksSettingsCatalog {
         for (ChiseBooleanSetting option : VISIBILITY_TARGETS) target(rows, option);
     }
 
-    private static void addVisualFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.visualFilter", "Visual Filter");
+    private static void addFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "header.filter", "Filter");
         feature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS, "config.comment.builderfocusblocks");
         feature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
@@ -180,20 +190,85 @@ final class ChiseTweaksSettingsCatalog {
                 "Bright Concrete", "Improve White Concrete visibility.");
     }
 
-    private static void addHelpRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "help.title", "ChiseTweaks の使い方");
-        info(rows, "help.highlight", "Highlight",
-                "鉱石・細線・隠れブロック・ガラス・昆布などを見つけやすくします。各Highlightは同時にONにできます。");
-        info(rows, "help.visualFilter", "Visual Filter",
-                "指定したBlock / Entityの描画をローカルだけで整理します。サーバー上の状態は変更しません。");
-        info(rows, "help.analyzer", "Analyzer",
-                "Lava SourceとAncient Debrisを読み込み済みチャンクだけから解析します。未ロードチャンクを強制ロードしません。");
-        info(rows, "help.visibility", "Visibility",
-                "Low Fireとbuilt-in Resource Packで、炎・Chest・White Concreteの見やすさを改善します。");
-        info(rows, "help.settings", "設定",
-                "変更があると下部ボタンは「設定を適用」に変わります。未変更時の「設定をリセット」は現在のタブを初期値へ戻します。");
-        info(rows, "help.troubleshooting", "トラブルシューティング",
-                "問題が起きた場合はPrism Launcherのコンソールまたはlogs/latest.logを確認してください。診断情報は設定画面へ重複表示しません。");
+    private static void addInspectorRows(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            CrosshairInspector.Snapshot snapshot,
+            boolean includeHelp) {
+        CrosshairInspector.Snapshot resolved = snapshot == null
+                ? CrosshairInspector.Snapshot.noTarget()
+                : snapshot;
+        header(rows, "inspector.title", "screen.chisetweaks.inspector.title");
+        if (resolved.targetKind() == HitResult.Type.MISS) {
+            info(rows, "inspector.noTarget",
+                    text("screen.chisetweaks.inspector.no_target"),
+                    text("screen.chisetweaks.inspector.no_target.description"));
+        } else {
+            String targetLabel = resolved.targetKind() == HitResult.Type.BLOCK
+                    ? text("screen.chisetweaks.inspector.target.block")
+                    : text("screen.chisetweaks.inspector.target.entity");
+            info(rows, "inspector.target", targetLabel, resolved.targetId());
+            if (resolved.targetKind() == HitResult.Type.BLOCK) {
+                info(rows, "inspector.blockState",
+                        text("screen.chisetweaks.inspector.block_state"),
+                        resolved.stateProperties().isEmpty()
+                                ? text("screen.chisetweaks.inspector.none")
+                                : String.join("\n", resolved.stateProperties()));
+            }
+            info(rows, "inspector.filter",
+                    text("screen.chisetweaks.inspector.filter"),
+                    text(resolved.filterDecision().hidden()
+                            ? "screen.chisetweaks.inspector.filter.hidden"
+                            : "screen.chisetweaks.inspector.filter.visible"));
+            info(rows, "inspector.matchedRule",
+                    text("screen.chisetweaks.inspector.matched_rule"),
+                    filterReason(resolved.filterDecision()));
+            info(rows, "inspector.features",
+                    text("screen.chisetweaks.inspector.responsible_feature"),
+                    resolved.responsibleFeatures().isEmpty()
+                            ? text("screen.chisetweaks.inspector.none")
+                            : resolved.responsibleFeatures().stream()
+                                    .map(FeatureDefinition::englishName)
+                                    .reduce((left, right) -> left + "\n" + right)
+                                    .orElse(text("screen.chisetweaks.inspector.none")));
+            info(rows, "inspector.renderMode",
+                    text("screen.chisetweaks.inspector.render_mode"),
+                    resolved.responsibleFeatures().isEmpty()
+                            ? text("screen.chisetweaks.inspector.none")
+                            : resolved.responsibleFeatures().stream()
+                                    .map(feature -> renderMode(feature, resolved.filterDecision().hidden()))
+                                    .reduce((left, right) -> left + "\n" + right)
+                                    .orElse(text("screen.chisetweaks.inspector.none")));
+        }
+        if (includeHelp) addCommonHelpRows(rows);
+    }
+
+    private static String filterReason(BuilderFocusVisibility.FilterDecision decision) {
+        String reason = text("screen.chisetweaks.inspector.reason."
+                + decision.reason());
+        return decision.matchedRule().isEmpty() ? reason : reason + ": " + decision.matchedRule();
+    }
+
+    private static String renderMode(FeatureDefinition feature, boolean hidden) {
+        return text(renderModeKey(feature, hidden));
+    }
+
+    static String renderModeKey(FeatureDefinition feature, boolean hidden) {
+        if (hidden) return "screen.chisetweaks.inspector.render_mode.suppressed";
+        boolean throughWall = feature == FeatureDefinition.LAVA_HIGHLIGHT
+                || feature == FeatureDefinition.ANCIENT_DEBRIS_ANALYZER;
+        return throughWall
+                ? "screen.chisetweaks.inspector.render_mode.through_wall"
+                : "screen.chisetweaks.inspector.render_mode.visible";
+    }
+
+    private static void addCommonHelpRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        header(rows, "help.title", "screen.chisetweaks.help.title");
+        for (String section : List.of(
+                "highlight", "filter", "analyzer", "visibility", "settings", "troubleshooting")) {
+            info(rows, "help." + section,
+                    text("screen.chisetweaks.help." + section + ".name"),
+                    text("screen.chisetweaks.help." + section + ".description"));
+        }
     }
 
     private static void header(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id, String translationKey) {
