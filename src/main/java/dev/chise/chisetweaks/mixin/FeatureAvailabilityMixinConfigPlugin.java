@@ -15,6 +15,8 @@ public final class FeatureAvailabilityMixinConfigPlugin implements IMixinConfigP
     private static final Map<String, FeatureDefinition> MIXIN_FEATURES = Map.of(
             "dev.chise.chisetweaks.mixin.rendering.BuilderFocusBlockMixin",
             FeatureDefinition.BUILDER_FOCUS_BLOCKS,
+            "dev.chise.chisetweaks.mixin.rendering.BuilderFocusBlockEntityMixin",
+            FeatureDefinition.BUILDER_FOCUS_BLOCKS,
             "dev.chise.chisetweaks.mixin.rendering.BuilderFocusEntityMixin",
             FeatureDefinition.BUILDER_FOCUS_ENTITIES,
             "dev.chise.chisetweaks.mixin.rendering.FireVisibilityMixin",

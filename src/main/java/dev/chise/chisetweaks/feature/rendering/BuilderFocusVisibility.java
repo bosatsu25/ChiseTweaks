@@ -59,8 +59,22 @@ public final class BuilderFocusVisibility {
     }
 
     public static boolean shouldHide(Block block) {
-        if (block == null || BuiltInRegistries.BLOCK.getKey(block) == null) return false;
+        if (block == null || !FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue()) return false;
+        if (BuiltInRegistries.BLOCK.getKey(block) == null) return false;
         return blockRules.hides(block);
+    }
+
+    static boolean shouldHideByRule(
+            boolean enabled,
+            ChiseRuleMode mode,
+            boolean blacklistMatch,
+            boolean whitelistMatch) {
+        if (!enabled || mode == null || mode == ChiseRuleMode.NONE) return false;
+        return switch (mode) {
+            case BLACKLIST -> blacklistMatch;
+            case WHITELIST -> !whitelistMatch;
+            case NONE -> false;
+        };
     }
 
     public static boolean shouldHide(EntityType<?> type) {
@@ -202,12 +216,11 @@ public final class BuilderFocusVisibility {
         }
 
         boolean hides(Block block) {
-            if (!enabled || mode == ChiseRuleMode.NONE) return false;
-            return switch (mode) {
-                case BLACKLIST -> blacklist.contains(block);
-                case WHITELIST -> !whitelist.contains(block);
-                case NONE -> false;
-            };
+            return shouldHideByRule(
+                    enabled,
+                    mode,
+                    blacklist.contains(block),
+                    whitelist.contains(block));
         }
     }
 

@@ -8,6 +8,7 @@ import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
+import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ClipContext;
@@ -158,6 +159,7 @@ final class WorksiteScanner {
             WorksiteHighlightProfilePolicy.DimensionProfile dimensionProfile,
             PriorityQueue<WorksiteScanCandidate> candidates) {
         BlockState state = client.level.getBlockState(position);
+        if (BuilderFocusVisibility.shouldHide(state.getBlock())) return;
         WorksiteBlockDescriptor descriptor = blockInspector.describe(state);
         BlockInspectionCategory category =
                 blockInspector.resolveActiveCategory(descriptor, activeCategories);

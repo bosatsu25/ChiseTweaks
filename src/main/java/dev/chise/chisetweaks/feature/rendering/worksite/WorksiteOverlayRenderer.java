@@ -7,6 +7,7 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.performance.WorksiteOverlayDetailPolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
+import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import dev.chise.chisetweaks.feature.rendering.SurfaceLineVisualGeometry;
 import dev.chise.chisetweaks.feature.rendering.WorldLineGeometry;
 import dev.chise.chisetweaks.runtime.ClientCallbackCircuitBreaker;
@@ -139,7 +140,9 @@ final class WorksiteOverlayRenderer {
                 || !client.level.getChunkSource().hasChunk(position.getX() >> 4, position.getZ() >> 4)) {
             return null;
         }
-        return BuiltInRegistries.BLOCK.getKey(client.level.getBlockState(position).getBlock());
+        var block = client.level.getBlockState(position).getBlock();
+        if (BuilderFocusVisibility.shouldHide(block)) return null;
+        return BuiltInRegistries.BLOCK.getKey(block);
     }
 
     private static BlockPos attackedBlockPosition(Minecraft client) {

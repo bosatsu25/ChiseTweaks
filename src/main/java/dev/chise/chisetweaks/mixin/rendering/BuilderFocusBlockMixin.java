@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.mixin.rendering;
 
-import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -17,7 +16,6 @@ public abstract class BuilderFocusBlockMixin {
 
     @Inject(method = "getRenderShape", at = @At("HEAD"), cancellable = true)
     private void chiseTweaks$hideFilteredBlock(CallbackInfoReturnable<RenderShape> result) {
-        if (!FeatureSwitches.BUILDER_FOCUS_BLOCKS.getBooleanValue()) return;
         if (BuilderFocusVisibility.shouldHide(asState().getBlock())) {
             result.setReturnValue(RenderShape.INVISIBLE);
         }

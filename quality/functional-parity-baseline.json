@@ -95,6 +95,7 @@
   ],
   "mixins": [
     "rendering.BuilderFocusBlockMixin",
+    "rendering.BuilderFocusBlockEntityMixin",
     "rendering.BuilderFocusEntityMixin",
     "rendering.FireVisibilityMixin"
   ],

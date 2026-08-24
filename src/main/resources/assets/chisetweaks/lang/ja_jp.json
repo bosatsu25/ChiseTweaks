@@ -1,5 +1,5 @@
 {
-  "config.comment.builderfocusblocks": "初期OFF。確認作業のため、明示したブロックだけを残す／隠す描画規則を適用します。",
+  "config.comment.builderfocusblocks": "初期OFF。通常ブロック・BlockEntity・Chiseオーバーレイへ表示／非表示規則を適用します。非表示はハイライトより優先されます。",
   "config.comment.builderfocusentities": "初期OFF。確認作業のため、明示したエンティティだけを残す／隠す描画規則を適用します。",
   "config.comment.finethreadtrace": "近くにあり、実際に見えている糸とトリップワイヤーフックを制限範囲内で強調します。",
   "config.comment.glassinspection": "使用中のリソースパックとステンドグラスの色を保ったまま、ガラスブロックと板ガラスへ薄い発光マーカーを重ねます。",
@@ -51,7 +51,7 @@
   "help.chisetweaks.ancient_debris_analyzer.summary": "ロード済みのネザーチャンクに存在する古代の残骸を、距離に応じて弱くなる保持型アナライザーマーカーで壁越し表示します。",
   "help.chisetweaks.ancient_debris_analyzer.usage": "「視認改善」で古代の残骸アナライザーをONにし、16～256ブロックの検出範囲を選びます。近距離では強い外枠、遠距離では小さく淡いシグナルとして表示します。",
   "help.chisetweaks.builder_focus_blocks.requirement": "大きなリスト変更ではチャンク再描画が発生する場合があります。",
-  "help.chisetweaks.builder_focus_blocks.summary": "明示した表示リストにより、確認対象へ絞った一時的なブロック視界を作ります。",
+  "help.chisetweaks.builder_focus_blocks.summary": "通常ブロック・BlockEntity・Chiseオーバーレイへ表示リストを適用し、確認対象へ絞った視界を作ります。ハイライトをONにしても非表示が優先されます。",
   "help.chisetweaks.builder_focus_blocks.usage": "「Visual Filter」で「ブロックの対象」を開き、表示／非表示方式とブロックIDを設定してからブロックフィルターを有効にします。",
   "help.chisetweaks.builder_focus_entities.requirement": "一般的な遮蔽最適化や性能カリングは専用描画MODへ委譲します。",
   "help.chisetweaks.builder_focus_entities.summary": "宣言した表示リストから、確認対象へ絞った一時的なエンティティ視界を作ります。",
