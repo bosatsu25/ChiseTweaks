@@ -8,13 +8,16 @@ public final class VisualAssistanceStylePolicy {
     public static OverlayStyle styleFor(String blockId, BlockInspectionCategory category) {
         if (category == null || category == BlockInspectionCategory.NONE) return OverlayStyle.NONE;
         String id = blockId == null ? "" : blockId.toLowerCase(Locale.ROOT);
-        return switch (category) {
-            case TECHNICAL_TRACE -> new OverlayStyle(0xFFB29CFF, 100, Marker.CROSS);
-            case HIDDEN_SURFACE -> new OverlayStyle(hiddenColor(id), 90, Marker.CROSS);
-            case MATERIAL_HIGHLIGHT -> new OverlayStyle(materialColor(id), 80, Marker.DIAGONAL);
-            case NETHER_PALETTE -> new OverlayStyle(netherColor(id), 20, Marker.BOX);
-            case NONE -> OverlayStyle.NONE;
-        };
+        if (category == BlockInspectionCategory.TECHNICAL_TRACE) {
+            return new OverlayStyle(0xFFB29CFF, 100, Marker.CROSS);
+        }
+        if (category == BlockInspectionCategory.HIDDEN_SURFACE) {
+            return new OverlayStyle(hiddenColor(id), 90, Marker.CROSS);
+        }
+        if (category == BlockInspectionCategory.MATERIAL_HIGHLIGHT) {
+            return new OverlayStyle(materialColor(id), 80, Marker.DIAGONAL);
+        }
+        return new OverlayStyle(netherColor(id), 20, Marker.BOX);
     }
 
     private static int materialColor(String id) {

@@ -272,11 +272,10 @@ final class WorksiteScanner {
     }
 
     private static double[][] samplesFor(BlockInspectionCategory category) {
-        return switch (category) {
-            case TECHNICAL_TRACE -> THIN_TECHNICAL_SAMPLES;
-            case HIDDEN_SURFACE -> SHAPED_BLOCK_SAMPLES;
-            case MATERIAL_HIGHLIGHT, NETHER_PALETTE, NONE -> SOLID_SAMPLES;
-        };
+        if (category == BlockInspectionCategory.TECHNICAL_TRACE) return THIN_TECHNICAL_SAMPLES;
+        return category == BlockInspectionCategory.HIDDEN_SURFACE
+                ? SHAPED_BLOCK_SAMPLES
+                : SOLID_SAMPLES;
     }
 
     private static WorksiteScanCandidate[] createCandidatePool() {
