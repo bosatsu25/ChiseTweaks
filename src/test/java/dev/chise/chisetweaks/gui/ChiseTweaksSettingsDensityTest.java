@@ -10,15 +10,17 @@ final class ChiseTweaksSettingsDensityTest {
     void desktopRowsAndControlsStayCompact() {
         var geometry = ChiseTweaksSettingsLayout.calculate(854, 480);
         assertEquals(30, geometry.rowHeight());
+        assertEquals(42, geometry.infoRowHeight());
         assertEquals(24, geometry.headerHeight());
         assertTrue(geometry.toggleWidth() <= 84);
         assertTrue(geometry.actionWidth() <= 96);
     }
 
     @Test
-    void narrowLayoutAddsOnlyMinimalTouchHeightInsteadOfDescriptionStacking() {
+    void narrowLayoutAddsTouchHeightOnlyWhereHelpNeedsTwoLines() {
         var geometry = ChiseTweaksSettingsLayout.calculate(320, 240);
         assertEquals(34, geometry.rowHeight());
+        assertEquals(48, geometry.infoRowHeight());
         assertEquals(24, geometry.headerHeight());
         assertTrue(geometry.nameWidth() > 0);
         assertTrue(geometry.toggleWidth() <= 84);
