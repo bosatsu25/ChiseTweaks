@@ -11,17 +11,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 RETAINED_ENGLISH_NAMES = (
-    "Scene Filter: Blocks",
-    "Scene Filter: Entities",
-    "Fine Thread Trace",
-    "Hidden Surface Trace",
+    "Block Filter",
+    "Entity Filter",
+    "Fine Line Highlight",
+    "Hidden Block Highlight",
     "Glass Highlight",
     "Ore Highlights",
-    "Nether Palette",
+    "Nether Highlight",
     "Kelp Highlight",
     "Ancient Debris Analyzer",
-    "Fire Visibility",
-    "Lava Source Highlight",
+    "Low Fire",
+    "Lava Analyzer",
 )
 
 FORBIDDEN_JAVA_TOKENS = (
