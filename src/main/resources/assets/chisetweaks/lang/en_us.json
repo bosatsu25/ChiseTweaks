@@ -246,7 +246,7 @@
   "screen.chisetweaks.inspector.reason.allow_list_no_match": "Not present in allow list",
   "screen.chisetweaks.inspector.reason.self_protected": "Local player is protected",
   "screen.chisetweaks.inspector.reason.unregistered": "Unregistered target",
-  "screen.chisetweaks.placement.title": "Trapdoor — Placement Preview",
+  "screen.chisetweaks.placement.title": "Placement State Preview",
   "screen.chisetweaks.placement.impossible": "Placement impossible",
   "screen.chisetweaks.placement.predicted": "Predicted before placement",
   "screen.chisetweaks.placement.reason.upper": "clicked face=%s\nheight=upper half",

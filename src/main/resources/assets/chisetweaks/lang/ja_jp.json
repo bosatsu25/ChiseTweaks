@@ -246,7 +246,7 @@
   "screen.chisetweaks.inspector.reason.allow_list_no_match": "表示リストに登録なし",
   "screen.chisetweaks.inspector.reason.self_protected": "自分のプレイヤーは保護対象",
   "screen.chisetweaks.inspector.reason.unregistered": "未登録の対象",
-  "screen.chisetweaks.placement.title": "トラップドア — 配置プレビュー",
+  "screen.chisetweaks.placement.title": "配置状態プレビュー",
   "screen.chisetweaks.placement.impossible": "配置不可",
   "screen.chisetweaks.placement.predicted": "配置前の予測",
   "screen.chisetweaks.placement.reason.upper": "クリック面=%s\n高さ=上半分",

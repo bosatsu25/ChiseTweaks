@@ -16,6 +16,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -25,8 +26,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BlockItemStateProperties;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
@@ -120,12 +124,12 @@ final class CrosshairInspector {
         ItemStack stack = client.player == null ? null : client.player.getMainHandItem();
         boolean placementAvailable = stack != null
                 && stack.getItem() instanceof BlockItem item
-                && item.getBlock() instanceof TrapDoorBlock;
+                && supportsPlacementPreview(item.getBlock());
         Direction clickedFace = placementAvailable ? hit.getDirection() : null;
         boolean upperClick = placementAvailable
                 && hit.getLocation().y - hit.getBlockPos().getY() > 0.5D;
         BlockState predictedPlacement = placementAvailable
-                ? predictTrapdoorState(
+                ? predictPlacementState(
                         client.level,
                         client.player,
                         InteractionHand.MAIN_HAND,
@@ -240,7 +244,7 @@ final class CrosshairInspector {
                 upperClick);
     }
 
-    static BlockState predictTrapdoorState(
+    static BlockState predictPlacementState(
             Level level,
             Player player,
             InteractionHand hand,
@@ -248,10 +252,10 @@ final class CrosshairInspector {
             BlockHitResult hit,
             boolean enabled) {
         if (!enabled || !(stack.getItem() instanceof BlockItem item)
-                || !(item.getBlock() instanceof TrapDoorBlock trapdoor)) return null;
+                || !supportsPlacementPreview(item.getBlock())) return null;
         BlockPlaceContext context = new BlockPlaceContext(level, player, hand, stack, hit);
         if (!context.canPlace()) return null;
-        BlockState state = trapdoor.getStateForPlacement(context);
+        BlockState state = item.getBlock().getStateForPlacement(context);
         if (state == null
                 || !level.isUnobstructed(
                         state,
@@ -260,6 +264,17 @@ final class CrosshairInspector {
         return stack.getOrDefault(
                 DataComponents.BLOCK_STATE,
                 BlockItemStateProperties.EMPTY).apply(state);
+    }
+
+    static boolean supportsPlacementPreview(Block block) {
+        if (block instanceof TrapDoorBlock || block instanceof SlabBlock) return true;
+        BlockState state = block.defaultBlockState();
+        if (!state.hasProperty(BlockStateProperties.AXIS)) return false;
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+        return state.is(BlockTags.LOGS)
+                || id != null
+                && "minecraft".equals(id.getNamespace())
+                && id.getPath().endsWith("_froglight");
     }
 
     static List<FeatureDefinition> responsibleFeatures(
@@ -357,6 +372,30 @@ final class CrosshairInspector {
             addProperty(state, property, properties);
         }
         return formatStateProperties(properties);
+    }
+
+    static List<String> placementStateProperties(BlockState state) {
+        LinkedHashMap<String, String> properties = new LinkedHashMap<>();
+        if (state.getBlock() instanceof TrapDoorBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            addPropertyIfPresent(state, BlockStateProperties.HALF, properties);
+            addPropertyIfPresent(state, BlockStateProperties.OPEN, properties);
+            addPropertyIfPresent(state, BlockStateProperties.POWERED, properties);
+            addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
+        } else if (state.getBlock() instanceof SlabBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.SLAB_TYPE, properties);
+            addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
+        } else {
+            addPropertyIfPresent(state, BlockStateProperties.AXIS, properties);
+        }
+        return formatStateProperties(properties);
+    }
+
+    private static <T extends Comparable<T>> void addPropertyIfPresent(
+            BlockState state,
+            Property<T> property,
+            Map<String, String> properties) {
+        if (state.hasProperty(property)) addProperty(state, property, properties);
     }
 
     private static <T extends Comparable<T>> void addProperty(
