@@ -70,17 +70,17 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
     @Override
     public void tick(Minecraft client) {
         if (!isEnabled()) {
-            resetScanState();
+            resetScanState(null);
             return;
         }
         if (isSessionQuarantined()) return;
         if (client == null || client.player == null || client.level == null) {
-            resetScanState();
+            resetScanState(null);
             return;
         }
 
         if (lastLevel != client.level) {
-            resetForLevel(client.level);
+            resetScanState(client.level);
         }
 
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
@@ -276,7 +276,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
         nearestSources.clear();
     }
 
-    private void resetForLevel(ClientLevel level) {
+    private void resetScanState(ClientLevel level) {
         clearTargets();
         ticksUntilScan = 0;
         stableScanCount = 0;
@@ -284,16 +284,6 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
         lastObservedPlayerBlock = Long.MIN_VALUE;
         movementSinceLastScan = false;
         lastLevel = level;
-    }
-
-    private void resetScanState() {
-        clearTargets();
-        ticksUntilScan = 0;
-        stableScanCount = 0;
-        lastScanFingerprint = Integer.MIN_VALUE;
-        lastObservedPlayerBlock = Long.MIN_VALUE;
-        movementSinceLastScan = false;
-        lastLevel = null;
     }
 
     private static int scanFingerprint(LocalFeatureConfig local) {
@@ -315,13 +305,13 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
     @Override
     public void onQuarantined(Minecraft client) {
         runtimeQuarantined = true;
-        resetScanState();
+        resetScanState(null);
         closeRendererAfterRuntimeQuarantine();
     }
 
     @Override
     public void resetSession(Minecraft client) {
-        resetScanState();
+        resetScanState(null);
         // 描画経路の失敗はワールドやセッション初期化中だけの一過性である場合がある。Manager側の隔離状態はプロセス全体で保持するため、ここではリセットしない。
         renderQuarantined = false;
     }
