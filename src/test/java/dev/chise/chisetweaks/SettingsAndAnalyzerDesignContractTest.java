@@ -82,19 +82,29 @@ final class SettingsAndAnalyzerDesignContractTest {
     }
 
     @Test
-    void settingsPresentationKeepsUniversalMainLabelsAndMinecraftLocalizedDetailResources() throws IOException {
+    void settingsPresentationUsesFiveTabsReadmeNamesAndMinecraftLocalizedEditors() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String catalog = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
+        String definition = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
         String sceneFilter = read("src/main/java/dev/chise/chisetweaks/gui/ChiseSceneFilterEditorScreen.java");
         String oreCompat = read("src/main/java/dev/chise/chisetweaks/gui/ChiseOreCompatibilityScreen.java");
         String english = read("src/main/resources/assets/chisetweaks/lang/en_us.json");
         String japanese = read("src/main/resources/assets/chisetweaks/lang/ja_jp.json");
 
-        assertContainsAll(controller, "ChiseTweaksSettingsCatalog");
+        assertContainsAll(controller,
+                "ChiseTweaksSettingsCatalog",
+                "HIGHLIGHT",
+                "VISUAL_FILTER",
+                "ANALYZER",
+                "VISIBILITY",
+                "HELP");
         assertContainsNone(controller,
                 "boolean japanese",
-                "japanese ?");
+                "japanese ?",
+                "HIGHLIGHT_DETAILS",
+                "VISUAL_FILTER_DETAILS",
+                "LAVA_DETAILS");
         assertContainsAll(catalog,
                 "Component.translatable(",
                 "definition.englishName()",
@@ -102,16 +112,31 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Visual Filter\"",
                 "\"Analyzer\"",
                 "\"Visibility\"",
-                "\"Lava Analyzer\"",
-                "\"Ancient Debris Analyzer\"",
-                "\"Low Fire\"",
+                "\"使い方\"",
                 "\"Bright Chest\"",
                 "\"Bright Concrete\"");
-        assertContainsNone(screen, "controller.japanese()");
+        assertContainsAll(definition,
+                "\"Ore Highlights\"",
+                "\"Nether Highlight\"",
+                "\"Fine Line Highlight\"",
+                "\"Hidden Block Highlight\"",
+                "\"Glass Highlight\"",
+                "\"Kelp Highlight\"",
+                "\"Block Filter\"",
+                "\"Entity Filter\"",
+                "\"Lava Analyzer\"",
+                "\"Ancient Debris Analyzer\"",
+                "\"Low Fire\"");
+        assertContainsAll(screen,
+                "ChiseTweaksMetadata.MOD_NAME",
+                "\"設定を適用\"",
+                "\"設定をリセット\"");
+        assertContainsNone(screen,
+                "ChiseTweaksMetadata.MOD_VERSION",
+                "Resource reload:",
+                "ChiseTweaksHelpScreen");
         assertContainsNone(sceneFilter, "boolean japanese");
         assertContainsNone(oreCompat, "boolean japanese");
-        assertTrue(english.contains("\"screen.chisetweaks.settings.title.highlight\""));
-        assertTrue(japanese.contains("\"screen.chisetweaks.settings.title.highlight\""));
         assertTrue(english.contains("\"screen.chisetweaks.scene_filter.title\""));
         assertTrue(japanese.contains("\"screen.chisetweaks.ore_compat.title\""));
     }
