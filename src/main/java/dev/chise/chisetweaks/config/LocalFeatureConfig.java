@@ -229,14 +229,14 @@ public final class LocalFeatureConfig {
         }
     }
 
-    /** 旧built-in packの選択状態を新しい通常Feature設定へ一度だけ引き継ぐ。 */
+    /** 旧built-in packの明示的な選択状態だけを引き継ぎ、不明な状態では現在のdefault-onを維持する。 */
     private boolean migrateLegacyBrightState() {
         try {
             Optional<String> stored = SecureConfigStorage.readUtf8(
                     FabricLoader.getInstance().getGameDir(), "options.txt");
-            if (stored.isEmpty()) return false;
+            if (stored.isEmpty()) return true;
             String resourcePacks = resourcePacksLine(stored.get());
-            if (resourcePacks == null) return false;
+            if (resourcePacks == null) return true;
 
             boolean legacy = selected(resourcePacks, LEGACY_PACK_ID);
             boolean chest = selected(resourcePacks, LEGACY_CHEST_PACK_ID);
@@ -247,9 +247,6 @@ public final class LocalFeatureConfig {
             } else if (legacy) {
                 brightChestEnabled = true;
                 brightConcreteEnabled = true;
-            } else {
-                brightChestEnabled = false;
-                brightConcreteEnabled = false;
             }
             ChiseTweaksClient.LOGGER.info("Migrated legacy Bright visibility state into local feature config");
             return true;
