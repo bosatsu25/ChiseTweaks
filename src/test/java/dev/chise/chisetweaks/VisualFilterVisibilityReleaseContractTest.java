@@ -14,15 +14,16 @@ final class VisualFilterVisibilityReleaseContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void visualFilterAndLowFirePassTheReleaseGate() throws IOException {
+    void visualFilterLowFireAndBrightChestPassTheReleaseGate() throws IOException {
         String policy = source("src/main/java/dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicy.java");
         String plugin = source("src/main/java/dev/chise/chisetweaks/mixin/FeatureAvailabilityMixinConfigPlugin.java");
 
         assertTrue(policy.contains("EnumSet.allOf(FeatureDefinition.class)"));
         assertTrue(plugin.contains("BuilderFocusBlockMixin"));
-        assertTrue(plugin.contains("BuilderFocusBlockEntityMixin"));
+        assertTrue(plugin.contains("BlockEntityVisualStateMixin"));
         assertTrue(plugin.contains("BuilderFocusEntityMixin"));
         assertTrue(plugin.contains("FireVisibilityMixin"));
+        assertTrue(plugin.contains("FeatureDefinition.BRIGHT_CHEST"));
         assertTrue(plugin.contains("FeatureAvailabilityPolicy.isAvailable(feature)"));
     }
 
@@ -48,53 +49,34 @@ final class VisualFilterVisibilityReleaseContractTest {
     }
 
     @Test
-    void visibilityPacksAreIndependentAndUseTheDelayedTextureReloadPath() throws IOException {
-        String controller = source(
-                "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java");
-        String coordinator = source(
-                "src/main/java/dev/chise/chisetweaks/feature/resource/ResourceReloadCoordinator.java");
-        String registrar = source(
-                "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackRegistrar.java");
-        String visibilityPack = source(
-                "src/main/java/dev/chise/chisetweaks/feature/resource/VisibilityPack.java");
-        String chestSetting = source(
-                "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java");
-        String concreteSetting = source(
-                "src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java");
+    void brightVisibilityFeaturesAreIndependentWithoutResourcePackSelection() throws IOException {
+        String switches = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java");
+        String blockEntity = source(
+                "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java");
+        String visualPlugin = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
+        String model = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
         String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
 
-        assertTrue(visibilityPack.contains("CHEST(\"chise_chest_visibility\", \"Bright Chest\")"));
-        assertTrue(visibilityPack.contains("WHITE_CONCRETE(\"chise_white_concrete_visibility\", \"Bright Concrete\")"));
-        assertTrue(registrar.contains("for (VisibilityPack pack : VisibilityPack.values())"));
-        assertTrue(controller.contains("isEnabled(VisibilityPack pack)"));
-        assertTrue(controller.contains("setEnabled(VisibilityPack pack, boolean enabled)"));
-        assertTrue(controller.contains("getSelectedIds()"));
-        assertTrue(controller.contains("getAvailableIds()"));
-        assertTrue(controller.contains("repository.setSelected(selected)"));
-        assertTrue(controller.contains("options.updateResourcePacks(repository)"));
-        assertTrue(controller.contains("delayTextureReload().whenComplete"));
-        assertFalse(controller.contains("reloadResourcePacks().whenComplete"));
-        assertTrue(controller.contains("client.execute(() -> completeReload"));
-        assertTrue(controller.contains("ResourceReloadCoordinator RELOADS"));
-        assertTrue(controller.contains("RELOADS.markPending(selected)"));
-        assertTrue(controller.contains("TERMINAL_RECOVERY"));
-        assertTrue(controller.contains("RELOADS.cancel("));
-        assertTrue(controller.contains("restoreSelection"));
-        assertTrue(coordinator.contains("record Recovery"));
-        assertTrue(coordinator.contains("terminalFailure"));
-        assertTrue(coordinator.contains("Action.RELOAD"));
-        assertTrue(coordinator.contains("Action.RESTORE"));
-        assertTrue(chestSetting.contains("VisibilityPack.CHEST"));
-        assertTrue(concreteSetting.contains("VisibilityPack.WHITE_CONCRETE"));
-        assertFalse(chestSetting.contains("\"Bright Chest\""));
-        assertFalse(concreteSetting.contains("\"Bright Concrete\""));
-        assertTrue(catalog.contains("\"chestVisibility\""));
-        assertTrue(catalog.contains("\"whiteConcreteVisibility\""));
+        assertTrue(switches.contains("BRIGHT_CHEST = local("));
+        assertTrue(switches.contains("BRIGHT_CONCRETE = local("));
+        assertTrue(switches.contains("\"brightChest\","));
+        assertTrue(switches.contains("\"brightConcrete\","));
+        assertTrue(blockEntity.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
+        assertTrue(blockEntity.contains("chest.customSprite"));
+        assertTrue(visualPlugin.contains("FullbrightOverlayModel.brightConcrete"));
+        assertTrue(visualPlugin.contains("\"white_concrete\""));
+        int replacement = model.indexOf("private void emitReplacementOrBase");
+        int overlay = model.indexOf("private void emitExtraModel");
+        assertTrue(replacement >= 0 && overlay > replacement);
+        assertTrue(model.substring(replacement, overlay).contains("replacement.emitQuads"));
+        assertFalse(model.substring(replacement, overlay).contains("FullbrightOverlayEmission.emit"));
+        assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/feature/resource")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_chest_visibility")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_white_concrete_visibility")));
         assertTrue(catalog.contains("\"Bright Chest\""));
         assertTrue(catalog.contains("\"Bright Concrete\""));
-        assertFalse(catalog.contains("Chest Visibility / チェスト視認性"));
-        assertFalse(catalog.contains("White Concrete Visibility / 白色コンクリート視認性"));
-        assertFalse(catalog.contains("bundled white-concrete"));
     }
 
     private static String source(String relativePath) throws IOException {
