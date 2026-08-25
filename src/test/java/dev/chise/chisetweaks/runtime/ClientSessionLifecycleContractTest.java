@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ClientSessionLifecycleContractTest {
@@ -13,29 +14,30 @@ final class ClientSessionLifecycleContractTest {
             "src/main/java/dev/chise/chisetweaks/runtime/ClientSessionState.java");
 
     @Test
-    void joinPublishesSessionBeforeResetAndRecovery() throws IOException {
+    void joinPublishesSessionBeforeResetAndDiagnostics() throws IOException {
         String source = Files.readString(SOURCE);
         int method = source.indexOf("public static void onJoin(Minecraft client)");
         int increment = source.indexOf("SESSION_SEQUENCE.incrementAndGet()", method);
         int joined = source.indexOf("phase = SessionPhase.JOINED", increment);
         int reset = source.indexOf("reset(client);", joined);
-        int recovery = source.indexOf("ChiseTexturePackController.onSessionStart(client)", reset);
-        int log = source.indexOf("RuntimeDiagnosticEvent.CLIENT_JOIN", recovery);
+        int log = source.indexOf("RuntimeDiagnosticEvent.CLIENT_JOIN", reset);
         assertTrue(method >= 0 && increment > method && joined > increment
-                && reset > joined && recovery > reset && log > recovery);
+                && reset > joined && log > reset);
+        assertFalse(source.contains("ChiseTexturePackController"));
     }
 
     @Test
-    void disconnectCapturesDiagnosticsBeforeCancellingReloadAndClearsRuntimeBeforeDisconnected() throws IOException {
+    void disconnectCapturesDiagnosticsBeforeClearingRuntimeAndPublishingDisconnected() throws IOException {
         String source = Files.readString(SOURCE);
         int method = source.indexOf("public static void onDisconnect(Minecraft client)");
         int disconnecting = source.indexOf("phase = SessionPhase.DISCONNECTING", method);
         int log = source.indexOf("RuntimeDiagnosticEvent.CLIENT_DISCONNECT", disconnecting);
-        int packEnd = source.indexOf("ChiseTexturePackController.onSessionEnd(client)", log);
-        int reset = source.indexOf("reset(client);", packEnd);
+        int reset = source.indexOf("reset(client);", log);
         int disconnected = source.indexOf("phase = SessionPhase.DISCONNECTED", reset);
         assertTrue(method >= 0 && disconnecting > method && log > disconnecting
-                && packEnd > log && reset > packEnd && disconnected > reset);
+                && reset > log && disconnected > reset);
+        assertFalse(source.contains("onSessionEnd"));
+        assertFalse(source.contains("RESOURCE_RELOAD"));
     }
 
     @Test
