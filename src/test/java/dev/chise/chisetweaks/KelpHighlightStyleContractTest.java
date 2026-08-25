@@ -66,17 +66,16 @@ final class KelpHighlightStyleContractTest {
 
     @Test
     void kelpAndOreShareTheSameFullbrightLightingTransform() throws IOException {
-        String kelpModel = Files.readString(Path.of(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightKelpHighlightModel.java"));
-        String oreModel = Files.readString(Path.of(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java"));
+        String sharedModel = Files.readString(Path.of(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java"));
         String emission = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java"));
         String lighting = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayLighting.java"));
 
-        assertTrue(kelpModel.contains("FullbrightOverlayEmission.emit("));
-        assertTrue(oreModel.contains("FullbrightOverlayEmission.emit("));
+        assertTrue(sharedModel.contains("static FullbrightOverlayModel ore("));
+        assertTrue(sharedModel.contains("static FullbrightOverlayModel kelp("));
+        assertTrue(sharedModel.contains("FullbrightOverlayEmission.emit("));
         assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
         assertTrue(lighting.contains("quad.emissive(true)"));
         assertTrue(lighting.contains("quad.diffuseShade(false)"));
@@ -87,12 +86,15 @@ final class KelpHighlightStyleContractTest {
     void kelpModelPluginWrapsBothVanillaKelpBlocks() throws IOException {
         String plugin = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java"));
+        String wrapper = Files.readString(Path.of(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java"));
         String catalog = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/KelpHighlightOverlayCatalog.java"));
         assertTrue(plugin.contains("\"kelp\".equals(path)"));
         assertTrue(plugin.contains("\"kelp_plant\".equals(path)"));
-        assertTrue(plugin.contains("new FullbrightKelpHighlightModel(model)"));
+        assertTrue(plugin.contains("FullbrightOverlayModel.kelp(model)"));
         assertTrue(plugin.contains("KelpHighlightOverlayCatalog.KEY"));
+        assertTrue(wrapper.contains("return renderState.kelpEnabled();"));
         assertTrue(catalog.contains("block/visual/kelp/party_overlay"));
     }
 
