@@ -4,8 +4,9 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
-/** 13個のtoggle可能Featureを一つのregistryで管理する。 */
+/** 14個のtoggle可能Featureを一つのregistryで管理する。 */
 public final class FeatureSwitches {
+    public static final FeatureSwitch AIR_PLACEMENT = create(FeatureDefinition.AIR_PLACEMENT);
     public static final FeatureSwitch BUILDER_FOCUS_BLOCKS = create(FeatureDefinition.BUILDER_FOCUS_BLOCKS);
     public static final FeatureSwitch BUILDER_FOCUS_ENTITIES = create(FeatureDefinition.BUILDER_FOCUS_ENTITIES);
     public static final FeatureSwitch FINE_THREAD_TRACE = create(FeatureDefinition.FINE_THREAD_TRACE);
@@ -46,8 +47,9 @@ public final class FeatureSwitches {
             config -> config.brightConcreteEnabled,
             (config, value) -> config.brightConcreteEnabled = value);
 
-    /** chisetweaks.jsonに保存される従来Feature。 */
+    /** chisetweaks.jsonに保存されるFeature。 */
     public static final List<FeatureSwitch> FEATURE_CONFIG_VALUES = List.of(
+            AIR_PLACEMENT,
             BUILDER_FOCUS_BLOCKS,
             BUILDER_FOCUS_ENTITIES,
             FINE_THREAD_TRACE,
@@ -65,8 +67,9 @@ public final class FeatureSwitches {
             BRIGHT_CHEST,
             BRIGHT_CONCRETE);
 
-    /** UI・監査・ドキュメントが参照する13機能の正本。 */
+    /** UI・監査・ドキュメントが参照する14機能の正本。 */
     public static final List<FeatureSwitch> VALUES = List.of(
+            AIR_PLACEMENT,
             BUILDER_FOCUS_BLOCKS,
             BUILDER_FOCUS_ENTITIES,
             FINE_THREAD_TRACE,

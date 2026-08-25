@@ -6,6 +6,14 @@ import java.util.List;
 import java.util.Objects;
 
 public enum FeatureDefinition {
+    AIR_PLACEMENT(
+            "air_placement",
+            FeatureArea.BUILDING,
+            "config.name.airplacement",
+            "Air Placement",
+            "",
+            FeatureHelpLevel.ADVANCED,
+            null),
     BUILDER_FOCUS_BLOCKS(
             "builder_focus_blocks",
             FeatureArea.RENDERING,

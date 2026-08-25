@@ -7,7 +7,8 @@
   "entrypoints": {
     "fabric-client-gametest": [
       "dev.chise.chisetweaks.gui.TrapdoorPlacementClientGameTest",
-      "dev.chise.chisetweaks.regression.AllFeaturesRegressionClientGameTest"
+      "dev.chise.chisetweaks.regression.AllFeaturesRegressionClientGameTest",
+      "dev.chise.chisetweaks.regression.AirPlacementSurvivalClientGameTest"
     ]
   },
   "depends": {

@@ -7,6 +7,7 @@
     "goalBytes": 358400
   },
   "featureIds": [
+    "air_placement",
     "builder_focus_blocks",
     "builder_focus_entities",
     "fine_thread_trace",
@@ -23,6 +24,7 @@
   ],
   "settings": {
     "globalFeatureSwitches": {
+      "airPlacement": false,
       "builderFocusBlocks": false,
       "builderFocusEntities": false,
       "fineThreadTrace": false,
@@ -91,6 +93,7 @@
   },
   "resourcePackIds": [],
   "mixins": [
+    "placement.AirPlacementMixin",
     "rendering.BuilderFocusBlockMixin",
     "rendering.BlockEntityVisualStateMixin",
     "rendering.ChestVisibilityMixin",

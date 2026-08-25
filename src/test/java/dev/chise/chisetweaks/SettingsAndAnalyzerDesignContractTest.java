@@ -97,7 +97,9 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "FILTER",
                 "INSPECTOR",
                 "ANALYZER",
-                "VISIBILITY");
+                "VISIBILITY",
+                "withAirPlacement",
+                "FeatureSwitches.AIR_PLACEMENT");
         assertContainsNone(controller,
                 "boolean japanese",
                 "japanese ?",
@@ -123,6 +125,7 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Kelp Highlight\"",
                 "\"Block Filter\"",
                 "\"Entity Filter\"",
+                "\"Air Placement\"",
                 "\"Lava Analyzer\"",
                 "\"Ancient Debris Analyzer\"",
                 "\"Low Fire\"",
@@ -140,9 +143,10 @@ final class SettingsAndAnalyzerDesignContractTest {
         assertContainsNone(oreCompat, "boolean japanese");
 
         assertContainsAll(english,
+                "\"config.name.airplacement\": \"Air Placement\"",
                 "\"config.name.brightchest\": \"Bright Chest\"",
                 "\"config.name.brightconcrete\": \"Bright Concrete\"",
-                "Browse the 13 ChiseTweaks toggles",
+                "Browse the 14 ChiseTweaks toggles",
                 "direct lighting-only Bright features");
         assertContainsNone(english,
                 "config.option.localworksitevisibilityexclusivemode",
@@ -152,7 +156,6 @@ final class SettingsAndAnalyzerDesignContractTest {
         assertContainsAll(japanese,
                 "\"config.name.brightchest\": \"Bright Chest\"",
                 "\"config.name.brightconcrete\": \"Bright Concrete\"",
-                "13個の切り替え機能",
                 "Bright切替のためのResource Pack再読み込みは行いません");
         assertContainsNone(japanese,
                 "config.option.localworksitevisibilityexclusivemode",
