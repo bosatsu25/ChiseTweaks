@@ -90,12 +90,11 @@ def audit() -> list[str]:
 
     values_body = list_body(switches, "VALUES")
     value_constants = re.findall(r"\b([A-Z][A-Z0-9_]+)\b", values_body)
-    if len(value_constants) != 14 or set(value_constants) != set(definition_map):
-        failures.append("FeatureSwitches.VALUES must contain each of the 14 FeatureDefinition entries exactly once")
+    if len(value_constants) != 12 or set(value_constants) != set(definition_map):
+        failures.append("FeatureSwitches.VALUES must contain each of the 12 FeatureDefinition entries exactly once")
 
     profile_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/WorksiteHighlightProfilePolicy.java")
-    debris_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java")
-    constants = int_constants(profile_policy) | int_constants(debris_policy)
+    constants = int_constants(profile_policy)
     local_settings_text = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java")
     local_setting_pairs = re.findall(
         r"\b(?:bool|integer)\(\s*\"([^\"]+)\"\s*,\s*([^,\r\n]+)",
@@ -136,9 +135,13 @@ def audit() -> list[str]:
         "src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitches.java",
         "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java",
         "src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java",
+        "src/main/java/dev/chise/chisetweaks/feature/placement/AirPlacementTarget.java",
+        "src/main/java/dev/chise/chisetweaks/mixin/placement/AirPlacementMixin.java",
+        "src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java",
+        "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java",
     ):
         if (ROOT / removed).exists():
-            failures.append(f"obsolete visual feature foundation returned: {removed}")
+            failures.append(f"obsolete feature foundation returned: {removed}")
 
     mixins = load_json("src/main/resources/chisetweaks.features.mixins.json")
     diff("Mixin list", baseline["mixins"], mixins.get("client", []), failures)
@@ -166,10 +169,6 @@ def audit() -> list[str]:
     missing_fixtures = [path for path in baseline["migrationFixtures"] if not (ROOT / path).is_file()]
     if missing_fixtures:
         failures.append(f"migration fixtures missing: {missing_fixtures}")
-
-    analyzer_constants = int_constants(debris_policy)
-    analyzer_budget = {name: analyzer_constants.get(name) for name in baseline["analyzerBudget"]}
-    diff("Ancient Debris analyzer budget", baseline["analyzerBudget"], analyzer_budget, failures)
     return failures
 
 
