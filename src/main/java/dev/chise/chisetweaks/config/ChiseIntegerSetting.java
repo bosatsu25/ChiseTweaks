@@ -43,6 +43,35 @@ public final class ChiseIntegerSetting {
             int defaultValue,
             int minValue,
             int maxValue,
+            IntSupplier reader,
+            IntConsumer writer,
+            SettingPersistence persistence) {
+        this(
+                name, defaultValue, minValue, maxValue,
+                name, name, "", "",
+                reader, writer, value -> Integer.toString(value), true, persistence);
+    }
+
+    ChiseIntegerSetting(
+            String name,
+            int defaultValue,
+            int minValue,
+            int maxValue,
+            IntSupplier reader,
+            IntConsumer writer,
+            IntFunction<String> valueFormatter,
+            SettingPersistence persistence) {
+        this(
+                name, defaultValue, minValue, maxValue,
+                name, name, "", "",
+                reader, writer, valueFormatter, true, persistence);
+    }
+
+    ChiseIntegerSetting(
+            String name,
+            int defaultValue,
+            int minValue,
+            int maxValue,
             String englishName,
             String japaneseName,
             String englishComment,
