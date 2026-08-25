@@ -1,32 +1,11 @@
 package dev.chise.chisetweaks.config;
 
-import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-
-import java.util.List;
-
+/** @deprecated FeatureSwitchesへ統合済み。段階的なsource migration用alias。 */
+@Deprecated(forRemoval = true)
 public final class LocalFeatureSwitches {
-    public static final LocalFeatureSwitch FIRE_VISIBILITY = new LocalFeatureSwitch(
-            FeatureDefinition.FIRE_VISIBILITY,
-            "localFireVisibility",
-            config -> config.fireVisibilityEnabled,
-            (config, value) -> config.fireVisibilityEnabled = value);
-
-    public static final LocalFeatureSwitch LAVA_HIGHLIGHT = new LocalFeatureSwitch(
-            FeatureDefinition.LAVA_HIGHLIGHT,
-            "localLavaHighlight",
-            config -> config.lavaHighlightEnabled,
-            (config, value) -> config.lavaHighlightEnabled = value);
-
-    public static final LocalFeatureSwitch ANCIENT_DEBRIS_ANALYZER = new LocalFeatureSwitch(
-            FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
-            "localAncientDebrisAnalyzer",
-            config -> config.ancientDebrisAnalyzerEnabled,
-            (config, value) -> config.ancientDebrisAnalyzerEnabled = value);
-
-    public static final List<LocalFeatureSwitch> VALUES = List.of(
-            FIRE_VISIBILITY,
-            LAVA_HIGHLIGHT,
-            ANCIENT_DEBRIS_ANALYZER);
+    public static final FeatureSwitch FIRE_VISIBILITY = FeatureSwitches.FIRE_VISIBILITY;
+    public static final FeatureSwitch LAVA_HIGHLIGHT = FeatureSwitches.LAVA_HIGHLIGHT;
+    public static final FeatureSwitch ANCIENT_DEBRIS_ANALYZER = FeatureSwitches.ANCIENT_DEBRIS_ANALYZER;
 
     private LocalFeatureSwitches() {}
 }
