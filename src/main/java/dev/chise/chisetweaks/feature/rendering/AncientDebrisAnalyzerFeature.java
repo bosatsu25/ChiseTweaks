@@ -6,9 +6,6 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.feature.TickingFeature;
-import dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail;
-import dev.chise.chisetweaks.runtime.RuntimeDiagnosticEvent;
-import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -42,6 +39,11 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
             "ChiseTweaks Ancient Debris Analyzer retained rendering");
     private final ThroughWallPositionSnapshot visibleMarkers = new ThroughWallPositionSnapshot(
             AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS);
+    private final ThroughWallRenderGuard renderGuard = new ThroughWallRenderGuard(
+            renderer,
+            visibleMarkers,
+            FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.id(),
+            "Ancient Debris Analyzer");
     private final NearestPositionBuffer nearestMarkers = new NearestPositionBuffer(
             AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS);
     private final Map<Long, long[]> positionsByChunk = new HashMap<>();
@@ -63,7 +65,6 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     private int pendingValidationIndex;
     private int pendingValidationCount;
     private boolean selectionDirty;
-    private boolean renderQuarantined;
     private boolean runtimeQuarantined;
 
     @Override
@@ -81,7 +82,7 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
         ClientChunkEvents.CHUNK_LOAD.register(this::onChunkLoad);
         ClientChunkEvents.CHUNK_UNLOAD.register(this::onChunkUnload);
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(this::render);
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> renderer.close());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> renderGuard.close());
         ChiseTweaksClient.LOGGER.info(
                 "Ancient Debris Analyzer initialized with bounded loaded-chunk discovery, cache refresh and retained through-terrain rendering");
     }
@@ -343,33 +344,11 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
 
     private void render(LevelRenderContext context) {
         if (!isEnabled()
-                || isSessionQuarantined()
                 || visibleMarkers.isEmpty()
                 || BuilderFocusVisibility.shouldHide(Blocks.ANCIENT_DEBRIS)) return;
-        try {
-            Minecraft client = Minecraft.getInstance();
-            if (client.player == null || client.level == null || client.level != lastLevel || client.screen != null) return;
-            renderer.render(context, visibleMarkers);
-        } catch (RuntimeException | LinkageError failure) {
-            renderQuarantined = true;
-            visibleMarkers.clear();
-            try {
-                renderer.resetAfterFailure();
-            } catch (RuntimeException | LinkageError cleanupFailure) {
-                ChiseTweaksClient.LOGGER.warn(
-                        "Ancient Debris Analyzer renderer cleanup failed after {}",
-                        cleanupFailure.getClass().getSimpleName());
-            }
-            ChiseTweaksClient.LOGGER.error(
-                    "Ancient Debris Analyzer rendering was quarantined after {}",
-                    failure.getClass().getSimpleName());
-            RuntimeDiagnostics.log(
-                    RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
-                    Minecraft.getInstance(),
-                    RuntimeDiagnosticDetail.of("componentId", getId()),
-                    RuntimeDiagnosticDetail.of("stage", "render"),
-                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()));
-        }
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null || client.level != lastLevel || client.screen != null) return;
+        renderGuard.render(context);
     }
 
     private void resetState(ClientLevel level) {
@@ -422,26 +401,20 @@ public final class AncientDebrisAnalyzerFeature implements TickingFeature, Sessi
     }
 
     private boolean isSessionQuarantined() {
-        return runtimeQuarantined || renderQuarantined;
+        return runtimeQuarantined || renderGuard.isQuarantined();
     }
 
     @Override
     public void onQuarantined(Minecraft client) {
         runtimeQuarantined = true;
         resetState(null);
-        try {
-            renderer.close();
-        } catch (RuntimeException | LinkageError cleanupFailure) {
-            ChiseTweaksClient.LOGGER.warn(
-                    "Ancient Debris Analyzer renderer close failed after {}",
-                    cleanupFailure.getClass().getSimpleName());
-        }
+        renderGuard.close();
     }
 
     @Override
     public void resetSession(Minecraft client) {
         resetState(null);
-        renderQuarantined = false;
+        renderGuard.resetSession();
     }
 
     @Override
