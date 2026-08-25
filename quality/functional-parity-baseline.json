@@ -2,7 +2,7 @@
   "schema": 2,
   "baseline": {
     "version": "0.15.0+mc26.1.2",
-    "commit": "3a086169ed869aefe8421cb53c25c39e8e2eeaf9",
+    "commit": "28d72c5a088c96c284bbbe18e0b4ac9d56f55044",
     "runtimeJarBytes": 387108,
     "goalBytes": 358400
   },
