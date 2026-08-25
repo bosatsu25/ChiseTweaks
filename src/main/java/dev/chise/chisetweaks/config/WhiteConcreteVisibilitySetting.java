@@ -8,14 +8,7 @@ public final class WhiteConcreteVisibilitySetting extends ChiseBooleanSetting {
     public static final WhiteConcreteVisibilitySetting INSTANCE = new WhiteConcreteVisibilitySetting();
 
     private WhiteConcreteVisibilitySetting() {
-        super(
-                "whiteConcreteVisibility",
-                true,
-                "Bright Concrete",
-                "Bright Concrete",
-                "Toggle the Bright Concrete built-in resource pack independently.",
-                "Toggle the Bright Concrete built-in resource pack independently.",
-                SettingPersistence.EXTERNAL);
+        super("whiteConcreteVisibility", true, SettingPersistence.EXTERNAL);
     }
 
     @Override
