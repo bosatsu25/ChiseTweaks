@@ -85,9 +85,9 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(coordinator.contains("Action.RELOAD"));
         assertTrue(coordinator.contains("Action.RESTORE"));
         assertTrue(chestSetting.contains("VisibilityPack.CHEST"));
-        assertTrue(chestSetting.contains("\"Bright Chest\""));
         assertTrue(concreteSetting.contains("VisibilityPack.WHITE_CONCRETE"));
-        assertTrue(concreteSetting.contains("\"Bright Concrete\""));
+        assertFalse(chestSetting.contains("\"Bright Chest\""));
+        assertFalse(concreteSetting.contains("\"Bright Concrete\""));
         assertTrue(catalog.contains("\"chestVisibility\""));
         assertTrue(catalog.contains("\"whiteConcreteVisibility\""));
         assertTrue(catalog.contains("\"Bright Chest\""));
