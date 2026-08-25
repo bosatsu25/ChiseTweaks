@@ -56,7 +56,7 @@ final class OreHighlightCompatibilityArchitectureContractTest {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
 
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
@@ -64,13 +64,14 @@ final class OreHighlightCompatibilityArchitectureContractTest {
         assertTrue(plugin.contains("OreHighlightResolver.resolve(state)"));
         assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return VisualModelClassification.NONE;"));
         assertTrue(plugin.contains("case NONE -> model;"));
+        assertTrue(plugin.contains("FullbrightOverlayModel.ore("));
         assertFalse(plugin.contains("if (!\"minecraft\".equals(namespace))"));
-        assertFalse(plugin.contains("new FullbrightOreHighlightModel(model)"));
+        assertFalse(plugin.contains("FullbrightOreHighlightModel"));
         assertFalse(plugin.contains("OVERRIDE_PHASE"));
 
         assertTrue(model.contains("super.emitQuads(emitter, level, pos, state, random, cullTest);"));
         assertTrue(model.contains("VisualRenderState.Snapshot renderState = VisualRenderState.current();"));
-        assertTrue(model.contains("if (!renderState.shouldRenderOre(target)) return;"));
+        assertTrue(model.contains("return renderState.shouldRenderOre(target);"));
         assertFalse(model.contains("OreHighlightResolver.resolve"));
         assertFalse(model.contains("OreHighlightResolver.revision()"));
         assertFalse(model.contains("dynamicModded"));
