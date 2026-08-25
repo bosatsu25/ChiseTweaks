@@ -1,6 +1,5 @@
 package dev.chise.chisetweaks.feature.rendering.worksite;
 
-import dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
@@ -59,18 +58,7 @@ final class WorksiteBlockInspector {
         return selected;
     }
 
-    BlockInspectionPolicy.InspectionPresentation presentation(
-            BlockState state,
-            String blockId,
-            BlockInspectionCategory category) {
-        return BlockInspectionPolicy.inspect(blockId, properties(state), category);
-    }
-
-    OrientationOverlayPolicy.Overlay orientation(BlockState state) {
-        return OrientationOverlayPolicy.inspect(properties(state));
-    }
-
-    private Map<String, String> properties(BlockState state) {
+    Map<String, String> properties(BlockState state) {
         HashMap<String, String> result = new HashMap<>(EXPECTED_PROPERTY_CAPACITY);
         state.getValues().forEach(value ->
                 result.put(value.property().getName(), value.valueName()));
