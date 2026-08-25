@@ -86,6 +86,14 @@ public enum FeatureDefinition {
             "",
             FeatureHelpLevel.DIAGNOSTIC,
             null),
+    WARDEN_RISK_ANALYZER(
+            "warden_risk_analyzer",
+            FeatureArea.RENDERING,
+            "config.name.localwardenriskanalyzer",
+            "Warden Risk Analyzer",
+            "",
+            FeatureHelpLevel.DIAGNOSTIC,
+            null),
     FIRE_VISIBILITY(
             "fire_visibility",
             FeatureArea.RENDERING,
