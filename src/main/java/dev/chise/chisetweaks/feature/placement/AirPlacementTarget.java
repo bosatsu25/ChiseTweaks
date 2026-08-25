@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -44,7 +45,12 @@ public final class AirPlacementTarget {
                 player.getBoundingBox(),
                 player.getXRot(),
                 player.getDirection());
-        if (!level.hasChunkAt(target) || !level.getBlockState(target).isAir()) return null;
+        int chunkX = target.getX() >> 4;
+        int chunkZ = target.getZ() >> 4;
+        if (level.getChunkSource().getChunk(chunkX, chunkZ, ChunkStatus.FULL, false) == null
+                || !level.getBlockState(target).isAir()) {
+            return null;
+        }
 
         Direction face = clickedFace(player.getXRot(), player.getDirection());
         return new BlockHitResult(faceCenter(target, face), face, target, false);
