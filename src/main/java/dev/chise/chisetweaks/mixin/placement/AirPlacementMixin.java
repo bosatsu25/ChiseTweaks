@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-/** Temporarily turns a normal MISS into a bounded air-block hit for one vanilla use action. */
+/** 通常のuse操作がMISSした1回だけ、制限付きの空中設置対象へ一時的に差し替える。 */
 @Mixin(Minecraft.class)
 public abstract class AirPlacementMixin {
     @Shadow public @Nullable LocalPlayer player;
