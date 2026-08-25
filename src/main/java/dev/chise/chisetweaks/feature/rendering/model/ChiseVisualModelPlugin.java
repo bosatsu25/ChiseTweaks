@@ -7,13 +7,11 @@ import dev.chise.chisetweaks.core.vision.GlassHighlightTargetPolicy;
 import dev.chise.chisetweaks.core.vision.OreHighlightExternalRegistry;
 import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
-import net.fabricmc.fabric.api.client.model.loading.v1.ExtraModelKey;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier;
 import net.fabricmc.fabric.api.client.model.loading.v1.PreparableModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.model.loading.v1.SimpleUnbakedExtraModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -23,11 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ChiseVisualModelPlugin {
     public static final String REVISION = "visual-model-13-unified-features";
 
-    private static final Identifier BRIGHT_CONCRETE_MODEL = Identifier.fromNamespaceAndPath(
-            ChiseTweaksMetadata.MOD_ID,
-            "block/visual/bright_concrete");
-    private static final ExtraModelKey<BlockStateModel> BRIGHT_CONCRETE_KEY =
-            ExtraModelKey.create(BRIGHT_CONCRETE_MODEL::toString);
     private static volatile boolean modelPipelineReady;
 
     private ChiseVisualModelPlugin() {}
@@ -59,9 +52,6 @@ public final class ChiseVisualModelPlugin {
                     pluginContext.addModel(
                             GlassHighlightOverlayCatalog.PANE_KEY,
                             SimpleUnbakedExtraModel.blockStateModel(GlassHighlightOverlayCatalog.PANE_MODEL));
-                    pluginContext.addModel(
-                            BRIGHT_CONCRETE_KEY,
-                            SimpleUnbakedExtraModel.blockStateModel(BRIGHT_CONCRETE_MODEL));
 
                     ConcurrentHashMap<Block, VisualModelClassification> classificationCache =
                             new ConcurrentHashMap<>();
@@ -103,7 +93,7 @@ public final class ChiseVisualModelPlugin {
                     classification.target(),
                     classification.overlay().staticKey(),
                     classification.overlay().animatedKey());
-            case BRIGHT_CONCRETE -> FullbrightOverlayModel.brightConcrete(model, BRIGHT_CONCRETE_KEY);
+            case BRIGHT_CONCRETE -> FullbrightOverlayModel.brightConcrete(model);
         };
     }
 
