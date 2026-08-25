@@ -17,6 +17,8 @@ public final class FeatureAvailabilityMixinConfigPlugin implements IMixinConfigP
             List.of(FeatureDefinition.BUILDER_FOCUS_BLOCKS),
             "dev.chise.chisetweaks.mixin.rendering.BlockEntityVisualStateMixin",
             List.of(FeatureDefinition.BUILDER_FOCUS_BLOCKS, FeatureDefinition.BRIGHT_CHEST),
+            "dev.chise.chisetweaks.mixin.rendering.ChestVisibilityMixin",
+            List.of(FeatureDefinition.BRIGHT_CHEST),
             "dev.chise.chisetweaks.mixin.rendering.BuilderFocusEntityMixin",
             List.of(FeatureDefinition.BUILDER_FOCUS_ENTITIES),
             "dev.chise.chisetweaks.mixin.rendering.FireVisibilityMixin",
