@@ -21,10 +21,15 @@ public final class LocalFeatureConfig {
     private static final LocalFeatureConfig INSTANCE = new LocalFeatureConfig();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String CONFIG_FILE_NAME = "chisetweaks-visual.json";
+    private static final String LEGACY_PACK_ID = "chisetweaks:chise_texture";
+    private static final String LEGACY_CHEST_PACK_ID = "chisetweaks:chise_chest_visibility";
+    private static final String LEGACY_CONCRETE_PACK_ID = "chisetweaks:chise_white_concrete_visibility";
 
     public boolean lavaHighlightEnabled = false;
     public boolean ancientDebrisAnalyzerEnabled = false;
     public boolean fireVisibilityEnabled = false;
+    public boolean brightChestEnabled = true;
+    public boolean brightConcreteEnabled = true;
     public boolean oreHighlightAnimationEnabled = false;
 
     public int worksiteVisibilityHorizontalRadius = 5;
@@ -62,9 +67,13 @@ public final class LocalFeatureConfig {
                 save();
                 return;
             }
-            if (!replaceFromJsonDocument(stored.get())) {
+            String document = stored.get();
+            boolean migrateBrightState = needsLegacyBrightMigration(document);
+            if (!replaceFromJsonDocument(document)) {
                 ChiseTweaksClient.LOGGER.warn("Rejected local config; using safe defaults");
+                return;
             }
+            if (migrateBrightState && migrateLegacyBrightState()) save();
         } catch (java.io.IOException | RuntimeException error) {
             resetToDefaults();
             ChiseTweaksClient.LOGGER.warn(
@@ -146,6 +155,12 @@ public final class LocalFeatureConfig {
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.FIRE_VISIBILITY)) {
             fireVisibilityEnabled = false;
         }
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BRIGHT_CHEST)) {
+            brightChestEnabled = false;
+        }
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BRIGHT_CONCRETE)) {
+            brightConcreteEnabled = false;
+        }
         worksiteVisibilityHorizontalRadius =
                 WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(worksiteVisibilityHorizontalRadius);
         worksiteVisibilityVerticalRadius =
@@ -182,6 +197,8 @@ public final class LocalFeatureConfig {
         lavaHighlightEnabled = loaded.lavaHighlightEnabled;
         ancientDebrisAnalyzerEnabled = loaded.ancientDebrisAnalyzerEnabled;
         fireVisibilityEnabled = loaded.fireVisibilityEnabled;
+        brightChestEnabled = loaded.brightChestEnabled;
+        brightConcreteEnabled = loaded.brightConcreteEnabled;
         oreHighlightAnimationEnabled = loaded.oreHighlightAnimationEnabled;
         worksiteVisibilityHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
         worksiteVisibilityVerticalRadius = loaded.worksiteVisibilityVerticalRadius;
@@ -201,5 +218,59 @@ public final class LocalFeatureConfig {
         ancientDebrisAnalyzerMaxMarkers = loaded.ancientDebrisAnalyzerMaxMarkers;
         visualTargetMask = loaded.visualTargetMask;
         visualTargetSchemaVersion = loaded.visualTargetSchemaVersion;
+    }
+
+    private static boolean needsLegacyBrightMigration(String document) {
+        try {
+            JsonObject root = JsonParser.parseString(document).getAsJsonObject();
+            return !root.has("brightChestEnabled") || !root.has("brightConcreteEnabled");
+        } catch (RuntimeException invalid) {
+            return false;
+        }
+    }
+
+    /** 旧built-in packの選択状態を新しい通常Feature設定へ一度だけ引き継ぐ。 */
+    private boolean migrateLegacyBrightState() {
+        try {
+            Optional<String> stored = SecureConfigStorage.readUtf8(
+                    FabricLoader.getInstance().getGameDir(), "options.txt");
+            if (stored.isEmpty()) return false;
+            String resourcePacks = resourcePacksLine(stored.get());
+            if (resourcePacks == null) return false;
+
+            boolean legacy = selected(resourcePacks, LEGACY_PACK_ID);
+            boolean chest = selected(resourcePacks, LEGACY_CHEST_PACK_ID);
+            boolean concrete = selected(resourcePacks, LEGACY_CONCRETE_PACK_ID);
+            if (chest || concrete) {
+                brightChestEnabled = chest;
+                brightConcreteEnabled = concrete;
+            } else if (legacy) {
+                brightChestEnabled = true;
+                brightConcreteEnabled = true;
+            } else {
+                brightChestEnabled = false;
+                brightConcreteEnabled = false;
+            }
+            ChiseTweaksClient.LOGGER.info("Migrated legacy Bright visibility state into local feature config");
+            return true;
+        } catch (java.io.IOException | RuntimeException failure) {
+            ChiseTweaksClient.LOGGER.warn(
+                    "Legacy Bright visibility state was not migrated after {}",
+                    failure.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    private static String resourcePacksLine(String document) {
+        if (document == null || document.isBlank()) return null;
+        for (String line : document.split("\\R", -1)) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("resourcePacks:")) return trimmed;
+        }
+        return null;
+    }
+
+    private static boolean selected(String resourcePacksLine, String packId) {
+        return resourcePacksLine != null && resourcePacksLine.contains("\"" + packId + "\"");
     }
 }
