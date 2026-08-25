@@ -6,6 +6,7 @@ import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
 import dev.chise.chisetweaks.feature.rendering.AncientDebrisAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.LavaHighlightFeature;
+import dev.chise.chisetweaks.feature.rendering.WardenRiskAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine;
 import dev.chise.chisetweaks.gui.PatternConsistencyInspector;
 import dev.chise.chisetweaks.gui.PlacementComparisonTracker;
@@ -43,6 +44,9 @@ public final class FeatureManager {
         }
         if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
             registerComponent(new AncientDebrisAnalyzerFeature());
+        }
+        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.WARDEN_RISK_ANALYZER)) {
+            registerComponent(new WardenRiskAnalyzerFeature());
         }
         if (hasAvailableWorksiteVisibilityFeature()) {
             registerComponent(new WorksiteVisibilityEngine());
