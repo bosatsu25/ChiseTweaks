@@ -35,12 +35,21 @@ final class SimplePlacementPreviewTest {
 
         assertTrue(source.contains("instanceof TrapDoorBlock"));
         assertTrue(source.contains("instanceof SlabBlock"));
+        for (String family : new String[]{
+                "StairBlock", "GlazedTerracottaBlock", "FenceGateBlock", "GrindstoneBlock",
+                "BeehiveBlock", "CampfireBlock"}) {
+            assertTrue(source.contains("instanceof " + family), family);
+        }
         assertTrue(source.contains("state.is(BlockTags.LOGS)"));
         assertTrue(source.contains("endsWith(\"_froglight\")"));
         for (String property : new String[]{
-                "AXIS", "SLAB_TYPE", "HORIZONTAL_FACING", "HALF", "OPEN", "POWERED", "WATERLOGGED"}) {
+                "AXIS", "SLAB_TYPE", "HORIZONTAL_FACING", "HALF", "STAIRS_SHAPE", "OPEN",
+                "POWERED", "IN_WALL", "ATTACH_FACE", "LEVEL_HONEY", "LIT", "SIGNAL_FIRE",
+                "WATERLOGGED"}) {
             assertTrue(source.contains("BlockStateProperties." + property), property);
         }
+        assertTrue(source.contains("actualPlacementStateProperties"));
+        assertTrue(source.contains("if (actual) addPropertyIfPresent(state, BlockStateProperties.LEVEL_HONEY"));
         assertFalse(source.contains("oak_trapdoor\""));
         assertFalse(source.contains("oak_log\""));
         assertFalse(source.contains("ochre_froglight\""));
@@ -61,6 +70,7 @@ final class SimplePlacementPreviewTest {
         String catalog = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java"));
         assertTrue(catalog.contains("CrosshairInspector.placementStateProperties(state)"));
+        assertTrue(catalog.contains("CrosshairInspector.actualPlacementStateProperties"));
         for (String forbidden : new String[]{
                 "setBlock(", "setBlockAndUpdate(", ".place(", "sendPacket", "send(",
                 "clickMouse", "pressMouse", "keyPress", ".clip(", "raycast(", "LOGGER"}) {
@@ -82,7 +92,9 @@ final class SimplePlacementPreviewTest {
         for (String block : new String[]{
                 "OAK_TRAPDOOR", "IRON_TRAPDOOR", "OAK_LOG", "OAK_WOOD", "CRIMSON_STEM",
                 "CRIMSON_HYPHAE", "OCHRE_FROGLIGHT", "VERDANT_FROGLIGHT",
-                "PEARLESCENT_FROGLIGHT", "OAK_SLAB", "STONE", "QUARTZ_PILLAR"}) {
+                "PEARLESCENT_FROGLIGHT", "OAK_SLAB", "OAK_STAIRS", "WHITE_GLAZED_TERRACOTTA",
+                "OAK_FENCE_GATE", "GRINDSTONE", "BEEHIVE", "BEE_NEST", "CAMPFIRE",
+                "STONE", "QUARTZ_PILLAR"}) {
             assertTrue(source.contains("Blocks." + block), block);
         }
         assertTrue(source.contains("new ItemStack(Items.STICK)"));
@@ -93,5 +105,10 @@ final class SimplePlacementPreviewTest {
         assertTrue(source.contains("BlockStateProperties.AXIS"));
         assertTrue(source.contains("BlockStateProperties.SLAB_TYPE"));
         assertTrue(source.contains("BlockStateProperties.WATERLOGGED"));
+        assertTrue(source.contains("StairsShape.OUTER_LEFT"));
+        assertTrue(source.contains("StairsShape.INNER_LEFT"));
+        assertTrue(source.contains("AttachFace.FLOOR"));
+        assertTrue(source.contains("AttachFace.WALL"));
+        assertTrue(source.contains("AttachFace.CEILING"));
     }
 }

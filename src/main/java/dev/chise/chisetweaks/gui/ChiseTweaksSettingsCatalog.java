@@ -280,7 +280,7 @@ final class ChiseTweaksSettingsCatalog {
         } else {
             info(rows, "placement.actual",
                     text("screen.chisetweaks.placement.actual"),
-                    semanticProperties(CrosshairInspector.placementStateProperties(
+                    semanticProperties(CrosshairInspector.actualPlacementStateProperties(
                             placement.actualPlacement())));
             info(rows, "placement.result",
                     text("screen.chisetweaks.placement.result"),
@@ -359,7 +359,7 @@ final class ChiseTweaksSettingsCatalog {
 
     private static String changedPlacementProperties(BlockState predicted, BlockState actual) {
         List<String> before = CrosshairInspector.placementStateProperties(predicted);
-        List<String> after = CrosshairInspector.placementStateProperties(actual);
+        List<String> after = CrosshairInspector.actualPlacementStateProperties(actual);
         StringBuilder changed = new StringBuilder();
         for (String property : before) {
             int separator = property.indexOf('=');

@@ -17,12 +17,17 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.SlabType;
+import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** 実際のvanilla配置結果を、製品側previewのoracleとして比較するclient integration test。 */
 public final class TrapdoorPlacementClientGameTest implements FabricClientGameTest {
@@ -52,6 +57,17 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                         "hyphae family must be supported");
                 require(CrosshairInspector.supportsPlacementPreview(Blocks.OCHRE_FROGLIGHT),
                         "froglight family must be supported");
+                for (Block complex : new Block[]{
+                        Blocks.OAK_STAIRS,
+                        Blocks.WHITE_GLAZED_TERRACOTTA,
+                        Blocks.OAK_FENCE_GATE,
+                        Blocks.GRINDSTONE,
+                        Blocks.BEEHIVE,
+                        Blocks.BEE_NEST,
+                        Blocks.CAMPFIRE}) {
+                    require(CrosshairInspector.supportsPlacementPreview(complex),
+                            "complex family must be supported: " + complex);
+                }
                 require(!CrosshairInspector.supportsPlacementPreview(Blocks.STONE),
                         "ordinary block must remain unsupported");
                 require(!CrosshairInspector.supportsPlacementPreview(Blocks.QUARTZ_PILLAR),
@@ -148,10 +164,121 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                         TargetKind.WATER, SlabType.BOTTOM, true);
                 assertSlabPlacement(level, player, origin, 26, Direction.UP, 1.0D,
                         TargetKind.REPLACEABLE, SlabType.BOTTOM, false);
+
+                assertComplexPlacements(level, player, origin);
                 assertComparisonLifecycle(
-                        level, server.getLevel(Level.NETHER), player, origin, 27);
+                        level, server.getLevel(Level.NETHER), player, origin, 52);
             });
         }
+    }
+
+    private static void assertComplexPlacements(
+            ServerLevel level,
+            ServerPlayer player,
+            BlockPos origin) {
+        Set<String> stairs = Set.of("facing", "half", "shape", "waterlogged");
+        Set<Direction> stairFacings = new HashSet<>();
+        int index = 27;
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            PlacementResult result = assertComplexPlacement(
+                    level, player, origin, index++, Blocks.OAK_STAIRS,
+                    Direction.UP, 1.0D, TargetKind.SOLID, facing,
+                    stairs, stairs, true);
+            stairFacings.add(result.actual().getValue(BlockStateProperties.HORIZONTAL_FACING));
+        }
+        require(stairFacings.equals(Set.of(
+                        Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)),
+                "stairs oracle must cover all horizontal facings");
+
+        PlacementResult bottom = assertComplexPlacement(
+                level, player, origin, index++, Blocks.OAK_STAIRS,
+                Direction.NORTH, 0.25D, TargetKind.SOLID, Direction.SOUTH,
+                stairs, stairs, true);
+        PlacementResult top = assertComplexPlacement(
+                level, player, origin, index++, Blocks.OAK_STAIRS,
+                Direction.NORTH, 0.75D, TargetKind.SOLID, Direction.SOUTH,
+                stairs, stairs, true);
+        require(bottom.actual().getValue(BlockStateProperties.HALF) == Half.BOTTOM,
+                "lower side click must exercise bottom stairs");
+        require(top.actual().getValue(BlockStateProperties.HALF) == Half.TOP,
+                "upper side click must exercise top stairs");
+
+        PlacementResult waterlogged = assertComplexPlacement(
+                level, player, origin, index++, Blocks.OAK_STAIRS,
+                Direction.UP, 1.0D, TargetKind.WATER, Direction.NORTH,
+                stairs, stairs, true);
+        require(waterlogged.actual().getValue(BlockStateProperties.WATERLOGGED),
+                "stairs water oracle must produce waterlogged actual state");
+        assertComplexPlacement(
+                level, player, origin, index++, Blocks.OAK_STAIRS,
+                Direction.EAST, 0.5D, TargetKind.BLOCKED, Direction.NORTH,
+                stairs, stairs, false);
+
+        assertStairNeighborShape(level, player, origin, index++, Direction.NORTH, StairsShape.OUTER_LEFT);
+        assertStairNeighborShape(level, player, origin, index++, Direction.SOUTH, StairsShape.INNER_LEFT);
+
+        Set<String> facingOnly = Set.of("facing");
+        Set<Direction> glazedFacings = new HashSet<>();
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            PlacementResult result = assertComplexPlacement(
+                    level, player, origin, index++, Blocks.WHITE_GLAZED_TERRACOTTA,
+                    Direction.UP, 1.0D, TargetKind.SOLID, facing,
+                    facingOnly, facingOnly, true);
+            glazedFacings.add(result.actual().getValue(BlockStateProperties.HORIZONTAL_FACING));
+        }
+        require(glazedFacings.size() == 4, "glazed terracotta oracle must cover four facings");
+
+        Set<String> gate = Set.of("facing", "in_wall", "open", "powered");
+        assertComplexPlacement(
+                level, player, origin, index++, Blocks.OAK_FENCE_GATE,
+                Direction.UP, 1.0D, TargetKind.SOLID, Direction.WEST,
+                gate, gate, true);
+        assertComplexPlacement(
+                level, player, origin, index++, Blocks.OAK_FENCE_GATE,
+                Direction.UP, 1.0D, TargetKind.REPLACEABLE, Direction.EAST,
+                gate, gate, true);
+
+        Set<String> grindstone = Set.of("face", "facing");
+        PlacementResult floor = assertComplexPlacement(
+                level, player, origin, index++, Blocks.GRINDSTONE,
+                Direction.UP, 1.0D, TargetKind.SOLID, Direction.NORTH,
+                grindstone, grindstone, true);
+        PlacementResult wall = assertComplexPlacement(
+                level, player, origin, index++, Blocks.GRINDSTONE,
+                Direction.NORTH, 0.5D, TargetKind.SOLID, Direction.EAST,
+                grindstone, grindstone, true);
+        PlacementResult ceiling = assertComplexPlacement(
+                level, player, origin, index++, Blocks.GRINDSTONE,
+                Direction.DOWN, 0.0D, TargetKind.SOLID, Direction.SOUTH,
+                grindstone, grindstone, true);
+        require(floor.actual().getValue(BlockStateProperties.ATTACH_FACE) == AttachFace.FLOOR,
+                "grindstone floor placement was not exercised");
+        require(wall.actual().getValue(BlockStateProperties.ATTACH_FACE) == AttachFace.WALL,
+                "grindstone wall placement was not exercised");
+        require(ceiling.actual().getValue(BlockStateProperties.ATTACH_FACE) == AttachFace.CEILING,
+                "grindstone ceiling placement was not exercised");
+
+        Set<String> hiveActual = Set.of("facing", "honey_level");
+        assertComplexPlacement(
+                level, player, origin, index++, Blocks.BEEHIVE,
+                Direction.UP, 1.0D, TargetKind.SOLID, Direction.NORTH,
+                facingOnly, hiveActual, true);
+        assertComplexPlacement(
+                level, player, origin, index++, Blocks.BEE_NEST,
+                Direction.UP, 1.0D, TargetKind.SOLID, Direction.SOUTH,
+                facingOnly, hiveActual, true);
+
+        Set<String> campfire = Set.of("facing", "lit", "signal_fire", "waterlogged");
+        assertComplexPlacement(
+                level, player, origin, index++, Blocks.CAMPFIRE,
+                Direction.UP, 1.0D, TargetKind.SOLID, Direction.WEST,
+                campfire, campfire, true);
+        PlacementResult waterCampfire = assertComplexPlacement(
+                level, player, origin, index, Blocks.CAMPFIRE,
+                Direction.UP, 1.0D, TargetKind.WATER, Direction.EAST,
+                campfire, campfire, true);
+        require(waterCampfire.actual().getValue(BlockStateProperties.WATERLOGGED),
+                "campfire water oracle must produce waterlogged actual state");
     }
 
     private static void assertTrapdoorPlacement(
@@ -255,6 +382,89 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                 "slab preview must expose only type and waterlogged");
     }
 
+    private static PlacementResult assertComplexPlacement(
+            ServerLevel level,
+            ServerPlayer player,
+            BlockPos origin,
+            int index,
+            Block block,
+            Direction face,
+            double clickY,
+            TargetKind targetKind,
+            Direction playerFacing,
+            Set<String> predictedProperties,
+            Set<String> actualProperties,
+            boolean expectedPossible) {
+        return assertComplexPlacement(
+                level, player, origin, index, block, face, clickY, targetKind, playerFacing,
+                predictedProperties, actualProperties, expectedPossible, SiteSetup.NONE);
+    }
+
+    private static PlacementResult assertComplexPlacement(
+            ServerLevel level,
+            ServerPlayer player,
+            BlockPos origin,
+            int index,
+            Block block,
+            Direction face,
+            double clickY,
+            TargetKind targetKind,
+            Direction playerFacing,
+            Set<String> predictedProperties,
+            Set<String> actualProperties,
+            boolean expectedPossible,
+            SiteSetup setup) {
+        PlacementResult result = previewAndPlace(
+                level, player, origin, index, block, face, clickY,
+                targetKind, false, playerFacing, setup);
+        require((result.predicted() != null) == expectedPossible,
+                "complex preview possibility mismatch for " + block + " / " + targetKind);
+        require(result.actuallyPlaced() == expectedPossible,
+                "vanilla complex placement possibility mismatch for " + block + " / " + targetKind);
+        if (!expectedPossible) {
+            require(result.comparisonResult() == PlacementComparisonTracker.NONE,
+                    "impossible complex placement must not create a comparison");
+            return result;
+        }
+        require(result.comparisonResult() == PlacementComparisonTracker.MATCH
+                        || result.comparisonResult() == PlacementComparisonTracker.ADJUSTED,
+                "complex comparison must match or explain a vanilla adjustment for " + block);
+        require(propertyNames(CrosshairInspector.placementStateProperties(result.predicted()))
+                        .equals(predictedProperties),
+                "unexpected predicted property allowlist for " + block);
+        require(propertyNames(CrosshairInspector.actualPlacementStateProperties(result.actual()))
+                        .equals(actualProperties),
+                "unexpected actual property allowlist for " + block);
+        return result;
+    }
+
+    private static void assertStairNeighborShape(
+            ServerLevel level,
+            ServerPlayer player,
+            BlockPos origin,
+            int index,
+            Direction neighborSide,
+            StairsShape expectedShape) {
+        Set<String> properties = Set.of("facing", "half", "shape", "waterlogged");
+        PlacementResult result = assertComplexPlacement(
+                level, player, origin, index, Blocks.OAK_STAIRS,
+                Direction.UP, 1.0D, TargetKind.SOLID, Direction.NORTH,
+                properties, properties, true,
+                (testLevel, target) -> testLevel.setBlockAndUpdate(
+                        target.relative(neighborSide),
+                        Blocks.OAK_STAIRS.defaultBlockState()
+                                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST)
+                                .setValue(BlockStateProperties.HALF, Half.BOTTOM)));
+        require(result.actual().getValue(BlockStateProperties.STAIRS_SHAPE) == expectedShape,
+                "stairs neighbor oracle did not produce " + expectedShape);
+    }
+
+    private static Set<String> propertyNames(List<String> properties) {
+        Set<String> names = new HashSet<>();
+        for (String property : properties) names.add(property.substring(0, property.indexOf('=')));
+        return Set.copyOf(names);
+    }
+
     private static PlacementResult previewAndPlace(
             ServerLevel level,
             ServerPlayer player,
@@ -266,6 +476,23 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
             TargetKind targetKind,
             boolean sneaking,
             Direction playerFacing) {
+        return previewAndPlace(
+                level, player, origin, index, block, face, clickY,
+                targetKind, sneaking, playerFacing, SiteSetup.NONE);
+    }
+
+    private static PlacementResult previewAndPlace(
+            ServerLevel level,
+            ServerPlayer player,
+            BlockPos origin,
+            int index,
+            Block block,
+            Direction face,
+            double clickY,
+            TargetKind targetKind,
+            boolean sneaking,
+            Direction playerFacing,
+            SiteSetup setup) {
         BlockPos clicked = testPosition(origin, index);
         clear(level, clicked);
         switch (targetKind) {
@@ -274,7 +501,10 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                 level.setBlockAndUpdate(clicked.below(), Blocks.DIRT.defaultBlockState());
                 level.setBlockAndUpdate(clicked, Blocks.SHORT_GRASS.defaultBlockState());
             }
-            case WATER -> level.setBlockAndUpdate(clicked, Blocks.WATER.defaultBlockState());
+            case WATER -> {
+                level.setBlockAndUpdate(clicked.below(), Blocks.DIRT.defaultBlockState());
+                level.setBlockAndUpdate(clicked, Blocks.WATER.defaultBlockState());
+            }
         }
         if (targetKind == TargetKind.BLOCKED) {
             level.setBlockAndUpdate(clicked.relative(face), Blocks.STONE.defaultBlockState());
@@ -290,6 +520,9 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                     clicked,
                     false);
             ItemStack previewStack = new ItemStack(block);
+            BlockPlaceContext previewContext = new BlockPlaceContext(
+                    level, player, InteractionHand.MAIN_HAND, previewStack, hit);
+            setup.prepare(level, previewContext.getClickedPos());
             BlockState predicted = CrosshairInspector.predictPlacementState(
                     level,
                     player,
@@ -424,6 +657,13 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
             BlockState actual,
             boolean actuallyPlaced,
             int comparisonResult) {
+    }
+
+    @FunctionalInterface
+    private interface SiteSetup {
+        SiteSetup NONE = (level, target) -> { };
+
+        void prepare(ServerLevel level, BlockPos target);
     }
 
     private enum TargetKind {
