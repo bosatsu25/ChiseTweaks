@@ -8,14 +8,7 @@ public final class ChestVisibilitySetting extends ChiseBooleanSetting {
     public static final ChestVisibilitySetting INSTANCE = new ChestVisibilitySetting();
 
     private ChestVisibilitySetting() {
-        super(
-                "chestVisibility",
-                true,
-                "Bright Chest",
-                "Bright Chest",
-                "Toggle the Bright Chest built-in resource pack independently.",
-                "Toggle the Bright Chest built-in resource pack independently.",
-                SettingPersistence.EXTERNAL);
+        super("chestVisibility", true, SettingPersistence.EXTERNAL);
     }
 
     @Override
