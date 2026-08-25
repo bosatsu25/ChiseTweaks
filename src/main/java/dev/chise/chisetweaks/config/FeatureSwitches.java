@@ -4,7 +4,7 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
-/** 14個のtoggle可能Featureを一つのregistryで管理する。 */
+/** 15個のtoggle可能Featureを一つのregistryで管理する。 */
 public final class FeatureSwitches {
     public static final FeatureSwitch AIR_PLACEMENT = create(FeatureDefinition.AIR_PLACEMENT);
     public static final FeatureSwitch BUILDER_FOCUS_BLOCKS = create(FeatureDefinition.BUILDER_FOCUS_BLOCKS);
@@ -34,6 +34,12 @@ public final class FeatureSwitches {
             false,
             config -> config.ancientDebrisAnalyzerEnabled,
             (config, value) -> config.ancientDebrisAnalyzerEnabled = value);
+    public static final FeatureSwitch WARDEN_RISK_ANALYZER = local(
+            FeatureDefinition.WARDEN_RISK_ANALYZER,
+            "localWardenRiskAnalyzer",
+            false,
+            config -> config.wardenRiskAnalyzerEnabled,
+            (config, value) -> config.wardenRiskAnalyzerEnabled = value);
     public static final FeatureSwitch BRIGHT_CHEST = local(
             FeatureDefinition.BRIGHT_CHEST,
             "brightChest",
@@ -64,10 +70,11 @@ public final class FeatureSwitches {
             FIRE_VISIBILITY,
             LAVA_HIGHLIGHT,
             ANCIENT_DEBRIS_ANALYZER,
+            WARDEN_RISK_ANALYZER,
             BRIGHT_CHEST,
             BRIGHT_CONCRETE);
 
-    /** UI・監査・ドキュメントが参照する14機能の正本。 */
+    /** UI・監査・ドキュメントが参照する15機能の正本。 */
     public static final List<FeatureSwitch> VALUES = List.of(
             AIR_PLACEMENT,
             BUILDER_FOCUS_BLOCKS,
@@ -80,6 +87,7 @@ public final class FeatureSwitches {
             KELP_HIGHLIGHT,
             LAVA_HIGHLIGHT,
             ANCIENT_DEBRIS_ANALYZER,
+            WARDEN_RISK_ANALYZER,
             FIRE_VISIBILITY,
             BRIGHT_CHEST,
             BRIGHT_CONCRETE);
