@@ -17,7 +17,8 @@ final class SettingsPersistenceBoundaryContractTest {
     void localUiAdaptersAndRuntimeFeaturesDoNotOwnDiskPersistence() throws IOException {
         String localSettings = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
         String targetSettings = source("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
-        String localSwitch = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitch.java");
+        String featureSwitch = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitch.java");
+        String switches = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java");
         String lava = source("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
         String debris = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
         String featureContract = source("src/main/java/dev/chise/chisetweaks/feature/Feature.java");
@@ -26,19 +27,24 @@ final class SettingsPersistenceBoundaryContractTest {
 
         assertFalse(localSettings.contains(".save()"));
         assertFalse(targetSettings.contains(".save()"));
-        assertFalse(localSwitch.contains(".save()"));
+        assertFalse(featureSwitch.contains(".save()"));
         assertFalse(lava.contains(".save()"));
         assertFalse(debris.contains(".save()"));
-        assertFalse(localSwitch.contains("FeatureManager"));
-        assertFalse(localSwitch.contains("setEnabled("));
+        assertFalse(featureSwitch.contains("FeatureManager"));
+        assertFalse(featureSwitch.contains("setEnabled("));
         assertFalse(featureContract.contains("setEnabled("));
         assertFalse(targetSettings.contains("refreshTranslations"));
 
         assertTrue(localSettings.contains("SettingPersistence.LOCAL_CONFIG"));
         assertTrue(targetSettings.contains("SettingPersistence.LOCAL_CONFIG"));
-        assertTrue(localSwitch.contains("SettingPersistence.LOCAL_CONFIG"));
-        assertTrue(localSwitch.contains("setter.accept(LocalFeatureConfig.getInstance(), effectiveValue)"));
+        assertTrue(featureSwitch.contains("SettingPersistence persistence"));
+        assertTrue(featureSwitch.contains("writer.accept(FeatureAvailabilityPolicy.isAvailable(definition) && requested)"));
+        assertTrue(switches.contains("SettingPersistence.LOCAL_CONFIG"));
+        assertTrue(switches.contains("config -> config.brightChestEnabled"));
+        assertTrue(switches.contains("config -> config.brightConcreteEnabled"));
 
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitch.java")));
         assertFalse(controller.contains("FeatureConfig.saveToFile()"));
         assertFalse(controller.contains("LocalFeatureConfig.getInstance().save()"));
         assertTrue(controller.contains("SettingPersistenceCoordinator.production()"));
