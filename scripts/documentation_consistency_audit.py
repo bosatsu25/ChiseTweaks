@@ -78,6 +78,13 @@ def main() -> int:
         "README must link to DEVELOPMENT.md",
         failures,
     )
+    require(r"^## 13 Feature$", readme, "README must document the thirteen-feature scope", failures)
+    require(
+        r"Resource Pack selection / reloadへ依存しない",
+        development,
+        "DEVELOPMENT.md must document Bright non-pack rendering ownership",
+        failures,
+    )
 
     for marker in (
         "python scripts/bump_version.py patch",
@@ -85,7 +92,7 @@ def main() -> int:
         "exact CI-verified runtime JAR",
         f"`{jar_goal} bytes`",
         f"`{jar_max} bytes`",
-        "runtime featureは現在11個",
+        "toggle可能なruntime featureは現在13個",
         "GitHub Issues",
     ):
         if marker not in development:
