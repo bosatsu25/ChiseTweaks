@@ -13,14 +13,21 @@ final class AcceptanceObservabilityContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void prismAuditSeparatesTransportDisconnectsFromChiseFailures() throws IOException {
+    void prismAuditSeparatesTransportDisconnectsFromCurrentChiseFailures() throws IOException {
         String audit = source("scripts/prism_acceptance_audit.py");
         assertTrue(audit.contains("transport_disconnect_not_chise_failure"));
         assertTrue(audit.contains("MixinTransformerError"));
-        assertTrue(audit.contains("resource-reload-terminal-failure"));
+        assertTrue(audit.contains("component-init-quarantine"));
+        assertTrue(audit.contains("component-quarantine"));
+        assertTrue(audit.contains("Ore Highlight model reload failed"));
+        assertTrue(audit.contains("retired Chise runtime reference found"));
+        assertTrue(audit.contains("AirPlacementMixin"));
+        assertTrue(audit.contains("AncientDebrisAnalyzerFeature"));
         assertTrue(audit.contains("client-startup"));
         assertTrue(audit.contains("client-join"));
         assertTrue(audit.contains("client-disconnect"));
+        assertFalse(audit.contains("resource-pack-selection-failure"));
+        assertFalse(audit.contains("resource-reload-terminal-failure"));
     }
 
     @Test
