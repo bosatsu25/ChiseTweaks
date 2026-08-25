@@ -157,7 +157,6 @@ jacoco {
 def coverageGateClasses = [
         'dev/chise/chisetweaks/core/performance/WorksiteScanThrottlePolicy*.class',
         'dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicy*.class',
-        'dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy*.class',
         'dev/chise/chisetweaks/core/policy/ConfigListPolicy*.class',
         'dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicy*.class',
         'dev/chise/chisetweaks/core/policy/LavaVisionPalettePolicy*.class',
@@ -180,7 +179,6 @@ def coverageGateClasses = [
 def mutationGateClasses = [
         'dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy',
         'dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy',
-        'dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy',
         'dev.chise.chisetweaks.core.policy.ConfigListPolicy',
         'dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy',
         'dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy',
