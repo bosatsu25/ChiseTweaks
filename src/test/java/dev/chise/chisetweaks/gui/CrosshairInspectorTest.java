@@ -118,7 +118,7 @@ final class CrosshairInspectorTest {
     }
 
     @Test
-    void allEnabledFeaturesRemainIndependentAndReportTheirActualRenderModes() {
+    void allEnabledVisualFeaturesRemainIndependentAndReportTheirActualRenderModes() {
         long all = CrosshairInspector.enabledFeatureMask(
                 FeatureDefinition.FINE_THREAD_TRACE,
                 FeatureDefinition.HIDDEN_SURFACE_TRACE,
@@ -126,20 +126,19 @@ final class CrosshairInspectorTest {
                 FeatureDefinition.GLASS_INSPECTION,
                 FeatureDefinition.KELP_HIGHLIGHT,
                 FeatureDefinition.NETHER_PALETTE,
-                FeatureDefinition.LAVA_HIGHLIGHT,
-                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER);
+                FeatureDefinition.LAVA_HIGHLIGHT);
         Set<FeatureDefinition> observed = new HashSet<>();
 
-        observed.addAll(features(impacts("minecraft:tripwire", null, false, false, false, all)));
-        observed.addAll(features(impacts("minecraft:blue_ice", null, false, false, false, all)));
+        observed.addAll(features(impacts("minecraft:tripwire", null, false, false, all)));
+        observed.addAll(features(impacts("minecraft:blue_ice", null, false, false, all)));
         observed.addAll(features(impacts(
-                "minecraft:diamond_ore", Target.MATERIAL_DIAMOND_ORE, true, false, false, all)));
-        observed.addAll(features(impacts("minecraft:glass", null, false, false, false, all)));
-        observed.addAll(features(impacts("minecraft:kelp", null, false, false, false, all)));
-        observed.addAll(features(impacts("minecraft:netherrack", null, false, false, false, all)));
-        observed.addAll(features(impacts("minecraft:lava", null, false, true, false, all)));
+                "minecraft:diamond_ore", Target.MATERIAL_DIAMOND_ORE, true, false, all)));
+        observed.addAll(features(impacts("minecraft:glass", null, false, false, all)));
+        observed.addAll(features(impacts("minecraft:kelp", null, false, false, all)));
+        observed.addAll(features(impacts("minecraft:netherrack", null, false, false, all)));
+        observed.addAll(features(impacts("minecraft:lava", null, false, true, all)));
         List<FeatureDefinition> ancient = impacts(
-                "minecraft:ancient_debris", Target.MATERIAL_ANCIENT_DEBRIS, true, false, true, all);
+                "minecraft:ancient_debris", Target.MATERIAL_ANCIENT_DEBRIS, true, false, all);
         observed.addAll(features(ancient));
 
         assertEquals(Set.of(
@@ -149,30 +148,26 @@ final class CrosshairInspectorTest {
                 FeatureDefinition.GLASS_INSPECTION,
                 FeatureDefinition.KELP_HIGHLIGHT,
                 FeatureDefinition.NETHER_PALETTE,
-                FeatureDefinition.LAVA_HIGHLIGHT,
-                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER), observed);
-        assertTrue(ancient.contains(FeatureDefinition.MATERIAL_HIGHLIGHTS));
-        assertTrue(ancient.contains(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER));
+                FeatureDefinition.LAVA_HIGHLIGHT), observed);
+        assertEquals(List.of(FeatureDefinition.MATERIAL_HIGHLIGHTS), ancient);
         assertEquals("screen.chisetweaks.inspector.render_mode.visible",
                 ChiseTweaksSettingsCatalog.renderModeKey(
                         FeatureDefinition.MATERIAL_HIGHLIGHTS, false));
         assertEquals("screen.chisetweaks.inspector.render_mode.through_wall",
                 ChiseTweaksSettingsCatalog.renderModeKey(
-                        FeatureDefinition.ANCIENT_DEBRIS_ANALYZER, false));
+                        FeatureDefinition.LAVA_HIGHLIGHT, false));
     }
 
     @Test
     void filterHideSuppressesEveryOtherwiseResponsibleFeature() {
         long enabled = CrosshairInspector.enabledFeatureMask(
-                FeatureDefinition.MATERIAL_HIGHLIGHTS,
-                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER);
+                FeatureDefinition.MATERIAL_HIGHLIGHTS);
         List<FeatureDefinition> impacts = CrosshairInspector.responsibleFeatures(
                 "minecraft:ancient_debris",
                 BlockInspectionPolicy.categories("minecraft:ancient_debris"),
                 Target.MATERIAL_ANCIENT_DEBRIS,
                 true,
                 false,
-                true,
                 VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
                 true,
                 enabled);
@@ -197,7 +192,6 @@ final class CrosshairInspectorTest {
             Target oreTarget,
             boolean oreResolved,
             boolean sourceLava,
-            boolean ancientAnalyzerTarget,
             long enabledFeatures) {
         return CrosshairInspector.responsibleFeatures(
                 id,
@@ -205,7 +199,6 @@ final class CrosshairInspectorTest {
                 oreTarget,
                 oreResolved,
                 sourceLava,
-                ancientAnalyzerTarget,
                 VisualTargetSelectionPolicy.ALL_TARGETS_MASK,
                 true,
                 enabledFeatures);

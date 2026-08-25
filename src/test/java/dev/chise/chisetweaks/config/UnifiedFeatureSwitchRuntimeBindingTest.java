@@ -11,9 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class UnifiedFeatureSwitchRuntimeBindingTest {
     @Test
-    void allFourteenSwitchesRemainIndependentWhenEnabledTogether() {
+    void allTwelveSwitchesRemainIndependentWhenEnabledTogether() {
         List<FeatureSwitch> switches = FeatureSwitches.VALUES;
-        assertEquals(14, switches.size());
+        assertEquals(12, switches.size());
 
         ArrayList<Boolean> original = new ArrayList<>(switches.size());
         for (FeatureSwitch feature : switches) original.add(feature.getBooleanValue());
@@ -41,25 +41,21 @@ final class UnifiedFeatureSwitchRuntimeBindingTest {
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         boolean fire = local.fireVisibilityEnabled;
         boolean lava = local.lavaHighlightEnabled;
-        boolean debris = local.ancientDebrisAnalyzerEnabled;
         boolean chest = local.brightChestEnabled;
         boolean concrete = local.brightConcreteEnabled;
         try {
             FeatureSwitches.FIRE_VISIBILITY.setBooleanValueSilently(true);
             FeatureSwitches.LAVA_HIGHLIGHT.setBooleanValueSilently(true);
-            FeatureSwitches.ANCIENT_DEBRIS_ANALYZER.setBooleanValueSilently(true);
             FeatureSwitches.BRIGHT_CHEST.setBooleanValueSilently(false);
             FeatureSwitches.BRIGHT_CONCRETE.setBooleanValueSilently(false);
 
             assertTrue(local.fireVisibilityEnabled);
             assertTrue(local.lavaHighlightEnabled);
-            assertTrue(local.ancientDebrisAnalyzerEnabled);
             assertFalse(local.brightChestEnabled);
             assertFalse(local.brightConcreteEnabled);
         } finally {
             local.fireVisibilityEnabled = fire;
             local.lavaHighlightEnabled = lava;
-            local.ancientDebrisAnalyzerEnabled = debris;
             local.brightChestEnabled = chest;
             local.brightConcreteEnabled = concrete;
         }

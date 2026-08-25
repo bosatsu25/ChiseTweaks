@@ -13,8 +13,6 @@ import java.util.Set;
 /** 互換性影響の大きいMixinを、対応する現行featureが利用可能な場合だけ適用する。 */
 public final class FeatureAvailabilityMixinConfigPlugin implements IMixinConfigPlugin {
     private static final Map<String, List<FeatureDefinition>> MIXIN_FEATURES = Map.of(
-            "dev.chise.chisetweaks.mixin.placement.AirPlacementMixin",
-            List.of(FeatureDefinition.AIR_PLACEMENT),
             "dev.chise.chisetweaks.mixin.rendering.BuilderFocusBlockMixin",
             List.of(FeatureDefinition.BUILDER_FOCUS_BLOCKS),
             "dev.chise.chisetweaks.mixin.rendering.BlockEntityVisualStateMixin",

@@ -10,12 +10,11 @@ import static dev.chise.chisetweaks.SourceContractSupport.exists;
 import static dev.chise.chisetweaks.SourceContractSupport.read;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-/** 壁越しAnalyzerがGPU保持処理と輪郭＋面geometryを重複実装しないことを固定する。 */
+/** Retained Lava Analyzer must use one retained GPU renderer/geometry path. */
 final class ThroughWallRendererSharingContractTest {
     @Test
-    void analyzersShareOneRetainedRendererAndFilledWireBoxGeometry() throws IOException {
+    void lavaAnalyzerUsesOneRetainedRendererAndFilledWireBoxGeometry() throws IOException {
         String lava = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
-        String debris = read("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
         String retained = read("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
         String geometry = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallWireBoxGeometry.java");
@@ -23,18 +22,15 @@ final class ThroughWallRendererSharingContractTest {
         assertContainsAll(lava,
                 "ThroughWallMarkerRenderer",
                 "ThroughWallMarkerRenderer.Style.LAVA_SOURCE");
-        assertContainsAll(debris,
-                "ThroughWallMarkerRenderer",
-                "ThroughWallMarkerRenderer.Style.ANCIENT_DEBRIS");
         assertContainsAll(renderer,
                 "RetainedThroughWallBuffer",
                 "ThroughWallWireBoxGeometry.drawFilledBox",
                 "ThroughWallWireBoxGeometry.drawWireBox",
                 "fillColorForDistance(distance)",
                 "enum Style",
-                "LAVA_SOURCE",
-                "ANCIENT_DEBRIS");
+                "LAVA_SOURCE");
         assertContainsNone(renderer,
+                "ANCIENT_DEBRIS",
                 "MappableRingBuffer",
                 "MemoryUtil.memCopy",
                 "createRenderPass(",
@@ -54,5 +50,6 @@ final class ThroughWallRendererSharingContractTest {
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisThroughWallRenderer.java"));
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaSourceSnapshot.java"));
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisSnapshot.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"));
     }
 }

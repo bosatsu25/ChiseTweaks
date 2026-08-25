@@ -15,9 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class RetainedFeatureScopeTest {
     @Test
-    void canonicalScopeContainsExactlyTheFourteenRetainedFeatures() {
+    void canonicalScopeContainsExactlyTheTwelveRetainedFeatures() {
         assertEquals(List.of(
-                FeatureDefinition.AIR_PLACEMENT,
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
                 FeatureDefinition.FINE_THREAD_TRACE,
@@ -26,15 +25,16 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.MATERIAL_HIGHLIGHTS,
                 FeatureDefinition.NETHER_PALETTE,
                 FeatureDefinition.KELP_HIGHLIGHT,
-                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
                 FeatureDefinition.FIRE_VISIBILITY,
                 FeatureDefinition.LAVA_HIGHLIGHT,
                 FeatureDefinition.BRIGHT_CHEST,
                 FeatureDefinition.BRIGHT_CONCRETE), FeatureDefinition.VALUES);
-        assertEquals(14, FeatureDefinition.VALUES.size());
-        assertEquals(FeatureArea.BUILDING, FeatureDefinition.AIR_PLACEMENT.area());
-        assertEquals(13, FeatureDefinition.VALUES.stream()
+        assertEquals(12, FeatureDefinition.VALUES.size());
+        assertEquals(12, FeatureDefinition.VALUES.stream()
                 .filter(definition -> definition.area() == FeatureArea.RENDERING)
+                .count());
+        assertEquals(0, FeatureDefinition.VALUES.stream()
+                .filter(definition -> definition.area() == FeatureArea.BUILDING)
                 .count());
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.dependency().isEmpty()));
     }
@@ -61,13 +61,11 @@ final class RetainedFeatureScopeTest {
     @Test
     void nonWorksiteFeaturesStayOutsideWorksiteModeCoupling() {
         for (FeatureDefinition definition : List.of(
-                FeatureDefinition.AIR_PLACEMENT,
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
                 FeatureDefinition.GLASS_INSPECTION,
                 FeatureDefinition.MATERIAL_HIGHLIGHTS,
                 FeatureDefinition.KELP_HIGHLIGHT,
-                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
                 FeatureDefinition.FIRE_VISIBILITY,
                 FeatureDefinition.LAVA_HIGHLIGHT,
                 FeatureDefinition.BRIGHT_CHEST,
@@ -78,9 +76,8 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void unifiedSwitchRegistryContainsAllFourteenFeatureSwitches() {
+    void unifiedSwitchRegistryContainsAllTwelveFeatureSwitches() {
         assertEquals(List.of(
-                FeatureDefinition.AIR_PLACEMENT,
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
                 FeatureDefinition.FINE_THREAD_TRACE,
@@ -90,18 +87,16 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.NETHER_PALETTE,
                 FeatureDefinition.KELP_HIGHLIGHT,
                 FeatureDefinition.LAVA_HIGHLIGHT,
-                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
                 FeatureDefinition.FIRE_VISIBILITY,
                 FeatureDefinition.BRIGHT_CHEST,
                 FeatureDefinition.BRIGHT_CONCRETE),
                 FeatureSwitches.VALUES.stream().map(value -> value.definition()).toList());
-        assertEquals(9, FeatureSwitches.FEATURE_CONFIG_VALUES.size());
-        assertEquals(5, FeatureSwitches.LOCAL_CONFIG_VALUES.size());
+        assertEquals(8, FeatureSwitches.FEATURE_CONFIG_VALUES.size());
+        assertEquals(4, FeatureSwitches.LOCAL_CONFIG_VALUES.size());
     }
 
     @Test
     void retainedEnglishNamesMatchReadmeProductTerminology() {
-        assertEquals("Air Placement", FeatureDefinition.AIR_PLACEMENT.englishName());
         assertEquals("Block Filter", FeatureDefinition.BUILDER_FOCUS_BLOCKS.englishName());
         assertEquals("Entity Filter", FeatureDefinition.BUILDER_FOCUS_ENTITIES.englishName());
         assertEquals("Fine Line Highlight", FeatureDefinition.FINE_THREAD_TRACE.englishName());
@@ -110,7 +105,6 @@ final class RetainedFeatureScopeTest {
         assertEquals("Ore Highlights", FeatureDefinition.MATERIAL_HIGHLIGHTS.englishName());
         assertEquals("Nether Highlight", FeatureDefinition.NETHER_PALETTE.englishName());
         assertEquals("Kelp Highlight", FeatureDefinition.KELP_HIGHLIGHT.englishName());
-        assertEquals("Ancient Debris Analyzer", FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.englishName());
         assertEquals("Low Fire", FeatureDefinition.FIRE_VISIBILITY.englishName());
         assertEquals("Lava Analyzer", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
         assertEquals("Bright Chest", FeatureDefinition.BRIGHT_CHEST.englishName());

@@ -33,10 +33,7 @@ final class ChiseTweaksSettingsCatalog {
         } else if (resolved == ChiseTweaksSettingsController.Surface.FILTER) {
             addFilterRows(rows);
         } else if (resolved == ChiseTweaksSettingsController.Surface.INSPECTOR) {
-            addInspectorRows(
-                    rows,
-                    CrosshairInspector.Snapshot.noTarget(),
-                    false);
+            addInspectorRows(rows, CrosshairInspector.Snapshot.noTarget(), false);
         } else if (resolved == ChiseTweaksSettingsController.Surface.ANALYZER) {
             addAnalyzerRows(rows);
         } else {
@@ -161,9 +158,6 @@ final class ChiseTweaksSettingsCatalog {
         boolLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
                 FeatureDefinition.LAVA_HIGHLIGHT.englishName(),
                 text("config.comment.locallavahighlight"));
-        boolLiteral(rows, "ancientDebrisAnalyzer", FeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
-                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.englishName(),
-                text("config.comment.localancientdebrisanalyzer"));
 
         headerLiteral(rows, "detail.analyzer.lava", "Lava Analyzer Settings");
         integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
@@ -178,14 +172,6 @@ final class ChiseTweaksSettingsCatalog {
         integer(rows, "lavaMaxOverlays", LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
                 "screen.chisetweaks.settings.lava_max.name",
                 "screen.chisetweaks.settings.lava_max.description", 1);
-
-        headerLiteral(rows, "detail.analyzer.ancientDebris", "Ancient Debris Analyzer Settings");
-        integer(rows, "ancientDebrisRange", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE,
-                "screen.chisetweaks.settings.debris_range.name",
-                "screen.chisetweaks.settings.debris_range.description", 16);
-        integer(rows, "ancientDebrisMaxMarkers", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS,
-                "screen.chisetweaks.settings.debris_max.name",
-                "screen.chisetweaks.settings.debris_max.description", 8);
     }
 
     private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
@@ -300,7 +286,7 @@ final class ChiseTweaksSettingsCatalog {
                     placementReason(placement));
             return;
         }
-        var state = placement.predictedPlacement();
+        BlockState state = placement.predictedPlacement();
         info(rows, "placement.predicted",
                 text("screen.chisetweaks.placement.predicted"),
                 semanticProperties(CrosshairInspector.placementStateProperties(state)));
@@ -425,8 +411,7 @@ final class ChiseTweaksSettingsCatalog {
     }
 
     private static String filterReason(BuilderFocusVisibility.FilterDecision decision) {
-        String reason = text("screen.chisetweaks.inspector.reason."
-                + decision.reason());
+        String reason = text("screen.chisetweaks.inspector.reason." + decision.reason());
         return decision.matchedRule().isEmpty() ? reason : reason + ": " + decision.matchedRule();
     }
 
@@ -444,9 +429,7 @@ final class ChiseTweaksSettingsCatalog {
 
     static String renderModeKey(FeatureDefinition feature, boolean hidden) {
         if (hidden) return "screen.chisetweaks.inspector.render_mode.suppressed";
-        boolean throughWall = feature == FeatureDefinition.LAVA_HIGHLIGHT
-                || feature == FeatureDefinition.ANCIENT_DEBRIS_ANALYZER;
-        return throughWall
+        return feature == FeatureDefinition.LAVA_HIGHLIGHT
                 ? "screen.chisetweaks.inspector.render_mode.through_wall"
                 : "screen.chisetweaks.inspector.render_mode.visible";
     }

@@ -7,7 +7,6 @@ import com.google.gson.JsonParser;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
-import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
@@ -26,7 +25,6 @@ public final class LocalFeatureConfig {
     private static final String LEGACY_CONCRETE_PACK_ID = "chisetweaks:chise_white_concrete_visibility";
 
     public boolean lavaHighlightEnabled = false;
-    public boolean ancientDebrisAnalyzerEnabled = false;
     public boolean fireVisibilityEnabled = false;
     public boolean brightChestEnabled = true;
     public boolean brightConcreteEnabled = true;
@@ -47,9 +45,6 @@ public final class LocalFeatureConfig {
     public int lavaAnalyzerVerticalRadius = 3;
     public int lavaAnalyzerIntervalTicks = 10;
     public int lavaAnalyzerMaxOverlayResults = 12;
-
-    public int ancientDebrisAnalyzerRangeBlocks = AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS;
-    public int ancientDebrisAnalyzerMaxMarkers = AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS;
 
     public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
     public int visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
@@ -149,9 +144,6 @@ public final class LocalFeatureConfig {
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
             lavaHighlightEnabled = false;
         }
-        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
-            ancientDebrisAnalyzerEnabled = false;
-        }
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.FIRE_VISIBILITY)) {
             fireVisibilityEnabled = false;
         }
@@ -185,17 +177,12 @@ public final class LocalFeatureConfig {
                 WorksiteVisibilityBudgetPolicy.clampIntervalTicks(lavaAnalyzerIntervalTicks);
         lavaAnalyzerMaxOverlayResults =
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(lavaAnalyzerMaxOverlayResults);
-        ancientDebrisAnalyzerRangeBlocks =
-                AncientDebrisAnalyzerPolicy.clampRangeBlocks(ancientDebrisAnalyzerRangeBlocks);
-        ancientDebrisAnalyzerMaxMarkers =
-                AncientDebrisAnalyzerPolicy.clampMaxMarkers(ancientDebrisAnalyzerMaxMarkers);
         visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
     }
 
     private void copyFrom(LocalFeatureConfig loaded) {
         lavaHighlightEnabled = loaded.lavaHighlightEnabled;
-        ancientDebrisAnalyzerEnabled = loaded.ancientDebrisAnalyzerEnabled;
         fireVisibilityEnabled = loaded.fireVisibilityEnabled;
         brightChestEnabled = loaded.brightChestEnabled;
         brightConcreteEnabled = loaded.brightConcreteEnabled;
@@ -214,8 +201,6 @@ public final class LocalFeatureConfig {
         lavaAnalyzerVerticalRadius = loaded.lavaAnalyzerVerticalRadius;
         lavaAnalyzerIntervalTicks = loaded.lavaAnalyzerIntervalTicks;
         lavaAnalyzerMaxOverlayResults = loaded.lavaAnalyzerMaxOverlayResults;
-        ancientDebrisAnalyzerRangeBlocks = loaded.ancientDebrisAnalyzerRangeBlocks;
-        ancientDebrisAnalyzerMaxMarkers = loaded.ancientDebrisAnalyzerMaxMarkers;
         visualTargetMask = loaded.visualTargetMask;
         visualTargetSchemaVersion = loaded.visualTargetSchemaVersion;
     }

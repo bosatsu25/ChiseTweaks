@@ -4,9 +4,8 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
-/** 14個のtoggle可能Featureを一つのregistryで管理する。 */
+/** 12個のtoggle可能Featureを一つのregistryで管理する。 */
 public final class FeatureSwitches {
-    public static final FeatureSwitch AIR_PLACEMENT = create(FeatureDefinition.AIR_PLACEMENT);
     public static final FeatureSwitch BUILDER_FOCUS_BLOCKS = create(FeatureDefinition.BUILDER_FOCUS_BLOCKS);
     public static final FeatureSwitch BUILDER_FOCUS_ENTITIES = create(FeatureDefinition.BUILDER_FOCUS_ENTITIES);
     public static final FeatureSwitch FINE_THREAD_TRACE = create(FeatureDefinition.FINE_THREAD_TRACE);
@@ -28,12 +27,6 @@ public final class FeatureSwitches {
             false,
             config -> config.lavaHighlightEnabled,
             (config, value) -> config.lavaHighlightEnabled = value);
-    public static final FeatureSwitch ANCIENT_DEBRIS_ANALYZER = local(
-            FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
-            "localAncientDebrisAnalyzer",
-            false,
-            config -> config.ancientDebrisAnalyzerEnabled,
-            (config, value) -> config.ancientDebrisAnalyzerEnabled = value);
     public static final FeatureSwitch BRIGHT_CHEST = local(
             FeatureDefinition.BRIGHT_CHEST,
             "brightChest",
@@ -49,7 +42,6 @@ public final class FeatureSwitches {
 
     /** chisetweaks.jsonに保存されるFeature。 */
     public static final List<FeatureSwitch> FEATURE_CONFIG_VALUES = List.of(
-            AIR_PLACEMENT,
             BUILDER_FOCUS_BLOCKS,
             BUILDER_FOCUS_ENTITIES,
             FINE_THREAD_TRACE,
@@ -63,13 +55,11 @@ public final class FeatureSwitches {
     public static final List<FeatureSwitch> LOCAL_CONFIG_VALUES = List.of(
             FIRE_VISIBILITY,
             LAVA_HIGHLIGHT,
-            ANCIENT_DEBRIS_ANALYZER,
             BRIGHT_CHEST,
             BRIGHT_CONCRETE);
 
-    /** UI・監査・ドキュメントが参照する14機能の正本。 */
+    /** UI・監査・ドキュメントが参照する12機能の正本。 */
     public static final List<FeatureSwitch> VALUES = List.of(
-            AIR_PLACEMENT,
             BUILDER_FOCUS_BLOCKS,
             BUILDER_FOCUS_ENTITIES,
             FINE_THREAD_TRACE,
@@ -79,7 +69,6 @@ public final class FeatureSwitches {
             NETHER_PALETTE,
             KELP_HIGHLIGHT,
             LAVA_HIGHLIGHT,
-            ANCIENT_DEBRIS_ANALYZER,
             FIRE_VISIBILITY,
             BRIGHT_CHEST,
             BRIGHT_CONCRETE);

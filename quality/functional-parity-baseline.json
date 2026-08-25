@@ -1,13 +1,12 @@
 {
   "schema": 2,
   "baseline": {
-    "version": "0.9.4+mc26.1.2",
-    "commit": "397a2bf536d389fba86ee502bbaa12c2ad0fa4e8",
-    "runtimeJarBytes": 446814,
+    "version": "0.15.0+mc26.1.2",
+    "commit": "28d72c5a088c96c284bbbe18e0b4ac9d56f55044",
+    "runtimeJarBytes": 387108,
     "goalBytes": 358400
   },
   "featureIds": [
-    "air_placement",
     "builder_focus_blocks",
     "builder_focus_entities",
     "fine_thread_trace",
@@ -16,7 +15,6 @@
     "material_highlights",
     "nether_palette",
     "kelp_highlight",
-    "ancient_debris_analyzer",
     "fire_visibility",
     "lava_highlight",
     "bright_chest",
@@ -24,7 +22,6 @@
   ],
   "settings": {
     "globalFeatureSwitches": {
-      "airPlacement": false,
       "builderFocusBlocks": false,
       "builderFocusEntities": false,
       "fineThreadTrace": false,
@@ -37,7 +34,6 @@
     "localFeatureSwitches": {
       "localFireVisibility": false,
       "localLavaHighlight": false,
-      "localAncientDebrisAnalyzer": false,
       "brightChest": true,
       "brightConcrete": true
     },
@@ -56,9 +52,7 @@
       "localLavaAnalyzerHorizontalRadius": 5,
       "localLavaAnalyzerVerticalRadius": 3,
       "localLavaAnalyzerIntervalTicks": 10,
-      "localLavaAnalyzerMaxOverlays": 12,
-      "localAncientDebrisAnalyzerRange": 64,
-      "localAncientDebrisAnalyzerMaxMarkers": 64
+      "localLavaAnalyzerMaxOverlays": 12
     },
     "visualTargets": {
       "visualTargetMaterialCoalOre": true,
@@ -93,7 +87,6 @@
   },
   "resourcePackIds": [],
   "mixins": [
-    "placement.AirPlacementMixin",
     "rendering.BuilderFocusBlockMixin",
     "rendering.BlockEntityVisualStateMixin",
     "rendering.ChestVisibilityMixin",
@@ -148,19 +141,5 @@
     "src/test/resources/config-fixtures/0.9.1-local.json",
     "src/test/resources/config-fixtures/0.9.2-local.json",
     "src/test/resources/config-fixtures/future-local.json"
-  ],
-  "analyzerBudget": {
-    "DEFAULT_RANGE_BLOCKS": 64,
-    "MIN_RANGE_BLOCKS": 16,
-    "MAX_RANGE_BLOCKS": 256,
-    "DEFAULT_MAX_MARKERS": 64,
-    "MIN_MAX_MARKERS": 8,
-    "MAX_MAX_MARKERS": 128,
-    "MAX_BOOTSTRAP_CHUNK_RADIUS": 17,
-    "MAX_BOOTSTRAP_CHUNKS_PER_TICK": 64,
-    "MAX_VALIDATION_CHUNKS_PER_TICK": 16,
-    "MAX_TRACKED_CHUNKS": 4096,
-    "MAX_DEBRIS_PER_CHUNK": 256,
-    "VALIDATION_INTERVAL_TICKS": 20
-  }
+  ]
 }

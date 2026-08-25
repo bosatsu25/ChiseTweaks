@@ -41,13 +41,18 @@ final class ChiseTweaksSettingsControllerTest {
                 List.of("materials", "nether", "thread", "hidden", "glass", "kelp")));
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.FILTER)).containsAll(
                 List.of("focusBlocks", "focusEntities", "editBlockFilter", "editEntityFilter")));
-        assertEquals(List.of(
-                        "placement.tools", "airPlacement",
-                        "inspector.title", "inspector.noTarget", "placement.title", "placement.none",
-                        "pattern.title", "pattern.select", "pattern.inactive"),
-                ids(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR)));
-        assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER)).containsAll(
-                List.of("lava", "ancientDebrisAnalyzer", "lavaRange", "ancientDebrisRange")));
+
+        List<String> inspector = ids(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR));
+        assertTrue(inspector.containsAll(List.of(
+                "inspector.title", "inspector.noTarget", "placement.title", "placement.none",
+                "pattern.title", "pattern.select", "pattern.inactive")));
+        assertFalse(inspector.contains("airPlacement"));
+
+        List<String> analyzer = ids(controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER));
+        assertTrue(analyzer.containsAll(List.of(
+                "header.analyzer", "lava", "lavaRange", "lavaVerticalRange", "lavaInterval", "lavaMaxOverlays")));
+        assertFalse(analyzer.stream().anyMatch(id -> id.toLowerCase().contains("ancientdebris")));
+
         assertEquals(List.of("header.visibility", "fireVisibility", "chestVisibility", "whiteConcreteVisibility"),
                 ids(controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY)));
         assertTrue(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR).stream()
@@ -59,7 +64,6 @@ final class ChiseTweaksSettingsControllerTest {
         var controller = new ChiseTweaksSettingsController();
         var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
         var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
-        var inspector = controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR);
         var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
 
@@ -71,9 +75,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals("Kelp Highlight", row(highlight, "kelp").name());
         assertEquals("Block Filter", row(visual, "focusBlocks").name());
         assertEquals("Entity Filter", row(visual, "focusEntities").name());
-        assertEquals("Air Placement", row(inspector, "airPlacement").name());
         assertEquals("Lava Analyzer", row(analyzer, "lava").name());
-        assertEquals("Ancient Debris Analyzer", row(analyzer, "ancientDebrisAnalyzer").name());
         assertEquals("Low Fire", row(visibility, "fireVisibility").name());
         assertEquals("Bright Chest", row(visibility, "chestVisibility").name());
         assertEquals("Bright Concrete", row(visibility, "whiteConcreteVisibility").name());
@@ -84,7 +86,6 @@ final class ChiseTweaksSettingsControllerTest {
         var controller = new ChiseTweaksSettingsController();
         var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
         var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
-        var inspector = controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR);
         var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
 
@@ -97,10 +98,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertSame(FeatureSwitches.BUILDER_FOCUS_BLOCKS, row(visual, "focusBlocks").booleanConfig());
         assertSame(FeatureSwitches.BUILDER_FOCUS_ENTITIES, row(visual, "focusEntities").booleanConfig());
         assertSame(BuilderFocusConfig.REFRESH_RENDERER, row(visual, "refreshRenderer").booleanConfig());
-        assertSame(FeatureSwitches.AIR_PLACEMENT, row(inspector, "airPlacement").booleanConfig());
         assertSame(FeatureSwitches.LAVA_HIGHLIGHT, row(analyzer, "lava").booleanConfig());
-        assertSame(FeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
-                row(analyzer, "ancientDebrisAnalyzer").booleanConfig());
         assertSame(FeatureSwitches.FIRE_VISIBILITY, row(visibility, "fireVisibility").booleanConfig());
         assertSame(FeatureSwitches.BRIGHT_CHEST, row(visibility, "chestVisibility").booleanConfig());
         assertSame(FeatureSwitches.BRIGHT_CONCRETE,
@@ -130,22 +128,25 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void analyzerTabKeepsLavaAndAncientDebrisSettingsSeparate() {
+    void analyzerTabOwnsOnlyTheRetainedLavaAnalyzerSettings() {
         var rows = new ChiseTweaksSettingsController().rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 row(rows, "lavaRange").integerConfig());
+        assertSame(LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
+                row(rows, "lavaVerticalRange").integerConfig());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
                 row(rows, "lavaInterval").integerConfig());
-        assertSame(LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE,
-                row(rows, "ancientDebrisRange").integerConfig());
-        assertSame(LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS,
-                row(rows, "ancientDebrisMaxMarkers").integerConfig());
+        assertSame(LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
+                row(rows, "lavaMaxOverlays").integerConfig());
+        assertFalse(rows.stream().anyMatch(candidate -> candidate.id().toLowerCase().contains("ancientdebris")));
     }
 
     @Test
-    void rowIdsAreUniqueAndDiagnosticUtilityRowsDoNotReturn() {
+    void rowIdsAreUniqueAndRetiredUtilityOrFeatureRowsDoNotReturn() {
         var controller = new ChiseTweaksSettingsController();
-        Set<String> removedTokens = Set.of("diagnostic", "resourceReload", "copySnapshot", "exportSnapshot");
+        Set<String> removedTokens = Set.of(
+                "diagnostic", "resourceReload", "copySnapshot", "exportSnapshot",
+                "airPlacement", "ancientDebrisAnalyzer");
         for (ChiseTweaksSettingsController.Surface surface : ChiseTweaksSettingsController.Surface.values()) {
             Set<String> unique = new HashSet<>();
             for (ChiseTweaksSettingRowDefinition row : controller.rows(surface)) {
@@ -153,7 +154,7 @@ final class ChiseTweaksSettingsControllerTest {
                 String normalized = row.id().toLowerCase();
                 for (String removed : removedTokens) {
                     assertFalse(normalized.contains(removed.toLowerCase()),
-                            "removed utility leaked into settings row: " + row.id());
+                            "retired row leaked into settings: " + row.id());
                 }
             }
             assertRowContracts(controller.rows(surface));

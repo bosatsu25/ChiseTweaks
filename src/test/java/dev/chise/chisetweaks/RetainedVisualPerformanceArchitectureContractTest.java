@@ -7,7 +7,9 @@ import java.io.IOException;
 
 import static dev.chise.chisetweaks.SourceContractSupport.assertContainsAll;
 import static dev.chise.chisetweaks.SourceContractSupport.assertContainsNone;
+import static dev.chise.chisetweaks.SourceContractSupport.exists;
 import static dev.chise.chisetweaks.SourceContractSupport.read;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @Tag("performance")
 final class RetainedVisualPerformanceArchitectureContractTest {
@@ -60,23 +62,9 @@ final class RetainedVisualPerformanceArchitectureContractTest {
     }
 
     @Test
-    void ancientDebrisBootstrapHasAFrameTimeBudget() throws IOException {
-        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
-        String policy = read("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java");
-
-        assertContainsAll(feature,
-                "pendingBootstrapChunks",
-                "scheduleLoadedChunkBootstrap(",
-                "processPendingLoadedChunks(",
-                "MAX_BOOTSTRAP_CHUNKS_PER_TICK",
-                "getChunkNow(");
-        assertContainsAll(policy,
-                "MAX_BOOTSTRAP_CHUNKS_PER_TICK",
-                "MAX_BOOTSTRAP_CHUNK_COUNT");
-        assertContainsNone(feature,
-                "Executor",
-                "new Thread(",
-                "CompletableFuture");
+    void retiredHiddenResourceAnalyzerCannotReturnAsAProductionHotPath() {
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java"));
     }
 
     @Test
