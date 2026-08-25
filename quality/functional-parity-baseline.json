@@ -2,8 +2,8 @@
   "schema": 2,
   "baseline": {
     "version": "0.15.0+mc26.1.2",
-    "commit": "193609a4e37fc875249bfca75697230ff0ca1c81",
-    "runtimeJarBytes": 0,
+    "commit": "3a086169ed869aefe8421cb53c25c39e8e2eeaf9",
+    "runtimeJarBytes": 387108,
     "goalBytes": 358400
   },
   "featureIds": [
