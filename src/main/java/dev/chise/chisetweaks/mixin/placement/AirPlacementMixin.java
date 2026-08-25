@@ -1,7 +1,7 @@
 package dev.chise.chisetweaks.mixin.placement;
 
-import com.llamalad7.mixinextras.injector.wrapmethod.Operation;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import dev.chise.chisetweaks.feature.placement.AirPlacementTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
