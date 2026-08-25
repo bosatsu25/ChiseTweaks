@@ -7,9 +7,6 @@ import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.feature.TickingFeature;
-import dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail;
-import dev.chise.chisetweaks.runtime.RuntimeDiagnosticEvent;
-import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -35,6 +32,11 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
             "ChiseTweaks Lava Source Highlight retained buffer",
             "ChiseTweaks Lava Source Highlight retained rendering");
     private final ThroughWallPositionSnapshot highlightedSources = new ThroughWallPositionSnapshot(MAX_CANDIDATES);
+    private final ThroughWallRenderGuard renderGuard = new ThroughWallRenderGuard(
+            sourceRenderer,
+            highlightedSources,
+            FeatureDefinition.LAVA_HIGHLIGHT.id(),
+            "Lava Source Highlight");
     private final NearestPositionBuffer nearestSources = new NearestPositionBuffer(MAX_CANDIDATES);
     private final LevelChunk[] loadedChunkBuffer = new LevelChunk[
             WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES];
@@ -47,7 +49,6 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
     private long lastObservedPlayerBlock = Long.MIN_VALUE;
     private boolean movementSinceLastScan;
     private ClientLevel lastLevel;
-    private boolean renderQuarantined;
     private boolean runtimeQuarantined;
 
     @Override
@@ -63,7 +64,7 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
     @Override
     public void init() {
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(this::render);
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> sourceRenderer.close());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> renderGuard.close());
         ChiseTweaksClient.LOGGER.info(
                 "Lava Source Highlight initialized with adaptive bounded scanning and retained through-terrain rendering");
     }
@@ -225,54 +226,14 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
 
     private void render(LevelRenderContext context) {
         if (!isEnabled()
-                || isSessionQuarantined()
                 || highlightedSources.isEmpty()
                 || BuilderFocusVisibility.shouldHide(Blocks.LAVA)) return;
-        try {
-            renderSafely(context);
-        } catch (RuntimeException | LinkageError failure) {
-            renderQuarantined = true;
-            clearTargets();
-            resetRendererAfterFailure();
-            ChiseTweaksClient.LOGGER.error(
-                    "Lava Source Highlight rendering was quarantined after {}",
-                    failure.getClass().getSimpleName());
-            RuntimeDiagnostics.log(
-                    RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
-                    Minecraft.getInstance(),
-                    RuntimeDiagnosticDetail.of("componentId", getId()),
-                    RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()),
-                    RuntimeDiagnosticDetail.of("stage", "render"));
-        }
-    }
-
-    private void renderSafely(LevelRenderContext context) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null
                 || client.level == null
                 || client.level != lastLevel
                 || client.screen != null) return;
-        sourceRenderer.render(context, highlightedSources);
-    }
-
-    private void resetRendererAfterFailure() {
-        try {
-            sourceRenderer.resetAfterFailure();
-        } catch (RuntimeException | LinkageError cleanupFailure) {
-            ChiseTweaksClient.LOGGER.warn(
-                    "Lava Source Highlight renderer cleanup failed after {}",
-                    cleanupFailure.getClass().getSimpleName());
-        }
-    }
-
-    private void closeRendererAfterRuntimeQuarantine() {
-        try {
-            sourceRenderer.close();
-        } catch (RuntimeException | LinkageError cleanupFailure) {
-            ChiseTweaksClient.LOGGER.warn(
-                    "Lava Source Highlight renderer close failed after {}",
-                    cleanupFailure.getClass().getSimpleName());
-        }
+        renderGuard.render(context);
     }
 
     private void clearTargets() {
@@ -303,21 +264,21 @@ public class LavaHighlightFeature implements TickingFeature, SessionAwareRuntime
     }
 
     private boolean isSessionQuarantined() {
-        return runtimeQuarantined || renderQuarantined;
+        return runtimeQuarantined || renderGuard.isQuarantined();
     }
 
     @Override
     public void onQuarantined(Minecraft client) {
         runtimeQuarantined = true;
         resetScanState(null);
-        closeRendererAfterRuntimeQuarantine();
+        renderGuard.close();
     }
 
     @Override
     public void resetSession(Minecraft client) {
         resetScanState(null);
         // 描画経路の失敗はワールドやセッション初期化中だけの一過性である場合がある。Manager側の隔離状態はプロセス全体で保持するため、ここではリセットしない。
-        renderQuarantined = false;
+        renderGuard.resetSession();
     }
 
     @Override

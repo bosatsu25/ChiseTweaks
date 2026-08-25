@@ -16,10 +16,10 @@ final class OreHighlightFailSoftContractTest {
     @Test
     void resourcePackBaseIsEmittedBeforeAnyOptionalChiseWork() throws IOException {
         String model = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
         int baseEmit = model.indexOf("super.emitQuads(emitter, level, pos, state, random, cullTest);");
         int stateRead = model.indexOf("VisualRenderState.Snapshot renderState = VisualRenderState.current();", baseEmit);
-        int optionalBranch = model.indexOf("if (!renderState.shouldRenderOre(target)) return;", stateRead);
+        int optionalBranch = model.indexOf("if (!shouldRender(renderState)) return;", stateRead);
         int overlayEmit = model.indexOf("FullbrightOverlayEmission.emit(", optionalBranch);
         assertTrue(baseEmit >= 0);
         assertTrue(baseEmit < stateRead);
@@ -30,24 +30,25 @@ final class OreHighlightFailSoftContractTest {
     @Test
     void optionalOverlayLookupAndEmissionAreBoundedRecoverableAndFailSoft() throws IOException {
         String model = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
-        String kelp = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightKelpHighlightModel.java");
-        String glass = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightGlassHighlightModel.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
         String emission = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java");
 
-        for (String wrapper : new String[] {model, kelp, glass}) {
-            assertTrue(wrapper.contains("MAX_LOOKUP_ATTEMPTS = 3"));
-            assertTrue(wrapper.contains("catch (RuntimeException | LinkageError failure)"));
-            assertTrue(wrapper.contains("LOOKUP_FAILURE_LOGGED"));
-            assertTrue(wrapper.contains("EMIT_FAILURE_LOGGED"));
-            assertTrue(wrapper.contains("synchronized (this)"));
-            assertFalse(wrapper.contains("overlayResolved"));
-            assertTrue(wrapper.contains("FullbrightOverlayEmission.emit("));
-            assertTrue(wrapper.contains("Quarantined") || wrapper.contains("quarantined"));
-        }
+        assertTrue(model.contains("MAX_LOOKUP_ATTEMPTS = 3"));
+        assertTrue(model.contains("catch (RuntimeException | LinkageError failure)"));
+        assertTrue(model.contains("ORE_LOOKUP_FAILURE_LOGGED"));
+        assertTrue(model.contains("GLASS_LOOKUP_FAILURE_LOGGED"));
+        assertTrue(model.contains("KELP_LOOKUP_FAILURE_LOGGED"));
+        assertTrue(model.contains("ORE_EMIT_FAILURE_LOGGED"));
+        assertTrue(model.contains("GLASS_EMIT_FAILURE_LOGGED"));
+        assertTrue(model.contains("KELP_EMIT_FAILURE_LOGGED"));
+        assertTrue(model.contains("synchronized (this)"));
+        assertFalse(model.contains("overlayResolved"));
+        assertTrue(model.contains("FullbrightOverlayEmission.emit("));
+        assertTrue(model.contains("emissionQuarantined"));
+        assertTrue(model.contains("static FullbrightOverlayModel ore("));
+        assertTrue(model.contains("static FullbrightOverlayModel glass("));
+        assertTrue(model.contains("static FullbrightOverlayModel kelp("));
 
         assertTrue(emission.contains("boolean pushed = false"));
         assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
@@ -57,8 +58,6 @@ final class OreHighlightFailSoftContractTest {
         assertTrue(emission.contains("emitter.popTransform();"));
 
         assertTrue(model.contains("keeping the resource-pack base model without the Chise overlay"));
-        assertTrue(kelp.contains("keeping the resource-pack base kelp model without the Chise overlay"));
-        assertTrue(glass.contains("keeping the resource-pack base glass model without the Chise overlay"));
     }
 
     @Test

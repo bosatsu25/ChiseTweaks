@@ -19,6 +19,13 @@ public abstract class ChiseBooleanSetting {
     protected ChiseBooleanSetting(
             String name,
             boolean defaultValue,
+            SettingPersistence persistence) {
+        this(name, defaultValue, name, name, "", "", persistence);
+    }
+
+    protected ChiseBooleanSetting(
+            String name,
+            boolean defaultValue,
             String englishName,
             String japaneseName,
             String englishComment,

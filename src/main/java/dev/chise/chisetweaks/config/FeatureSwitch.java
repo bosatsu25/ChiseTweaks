@@ -11,15 +11,8 @@ public final class FeatureSwitch extends ChiseBooleanSetting {
     private final FeatureDefinition definition;
     private boolean enabled;
 
-    FeatureSwitch(FeatureDefinition definition, String fallbackComment) {
-        super(
-                configName(definition),
-                DEFAULT_ENABLED,
-                definition.englishName(),
-                definition.englishName(),
-                fallbackComment,
-                fallbackComment,
-                SettingPersistence.FEATURE_CONFIG);
+    FeatureSwitch(FeatureDefinition definition) {
+        super(configName(definition), DEFAULT_ENABLED, SettingPersistence.FEATURE_CONFIG);
         this.definition = Objects.requireNonNull(definition, "definition");
     }
 

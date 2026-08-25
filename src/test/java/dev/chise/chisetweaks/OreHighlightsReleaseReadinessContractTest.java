@@ -53,7 +53,7 @@ final class OreHighlightsReleaseReadinessContractTest {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
 
         assertFalse(engine.contains("BlockInspectionCategory.MATERIAL_HIGHLIGHT"));
         assertFalse(Files.exists(ROOT.resolve(
@@ -64,6 +64,7 @@ final class OreHighlightsReleaseReadinessContractTest {
         assertTrue(plugin.contains("classificationCache.computeIfAbsent("));
         assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return VisualModelClassification.NONE;"));
         assertTrue(plugin.contains("case NONE -> model;"));
+        assertTrue(plugin.contains("FullbrightOverlayModel.ore("));
 
         for (String forbidden : Set.of(
                 "WorksiteScanner", "LavaAnalyzerThroughWallRenderer",
@@ -74,6 +75,7 @@ final class OreHighlightsReleaseReadinessContractTest {
         }
         assertFalse(model.contains("OreHighlightResolver.resolve"));
         assertTrue(model.contains("VisualRenderState.current()"));
+        assertTrue(model.contains("renderState.shouldRenderOre(target)"));
     }
 
     @Test
@@ -81,7 +83,7 @@ final class OreHighlightsReleaseReadinessContractTest {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
         String generator = source("gradle/chise-visual-assets.gradle");
 
         assertTrue(plugin.contains("modifyBlockModelAfterBake"));
@@ -144,7 +146,7 @@ final class OreHighlightsReleaseReadinessContractTest {
     @Test
     void overlayOwnershipIsExplicitRatherThanCoordinateInferred() throws IOException {
         String model = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
         String emission = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java");
 
@@ -167,7 +169,7 @@ final class OreHighlightsReleaseReadinessContractTest {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
         String emission = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java");
         String lighting = source(

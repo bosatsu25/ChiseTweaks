@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.feature.rendering.worksite;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.performance.WorksiteCandidateRetentionPolicy;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
+import dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
@@ -224,12 +225,14 @@ final class WorksiteScanner {
         if (!lineOfSight(client, eyePosition, visibilityCursor, candidate.category())) return null;
 
         BlockPos position = new BlockPos(candidate.x(), candidate.y(), candidate.z());
-        WorksiteMaterializedInspection inspection = blockInspector.materialize(
-                candidate.state(), candidate.blockId(), candidate.category());
+        var properties = blockInspector.properties(candidate.state());
+        BlockInspectionPolicy.InspectionPresentation presentation = BlockInspectionPolicy.inspect(
+                candidate.blockId(), properties, candidate.category());
+        OrientationOverlayPolicy.Overlay orientation = OrientationOverlayPolicy.inspect(properties);
         return new WorksiteVisibleTarget(
                 position,
-                inspection.presentation(),
-                inspection.orientation(),
+                presentation,
+                orientation,
                 candidate.style(),
                 candidate.distanceSquared());
     }

@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ChiseVisualModelPlugin {
-    public static final String REVISION = "visual-model-overlay-10-classification-cache";
+    public static final String REVISION = "visual-model-overlay-11-shared-wrapper";
 
     private static volatile boolean modelPipelineReady;
 
@@ -53,7 +53,6 @@ public final class ChiseVisualModelPlugin {
                             SimpleUnbakedExtraModel.blockStateModel(GlassHighlightOverlayCatalog.PANE_MODEL));
 
                     // 1回のリソースモデル再読み込み中は分類結果を固定し、再読み込みをまたいで古い分類を持ち越さない。
-
                     ConcurrentHashMap<Block, VisualModelClassification> classificationCache =
                             new ConcurrentHashMap<>();
                     pluginContext.modifyBlockModelAfterBake().register(
@@ -84,12 +83,12 @@ public final class ChiseVisualModelPlugin {
 
         return switch (classification.kind()) {
             case NONE -> model;
-            case KELP -> new FullbrightKelpHighlightModel(model);
-            case GLASS -> new FullbrightGlassHighlightModel(
+            case KELP -> FullbrightOverlayModel.kelp(model);
+            case GLASS -> FullbrightOverlayModel.glass(
                     model,
                     classification.glassShape(),
                     GlassHighlightOverlayCatalog.keyFor(classification.glassShape()));
-            case ORE -> new FullbrightOreHighlightModel(
+            case ORE -> FullbrightOverlayModel.ore(
                     model,
                     classification.target(),
                     classification.overlay().staticKey(),

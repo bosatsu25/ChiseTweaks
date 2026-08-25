@@ -34,10 +34,8 @@ final class ChiseTweaksSettingsController {
         return new ChiseTweaksSettingsController();
     }
 
-    void initialize() {
-        LocalFeatureSettings.init();
-        VisualTargetSettings.init();
-    }
+    /** 設定bindingは初回参照時に初期化されるため、画面ライフサイクル用hookだけを保持する。 */
+    void initialize() {}
 
     List<ChiseTweaksSettingRowDefinition> rows() {
         return rows(Surface.HIGHLIGHT);

@@ -9,6 +9,20 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
     private final Consumer<Boolean> writer;
     private boolean value;
 
+    public SimpleBooleanSetting(String name, boolean defaultValue) {
+        this(
+                name,
+                defaultValue,
+                name,
+                name,
+                "",
+                "",
+                null,
+                null,
+                false,
+                SettingPersistence.FEATURE_CONFIG);
+    }
+
     public SimpleBooleanSetting(
             String name,
             boolean defaultValue,
@@ -27,6 +41,25 @@ public final class SimpleBooleanSetting extends ChiseBooleanSetting {
                 null,
                 false,
                 SettingPersistence.FEATURE_CONFIG);
+    }
+
+    SimpleBooleanSetting(
+            String name,
+            boolean defaultValue,
+            BooleanSupplier reader,
+            Consumer<Boolean> writer,
+            SettingPersistence persistence) {
+        this(
+                name,
+                defaultValue,
+                name,
+                name,
+                "",
+                "",
+                reader,
+                writer,
+                true,
+                persistence);
     }
 
     SimpleBooleanSetting(
