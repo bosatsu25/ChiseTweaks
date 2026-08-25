@@ -7,6 +7,7 @@ import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
 import dev.chise.chisetweaks.feature.rendering.AncientDebrisAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.LavaHighlightFeature;
 import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine;
+import dev.chise.chisetweaks.gui.PatternConsistencyInspector;
 import dev.chise.chisetweaks.gui.PlacementComparisonTracker;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
@@ -47,6 +48,7 @@ public final class FeatureManager {
             registerComponent(new WorksiteVisibilityEngine());
         }
         registerComponent(new PlacementComparisonTracker());
+        registerComponent(new PatternConsistencyInspector());
 
         for (ComponentSlot slot : componentSlots.values()) initializeComponent(slot);
 

@@ -88,6 +88,8 @@ record ChiseTweaksSettingRowDefinition(
     enum Action {
         EDIT_BLOCK_FILTER,
         EDIT_ENTITY_FILTER,
-        EDIT_ORE_COMPAT
+        EDIT_ORE_COMPAT,
+        SELECT_PATTERN_REFERENCE,
+        CLEAR_PATTERN_REFERENCE
     }
 }

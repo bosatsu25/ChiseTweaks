@@ -45,7 +45,8 @@ final class ChiseTweaksSettingsControllerTest {
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.FILTER)).containsAll(
                 List.of("focusBlocks", "focusEntities", "editBlockFilter", "editEntityFilter")));
         assertEquals(List.of(
-                        "inspector.title", "inspector.noTarget", "placement.title", "placement.none"),
+                        "inspector.title", "inspector.noTarget", "placement.title", "placement.none",
+                        "pattern.title", "pattern.select", "pattern.inactive"),
                 ids(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR)));
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER)).containsAll(
                 List.of("lava", "ancientDebrisAnalyzer", "lavaRange", "ancientDebrisRange")));

@@ -33,6 +33,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private int scrollOffset;
     private int maxScroll;
     private boolean inspectorHelpVisible;
+    private long patternRevision = Long.MIN_VALUE;
 
     public ChiseTweaksConfigScreen() {
         super(Component.literal(ChiseTweaksMetadata.MOD_NAME));
@@ -58,9 +59,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR
-                && inspector.refresh(minecraft)) {
-            rebuildInspectorRows();
+        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) {
+            boolean changed = inspector.refresh(minecraft);
+            long currentPatternRevision = PatternConsistencyInspector.currentRevision();
+            if (currentPatternRevision != patternRevision) {
+                patternRevision = currentPatternRevision;
+                changed = true;
+            }
+            if (changed) rebuildInspectorRows();
         }
         refreshRowButtons();
     }
@@ -222,6 +228,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
                     this, ChiseSceneFilterEditorScreen.Target.ENTITIES));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT) {
             minecraft.setScreen(new ChiseOreCompatibilityScreen(this));
+        } else if (action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE) {
+            PatternConsistencyInspector.selectReference(minecraft);
+            patternRevision = PatternConsistencyInspector.currentRevision();
+            rebuildInspectorRows();
+        } else if (action == ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE) {
+            PatternConsistencyInspector.clearReference();
+            patternRevision = PatternConsistencyInspector.currentRevision();
+            rebuildInspectorRows();
         }
     }
 

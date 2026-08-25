@@ -19,6 +19,9 @@ ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"),
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"),
 }
+PATTERN_INSPECTOR = Path(
+    "src/main/java/dev/chise/chisetweaks/gui/PatternConsistencyInspector.java"
+)
 FULL_RELOAD_CALL = re.compile(r"\breloadResourcePacks\s*\(\s*\)")
 DELAYED_TEXTURE_RELOAD_CALL = re.compile(r"\bdelayTextureReload\s*\(\s*\)")
 BLOCKING_WAIT_SYNTAX = re.compile(r"\.\s*(?:join|get)\s*\(")
@@ -184,6 +187,21 @@ def audit() -> list[str]:
         if PLAIN_GET_CHUNK.search(text):
             failures.append(f"{relative}: potentially force-loading getChunk call detected")
 
+    pattern_text = java_code_only((ROOT / PATTERN_INSPECTOR).read_text(encoding="utf-8"))
+    for marker in (
+        "HORIZONTAL_RADIUS = 8",
+        "VERTICAL_RADIUS = 4",
+        "MAX_BLOCKS_PER_TICK = 256",
+        "MAX_RETAINED_MISMATCHES = 64",
+        "RESCAN_INTERVAL_TICKS = 20",
+        "processed++ < MAX_BLOCKS_PER_TICK",
+        "getChunkSource().hasChunk",
+    ):
+        if marker not in pattern_text:
+            failures.append(f"Pattern Consistency budget changed or disappeared: {marker}")
+    if PLAIN_GET_CHUNK.search(pattern_text):
+        failures.append(f"{PATTERN_INSPECTOR}: potentially force-loading getChunk call detected")
+
     policy = ROOT / "src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java"
     policy_text = java_code_only(policy.read_text(encoding="utf-8"))
     for marker in (
@@ -212,6 +230,7 @@ def main() -> int:
     print("reload_controllers_get_join_free=true")
     print("analyzers_force_chunk_load=false")
     print("analyzer_budgets=bounded")
+    print("pattern_consistency_scan=bounded_loaded_chunks_only")
     print("detector_self_test=true")
     return 0
 

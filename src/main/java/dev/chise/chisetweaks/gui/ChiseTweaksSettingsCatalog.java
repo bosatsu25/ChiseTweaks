@@ -245,7 +245,45 @@ final class ChiseTweaksSettingsCatalog {
                                     resolved.filterDecision().hidden()));
         }
         addPlacementRows(rows, resolved);
+        addPatternConsistencyRows(rows);
         if (includeHelp) addCommonHelpRows(rows);
+    }
+
+    private static void addPatternConsistencyRows(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        PatternConsistencyInspector pattern = PatternConsistencyInspector.activeInspector();
+        header(rows, "pattern.title", "screen.chisetweaks.pattern.title");
+        action(rows, "pattern.select",
+                text("screen.chisetweaks.pattern.select.name"),
+                text("screen.chisetweaks.pattern.select.description"),
+                ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE,
+                text("screen.chisetweaks.pattern.select.action"));
+        if (pattern == null || !pattern.hasReference()) {
+            info(rows, "pattern.inactive",
+                    text("screen.chisetweaks.inspector.none"),
+                    text("screen.chisetweaks.pattern.inactive.description"));
+            return;
+        }
+        info(rows, "pattern.reference",
+                text("screen.chisetweaks.pattern.reference"),
+                pattern.referenceId() + "\n" + semanticProperties(pattern.referenceProperties()));
+        info(rows, "pattern.status",
+                text("screen.chisetweaks.pattern.status"),
+                Component.translatable(
+                        "screen.chisetweaks.pattern.status.value",
+                        pattern.compared(), pattern.matches(), pattern.mismatchTotal()).getString());
+        for (String group : PROPERTY_GROUPS) {
+            String description = pattern.mismatchSummary(group);
+            if (description.isEmpty()) continue;
+            info(rows, "pattern.mismatch." + group,
+                    text("screen.chisetweaks.inspector.state." + group),
+                    description);
+        }
+        action(rows, "pattern.clear",
+                text("screen.chisetweaks.pattern.clear.action"),
+                "",
+                ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE,
+                text("screen.chisetweaks.pattern.clear.action"));
     }
 
     private static void addPlacementRows(
@@ -384,7 +422,7 @@ final class ChiseTweaksSettingsCatalog {
         return null;
     }
 
-    private static String humanize(String token) {
+    static String humanize(String token) {
         String value = token.replace('_', ' ');
         return Character.toUpperCase(value.charAt(0)) + value.substring(1);
     }

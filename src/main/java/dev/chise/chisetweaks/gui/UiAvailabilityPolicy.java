@@ -36,6 +36,10 @@ final class UiAvailabilityPolicy {
         if (resolved == ChiseTweaksSettingsController.Surface.HIGHLIGHT) {
             return action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
         }
+        if (resolved == ChiseTweaksSettingsController.Surface.INSPECTOR) {
+            return action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE
+                    || action == ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE;
+        }
         return resolved == ChiseTweaksSettingsController.Surface.FILTER
                 && (action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
                 || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
