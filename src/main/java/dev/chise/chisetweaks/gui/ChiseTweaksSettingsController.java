@@ -8,10 +8,8 @@ import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.SettingPersistence;
 import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
-import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -41,15 +39,13 @@ final class ChiseTweaksSettingsController {
     }
 
     List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
-        Surface resolved = surface == null ? Surface.HIGHLIGHT : surface;
-        List<ChiseTweaksSettingRowDefinition> rows = catalog.rows(resolved);
-        return resolved == Surface.INSPECTOR ? withAirPlacement(rows) : rows;
+        return catalog.rows(surface == null ? Surface.HIGHLIGHT : surface);
     }
 
     List<ChiseTweaksSettingRowDefinition> inspectorRows(
             CrosshairInspector.Snapshot snapshot,
             boolean includeHelp) {
-        return withAirPlacement(catalog.inspectorRows(snapshot, includeHelp));
+        return catalog.inspectorRows(snapshot, includeHelp);
     }
 
     String surfaceTitle(Surface surface) {
@@ -69,13 +65,9 @@ final class ChiseTweaksSettingsController {
                 resetBuilderFocusDetails();
                 yield EnumSet.of(SettingPersistence.FEATURE_CONFIG);
             }
-            case INSPECTOR -> {
-                FeatureSwitches.AIR_PLACEMENT.resetToDefault();
-                yield EnumSet.of(SettingPersistence.FEATURE_CONFIG);
-            }
+            case INSPECTOR -> EnumSet.noneOf(SettingPersistence.class);
             case ANALYZER -> {
                 FeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
-                FeatureSwitches.ANCIENT_DEBRIS_ANALYZER.resetToDefault();
                 resetAnalyzerDetails();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
@@ -90,19 +82,6 @@ final class ChiseTweaksSettingsController {
 
     SettingPersistenceCoordinator.SaveResult saveConfig(Set<SettingPersistence> dirtyDomains) {
         return persistence.save(dirtyDomains);
-    }
-
-    private static List<ChiseTweaksSettingRowDefinition> withAirPlacement(
-            List<ChiseTweaksSettingRowDefinition> existing) {
-        ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>(existing.size() + 2);
-        rows.add(ChiseTweaksSettingRowDefinition.header("placement.tools", "Placement Tools"));
-        rows.add(ChiseTweaksSettingRowDefinition.bool(
-                "airPlacement",
-                FeatureDefinition.AIR_PLACEMENT.englishName(),
-                "Place a held block into the nearest air cell when your normal crosshair use would miss. Works in Survival and Creative.",
-                FeatureSwitches.AIR_PLACEMENT));
-        rows.addAll(existing);
-        return List.copyOf(rows);
     }
 
     private static void resetHighlightFeatures() {
@@ -136,8 +115,6 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS.resetToDefault();
         LocalFeatureSettings.LAVA_ANALYZER_INTERVAL.resetToDefault();
         LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS.resetToDefault();
-        LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_RANGE.resetToDefault();
-        LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS.resetToDefault();
     }
 
     private void resetBuilderFocusDetails() {
