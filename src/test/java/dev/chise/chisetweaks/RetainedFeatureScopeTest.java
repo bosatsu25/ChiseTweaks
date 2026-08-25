@@ -15,8 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class RetainedFeatureScopeTest {
     @Test
-    void canonicalScopeContainsExactlyTheThirteenRetainedFeatures() {
+    void canonicalScopeContainsExactlyTheFourteenRetainedFeatures() {
         assertEquals(List.of(
+                FeatureDefinition.AIR_PLACEMENT,
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
                 FeatureDefinition.FINE_THREAD_TRACE,
@@ -30,8 +31,11 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.LAVA_HIGHLIGHT,
                 FeatureDefinition.BRIGHT_CHEST,
                 FeatureDefinition.BRIGHT_CONCRETE), FeatureDefinition.VALUES);
-        assertEquals(13, FeatureDefinition.VALUES.size());
-        assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.area() == FeatureArea.RENDERING));
+        assertEquals(14, FeatureDefinition.VALUES.size());
+        assertEquals(FeatureArea.BUILDING, FeatureDefinition.AIR_PLACEMENT.area());
+        assertEquals(13, FeatureDefinition.VALUES.stream()
+                .filter(definition -> definition.area() == FeatureArea.RENDERING)
+                .count());
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.dependency().isEmpty()));
     }
 
@@ -57,6 +61,7 @@ final class RetainedFeatureScopeTest {
     @Test
     void nonWorksiteFeaturesStayOutsideWorksiteModeCoupling() {
         for (FeatureDefinition definition : List.of(
+                FeatureDefinition.AIR_PLACEMENT,
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
                 FeatureDefinition.GLASS_INSPECTION,
@@ -73,8 +78,9 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void unifiedSwitchRegistryContainsAllThirteenFeatureSwitches() {
+    void unifiedSwitchRegistryContainsAllFourteenFeatureSwitches() {
         assertEquals(List.of(
+                FeatureDefinition.AIR_PLACEMENT,
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
                 FeatureDefinition.FINE_THREAD_TRACE,
@@ -89,12 +95,13 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.BRIGHT_CHEST,
                 FeatureDefinition.BRIGHT_CONCRETE),
                 FeatureSwitches.VALUES.stream().map(value -> value.definition()).toList());
-        assertEquals(8, FeatureSwitches.FEATURE_CONFIG_VALUES.size());
+        assertEquals(9, FeatureSwitches.FEATURE_CONFIG_VALUES.size());
         assertEquals(5, FeatureSwitches.LOCAL_CONFIG_VALUES.size());
     }
 
     @Test
     void retainedEnglishNamesMatchReadmeProductTerminology() {
+        assertEquals("Air Placement", FeatureDefinition.AIR_PLACEMENT.englishName());
         assertEquals("Block Filter", FeatureDefinition.BUILDER_FOCUS_BLOCKS.englishName());
         assertEquals("Entity Filter", FeatureDefinition.BUILDER_FOCUS_ENTITIES.englishName());
         assertEquals("Fine Line Highlight", FeatureDefinition.FINE_THREAD_TRACE.englishName());
