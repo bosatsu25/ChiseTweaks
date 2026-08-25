@@ -24,17 +24,18 @@ class UnifiedVisualFeatureFoundationContractTest {
     }
 
     @Test
-    void brightFeaturesDoNotDependOnBuiltInResourcePackSelectionOrCustomAssets() throws Exception {
+    void brightFeaturesDoNotDependOnBuiltInResourcePackSelection() throws Exception {
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/feature/resource")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_chest_visibility")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_white_concrete_visibility")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/minecraft/atlases/chest.json")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/minecraft/atlases/chests.json")));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java")));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java")));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitches.java")));
-        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal.png")));
-        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_left.png")));
-        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_right.png")));
+        assertTrue(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal.png")));
+        assertTrue(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_left.png")));
+        assertTrue(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_right.png")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/block/visual/bright_white_concrete.png")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/models/block/visual/bright_concrete.json")));
     }
@@ -56,7 +57,7 @@ class UnifiedVisualFeatureFoundationContractTest {
     }
 
     @Test
-    void brightChestReusesVanillaWhiteConcreteSpriteAndFullbrightState() throws Exception {
+    void brightChestUsesDedicatedChestSpritesAndFullbrightState() throws Exception {
         String blockEntity = source("src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java");
         String chest = source("src/main/java/dev/chise/chisetweaks/mixin/rendering/ChestVisibilityMixin.java");
         String plugin = source("src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
@@ -66,16 +67,21 @@ class UnifiedVisualFeatureFoundationContractTest {
         assertTrue(blockEntity.contains("chest.lightCoords = LightCoordsUtil.FULL_BRIGHT"));
         assertFalse(blockEntity.contains("customSprite"));
 
-        assertTrue(chest.contains("Sheets.BLOCKS_MAPPER.apply"));
-        assertTrue(chest.contains("white_concrete"));
+        assertTrue(chest.contains("Sheets.CHEST_MAPPER.apply"));
+        assertTrue(chest.contains("\"chisetweaks\", \"normal\""));
+        assertTrue(chest.contains("\"chisetweaks\", \"normal_left\""));
+        assertTrue(chest.contains("\"chisetweaks\", \"normal_right\""));
+        assertTrue(chest.contains("case LEFT -> CHISETWEAKS$BRIGHT_LEFT"));
+        assertTrue(chest.contains("case RIGHT -> CHISETWEAKS$BRIGHT_RIGHT"));
         assertTrue(chest.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
         assertTrue(chest.contains("ChestMaterialType.REGULAR"));
         assertTrue(chest.contains("Sheets;chooseSprite"));
+        assertFalse(chest.contains("Sheets.BLOCKS_MAPPER.apply"));
+        assertFalse(chest.contains("white_concrete"));
         assertFalse(chest.contains("state.blockState"));
         assertFalse(chest.contains("Blocks.CHEST"));
         assertFalse(chest.contains("@Local"));
         assertFalse(chest.contains("resourcepacks/"));
-        assertFalse(chest.contains(".png"));
 
         assertTrue(plugin.contains("FullbrightOverlayModel.brightConcrete(model)"));
         assertTrue(plugin.contains("white_concrete"));

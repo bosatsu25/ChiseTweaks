@@ -14,14 +14,20 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * Bright Chestは専用textureを持たず、vanilla White ConcreteのspriteをChest modelへ再利用する。
- * BlockEntity state側のfull-bright lightCoordsと組み合わせ、resource reloadなしで白く見せる。
+ * Bright Chestはチェスト形状専用textureをCHEST atlasから選び、vanillaのmodel・開閉animationを維持する。
+ * BlockEntity state側のfull-bright lightCoordsと組み合わせ、外部Resource Pack切替なしで白いチェストとして描画する。
  */
 @Mixin(ChestRenderer.class)
 public abstract class ChestVisibilityMixin {
     @Unique
-    private static final SpriteId CHISETWEAKS$WHITE_CHEST =
-            Sheets.BLOCKS_MAPPER.apply(Identifier.fromNamespaceAndPath("minecraft", "white_concrete"));
+    private static final SpriteId CHISETWEAKS$BRIGHT_SINGLE =
+            Sheets.CHEST_MAPPER.apply(Identifier.fromNamespaceAndPath("chisetweaks", "normal"));
+    @Unique
+    private static final SpriteId CHISETWEAKS$BRIGHT_LEFT =
+            Sheets.CHEST_MAPPER.apply(Identifier.fromNamespaceAndPath("chisetweaks", "normal_left"));
+    @Unique
+    private static final SpriteId CHISETWEAKS$BRIGHT_RIGHT =
+            Sheets.CHEST_MAPPER.apply(Identifier.fromNamespaceAndPath("chisetweaks", "normal_right"));
 
     @WrapOperation(
             method = "submit",
@@ -37,6 +43,10 @@ public abstract class ChestVisibilityMixin {
                 || materialType != ChestRenderState.ChestMaterialType.REGULAR) {
             return vanilla;
         }
-        return CHISETWEAKS$WHITE_CHEST;
+        return switch (chestType) {
+            case LEFT -> CHISETWEAKS$BRIGHT_LEFT;
+            case RIGHT -> CHISETWEAKS$BRIGHT_RIGHT;
+            default -> CHISETWEAKS$BRIGHT_SINGLE;
+        };
     }
 }

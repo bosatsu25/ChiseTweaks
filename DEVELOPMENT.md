@@ -16,6 +16,9 @@
 - Air Placementは独自play packetを送らず、vanilla/server側の配置可否・interaction result・Survivalのitem消費を正本とする
 - Air Placementは処理終了時に元のcrosshair hitを必ず復元し、通常のBLOCK / ENTITY interactionを変更しない
 - Bright Chest / Bright Concreteはbuilt-in Resource Pack selection / reloadへ依存しない
+- Bright ChestはChiseTweaks内蔵のChest専用`normal.png` / `normal_left.png` / `normal_right.png`をvanilla CHEST atlas経路で選択し、Chest model・金具・蓋・double-chest分割・開閉animationを維持する
+- Bright ChestはWhite Concrete spriteをChestへ流用しない。White Concreteの描画責務はBright Concreteだけが持つ
+- Bright Concreteはvanilla White Concrete model / textureを維持し、quad lightingだけをfull-bright化する
 - 明示仕様がない限り機能を相互排他にしない
 - all-features-on（14機能）を回帰条件として扱う
 - custom packet / server installation / remote mod detection / auto downloader / automatic JAR replacementを実装しない
@@ -131,6 +134,8 @@ Minecraft placement予測では、production側の式をtest側へ複製しま�
 
 Air Placementでは、target geometryの境界JUnitに加えて、Client GameTestでSurvivalの実際のvanilla interactionを使い、空中設置成功とitemが正確に1個消費されることを検証します。
 
+Bright Chestではsingle / double-left / double-rightの3専用textureが存在し、`ChestRenderer`が`CHEST_MAPPER`経由で各`ChestType`へ正しいspriteを選び、White Concrete spriteへ退行しないことをsource contractで検証します。最終的なtexture atlas / geometry / animationの見え方はPrism実機acceptanceで確認します。
+
 GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button overlapを境界条件として扱います。
 
 Security/configではmalformed UTF-8、unsafe path、symlink、oversized payload、atomic write failureなどをfail-closed条件として扱います。
@@ -178,6 +183,7 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - Air Placementが通常のBLOCK / ENTITY右クリックを横取りしない
 - Survival Air Placementでvanilla同様にitemが1個ずつ消費される
 - Block FilterがBlockEntity / Bright Chestを正しく抑制
+- Bright Chestがsingle / double chestともチェスト形状・金具・蓋・開閉animationを維持した白いChestとして描画され、White Concrete面へ退行しない
 - Bright Chest / Bright Concrete（White Concrete）が独立して切り替わる
 - all-features-on（14機能）をOverworld / Netherでsmoke
 - Lava / Ancient Debris Analyzerに強制chunk loadや長時間停止がない
@@ -217,6 +223,8 @@ python scripts/prism_acceptance_audit.py <instance-root>/logs/latest.log
 CIでは決定的contractとして、blocking wait禁止、Analyzer force-load禁止、scan budget / cache上限、artifact sizeなどを監査します。
 
 Air Placementは常駐scan・overlay・background workを持たず、ユーザーのuse action発生時だけO(1)のtarget判定を行います。
+
+Bright Chestは既存Chest draw pathでspriteだけを切り替え、追加world scan・追加draw call・Resource Pack reloadを持ちません。3枚の専用textureによるJAR増加も既存hard ceiling内で管理します。
 
 ## 12. Security / privacy
 

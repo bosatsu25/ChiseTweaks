@@ -49,10 +49,12 @@ final class VisualFilterVisibilityReleaseContractTest {
     }
 
     @Test
-    void brightVisibilityFeaturesAreIndependentWithoutResourcePackSelectionOrCustomPngs() throws IOException {
+    void brightVisibilityFeaturesAreIndependentWithoutResourcePackSelection() throws IOException {
         String switches = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java");
         String blockEntity = source(
                 "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java");
+        String chest = source(
+                "src/main/java/dev/chise/chisetweaks/mixin/rendering/ChestVisibilityMixin.java");
         String visualPlugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
@@ -66,6 +68,12 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(blockEntity.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
         assertTrue(blockEntity.contains("chest.lightCoords = LightCoordsUtil.FULL_BRIGHT"));
         assertFalse(blockEntity.contains("customSprite"));
+        assertTrue(chest.contains("Sheets.CHEST_MAPPER.apply"));
+        assertTrue(chest.contains("\"chisetweaks\", \"normal\""));
+        assertTrue(chest.contains("\"chisetweaks\", \"normal_left\""));
+        assertTrue(chest.contains("\"chisetweaks\", \"normal_right\""));
+        assertFalse(chest.contains("Sheets.BLOCKS_MAPPER.apply"));
+        assertFalse(chest.contains("white_concrete"));
         assertTrue(visualPlugin.contains("FullbrightOverlayModel.brightConcrete(model)"));
         assertTrue(visualPlugin.contains("\"white_concrete\""));
         int bright = model.indexOf("private void emitBrightConcrete");
@@ -78,7 +86,9 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/feature/resource")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_chest_visibility")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_white_concrete_visibility")));
-        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal.png")));
+        assertTrue(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal.png")));
+        assertTrue(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_left.png")));
+        assertTrue(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_right.png")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/block/visual/bright_white_concrete.png")));
         assertTrue(catalog.contains("FeatureDefinition.BRIGHT_CHEST.englishName()"));
         assertTrue(catalog.contains("FeatureDefinition.BRIGHT_CONCRETE.englishName()"));

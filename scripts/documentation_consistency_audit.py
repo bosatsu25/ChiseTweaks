@@ -91,9 +91,15 @@ def main() -> int:
         failures,
     )
     require(
-        r"Bright系は専用PNGを持ちません",
+        r"Bright系はResource Pack切替を持ちません",
         readme,
-        "README must explain the texture-free Bright rendering architecture",
+        "README must explain Bright rendering without resource-pack switching",
+        failures,
+    )
+    require(
+        r"White Concrete spriteをChestへ貼らない",
+        readme,
+        "README must preserve the dedicated Bright Chest texture contract",
         failures,
     )
     require(
