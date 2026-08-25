@@ -21,7 +21,7 @@ import java.util.function.Predicate;
 
 /**
  * Chiseのblock-model視認機能が共有するmodel lifecycle。
- * Ore / Glass / Kelpはfullbright overlay、Bright Concreteは通常照明の置換modelとして扱う。
+ * Ore / Glass / Kelpは追加overlay、Bright Concreteはvanilla modelそのもののlightingだけを調整する。
  */
 final class FullbrightOverlayModel extends WrapperBlockStateModel {
     private static final int KIND_ORE = 0;
@@ -33,16 +33,14 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
     private static final AtomicBoolean ORE_LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean GLASS_LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean KELP_LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
-    private static final AtomicBoolean CONCRETE_LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean ORE_EMIT_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean GLASS_EMIT_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean KELP_EMIT_FAILURE_LOGGED = new AtomicBoolean();
-    private static final AtomicBoolean CONCRETE_EMIT_FAILURE_LOGGED = new AtomicBoolean();
 
     private final int kind;
     private final @Nullable Target target;
-    private final @Nullable GlassHighlightTargetPolicy.Shape glassShape;
-    private final ExtraModelKey<BlockStateModel> staticKey;
+    private final GlassHighlightTargetPolicy.@Nullable Shape glassShape;
+    private final @Nullable ExtraModelKey<BlockStateModel> staticKey;
     private final @Nullable ExtraModelKey<BlockStateModel> animatedKey;
 
     private volatile @Nullable BlockStateModel staticOverlay;
@@ -56,8 +54,8 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
             BlockStateModel wrapped,
             int kind,
             @Nullable Target target,
-            @Nullable GlassHighlightTargetPolicy.Shape glassShape,
-            ExtraModelKey<BlockStateModel> staticKey,
+            GlassHighlightTargetPolicy.@Nullable Shape glassShape,
+            @Nullable ExtraModelKey<BlockStateModel> staticKey,
             @Nullable ExtraModelKey<BlockStateModel> animatedKey) {
         super(wrapped);
         this.kind = kind;
@@ -92,11 +90,9 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
                 wrapped, KIND_KELP, null, null, KelpHighlightOverlayCatalog.KEY, null);
     }
 
-    static FullbrightOverlayModel brightConcrete(
-            BlockStateModel wrapped,
-            ExtraModelKey<BlockStateModel> replacementKey) {
+    static FullbrightOverlayModel brightConcrete(BlockStateModel wrapped) {
         return new FullbrightOverlayModel(
-                wrapped, KIND_BRIGHT_CONCRETE, null, null, replacementKey, null);
+                wrapped, KIND_BRIGHT_CONCRETE, null, null, null, null);
     }
 
     @Override
@@ -109,7 +105,7 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
             Predicate<@Nullable Direction> cullTest) {
         VisualRenderState.Snapshot renderState = VisualRenderState.current();
         if (kind == KIND_BRIGHT_CONCRETE) {
-            emitReplacementOrBase(emitter, level, pos, state, random, cullTest, renderState);
+            emitBrightConcrete(emitter, level, pos, state, random, cullTest, renderState);
             return;
         }
 
@@ -118,7 +114,7 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
         emitExtraModel(emitter, level, pos, state, random, cullTest, renderState);
     }
 
-    private void emitReplacementOrBase(
+    private void emitBrightConcrete(
             QuadEmitter emitter,
             BlockAndTintGetter level,
             BlockPos pos,
@@ -126,21 +122,19 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
             RandomSource random,
             Predicate<@Nullable Direction> cullTest,
             VisualRenderState.Snapshot renderState) {
-        if (!shouldRender(renderState) || staticEmissionQuarantined) {
+        if (!shouldRender(renderState)) {
             super.emitQuads(emitter, level, pos, state, random, cullTest);
             return;
         }
-        BlockStateModel replacement = overlayModel(false);
-        if (replacement == null) {
-            super.emitQuads(emitter, level, pos, state, random, cullTest);
-            return;
-        }
+
+        emitter.pushTransform(quad -> {
+            FullbrightOverlayLighting.apply(quad);
+            return true;
+        });
         try {
-            replacement.emitQuads(emitter, level, pos, state, random, cullTest);
-        } catch (RuntimeException | LinkageError failure) {
-            quarantineEmission(false);
-            warnOnce(emissionWarningGate(), featureName() + " model emission", failure);
             super.emitQuads(emitter, level, pos, state, random, cullTest);
+        } finally {
+            emitter.popTransform();
         }
     }
 
@@ -257,22 +251,20 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
     private AtomicBoolean lookupWarningGate() {
         if (kind == KIND_ORE) return ORE_LOOKUP_FAILURE_LOGGED;
         if (kind == KIND_GLASS) return GLASS_LOOKUP_FAILURE_LOGGED;
-        if (kind == KIND_KELP) return KELP_LOOKUP_FAILURE_LOGGED;
-        return CONCRETE_LOOKUP_FAILURE_LOGGED;
+        return KELP_LOOKUP_FAILURE_LOGGED;
     }
 
     private AtomicBoolean emissionWarningGate() {
         if (kind == KIND_ORE) return ORE_EMIT_FAILURE_LOGGED;
         if (kind == KIND_GLASS) return GLASS_EMIT_FAILURE_LOGGED;
-        if (kind == KIND_KELP) return KELP_EMIT_FAILURE_LOGGED;
-        return CONCRETE_EMIT_FAILURE_LOGGED;
+        return KELP_EMIT_FAILURE_LOGGED;
     }
 
     private record GeometryKey(
             Object wrappedKey,
             int kind,
             @Nullable Object token,
-            @Nullable OreHighlightRuntimePolicy.Motion motion) {}
+            OreHighlightRuntimePolicy.@Nullable Motion motion) {}
 
     private static void warnOnce(AtomicBoolean gate, String operation, Throwable failure) {
         if (!gate.compareAndSet(false, true)) return;
