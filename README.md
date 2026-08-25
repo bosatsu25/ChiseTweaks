@@ -4,7 +4,7 @@
 
 ChiseTweaksは、**見つける・隠す・調べる・置き方を確認する・手動配置を補助する**ための機能を1つにまとめています。自動建築やサーバー側を迂回する独自配置処理は行いません。
 
-Current version: **`0.14.0+mc26.1.2`**  
+Current version: **`0.14.1+mc26.1.2`**  
 開発・QA・CI・Releaseの現在契約は [`DEVELOPMENT.md`](DEVELOPMENT.md) を参照してください。
 
 ## 必要環境
@@ -89,7 +89,7 @@ flowchart TD
     MODEL --> CONCRETE[Bright Concrete\nvanilla model + lighting transform]
 
     BE --> BLOCKFILTER[Block Filter precedence]
-    BE --> CHEST[Bright Chest\nwhite vanilla sprite + full-bright lightCoords]
+    BE --> CHEST[Bright Chest\ndedicated chest sprites + full-bright lightCoords]
 
     OVERLAY --> FINE[Fine Line Highlight]
     OVERLAY --> HIDDEN[Hidden Block Highlight]
@@ -101,14 +101,14 @@ flowchart TD
     SCREEN --> FIRE[Low Fire]
 ```
 
-### Bright系は専用PNGを持ちません
+### Bright系はResource Pack切替を持ちません
 
-Bright Chest / Bright Concreteは**Minecraftがすでに持っているassetを再利用**し、Chise専用PNGやbuilt-in Resource Pack selectionを持ちません。
+Bright Chest / Bright Concreteは、**built-in Resource Packの選択変更や切替reloadを行わず**、それぞれの描画経路で直接切り替えます。
 
-- Bright Chest: 通常Chest geometryへMinecraftのWhite Concrete spriteを再利用し、`lightCoords`をfull-bright化
+- Bright Chest: Chest geometry・金具・蓋・開閉animationはvanillaのまま、ChiseTweaks内蔵の白いChest専用sprite（single / double-left / double-right）をCHEST atlasから選択し、`lightCoords`をfull-bright化
 - Bright Concrete: White Concreteのvanilla model / textureをそのまま使い、quad lightingだけをfull-bright化
-- Bright専用Chest / Concrete PNGなし
-- Bright専用replacement modelなし
+- Bright Chestだけ専用Chest PNGを3枚保持し、White Concrete textureは流用しない
+- Bright Concrete専用PNG / replacement modelなし
 - built-in Resource Pack選択変更なし
 - Bright切替時のResource Pack reloadなし
 
@@ -214,12 +214,14 @@ LavaとAncient Debrisはrenderer lifecycleを共有しても、**scanner algorit
 
 ### Bright Chest
 
-通常Chest / Double Chestを白く明るく見せます。専用PNGは持たず、MinecraftのWhite Concrete spriteをChest modelへ再利用し、抽出済みrender stateの`lightCoords`をfull-brightへ上げます。
+通常Chest / Double Chestを、チェストの形状・金具・蓋・開閉animationを維持したまま白く明るく見せます。White Concrete spriteは使わず、ChiseTweaks内蔵のChest専用textureをCHEST atlasで選択し、抽出済みrender stateの`lightCoords`をfull-brightへ上げます。
 
-- 専用Chest PNGなし
-- Chise専用texture atlasなし
+- `normal.png` / `normal_left.png` / `normal_right.png` のChest専用3 textureを使用
+- MinecraftのChest model / double-chest分割 / 開閉animationはそのまま
+- White Concrete spriteをChestへ貼らない
+- vanilla CHEST atlas経路を使用し、独自texture atlasは追加しない
 - 追加draw callなし
-- Resource Pack reloadなし
+- Resource Pack selection変更 / reloadなし
 - Trapped / Ender / Copper Chestには白化を適用しない
 - BlockEntity NBT、コンテナ内容、看板本文などを読み取らない
 
@@ -259,13 +261,13 @@ Air Placementだけはユーザーが明示的に行った1回の通常右クリ
 - Air Placement: use action時だけO(1)のtarget判定＋一時HitResult差し替え。常駐scan / overlayなし
 - Ore / Glass / Kelp: block-model overlay pipeline
 - Bright Concrete: vanilla block-model emission + in-place lighting transform
-- Bright Chest: BlockEntity state extraction + vanilla sprite selection
+- Bright Chest: BlockEntity state extraction + CHEST atlasの専用sprite選択
 - Block Filter: block / BlockEntity render boundary
 - Fine Line / Hidden / Nether: bounded local scan + overlay
 - Lava / Ancient Debris: bounded analyzer + retained marker
 - Low Fire: first-person screen overlay
 
-Bright系は専用PNG・専用Resource Pack・専用replacement modelを廃止したため、Bright ON/OFFのためのasset reloadはありません。
+Bright Chestは専用Chest PNGを3枚内蔵しますが、Bright切替用の専用Resource Pack・replacement modelは持たず、ON/OFFのためのasset reloadはありません。
 
 配布runtime JARには**446,814 bytesのhard ceiling**があります。機能等価性を壊す容量削減は採用しません。長期目標は350KiB (`358,400 bytes`) です。
 
