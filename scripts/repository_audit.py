@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-fast repository audit for the retained fourteen-feature ChiseTweaks scope."""
+"""Fail-fast repository audit for the retained fifteen-feature ChiseTweaks scope."""
 from __future__ import annotations
 
 import json
@@ -21,6 +21,7 @@ RETAINED_ENGLISH_NAMES = (
     "Nether Highlight",
     "Kelp Highlight",
     "Ancient Debris Analyzer",
+    "Warden Risk Analyzer",
     "Low Fire",
     "Lava Analyzer",
     "Bright Chest",
@@ -93,12 +94,14 @@ REQUIRED_PATHS = (
     "src/main/resources/chisetweaks.features.mixins.json",
     "src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java",
     "src/main/java/dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicy.java",
+    "src/main/java/dev/chise/chisetweaks/core/policy/WardenRiskAnalyzerPolicy.java",
     "src/main/java/dev/chise/chisetweaks/gui/UiAvailabilityPolicy.java",
     "src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java",
     "src/main/java/dev/chise/chisetweaks/feature/placement/AirPlacementTarget.java",
     "src/main/java/dev/chise/chisetweaks/mixin/placement/AirPlacementMixin.java",
     "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java",
+    "src/main/java/dev/chise/chisetweaks/feature/rendering/WardenRiskAnalyzerFeature.java",
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticEvent.java",
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticDetail.java",
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticSnapshot.java",
@@ -211,8 +214,8 @@ def audit() -> list[str]:
         for name in RETAINED_ENGLISH_NAMES:
             if f'"{name}"' not in feature_source:
                 fail(f"FeatureDefinition is missing retained name: {name}", failures)
-        if feature_source.count("FeatureArea.RENDERING") != 13:
-            fail("FeatureDefinition must retain exactly thirteen rendering definitions", failures)
+        if feature_source.count("FeatureArea.RENDERING") != 14:
+            fail("FeatureDefinition must retain exactly fourteen rendering definitions", failures)
         if feature_source.count("FeatureArea.BUILDING") != 1:
             fail("FeatureDefinition must contain exactly one retained building definition", failures)
 
@@ -221,8 +224,8 @@ def audit() -> list[str]:
         switches = read_text(switches_path)
         values = re.search(r"\bVALUES\s*=\s*List\.of\((.*?)\);", switches, re.DOTALL)
         names = re.findall(r"\b[A-Z][A-Z0-9_]+\b", values.group(1)) if values else []
-        if len(names) != 14 or len(set(names)) != 14:
-            fail("FeatureSwitches.VALUES must contain exactly fourteen unique toggles", failures)
+        if len(names) != 15 or len(set(names)) != 15:
+            fail("FeatureSwitches.VALUES must contain exactly fifteen unique toggles", failures)
 
     fabric_path = ROOT / "src/main/resources/fabric.mod.json"
     if fabric_path.is_file():
@@ -269,7 +272,7 @@ def main() -> int:
             print(f"- {failure}", file=sys.stderr)
         return 1
     print("REPOSITORY AUDIT: PASS")
-    print("scope=14 retained features (13 rendering + 1 building)")
+    print("scope=15 retained features (14 rendering + 1 building)")
     print("client_only=true")
     print("canonical_architecture=true")
     print("removed_feature_residue=false")
