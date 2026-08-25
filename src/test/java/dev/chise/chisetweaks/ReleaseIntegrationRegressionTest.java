@@ -2,7 +2,6 @@ package dev.chise.chisetweaks;
 
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
-import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -15,16 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless integration contracts for the 0.9.x runtime acceptance matrix. */
+/** Headless integration contracts for the retained runtime acceptance matrix. */
 final class ReleaseIntegrationRegressionTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void allElevenRuntimeFeaturesCanRemainEnabledAtTheSameTime() {
-        List<ChiseBooleanSetting> switches = new ArrayList<>();
-        switches.addAll(FeatureSwitches.VALUES);
-        switches.addAll(LocalFeatureSwitches.VALUES);
-        assertEquals(11, switches.size());
+    void allThirteenRuntimeFeaturesCanRemainEnabledAtTheSameTime() {
+        List<ChiseBooleanSetting> switches = new ArrayList<>(FeatureSwitches.VALUES);
+        assertEquals(13, switches.size());
 
         boolean[] original = new boolean[switches.size()];
         for (int index = 0; index < switches.size(); index++) {
