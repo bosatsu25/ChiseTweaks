@@ -9,20 +9,17 @@
 - Fabric Loader `0.19.3` 以上
 - Fabric API `0.155.2+26.1.2` 以上
 - Java `25` 以上
-- toggle可能なruntime featureは現在14個（13 rendering + Air Placement）
-- Air Placementは`FeatureArea.BUILDING`の通常Featureで、Survival / Creativeの両方に対応する
-- Air Placementはユーザーが通常のuse操作を行い、crosshair結果が`MISS`のときだけ候補を補う。自動クリック・連打・key injectionは行わない
-- Air PlacementはBlockItemを手に持つ場合だけ、プレイヤーcollision boxの直外側にある最寄りの**読み込み済みair block**を一時的な`BlockHitResult`としてvanilla `Minecraft.startUseItem()`へ渡す
-- Air Placementは独自play packetを送らず、vanilla/server側の配置可否・interaction result・Survivalのitem消費を正本とする
-- Air Placementは処理終了時に元のcrosshair hitを必ず復元し、通常のBLOCK / ENTITY interactionを変更しない
+- toggle可能なruntime featureは現在12個
+- 12機能はすべてrendering / inspection-orientedで、building-action featureは持たない
 - Bright Chest / Bright Concreteはbuilt-in Resource Pack selection / reloadへ依存しない
 - Bright ChestはChiseTweaks内蔵のChest専用`normal.png` / `normal_left.png` / `normal_right.png`をvanilla CHEST atlas経路で選択し、Chest model・金具・蓋・double-chest分割・開閉animationを維持する
 - Bright ChestはWhite Concrete spriteをChestへ流用しない。White Concreteの描画責務はBright Concreteだけが持つ
 - Bright Concreteはvanilla White Concrete model / textureを維持し、quad lightingだけをfull-bright化する
 - 明示仕様がない限り機能を相互排他にしない
-- all-features-on（14機能）を回帰条件として扱う
+- all-features-on（12機能）を回帰条件として扱う
 - custom packet / server installation / remote mod detection / auto downloader / automatic JAR replacementを実装しない
-- Analyzerはloaded chunks only。未ロードchunkを強制loadしない
+- Lava Analyzerはloaded chunks only。未ロードchunkを強制loadしない
+- サーバー側ゲーム進行を変える配置補助や、隠れ資源・server-only状態を探索／推測するAnalyzerは現行スコープ外
 
 ## 2. Toolchain
 
@@ -74,10 +71,10 @@ Minecraft互換versionはSemVer build metadataとして扱います。
 ### Bump policy
 
 - PATCH: bug fix、performance tuning、QA / CI hardening、documentation、UI polish
-- MINOR: backward-compatibleなuser-facing capability、新しいfeature / analyzer / workflow
+- MINOR: backward-compatibleなuser-facing capability、新しいfeature / analyzer / workflow、または明示的な製品スコープ整理
 - MAJOR: intentional incompatible config/runtime/API contract、migrationを要する削除、stable 1.0宣言
 
-Versionは手編集ではなく次を使用します。
+Versionは手編集ではなく通常は次を使用します。
 
 ```bash
 python scripts/bump_version.py patch
@@ -112,7 +109,7 @@ Verification layers:
 - JUnit: functional contracts、state transition、boundary、UI/config regression
 - JaCoCo: retained deterministic scope。line coverage threshold `96%`
 - PIT: semantic policy/state-transition scope。mutation score / test strength threshold `96%`
-- Client GameTest: Minecraft runtimeでvanilla placement stateをoracleとして比較し、全14機能同時ONとSurvival Air Placementも検証
+- Client GameTest: Minecraft runtimeでvanilla placement stateをoracleとして比較し、全12機能同時ONを検証
 - Repository / Source Usage / Documentation / Compatibility / Functional Parity audits
 - Artifact / Visual Asset / Release Residue audits
 - Prism runtime acceptance: 実GPU、描画、入力、実機組み合わせ
@@ -130,9 +127,7 @@ Coverageはblack-box / runtime acceptanceの代替ではありません。
 - deterministic white-box coverage
 - error guessing
 
-Minecraft placement予測では、production側の式をtest側へ複製しません。**実際のvanilla placement結果をoracle**にします。
-
-Air Placementでは、target geometryの境界JUnitに加えて、Client GameTestでSurvivalの実際のvanilla interactionを使い、空中設置成功とitemが正確に1個消費されることを検証します。
+Minecraft placement予測では、production側の式をtest側へ複製しません。**実際のvanilla placement結果をoracle**にします。Placement Preview / Actual Comparisonは読み取り・比較capabilityであり、実際の入力や配置操作は変更しません。
 
 Bright Chestではsingle / double-left / double-rightの3専用textureが存在し、`ChestRenderer`が`CHEST_MAPPER`経由で各`ChestType`へ正しいspriteを選び、White Concrete spriteへ退行しないことをsource contractで検証します。最終的なtexture atlas / geometry / animationの見え方はPrism実機acceptanceで確認します。
 
@@ -179,14 +174,11 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - 日本語/英語と代表GUI scaleで5タブが使用可能
 - Crosshair Inspector / Placement Previewが読める
 - unsupported itemでmisleading previewを出さない
-- Air Placement OFFでvanilla MISS挙動、ONでSurvival / Creativeの単発空中設置が使用可能
-- Air Placementが通常のBLOCK / ENTITY右クリックを横取りしない
-- Survival Air Placementでvanilla同様にitemが1個ずつ消費される
 - Block FilterがBlockEntity / Bright Chestを正しく抑制
 - Bright Chestがsingle / double chestともチェスト形状・金具・蓋・開閉animationを維持した白いChestとして描画され、White Concrete面へ退行しない
 - Bright Chest / Bright Concrete（White Concrete）が独立して切り替わる
-- all-features-on（14機能）をOverworld / Netherでsmoke
-- Lava / Ancient Debris Analyzerに強制chunk loadや長時間停止がない
+- all-features-on（12機能）をOverworld / Netherでsmoke
+- Lava Analyzerに強制chunk loadや長時間停止がない
 - disconnect / dimension changeでstale session stateが残らない
 
 ログ監査には次を使用します。
@@ -205,7 +197,7 @@ python scripts/prism_acceptance_audit.py <instance-root>/logs/latest.log
 
 - `chise-absent`
 - `chise-all-off`
-- `analyzers-on`
+- `lava-analyzer-on`
 - `highlights-on`
 - `maximum-supported-load`
 
@@ -222,8 +214,6 @@ python scripts/prism_acceptance_audit.py <instance-root>/logs/latest.log
 
 CIでは決定的contractとして、blocking wait禁止、Analyzer force-load禁止、scan budget / cache上限、artifact sizeなどを監査します。
 
-Air Placementは常駐scan・overlay・background workを持たず、ユーザーのuse action発生時だけO(1)のtarget判定を行います。
-
 Bright Chestは既存Chest draw pathでspriteだけを切り替え、追加world scan・追加draw call・Resource Pack reloadを持ちません。3枚の専用textureによるJAR増加も既存hard ceiling内で管理します。
 
 ## 12. Security / privacy
@@ -232,7 +222,9 @@ Bright Chestは既存Chest draw pathでspriteだけを切り替え、追加world
 - no telemetry / external network
 - no custom play packet / packet automation
 - no automatic click/key injection
-- no autonomous world mutation; Air Placementはユーザーが明示的に行ったvanilla use actionだけを補助し、serverの通常配置判定を迂回しない
+- no autonomous world mutation
+- no hidden-resource scanner
+- no server-only threat-state inference
 - no sign/book/chat content capture
 - no inventory/container content capture
 - no UUID collection
