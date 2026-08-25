@@ -50,6 +50,26 @@ def scalar(value: str, constants: dict[str, int]) -> Any:
     return constants.get(token.rsplit(".", 1)[-1], token)
 
 
+def policy_scalar(
+        value: str,
+        profile_constants: dict[str, int],
+        debris_constants: dict[str, int],
+        warden_constants: dict[str, int]) -> Any:
+    """Resolve qualified policy constants without collisions between policy classes."""
+    token = value.strip()
+    owners = {
+        "WorksiteHighlightProfilePolicy": profile_constants,
+        "AncientDebrisAnalyzerPolicy": debris_constants,
+        "WardenRiskAnalyzerPolicy": warden_constants,
+    }
+    if "." in token:
+        owner, name = token.rsplit(".", 1)
+        constants = owners.get(owner)
+        if constants is not None:
+            return constants.get(name, token)
+    return scalar(token, profile_constants | debris_constants | warden_constants)
+
+
 def diff(label: str, expected: Any, actual: Any, failures: list[str]) -> None:
     if expected != actual:
         failures.append(f"{label}: expected={expected!r}, actual={actual!r}")
@@ -96,14 +116,19 @@ def audit() -> list[str]:
     profile_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/WorksiteHighlightProfilePolicy.java")
     debris_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java")
     warden_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/WardenRiskAnalyzerPolicy.java")
-    constants = int_constants(profile_policy) | int_constants(debris_policy) | int_constants(warden_policy)
+    profile_constants = int_constants(profile_policy)
+    debris_constants = int_constants(debris_policy)
+    warden_constants = int_constants(warden_policy)
     local_settings_text = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java")
     local_setting_pairs = re.findall(
         r"\b(?:bool|integer)\(\s*\"([^\"]+)\"\s*,\s*([^,\r\n]+)",
         local_settings_text,
         re.MULTILINE,
     )
-    local_settings = {name: scalar(default, constants) for name, default in local_setting_pairs}
+    local_settings = {
+        name: policy_scalar(default, profile_constants, debris_constants, warden_constants)
+        for name, default in local_setting_pairs
+    }
     diff("local setting defaults", baseline["settings"]["localSettings"], local_settings, failures)
 
     visual_targets_text = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java")
@@ -168,7 +193,7 @@ def audit() -> list[str]:
     if missing_fixtures:
         failures.append(f"migration fixtures missing: {missing_fixtures}")
 
-    analyzer_constants = int_constants(debris_policy)
+    analyzer_constants = debris_constants
     analyzer_budget = {name: analyzer_constants.get(name) for name in baseline["analyzerBudget"]}
     diff("Ancient Debris analyzer budget", baseline["analyzerBudget"], analyzer_budget, failures)
     return failures
