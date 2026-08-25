@@ -22,6 +22,7 @@ public final class VisualRenderState {
                 FeatureSwitches.MATERIAL_HIGHLIGHTS.getBooleanValue(),
                 FeatureSwitches.KELP_HIGHLIGHT.getBooleanValue(),
                 FeatureSwitches.GLASS_INSPECTION.getBooleanValue(),
+                FeatureSwitches.BRIGHT_CONCRETE.getBooleanValue(),
                 OreHighlightRuntimePolicy.motion(local.oreHighlightAnimationEnabled),
                 VisualTargetSelectionPolicy.sanitizeMask(local.visualTargetMask));
     }
@@ -30,10 +31,12 @@ public final class VisualRenderState {
             boolean oreEnabled,
             boolean kelpEnabled,
             boolean glassEnabled,
+            boolean brightConcreteEnabled,
             OreHighlightRuntimePolicy.Motion oreMotion,
             int visualTargetMask) {
         private static Snapshot disabled() {
             return new Snapshot(
+                    false,
                     false,
                     false,
                     false,
