@@ -16,7 +16,7 @@ final class OreHighlightShaderInvariantContractTest {
     @Test
     void oreHighlightsAlwaysSubmitTheSameEmissiveChiseOwnedOverlayMaterial() throws IOException {
         String model = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
         String emission = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java");
         String lighting = source(
@@ -24,6 +24,7 @@ final class OreHighlightShaderInvariantContractTest {
 
         assertTrue(model.contains("super.emitQuads(emitter, level, pos, state, random, cullTest);"));
         assertTrue(model.contains("FullbrightOverlayEmission.emit("));
+        assertTrue(model.contains("renderState.shouldRenderOre(target)"));
         assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
         assertTrue(lighting.contains("quad.emissive(true)"));
         assertTrue(lighting.contains("quad.diffuseShade(false)"));
@@ -51,7 +52,7 @@ final class OreHighlightShaderInvariantContractTest {
         assertTrue(plugin.contains("SimpleUnbakedExtraModel.blockStateModel"));
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
         assertTrue(plugin.contains("classificationCache.computeIfAbsent("));
-        assertTrue(plugin.contains("new FullbrightOreHighlightModel("));
+        assertTrue(plugin.contains("FullbrightOverlayModel.ore("));
         assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return VisualModelClassification.NONE;"));
         assertTrue(plugin.contains("case NONE -> model;"));
         assertFalse(plugin.contains("ModelModifier.OVERRIDE_PHASE"));
