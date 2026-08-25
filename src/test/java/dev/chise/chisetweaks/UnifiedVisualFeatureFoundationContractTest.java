@@ -24,23 +24,33 @@ class UnifiedVisualFeatureFoundationContractTest {
     }
 
     @Test
-    void brightFeaturesDoNotDependOnBuiltInResourcePackSelection() throws Exception {
+    void brightFeaturesDoNotDependOnBuiltInResourcePackSelectionOrCustomAssets() throws Exception {
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/feature/resource")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_chest_visibility")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_white_concrete_visibility")));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java")));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java")));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitches.java")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal.png")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_left.png")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_right.png")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/block/visual/bright_white_concrete.png")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/models/block/visual/bright_concrete.json")));
     }
 
     @Test
-    void brightConcretePreservesNormalLightingWhileOtherModelHighlightsStayFullbright() throws Exception {
+    void brightConcreteUsesVanillaModelWithInPlaceFullbrightLighting() throws Exception {
         String model = source("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
-        int replacementStart = model.indexOf("private void emitReplacementOrBase");
+        int brightStart = model.indexOf("private void emitBrightConcrete");
         int extraStart = model.indexOf("private void emitExtraModel");
-        String replacement = model.substring(replacementStart, extraStart);
-        assertTrue(replacement.contains("replacement.emitQuads"));
-        assertFalse(replacement.contains("FullbrightOverlayEmission.emit"));
+        assertTrue(brightStart >= 0 && extraStart > brightStart);
+        String bright = model.substring(brightStart, extraStart);
+        assertTrue(bright.contains("emitter.pushTransform"));
+        assertTrue(bright.contains("FullbrightOverlayLighting.apply(quad)"));
+        assertTrue(bright.contains("super.emitQuads(emitter, level, pos, state, random, cullTest)"));
+        assertTrue(bright.contains("emitter.popTransform()"));
+        assertFalse(bright.contains("FullbrightOverlayEmission.emit"));
+        assertFalse(bright.contains("overlayModel("));
         assertTrue(model.substring(extraStart).contains("FullbrightOverlayEmission.emit"));
     }
 
@@ -48,10 +58,13 @@ class UnifiedVisualFeatureFoundationContractTest {
     void brightChestAndConcreteUseExistingRenderingBoundaries() throws Exception {
         String blockEntity = source("src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java");
         String plugin = source("src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
-        assertTrue(blockEntity.contains("FeatureSwitches.BRIGHT_CHEST"));
+        assertTrue(blockEntity.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
         assertTrue(blockEntity.contains("BuilderFocusVisibility.shouldHide"));
-        assertTrue(plugin.contains("FullbrightOverlayModel.brightConcrete"));
+        assertTrue(blockEntity.contains("chest.lightCoords = LightCoordsUtil.FULL_BRIGHT"));
+        assertFalse(blockEntity.contains("customSprite"));
+        assertTrue(plugin.contains("FullbrightOverlayModel.brightConcrete(model)"));
         assertTrue(plugin.contains("white_concrete"));
+        assertFalse(plugin.contains("BRIGHT_CONCRETE_MODEL"));
     }
 
     private static String source(String path) throws Exception {
