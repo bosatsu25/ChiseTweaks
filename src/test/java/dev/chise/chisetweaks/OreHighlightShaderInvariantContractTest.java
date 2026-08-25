@@ -45,7 +45,7 @@ final class OreHighlightShaderInvariantContractTest {
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
 
-        assertTrue(plugin.contains("visual-model-overlay-"));
+        assertTrue(plugin.contains("visual-model-13-unified-features"));
         assertTrue(plugin.contains("zero-scan"));
         assertTrue(plugin.contains("PreparableModelLoadingPlugin.register"));
         assertTrue(plugin.contains("pluginContext.addModel("));
@@ -53,11 +53,13 @@ final class OreHighlightShaderInvariantContractTest {
         assertTrue(plugin.contains("ModelModifier.WRAP_PHASE"));
         assertTrue(plugin.contains("classificationCache.computeIfAbsent("));
         assertTrue(plugin.contains("FullbrightOverlayModel.ore("));
+        assertTrue(plugin.contains("FullbrightOverlayModel.brightConcrete(model)"));
         assertTrue(plugin.contains("if (resolved == null || resolved.style() == null) return VisualModelClassification.NONE;"));
         assertTrue(plugin.contains("case NONE -> model;"));
         assertFalse(plugin.contains("ModelModifier.OVERRIDE_PHASE"));
         assertFalse(plugin.contains("modifyBlockModelOnLoad"));
         assertFalse(plugin.contains("SingleVariant.Unbaked"));
+        assertFalse(plugin.contains("BRIGHT_CONCRETE_MODEL"));
         assertFalse(plugin.contains("IrisApi"));
         assertFalse(plugin.contains("isShaderPackInUse"));
         assertFalse(plugin.contains("shaderPackName"));
