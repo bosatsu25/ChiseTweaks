@@ -7,7 +7,6 @@
     "defaultRequire": 0
   },
   "client": [
-    "placement.AirPlacementMixin",
     "rendering.BuilderFocusBlockMixin",
     "rendering.BlockEntityVisualStateMixin",
     "rendering.ChestVisibilityMixin",
