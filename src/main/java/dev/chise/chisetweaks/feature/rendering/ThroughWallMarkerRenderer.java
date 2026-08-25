@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
+import dev.chise.chisetweaks.core.policy.WardenRiskAnalyzerPolicy;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -18,7 +19,8 @@ import java.util.Optional;
 final class ThroughWallMarkerRenderer implements AutoCloseable {
     enum Style {
         LAVA_SOURCE,
-        ANCIENT_DEBRIS
+        ANCIENT_DEBRIS,
+        WARDEN_RISK
     }
 
     private static final RenderPipeline THROUGH_WALL_PIPELINE = RenderPipelines.register(
@@ -114,6 +116,7 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
         return switch (style) {
             case LAVA_SOURCE -> LavaVisionPalettePolicy.colorForDistance(distance);
             case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.colorForDistance(distance);
+            case WARDEN_RISK -> WardenRiskAnalyzerPolicy.colorForDistance(distance);
         };
     }
 
@@ -121,6 +124,7 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
         return switch (style) {
             case LAVA_SOURCE -> LavaVisionPalettePolicy.fillColorForDistance(distance);
             case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.fillColorForDistance(distance);
+            case WARDEN_RISK -> WardenRiskAnalyzerPolicy.fillColorForDistance(distance);
         };
     }
 
@@ -128,6 +132,7 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
         return switch (style) {
             case LAVA_SOURCE -> LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS;
             case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.edgeThicknessForDistance(distance);
+            case WARDEN_RISK -> WardenRiskAnalyzerPolicy.edgeThicknessForDistance(distance);
         };
     }
 
@@ -135,6 +140,7 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
         return switch (style) {
             case LAVA_SOURCE -> LavaVisionPalettePolicy.ANALYZER_BOX_INSET;
             case ANCIENT_DEBRIS -> AncientDebrisAnalyzerPolicy.boxInsetForDistance(distance);
+            case WARDEN_RISK -> WardenRiskAnalyzerPolicy.boxInsetForDistance(distance);
         };
     }
 
