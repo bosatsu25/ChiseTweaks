@@ -24,7 +24,8 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "value -> config().lavaAnalyzerIntervalTicks = value");
         assertContainsNone(settings,
                 "syncFromStorage",
-                "private static boolean syncing");
+                "private static boolean syncing",
+                "AncientDebrisAnalyzerPolicy");
         assertContainsAll(targets,
                 "LocalFeatureConfig.getInstance().visualTargetMask",
                 "VisualTargetSelectionPolicy.withEnabled(");
@@ -45,43 +46,25 @@ final class SettingsAndAnalyzerDesignContractTest {
     }
 
     @Test
-    void analyzerFeaturesShareOnlyGenericRetentionAndRenderingInfrastructure() throws IOException {
+    void lavaAnalyzerRetainsGenericThroughWallInfrastructureWithoutRetiredScanner() throws IOException {
         String lava = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
-        String debris = read("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
 
         assertContainsAll(lava,
                 "ThroughWallMarkerRenderer.Style.LAVA_SOURCE",
-                "new NearestPositionBuffer(");
-        assertContainsAll(debris,
-                "ThroughWallMarkerRenderer.Style.ANCIENT_DEBRIS",
-                "new NearestPositionBuffer(");
-        assertContainsAll(renderer, "enum Style");
+                "new NearestPositionBuffer(",
+                "getChunkNow(");
+        assertContainsAll(renderer, "enum Style", "LAVA_SOURCE");
+        assertContainsNone(renderer, "ANCIENT_DEBRIS", "AncientDebrisAnalyzerPolicy");
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java"));
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java"));
-        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisThroughWallRenderer.java"));
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaSourceSnapshot.java"));
-        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisSnapshot.java"));
-    }
-
-    @Test
-    void analyzerDiscoveryStaysLoadedChunkOnlyAndDebrisBootstrapIsIncremental() throws IOException {
-        String lava = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
-        String debris = read("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
-
-        assertContainsAll(lava, "getChunkNow(");
-        assertContainsAll(debris,
-                "getChunkNow(",
-                "scheduleLoadedChunkBootstrap(",
-                "processPendingLoadedChunks(",
-                "AncientDebrisAnalyzerPolicy.MAX_BOOTSTRAP_CHUNKS_PER_TICK");
-        assertContainsNone(debris,
-                "private void bootstrapLoadedChunks(",
-                "getChunk(chunkX, chunkZ, true)");
         assertContainsNone(lava, "getChunk(chunkX, chunkZ, true)");
     }
 
     @Test
-    void settingsPresentationUsesFiveTabsReadmeNamesAndMinecraftLocalizedEditors() throws IOException {
+    void settingsPresentationUsesFiveTabsAndRetainedProductNames() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String catalog = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
@@ -97,10 +80,11 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "FILTER",
                 "INSPECTOR",
                 "ANALYZER",
-                "VISIBILITY",
-                "withAirPlacement",
-                "FeatureSwitches.AIR_PLACEMENT");
+                "VISIBILITY");
         assertContainsNone(controller,
+                "withAirPlacement",
+                "FeatureSwitches.AIR_PLACEMENT",
+                "ANCIENT_DEBRIS_ANALYZER",
                 "boolean japanese",
                 "japanese ?",
                 "HIGHLIGHT_DETAILS",
@@ -116,6 +100,9 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Visibility\"",
                 "FeatureDefinition.BRIGHT_CHEST.englishName()",
                 "FeatureDefinition.BRIGHT_CONCRETE.englishName()");
+        assertContainsNone(catalog,
+                "FeatureDefinition.AIR_PLACEMENT",
+                "FeatureDefinition.ANCIENT_DEBRIS_ANALYZER");
         assertContainsAll(definition,
                 "\"Ore Highlights\"",
                 "\"Nether Highlight\"",
@@ -125,12 +112,13 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Kelp Highlight\"",
                 "\"Block Filter\"",
                 "\"Entity Filter\"",
-                "\"Air Placement\"",
                 "\"Lava Analyzer\"",
-                "\"Ancient Debris Analyzer\"",
                 "\"Low Fire\"",
                 "\"Bright Chest\"",
                 "\"Bright Concrete\"");
+        assertContainsNone(definition,
+                "\"Air Placement\"",
+                "\"Ancient Debris Analyzer\"");
         assertContainsAll(screen,
                 "ChiseTweaksMetadata.MOD_NAME",
                 "\"設定を適用\"",
@@ -143,10 +131,8 @@ final class SettingsAndAnalyzerDesignContractTest {
         assertContainsNone(oreCompat, "boolean japanese");
 
         assertContainsAll(english,
-                "\"config.name.airplacement\": \"Air Placement\"",
                 "\"config.name.brightchest\": \"Bright Chest\"",
                 "\"config.name.brightconcrete\": \"Bright Concrete\"",
-                "Browse the 14 ChiseTweaks toggles",
                 "direct lighting-only Bright features");
         assertContainsNone(english,
                 "config.option.localworksitevisibilityexclusivemode",
