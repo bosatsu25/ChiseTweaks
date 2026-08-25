@@ -28,6 +28,7 @@ class UnifiedVisualFeatureFoundationContractTest {
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/feature/resource")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_chest_visibility")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_white_concrete_visibility")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/minecraft/atlases/chest.json")));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java")));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java")));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitches.java")));
@@ -55,16 +56,38 @@ class UnifiedVisualFeatureFoundationContractTest {
     }
 
     @Test
-    void brightChestAndConcreteUseExistingRenderingBoundaries() throws Exception {
+    void brightChestReusesVanillaWhiteConcreteSpriteAndFullbrightState() throws Exception {
         String blockEntity = source("src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java");
+        String chest = source("src/main/java/dev/chise/chisetweaks/mixin/rendering/ChestVisibilityMixin.java");
         String plugin = source("src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
+
         assertTrue(blockEntity.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
         assertTrue(blockEntity.contains("BuilderFocusVisibility.shouldHide"));
         assertTrue(blockEntity.contains("chest.lightCoords = LightCoordsUtil.FULL_BRIGHT"));
         assertFalse(blockEntity.contains("customSprite"));
+
+        assertTrue(chest.contains("Sheets.BLOCKS_MAPPER.apply"));
+        assertTrue(chest.contains("white_concrete"));
+        assertTrue(chest.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
+        assertTrue(chest.contains("state.blockState.is(Blocks.CHEST)"));
+        assertTrue(chest.contains("Sheets;chooseSprite"));
+        assertFalse(chest.contains("resourcepacks/"));
+        assertFalse(chest.contains(".png"));
+
         assertTrue(plugin.contains("FullbrightOverlayModel.brightConcrete(model)"));
         assertTrue(plugin.contains("white_concrete"));
         assertFalse(plugin.contains("BRIGHT_CONCRETE_MODEL"));
+    }
+
+    @Test
+    void legacyBrightMigrationNeverTurnsUnrecognizedStateOff() throws Exception {
+        String config = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
+        int start = config.indexOf("private boolean migrateLegacyBrightState()");
+        int end = config.indexOf("private static String resourcePacksLine", start);
+        assertTrue(start >= 0 && end > start);
+        String migration = config.substring(start, end);
+        assertFalse(migration.contains("brightChestEnabled = false"));
+        assertFalse(migration.contains("brightConcreteEnabled = false"));
     }
 
     private static String source(String path) throws Exception {
