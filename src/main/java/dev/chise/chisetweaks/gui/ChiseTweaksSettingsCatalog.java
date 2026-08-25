@@ -1,14 +1,11 @@
 package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
-import dev.chise.chisetweaks.config.ChestVisibilitySetting;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
-import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
-import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.network.chat.Component;
@@ -161,10 +158,10 @@ final class ChiseTweaksSettingsCatalog {
 
     private static void addAnalyzerRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.analyzer", "Analyzer");
-        boolLiteral(rows, "lava", LocalFeatureSwitches.LAVA_HIGHLIGHT,
+        boolLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
                 FeatureDefinition.LAVA_HIGHLIGHT.englishName(),
                 text("config.comment.locallavahighlight"));
-        boolLiteral(rows, "ancientDebrisAnalyzer", LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
+        boolLiteral(rows, "ancientDebrisAnalyzer", FeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
                 FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.englishName(),
                 text("config.comment.localancientdebrisanalyzer"));
 
@@ -193,13 +190,13 @@ final class ChiseTweaksSettingsCatalog {
 
     private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.visibility", "Visibility");
-        boolLiteral(rows, "fireVisibility", LocalFeatureSwitches.FIRE_VISIBILITY,
+        boolLiteral(rows, "fireVisibility", FeatureSwitches.FIRE_VISIBILITY,
                 FeatureDefinition.FIRE_VISIBILITY.englishName(),
                 "Lower only the first-person fire overlay.");
-        boolLiteral(rows, "chestVisibility", ChestVisibilitySetting.INSTANCE,
-                "Bright Chest", "Improve Chest and Double Chest visibility.");
-        boolLiteral(rows, "whiteConcreteVisibility", WhiteConcreteVisibilitySetting.INSTANCE,
-                "Bright Concrete", "Improve White Concrete visibility.");
+        boolLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
+                FeatureDefinition.BRIGHT_CHEST.englishName(), "Improve Chest and Double Chest visibility.");
+        boolLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
+                FeatureDefinition.BRIGHT_CONCRETE.englishName(), "Improve White Concrete visibility.");
     }
 
     private static void addInspectorRows(
@@ -531,5 +528,4 @@ final class ChiseTweaksSettingsCatalog {
     private static String text(String key) {
         return Component.translatable(key).getString();
     }
-
 }
