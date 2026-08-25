@@ -113,8 +113,8 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Inspector\"",
                 "\"Analyzer\"",
                 "\"Visibility\"",
-                "\"Bright Chest\"",
-                "\"Bright Concrete\"");
+                "FeatureDefinition.BRIGHT_CHEST.englishName()",
+                "FeatureDefinition.BRIGHT_CONCRETE.englishName()");
         assertContainsAll(definition,
                 "\"Ore Highlights\"",
                 "\"Nether Highlight\"",
@@ -126,7 +126,9 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Entity Filter\"",
                 "\"Lava Analyzer\"",
                 "\"Ancient Debris Analyzer\"",
-                "\"Low Fire\"");
+                "\"Low Fire\"",
+                "\"Bright Chest\"",
+                "\"Bright Concrete\"");
         assertContainsAll(screen,
                 "ChiseTweaksMetadata.MOD_NAME",
                 "\"設定を適用\"",
