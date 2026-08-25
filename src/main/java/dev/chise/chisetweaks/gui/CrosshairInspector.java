@@ -26,8 +26,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BlockItemStateProperties;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BeehiveBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.GlazedTerracottaBlock;
+import net.minecraft.world.level.block.GrindstoneBlock;
 import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -285,7 +291,14 @@ final class CrosshairInspector {
     }
 
     static boolean supportsPlacementPreview(Block block) {
-        if (block instanceof TrapDoorBlock || block instanceof SlabBlock) return true;
+        if (block instanceof TrapDoorBlock
+                || block instanceof SlabBlock
+                || block instanceof StairBlock
+                || block instanceof GlazedTerracottaBlock
+                || block instanceof FenceGateBlock
+                || block instanceof GrindstoneBlock
+                || block instanceof BeehiveBlock
+                || block instanceof CampfireBlock) return true;
         BlockState state = block.defaultBlockState();
         if (!state.hasProperty(BlockStateProperties.AXIS)) return false;
         Identifier id = BuiltInRegistries.BLOCK.getKey(block);
@@ -393,6 +406,14 @@ final class CrosshairInspector {
     }
 
     static List<String> placementStateProperties(BlockState state) {
+        return placementStateProperties(state, false);
+    }
+
+    static List<String> actualPlacementStateProperties(BlockState state) {
+        return placementStateProperties(state, true);
+    }
+
+    private static List<String> placementStateProperties(BlockState state, boolean actual) {
         LinkedHashMap<String, String> properties = new LinkedHashMap<>();
         if (state.getBlock() instanceof TrapDoorBlock) {
             addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
@@ -402,6 +423,29 @@ final class CrosshairInspector {
             addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
         } else if (state.getBlock() instanceof SlabBlock) {
             addPropertyIfPresent(state, BlockStateProperties.SLAB_TYPE, properties);
+            addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
+        } else if (state.getBlock() instanceof StairBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            addPropertyIfPresent(state, BlockStateProperties.HALF, properties);
+            addPropertyIfPresent(state, BlockStateProperties.STAIRS_SHAPE, properties);
+            addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
+        } else if (state.getBlock() instanceof GlazedTerracottaBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+        } else if (state.getBlock() instanceof FenceGateBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            addPropertyIfPresent(state, BlockStateProperties.OPEN, properties);
+            addPropertyIfPresent(state, BlockStateProperties.POWERED, properties);
+            addPropertyIfPresent(state, BlockStateProperties.IN_WALL, properties);
+        } else if (state.getBlock() instanceof GrindstoneBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.ATTACH_FACE, properties);
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+        } else if (state.getBlock() instanceof BeehiveBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            if (actual) addPropertyIfPresent(state, BlockStateProperties.LEVEL_HONEY, properties);
+        } else if (state.getBlock() instanceof CampfireBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            addPropertyIfPresent(state, BlockStateProperties.LIT, properties);
+            addPropertyIfPresent(state, BlockStateProperties.SIGNAL_FIRE, properties);
             addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
         } else {
             addPropertyIfPresent(state, BlockStateProperties.AXIS, properties);

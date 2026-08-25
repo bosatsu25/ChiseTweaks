@@ -66,6 +66,12 @@ NBT、看板本文、本、chat、inventory、container内容、UUIDは取得し
 - Trapdoor: Facing / Half / Open / Powered / Waterlogged
 - Log / Wood / Stem / Hyphae / Froglight: Axis
 - Slab: Type / Waterlogged
+- Stairs: Facing / Half / Shape / Waterlogged
+- Glazed Terracotta: Facing
+- Fence Gate: Facing / Open / Powered / In Wall
+- Grindstone: Face / Facing
+- Beehive / Bee Nest: Facing prediction; Honey Level is shown only from observed Actual state
+- Campfire: Facing / Lit / Signal Fire / Waterlogged
 
 通常のvanilla配置後はその1座標だけを短時間観測し、PredictedとActualを `MATCH` または `ADJUSTED` として関連付け、変化したpropertyを表示します。別blockが置かれた場合は比較せず、timeout、disconnect、dimension変更でpending stateを破棄します。
 
