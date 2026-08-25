@@ -19,7 +19,6 @@ BRIGHT_RENDERING_PATHS = {
 }
 ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"),
-    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"),
 }
 PATTERN_INSPECTOR = Path(
     "src/main/java/dev/chise/chisetweaks/gui/PatternConsistencyInspector.java"
@@ -185,6 +184,9 @@ def audit() -> list[str]:
 
     for relative in ANALYZERS:
         path = ROOT / relative
+        if not path.is_file():
+            failures.append(f"{relative}: retained analyzer implementation is missing")
+            continue
         text = java_code_only(path.read_text(encoding="utf-8"))
         if "getChunkNow(" not in text:
             failures.append(f"{relative}: analyzer must inspect only already-loaded chunks")
@@ -206,17 +208,6 @@ def audit() -> list[str]:
     if PLAIN_GET_CHUNK.search(pattern_text):
         failures.append(f"{PATTERN_INSPECTOR}: potentially force-loading getChunk call detected")
 
-    policy = ROOT / "src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java"
-    policy_text = java_code_only(policy.read_text(encoding="utf-8"))
-    for marker in (
-        "MAX_BOOTSTRAP_CHUNKS_PER_TICK = 64",
-        "MAX_VALIDATION_CHUNKS_PER_TICK = 16",
-        "MAX_TRACKED_CHUNKS = 4096",
-        "MAX_DEBRIS_PER_CHUNK = 256",
-    ):
-        if marker not in policy_text:
-            failures.append(f"AncientDebrisAnalyzerPolicy budget changed or disappeared: {marker}")
-
     return failures
 
 
@@ -236,8 +227,8 @@ def main() -> int:
     print("bright_chest=chest_atlas_sprite_selection_plus_fullbright_lightcoords")
     print("bright_concrete=vanilla_model_fullbright_quad_transform")
     print("reload_controllers_get_join_free=true")
-    print("analyzers_force_chunk_load=false")
-    print("analyzer_budgets=bounded")
+    print("lava_analyzer_force_chunk_load=false")
+    print("retained_analyzers=1")
     print("pattern_consistency_scan=bounded_loaded_chunks_only")
     print("detector_self_test=true")
     return 0
