@@ -59,14 +59,15 @@ final class WorksiteBlockInspector {
         return selected;
     }
 
-    WorksiteMaterializedInspection materialize(
+    BlockInspectionPolicy.InspectionPresentation presentation(
             BlockState state,
             String blockId,
             BlockInspectionCategory category) {
-        Map<String, String> stateProperties = properties(state);
-        return new WorksiteMaterializedInspection(
-                BlockInspectionPolicy.inspect(blockId, stateProperties, category),
-                OrientationOverlayPolicy.inspect(stateProperties));
+        return BlockInspectionPolicy.inspect(blockId, properties(state), category);
+    }
+
+    OrientationOverlayPolicy.Overlay orientation(BlockState state) {
+        return OrientationOverlayPolicy.inspect(properties(state));
     }
 
     private Map<String, String> properties(BlockState state) {
