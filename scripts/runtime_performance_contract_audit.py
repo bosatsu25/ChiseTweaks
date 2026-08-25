@@ -13,6 +13,7 @@ FULL_RELOAD_CONTROLLER = Path(
 )
 BRIGHT_RENDERING_PATHS = {
     Path("src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java"),
+    Path("src/main/java/dev/chise/chisetweaks/mixin/rendering/ChestVisibilityMixin.java"),
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java"),
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java"),
 }
@@ -124,18 +125,41 @@ def audit() -> list[str]:
         if blocking_wait_syntax(code):
             failures.append(f"{relative}: Bright rendering must not block on get/join")
 
-    chest_path = ROOT / "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java"
-    chest = java_code_only(chest_path.read_text(encoding="utf-8"))
+    chest_state_path = ROOT / "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java"
+    chest_state = java_code_only(chest_state_path.read_text(encoding="utf-8"))
     for marker in (
         "FeatureSwitches.BRIGHT_CHEST.getBooleanValue()",
         "state instanceof ChestRenderState chest",
         "chest.lightCoords = LightCoordsUtil.FULL_BRIGHT",
     ):
-        if marker not in chest:
+        if marker not in chest_state:
             failures.append(f"Bright Chest lightweight lighting boundary changed or disappeared: {marker}")
     for forbidden in ("customSprite", "SpriteId", "CHEST_MAPPER", "entity/chest/"):
-        if forbidden in chest:
-            failures.append(f"Bright Chest must reuse vanilla geometry/texture instead of custom assets: {forbidden}")
+        if forbidden in chest_state:
+            failures.append(f"Bright Chest texture selection leaked into BlockEntity state extraction: {forbidden}")
+
+    chest_sprite_path = ROOT / "src/main/java/dev/chise/chisetweaks/mixin/rendering/ChestVisibilityMixin.java"
+    chest_sprite = java_code_only(chest_sprite_path.read_text(encoding="utf-8"))
+    for marker in (
+        "Sheets.CHEST_MAPPER.apply",
+        'Identifier.fromNamespaceAndPath("chisetweaks", "normal")',
+        'Identifier.fromNamespaceAndPath("chisetweaks", "normal_left")',
+        'Identifier.fromNamespaceAndPath("chisetweaks", "normal_right")',
+        "case LEFT -> CHISETWEAKS$BRIGHT_LEFT",
+        "case RIGHT -> CHISETWEAKS$BRIGHT_RIGHT",
+    ):
+        if marker not in chest_sprite:
+            failures.append(f"Bright Chest dedicated sprite boundary changed or disappeared: {marker}")
+    for forbidden in ("Sheets.BLOCKS_MAPPER.apply", "white_concrete", "reloadResourcePacks", "delayTextureReload"):
+        if forbidden in chest_sprite:
+            failures.append(f"Bright Chest must stay on the dedicated CHEST-atlas path: {forbidden}")
+    for relative in (
+        "src/main/resources/assets/chisetweaks/textures/entity/chest/normal.png",
+        "src/main/resources/assets/chisetweaks/textures/entity/chest/normal_left.png",
+        "src/main/resources/assets/chisetweaks/textures/entity/chest/normal_right.png",
+    ):
+        if not (ROOT / relative).is_file():
+            failures.append(f"Bright Chest dedicated texture missing: {relative}")
 
     concrete_path = ROOT / "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java"
     concrete = java_code_only(concrete_path.read_text(encoding="utf-8"))
@@ -208,8 +232,8 @@ def main() -> int:
     print("full_resource_reload_callers=1_model_controller")
     print("visibility_pack_reload=removed")
     print("bright_rendering_resource_reload=false")
-    print("bright_custom_assets=false")
-    print("bright_chest=vanilla_texture_fullbright_lightcoords")
+    print("bright_chest_assets=3_dedicated_chest_textures")
+    print("bright_chest=chest_atlas_sprite_selection_plus_fullbright_lightcoords")
     print("bright_concrete=vanilla_model_fullbright_quad_transform")
     print("reload_controllers_get_join_free=true")
     print("analyzers_force_chunk_load=false")
