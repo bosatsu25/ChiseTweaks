@@ -10,18 +10,19 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import java.util.List;
 
 /**
- * 14個のtoggleを同時ONにした実クライアント描画smoke。
+ * 15個のtoggleを同時ONにした実クライアント描画smoke。
  * 共通化後も各Featureが相互排他にならず、runtime componentがquarantineされないことを確認する。
  */
 public final class AllFeaturesRegressionClientGameTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
         List<FeatureSwitch> switches = FeatureSwitches.VALUES;
-        require(switches.size() == 14, "expected 14 canonical feature switches");
+        require(switches.size() == 15, "expected 15 canonical feature switches");
         boolean[] original = new boolean[switches.size()];
 
         context.runOnClient(client -> {
@@ -53,10 +54,15 @@ public final class AllFeaturesRegressionClientGameTest implements FabricClientGa
                 level.setBlockAndUpdate(origin.offset(8, 0, 0), Blocks.POWDER_SNOW.defaultBlockState());
                 level.setBlockAndUpdate(origin.offset(9, 0, 0), Blocks.LAVA.defaultBlockState());
                 level.setBlockAndUpdate(origin.offset(10, 0, 0), Blocks.KELP.defaultBlockState());
+                level.setBlockAndUpdate(
+                        origin.offset(11, 0, 0),
+                        Blocks.SCULK_SHRIEKER.defaultBlockState()
+                                .setValue(BlockStateProperties.CAN_SUMMON, true));
+                level.setBlockAndUpdate(origin.offset(12, 0, 0), Blocks.SCULK_SENSOR.defaultBlockState());
             });
 
             // Client-side chunk download already completed above. Keep the world alive for
-            // multiple render/tick cycles so block model, BlockEntity, overlay, analyzer and
+            // multiple render/tick cycles so block model, BlockEntity, overlay, analyzers and
             // placement mixin paths coexist without becoming mutually exclusive.
             context.waitTicks(60);
 
