@@ -103,8 +103,7 @@ final class CrosshairInspector {
             return updateBlock(client, blockHit, state, Level.NETHER.equals(client.level.dimension()));
         }
         if (hit.getType() == HitResult.Type.ENTITY && hit instanceof EntityHitResult entityHit) {
-            Entity entity = entityHit.getEntity();
-            return updateEntity(client, entity);
+            return updateEntity(client, entityHit.getEntity());
         }
         return updateNoTarget();
     }
@@ -180,7 +179,6 @@ final class CrosshairInspector {
                 featureMask,
                 local.visualTargetMask,
                 local.worksiteVisibilityWorldOverlay,
-                inNether,
                 predictedPlacement,
                 actualPlacement,
                 placementResult,
@@ -228,7 +226,6 @@ final class CrosshairInspector {
             long enabledFeatures,
             int visualTargetMask,
             boolean worldOverlay,
-            boolean inNether,
             BlockState predictedPlacement,
             BlockState actualPlacement,
             int placementResult,
@@ -256,7 +253,6 @@ final class CrosshairInspector {
                         ore == null ? null : ore.target(),
                         ore != null,
                         sourceLava,
-                        inNether && "minecraft:ancient_debris".equals(targetId),
                         visualTargetMask,
                         worldOverlay,
                         enabledFeatures),
@@ -313,7 +309,6 @@ final class CrosshairInspector {
             Target oreTarget,
             boolean oreResolved,
             boolean sourceLava,
-            boolean ancientAnalyzerTarget,
             int visualTargetMask,
             boolean worldOverlay,
             long enabledFeatures) {
@@ -346,11 +341,6 @@ final class CrosshairInspector {
                 visualTargetMask, worldOverlay, enabledFeatures);
         if (featureEnabled(enabledFeatures, FeatureDefinition.LAVA_HIGHLIGHT) && sourceLava) {
             result.add(FeatureDefinition.LAVA_HIGHLIGHT);
-        }
-        if (featureEnabled(enabledFeatures, FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)
-                && ancientAnalyzerTarget
-                && "minecraft:ancient_debris".equals(id)) {
-            result.add(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER);
         }
         return List.copyOf(result);
     }
@@ -526,6 +516,5 @@ final class CrosshairInspector {
         static Snapshot noTarget() {
             return NO_TARGET;
         }
-
     }
 }
