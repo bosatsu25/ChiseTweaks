@@ -90,12 +90,13 @@ def audit() -> list[str]:
 
     values_body = list_body(switches, "VALUES")
     value_constants = re.findall(r"\b([A-Z][A-Z0-9_]+)\b", values_body)
-    if len(value_constants) != 14 or set(value_constants) != set(definition_map):
-        failures.append("FeatureSwitches.VALUES must contain each of the 14 FeatureDefinition entries exactly once")
+    if len(value_constants) != 15 or set(value_constants) != set(definition_map):
+        failures.append("FeatureSwitches.VALUES must contain each of the 15 FeatureDefinition entries exactly once")
 
     profile_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/WorksiteHighlightProfilePolicy.java")
     debris_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java")
-    constants = int_constants(profile_policy) | int_constants(debris_policy)
+    warden_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/WardenRiskAnalyzerPolicy.java")
+    constants = int_constants(profile_policy) | int_constants(debris_policy) | int_constants(warden_policy)
     local_settings_text = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java")
     local_setting_pairs = re.findall(
         r"\b(?:bool|integer)\(\s*\"([^\"]+)\"\s*,\s*([^,\r\n]+)",
