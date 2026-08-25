@@ -49,7 +49,7 @@ final class VisualFilterVisibilityReleaseContractTest {
     }
 
     @Test
-    void brightVisibilityFeaturesAreIndependentWithoutResourcePackSelection() throws IOException {
+    void brightVisibilityFeaturesAreIndependentWithoutResourcePackSelectionOrCustomPngs() throws IOException {
         String switches = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java");
         String blockEntity = source(
                 "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java");
@@ -64,19 +64,24 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(switches.contains("\"brightChest\","));
         assertTrue(switches.contains("\"brightConcrete\","));
         assertTrue(blockEntity.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
-        assertTrue(blockEntity.contains("chest.customSprite"));
-        assertTrue(visualPlugin.contains("FullbrightOverlayModel.brightConcrete"));
+        assertTrue(blockEntity.contains("chest.lightCoords = LightCoordsUtil.FULL_BRIGHT"));
+        assertFalse(blockEntity.contains("customSprite"));
+        assertTrue(visualPlugin.contains("FullbrightOverlayModel.brightConcrete(model)"));
         assertTrue(visualPlugin.contains("\"white_concrete\""));
-        int replacement = model.indexOf("private void emitReplacementOrBase");
+        int bright = model.indexOf("private void emitBrightConcrete");
         int overlay = model.indexOf("private void emitExtraModel");
-        assertTrue(replacement >= 0 && overlay > replacement);
-        assertTrue(model.substring(replacement, overlay).contains("replacement.emitQuads"));
-        assertFalse(model.substring(replacement, overlay).contains("FullbrightOverlayEmission.emit"));
+        assertTrue(bright >= 0 && overlay > bright);
+        String brightBody = model.substring(bright, overlay);
+        assertTrue(brightBody.contains("FullbrightOverlayLighting.apply(quad)"));
+        assertTrue(brightBody.contains("super.emitQuads(emitter, level, pos, state, random, cullTest)"));
+        assertFalse(brightBody.contains("FullbrightOverlayEmission.emit"));
         assertFalse(Files.exists(ROOT.resolve("src/main/java/dev/chise/chisetweaks/feature/resource")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_chest_visibility")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/resourcepacks/chise_white_concrete_visibility")));
-        assertTrue(catalog.contains("\"Bright Chest\""));
-        assertTrue(catalog.contains("\"Bright Concrete\""));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal.png")));
+        assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/block/visual/bright_white_concrete.png")));
+        assertTrue(catalog.contains("FeatureDefinition.BRIGHT_CHEST.englishName()"));
+        assertTrue(catalog.contains("FeatureDefinition.BRIGHT_CONCRETE.englishName()"));
     }
 
     private static String source(String relativePath) throws IOException {
