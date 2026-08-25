@@ -6,14 +6,6 @@ import java.util.List;
 import java.util.Objects;
 
 public enum FeatureDefinition {
-    AIR_PLACEMENT(
-            "air_placement",
-            FeatureArea.BUILDING,
-            "config.name.airplacement",
-            "Air Placement",
-            "",
-            FeatureHelpLevel.ADVANCED,
-            null),
     BUILDER_FOCUS_BLOCKS(
             "builder_focus_blocks",
             FeatureArea.RENDERING,
@@ -75,14 +67,6 @@ public enum FeatureDefinition {
             FeatureArea.RENDERING,
             "config.name.kelphighlight",
             "Kelp Highlight",
-            "",
-            FeatureHelpLevel.DIAGNOSTIC,
-            null),
-    ANCIENT_DEBRIS_ANALYZER(
-            "ancient_debris_analyzer",
-            FeatureArea.RENDERING,
-            "config.name.localancientdebrisanalyzer",
-            "Ancient Debris Analyzer",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
             null),
