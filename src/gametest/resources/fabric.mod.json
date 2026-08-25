@@ -6,7 +6,8 @@
   "environment": "client",
   "entrypoints": {
     "fabric-client-gametest": [
-      "dev.chise.chisetweaks.gui.TrapdoorPlacementClientGameTest"
+      "dev.chise.chisetweaks.gui.TrapdoorPlacementClientGameTest",
+      "dev.chise.chisetweaks.regression.AllFeaturesRegressionClientGameTest"
     ]
   },
   "depends": {
