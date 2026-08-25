@@ -1,7 +1,6 @@
 package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
-import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 
 import java.util.function.BooleanSupplier;
@@ -107,21 +106,6 @@ public final class LocalFeatureSettings {
             WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS,
             () -> config().lavaAnalyzerMaxOverlayResults,
             value -> config().lavaAnalyzerMaxOverlayResults = value);
-
-    public static final ChiseIntegerSetting ANCIENT_DEBRIS_ANALYZER_RANGE = integer(
-            "localAncientDebrisAnalyzerRange",
-            AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS,
-            AncientDebrisAnalyzerPolicy.MIN_RANGE_BLOCKS,
-            AncientDebrisAnalyzerPolicy.MAX_RANGE_BLOCKS,
-            () -> config().ancientDebrisAnalyzerRangeBlocks,
-            value -> config().ancientDebrisAnalyzerRangeBlocks = value);
-    public static final ChiseIntegerSetting ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS = integer(
-            "localAncientDebrisAnalyzerMaxMarkers",
-            AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS,
-            AncientDebrisAnalyzerPolicy.MIN_MAX_MARKERS,
-            AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS,
-            () -> config().ancientDebrisAnalyzerMaxMarkers,
-            value -> config().ancientDebrisAnalyzerMaxMarkers = value);
 
     static {
         ORE_HIGHLIGHT_ANIMATION.setValueChangeCallback(
