@@ -1,9 +1,9 @@
 {
   "schema": 2,
   "baseline": {
-    "version": "0.9.4+mc26.1.2",
-    "commit": "397a2bf536d389fba86ee502bbaa12c2ad0fa4e8",
-    "runtimeJarBytes": 446814,
+    "version": "0.15.0+mc26.1.2",
+    "commit": "56b984e689478533dea346ca69234b414f11fd0b",
+    "runtimeJarBytes": 0,
     "goalBytes": 358400
   },
   "featureIds": [
@@ -17,6 +17,7 @@
     "nether_palette",
     "kelp_highlight",
     "ancient_debris_analyzer",
+    "warden_risk_analyzer",
     "fire_visibility",
     "lava_highlight",
     "bright_chest",
@@ -38,6 +39,7 @@
       "localFireVisibility": false,
       "localLavaHighlight": false,
       "localAncientDebrisAnalyzer": false,
+      "localWardenRiskAnalyzer": false,
       "brightChest": true,
       "brightConcrete": true
     },
@@ -58,7 +60,9 @@
       "localLavaAnalyzerIntervalTicks": 10,
       "localLavaAnalyzerMaxOverlays": 12,
       "localAncientDebrisAnalyzerRange": 64,
-      "localAncientDebrisAnalyzerMaxMarkers": 64
+      "localAncientDebrisAnalyzerMaxMarkers": 64,
+      "localWardenRiskAnalyzerRange": 48,
+      "localWardenRiskAnalyzerMaxMarkers": 64
     },
     "visualTargets": {
       "visualTargetMaterialCoalOre": true,
