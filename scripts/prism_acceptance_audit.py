@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Classify a Prism latest.log without treating ordinary network resets as Chise crashes."""
+"""Classify a Prism latest.log against the current 12-feature ChiseTweaks runtime contract."""
 from __future__ import annotations
 
 import argparse
@@ -17,11 +17,17 @@ CRITICAL_MIXIN_MARKERS = (
 CHISE_FAILURE_EVENTS = {
     "component-init-quarantine",
     "component-quarantine",
-    "resource-pack-selection-failure",
-    "resource-pack-rollback-failure",
-    "resource-reload-failure",
-    "resource-reload-terminal-failure",
 }
+RESOURCE_FAILURE_MARKERS = (
+    "Ore Highlight model reload failed",
+)
+RETIRED_RUNTIME_MARKERS = (
+    "AirPlacementMixin",
+    "AirPlacementTarget",
+    "AncientDebrisAnalyzerFeature",
+    "AncientDebrisAnalyzerPolicy",
+    "WardenRiskAnalyzer",
+)
 NETWORK_RESET_MARKERS = (
     "java.net.SocketException: Connection reset",
     "Connection reset",
@@ -40,6 +46,14 @@ def audit(text: str, require_join: bool, require_disconnect: bool) -> tuple[list
     for event in sorted(event_set & CHISE_FAILURE_EVENTS):
         failures.append(f"Chise failure diagnostic event found: {event}")
 
+    for marker in RESOURCE_FAILURE_MARKERS:
+        if marker in text:
+            failures.append(f"Chise resource/model failure marker found: {marker}")
+
+    for marker in RETIRED_RUNTIME_MARKERS:
+        if marker in text:
+            failures.append(f"retired Chise runtime reference found: {marker}")
+
     if "client-startup" not in event_set:
         failures.append("client-startup diagnostic event is missing")
     if require_join and "client-join" not in event_set:
@@ -54,12 +68,13 @@ def audit(text: str, require_join: bool, require_disconnect: bool) -> tuple[list
         "snapshot_count": len(snapshots),
         "network_reset_count": network_resets,
         "network_reset_classification": "transport_disconnect_not_chise_failure",
+        "retired_runtime_reference_count": sum(text.count(marker) for marker in RETIRED_RUNTIME_MARKERS),
     }
     return failures, summary
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audit a Prism/Minecraft latest.log for Chise acceptance evidence.")
+    parser = argparse.ArgumentParser(description="Audit a Prism/Minecraft latest.log for current Chise acceptance evidence.")
     parser.add_argument("log", type=Path)
     parser.add_argument("--require-join", action="store_true")
     parser.add_argument("--require-disconnect", action="store_true")
@@ -76,6 +91,7 @@ def main() -> int:
     print(f"diagnostic_snapshots={summary['snapshot_count']}")
     print(f"network_resets={summary['network_reset_count']}")
     print(f"network_reset_classification={summary['network_reset_classification']}")
+    print(f"retired_runtime_references={summary['retired_runtime_reference_count']}")
 
     if failures:
         print("PRISM ACCEPTANCE AUDIT: FAIL", file=sys.stderr)
