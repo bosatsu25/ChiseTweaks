@@ -71,18 +71,28 @@ final class ChiseTweaksInfoTextLayout {
         List<T> wrap(String text, int availableWidth);
     }
 
-    record Layout<T>(
-            List<T> nameLines,
-            List<T> descriptionLines,
-            int lineHeight,
-            int rowHeight) {
-        Layout {
-            nameLines = List.copyOf(nameLines);
-            descriptionLines = List.copyOf(descriptionLines);
-            if (nameLines.isEmpty()) throw new IllegalArgumentException("nameLines must not be empty");
+    static final class Layout<T> {
+        private final List<T> nameLines;
+        private final List<T> descriptionLines;
+        private final int lineHeight;
+        private final int rowHeight;
+
+        Layout(List<T> nameLines, List<T> descriptionLines, int lineHeight, int rowHeight) {
+            this.nameLines = List.copyOf(nameLines);
+            this.descriptionLines = List.copyOf(descriptionLines);
+            this.lineHeight = lineHeight;
+            this.rowHeight = rowHeight;
+            if (this.nameLines.isEmpty()) {
+                throw new IllegalArgumentException("nameLines must not be empty");
+            }
             if (lineHeight < 1) throw new IllegalArgumentException("lineHeight must be positive");
             if (rowHeight < 1) throw new IllegalArgumentException("rowHeight must be positive");
         }
+
+        List<T> nameLines() { return nameLines; }
+        List<T> descriptionLines() { return descriptionLines; }
+        int lineHeight() { return lineHeight; }
+        int rowHeight() { return rowHeight; }
 
         int nameLineY(int index) {
             checkIndex(index, nameLines.size());

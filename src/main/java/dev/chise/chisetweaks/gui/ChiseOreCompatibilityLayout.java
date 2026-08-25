@@ -40,7 +40,7 @@ public final class ChiseOreCompatibilityLayout {
         }
 
         int footerY = Math.max(0, safeHeight - 28);
-        Footer footer = compact
+        Rect[] footer = compact
                 ? compactFooter(panelX, panelWidth, footerY)
                 : standardFooter(panelX, panelWidth, footerY);
         int availableRows = Math.max(0, footerY - listTop - 4) / ROW_HEIGHT;
@@ -54,25 +54,25 @@ public final class ChiseOreCompatibilityLayout {
                 idInput,
                 style,
                 add,
-                footer.previous(),
-                footer.next(),
-                footer.clear(),
-                footer.back(),
+                footer[0],
+                footer[1],
+                footer[2],
+                footer[3],
                 listTop,
                 pageSize,
                 removeWidth,
                 compact);
     }
 
-    private static Footer standardFooter(int panelX, int panelWidth, int y) {
-        return new Footer(
+    private static Rect[] standardFooter(int panelX, int panelWidth, int y) {
+        return new Rect[]{
                 new Rect(panelX + 8, y, 58, 20),
                 new Rect(panelX + 70, y, 58, 20),
                 new Rect(panelX + 132, y, 122, 20),
-                new Rect(panelX + panelWidth - 88, y, 80, 20));
+                new Rect(panelX + panelWidth - 88, y, 80, 20)};
     }
 
-    private static Footer compactFooter(int panelX, int panelWidth, int y) {
+    private static Rect[] compactFooter(int panelX, int panelWidth, int y) {
         int inset = Math.min(8, Math.max(0, panelWidth / 12));
         int innerWidth = Math.max(1, panelWidth - inset * 2);
         int gap = innerWidth >= 20 ? 4 : 0;
@@ -86,10 +86,8 @@ public final class ChiseOreCompatibilityLayout {
         Rect next = new Rect(previous.right() + gap, y, second, 20);
         Rect clear = new Rect(next.right() + gap, y, third, 20);
         Rect back = new Rect(clear.right() + gap, y, fourth, 20);
-        return new Footer(previous, next, clear, back);
+        return new Rect[]{previous, next, clear, back};
     }
-
-    private record Footer(Rect previous, Rect next, Rect clear, Rect back) {}
 
     public record Geometry(
             Rect panel,
