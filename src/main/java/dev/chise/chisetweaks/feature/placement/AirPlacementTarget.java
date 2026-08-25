@@ -15,8 +15,8 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Resolves the closest air block directly outside the player's collision box.
- * The result is only substituted for a normal MISS during the user's vanilla use action.
+ * プレイヤーの当たり判定のすぐ外側にある最寄りの空気ブロックを解決する。
+ * 通常のuse操作がMISSだった場合だけ、その1回の操作中に一時的な設置対象として使う。
  */
 public final class AirPlacementTarget {
     private static final float VERTICAL_LOOK_THRESHOLD = 60.0F;
