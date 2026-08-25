@@ -11,9 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class UnifiedFeatureSwitchRuntimeBindingTest {
     @Test
-    void allThirteenSwitchesRemainIndependentWhenEnabledTogether() {
+    void allFourteenSwitchesRemainIndependentWhenEnabledTogether() {
         List<FeatureSwitch> switches = FeatureSwitches.VALUES;
-        assertEquals(13, switches.size());
+        assertEquals(14, switches.size());
 
         ArrayList<Boolean> original = new ArrayList<>(switches.size());
         for (FeatureSwitch feature : switches) original.add(feature.getBooleanValue());
