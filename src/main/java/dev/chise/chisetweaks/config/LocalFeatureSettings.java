@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
+import dev.chise.chisetweaks.core.policy.WardenRiskAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 
 import java.util.function.BooleanSupplier;
@@ -122,6 +123,21 @@ public final class LocalFeatureSettings {
             AncientDebrisAnalyzerPolicy.MAX_MAX_MARKERS,
             () -> config().ancientDebrisAnalyzerMaxMarkers,
             value -> config().ancientDebrisAnalyzerMaxMarkers = value);
+
+    public static final ChiseIntegerSetting WARDEN_RISK_ANALYZER_RANGE = integer(
+            "localWardenRiskAnalyzerRange",
+            WardenRiskAnalyzerPolicy.DEFAULT_RANGE_BLOCKS,
+            WardenRiskAnalyzerPolicy.MIN_RANGE_BLOCKS,
+            WardenRiskAnalyzerPolicy.MAX_RANGE_BLOCKS,
+            () -> config().wardenRiskAnalyzerRangeBlocks,
+            value -> config().wardenRiskAnalyzerRangeBlocks = value);
+    public static final ChiseIntegerSetting WARDEN_RISK_ANALYZER_MAX_MARKERS = integer(
+            "localWardenRiskAnalyzerMaxMarkers",
+            WardenRiskAnalyzerPolicy.DEFAULT_MAX_MARKERS,
+            WardenRiskAnalyzerPolicy.MIN_MAX_MARKERS,
+            WardenRiskAnalyzerPolicy.MAX_MAX_MARKERS,
+            () -> config().wardenRiskAnalyzerMaxMarkers,
+            value -> config().wardenRiskAnalyzerMaxMarkers = value);
 
     static {
         ORE_HIGHLIGHT_ANIMATION.setValueChangeCallback(
