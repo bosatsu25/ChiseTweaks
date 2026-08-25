@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class RetainedFeatureScopeTest {
     @Test
-    void canonicalScopeContainsExactlyTheElevenRetainedFeatures() {
+    void canonicalScopeContainsExactlyTheThirteenRetainedFeatures() {
         assertEquals(List.of(
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
@@ -27,8 +27,10 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.KELP_HIGHLIGHT,
                 FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
                 FeatureDefinition.FIRE_VISIBILITY,
-                FeatureDefinition.LAVA_HIGHLIGHT), FeatureDefinition.VALUES);
-        assertEquals(11, FeatureDefinition.VALUES.size());
+                FeatureDefinition.LAVA_HIGHLIGHT,
+                FeatureDefinition.BRIGHT_CHEST,
+                FeatureDefinition.BRIGHT_CONCRETE), FeatureDefinition.VALUES);
+        assertEquals(13, FeatureDefinition.VALUES.size());
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.area() == FeatureArea.RENDERING));
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.dependency().isEmpty()));
     }
@@ -53,27 +55,25 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void modelHighlightsSceneFiltersFireLavaAndAncientDebrisStayOutsideWorksiteModeCoupling() {
-        assertFalse(FeatureDefinition.BUILDER_FOCUS_BLOCKS.isWorksiteVisibilityMode());
-        assertFalse(FeatureDefinition.BUILDER_FOCUS_ENTITIES.isWorksiteVisibilityMode());
-        assertFalse(FeatureDefinition.GLASS_INSPECTION.isWorksiteVisibilityMode());
-        assertFalse(FeatureDefinition.MATERIAL_HIGHLIGHTS.isWorksiteVisibilityMode());
-        assertFalse(FeatureDefinition.KELP_HIGHLIGHT.isWorksiteVisibilityMode());
-        assertFalse(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.isWorksiteVisibilityMode());
-        assertFalse(FeatureDefinition.FIRE_VISIBILITY.isWorksiteVisibilityMode());
-        assertFalse(FeatureDefinition.LAVA_HIGHLIGHT.isWorksiteVisibilityMode());
-        assertEquals(null, FeatureDefinition.BUILDER_FOCUS_BLOCKS.inspectionCategory());
-        assertEquals(null, FeatureDefinition.BUILDER_FOCUS_ENTITIES.inspectionCategory());
-        assertEquals(null, FeatureDefinition.GLASS_INSPECTION.inspectionCategory());
-        assertEquals(null, FeatureDefinition.MATERIAL_HIGHLIGHTS.inspectionCategory());
-        assertEquals(null, FeatureDefinition.KELP_HIGHLIGHT.inspectionCategory());
-        assertEquals(null, FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.inspectionCategory());
-        assertEquals(null, FeatureDefinition.FIRE_VISIBILITY.inspectionCategory());
-        assertEquals(null, FeatureDefinition.LAVA_HIGHLIGHT.inspectionCategory());
+    void nonWorksiteFeaturesStayOutsideWorksiteModeCoupling() {
+        for (FeatureDefinition definition : List.of(
+                FeatureDefinition.BUILDER_FOCUS_BLOCKS,
+                FeatureDefinition.BUILDER_FOCUS_ENTITIES,
+                FeatureDefinition.GLASS_INSPECTION,
+                FeatureDefinition.MATERIAL_HIGHLIGHTS,
+                FeatureDefinition.KELP_HIGHLIGHT,
+                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
+                FeatureDefinition.FIRE_VISIBILITY,
+                FeatureDefinition.LAVA_HIGHLIGHT,
+                FeatureDefinition.BRIGHT_CHEST,
+                FeatureDefinition.BRIGHT_CONCRETE)) {
+            assertFalse(definition.isWorksiteVisibilityMode());
+            assertEquals(null, definition.inspectionCategory());
+        }
     }
 
     @Test
-    void persistentGlobalSwitchRegistryContainsEightConfigBackedFeatureSwitches() {
+    void unifiedSwitchRegistryContainsAllThirteenFeatureSwitches() {
         assertEquals(List.of(
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
                 FeatureDefinition.BUILDER_FOCUS_ENTITIES,
@@ -82,19 +82,15 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.GLASS_INSPECTION,
                 FeatureDefinition.MATERIAL_HIGHLIGHTS,
                 FeatureDefinition.NETHER_PALETTE,
-                FeatureDefinition.KELP_HIGHLIGHT),
-                FeatureSwitches.VALUES.stream().map(switchValue -> switchValue.definition()).toList());
-
-        assertEquals(List.of(
-                "builderFocusBlocks",
-                "builderFocusEntities",
-                "fineThreadTrace",
-                "hiddenSurfaceTrace",
-                "glassInspection",
-                "materialHighlights",
-                "netherPalette",
-                "kelpHighlight"),
-                FeatureSwitches.VALUES.stream().map(switchValue -> switchValue.getName()).toList());
+                FeatureDefinition.KELP_HIGHLIGHT,
+                FeatureDefinition.LAVA_HIGHLIGHT,
+                FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
+                FeatureDefinition.FIRE_VISIBILITY,
+                FeatureDefinition.BRIGHT_CHEST,
+                FeatureDefinition.BRIGHT_CONCRETE),
+                FeatureSwitches.VALUES.stream().map(value -> value.definition()).toList());
+        assertEquals(8, FeatureSwitches.FEATURE_CONFIG_VALUES.size());
+        assertEquals(5, FeatureSwitches.LOCAL_CONFIG_VALUES.size());
     }
 
     @Test
@@ -110,5 +106,7 @@ final class RetainedFeatureScopeTest {
         assertEquals("Ancient Debris Analyzer", FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.englishName());
         assertEquals("Low Fire", FeatureDefinition.FIRE_VISIBILITY.englishName());
         assertEquals("Lava Analyzer", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
+        assertEquals("Bright Chest", FeatureDefinition.BRIGHT_CHEST.englishName());
+        assertEquals("Bright Concrete", FeatureDefinition.BRIGHT_CONCRETE.englishName());
     }
 }
