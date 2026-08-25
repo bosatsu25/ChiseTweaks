@@ -9,6 +9,7 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.AncientDebrisAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
+import dev.chise.chisetweaks.core.policy.WardenRiskAnalyzerPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
@@ -27,6 +28,7 @@ public final class LocalFeatureConfig {
 
     public boolean lavaHighlightEnabled = false;
     public boolean ancientDebrisAnalyzerEnabled = false;
+    public boolean wardenRiskAnalyzerEnabled = false;
     public boolean fireVisibilityEnabled = false;
     public boolean brightChestEnabled = true;
     public boolean brightConcreteEnabled = true;
@@ -50,6 +52,8 @@ public final class LocalFeatureConfig {
 
     public int ancientDebrisAnalyzerRangeBlocks = AncientDebrisAnalyzerPolicy.DEFAULT_RANGE_BLOCKS;
     public int ancientDebrisAnalyzerMaxMarkers = AncientDebrisAnalyzerPolicy.DEFAULT_MAX_MARKERS;
+    public int wardenRiskAnalyzerRangeBlocks = WardenRiskAnalyzerPolicy.DEFAULT_RANGE_BLOCKS;
+    public int wardenRiskAnalyzerMaxMarkers = WardenRiskAnalyzerPolicy.DEFAULT_MAX_MARKERS;
 
     public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
     public int visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
@@ -152,6 +156,9 @@ public final class LocalFeatureConfig {
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER)) {
             ancientDebrisAnalyzerEnabled = false;
         }
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.WARDEN_RISK_ANALYZER)) {
+            wardenRiskAnalyzerEnabled = false;
+        }
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.FIRE_VISIBILITY)) {
             fireVisibilityEnabled = false;
         }
@@ -189,6 +196,10 @@ public final class LocalFeatureConfig {
                 AncientDebrisAnalyzerPolicy.clampRangeBlocks(ancientDebrisAnalyzerRangeBlocks);
         ancientDebrisAnalyzerMaxMarkers =
                 AncientDebrisAnalyzerPolicy.clampMaxMarkers(ancientDebrisAnalyzerMaxMarkers);
+        wardenRiskAnalyzerRangeBlocks =
+                WardenRiskAnalyzerPolicy.clampRangeBlocks(wardenRiskAnalyzerRangeBlocks);
+        wardenRiskAnalyzerMaxMarkers =
+                WardenRiskAnalyzerPolicy.clampMaxMarkers(wardenRiskAnalyzerMaxMarkers);
         visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
     }
@@ -196,6 +207,7 @@ public final class LocalFeatureConfig {
     private void copyFrom(LocalFeatureConfig loaded) {
         lavaHighlightEnabled = loaded.lavaHighlightEnabled;
         ancientDebrisAnalyzerEnabled = loaded.ancientDebrisAnalyzerEnabled;
+        wardenRiskAnalyzerEnabled = loaded.wardenRiskAnalyzerEnabled;
         fireVisibilityEnabled = loaded.fireVisibilityEnabled;
         brightChestEnabled = loaded.brightChestEnabled;
         brightConcreteEnabled = loaded.brightConcreteEnabled;
@@ -216,6 +228,8 @@ public final class LocalFeatureConfig {
         lavaAnalyzerMaxOverlayResults = loaded.lavaAnalyzerMaxOverlayResults;
         ancientDebrisAnalyzerRangeBlocks = loaded.ancientDebrisAnalyzerRangeBlocks;
         ancientDebrisAnalyzerMaxMarkers = loaded.ancientDebrisAnalyzerMaxMarkers;
+        wardenRiskAnalyzerRangeBlocks = loaded.wardenRiskAnalyzerRangeBlocks;
+        wardenRiskAnalyzerMaxMarkers = loaded.wardenRiskAnalyzerMaxMarkers;
         visualTargetMask = loaded.visualTargetMask;
         visualTargetSchemaVersion = loaded.visualTargetSchemaVersion;
     }
