@@ -19,9 +19,9 @@ final class ReleaseIntegrationRegressionTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void allThirteenRuntimeFeaturesCanRemainEnabledAtTheSameTime() {
+    void allFourteenRuntimeFeaturesCanRemainEnabledAtTheSameTime() {
         List<ChiseBooleanSetting> switches = new ArrayList<>(FeatureSwitches.VALUES);
-        assertEquals(13, switches.size());
+        assertEquals(14, switches.size());
 
         boolean[] original = new boolean[switches.size()];
         for (int index = 0; index < switches.size(); index++) {
