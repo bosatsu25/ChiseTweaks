@@ -14,13 +14,12 @@ final class SettingsPersistenceBoundaryContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void localUiAdaptersAndRuntimeFeaturesDoNotOwnDiskPersistence() throws IOException {
+    void localUiAdaptersAndRetainedRuntimeFeaturesDoNotOwnDiskPersistence() throws IOException {
         String localSettings = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
         String targetSettings = source("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
         String featureSwitch = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitch.java");
         String switches = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java");
         String lava = source("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
-        String debris = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
         String featureContract = source("src/main/java/dev/chise/chisetweaks/feature/Feature.java");
         String controller = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String persistence = source("src/main/java/dev/chise/chisetweaks/config/SettingPersistenceCoordinator.java");
@@ -29,7 +28,6 @@ final class SettingsPersistenceBoundaryContractTest {
         assertFalse(targetSettings.contains(".save()"));
         assertFalse(featureSwitch.contains(".save()"));
         assertFalse(lava.contains(".save()"));
-        assertFalse(debris.contains(".save()"));
         assertFalse(featureSwitch.contains("FeatureManager"));
         assertFalse(featureSwitch.contains("setEnabled("));
         assertFalse(featureContract.contains("setEnabled("));
@@ -45,6 +43,8 @@ final class SettingsPersistenceBoundaryContractTest {
 
         assertFalse(Files.exists(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitch.java")));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java")));
         assertFalse(controller.contains("FeatureConfig.saveToFile()"));
         assertFalse(controller.contains("LocalFeatureConfig.getInstance().save()"));
         assertTrue(controller.contains("SettingPersistenceCoordinator.production()"));
