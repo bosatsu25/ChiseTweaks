@@ -5,11 +5,7 @@ import java.util.List;
 public final class BuilderFocusConfig {
     public static final SimpleBooleanSetting REFRESH_RENDERER = new SimpleBooleanSetting(
             "refreshBuilderFocusRenderer",
-            true,
-            "Refresh renderer",
-            "描画を更新",
-            "Reload visible chunks after Scene Filter block rules change.",
-            "ブロック表示ルール変更後に表示中チャンクを更新します。");
+            true);
 
     public static final ChiseRuleModeSetting BLOCK_RULE_MODE = new ChiseRuleModeSetting(
             "builderFocusBlockRuleMode", ChiseRuleMode.NONE, SettingPersistence.FEATURE_CONFIG);
