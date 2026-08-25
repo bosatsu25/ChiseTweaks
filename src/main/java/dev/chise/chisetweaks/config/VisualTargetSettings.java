@@ -5,74 +5,33 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 
 import java.util.List;
 
-/** {@link LocalFeatureConfig} のvisual target maskへ直接bindingするUI向けメタデータ。 */
+/** {@link LocalFeatureConfig} のvisual target maskへ直接bindingするUI向けsetting。表示文言はlang側を正本とする。 */
 public final class VisualTargetSettings {
     private static final Runnable NOOP = () -> {};
     private static Runnable materialTargetsChangedCallback = NOOP;
 
     public static final List<ChiseBooleanSetting> ALL_OPTIONS = List.of(
-            entry(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre",
-                    "Ore: Coal", "鉱石：石炭",
-                    "Toggle normal and deepslate Coal Ore together.", "通常版と深層岩版の石炭鉱石を1つのスイッチで切り替えます。"),
-            entry(Target.MATERIAL_IRON_ORE, "visualTargetMaterialIronOre",
-                    "Ore: Iron", "鉱石：鉄",
-                    "Toggle normal and deepslate Iron Ore together.", "通常版と深層岩版の鉄鉱石を1つのスイッチで切り替えます。"),
-            entry(Target.MATERIAL_COPPER_ORE, "visualTargetMaterialCopperOre",
-                    "Ore: Copper", "鉱石：銅",
-                    "Toggle normal and deepslate Copper Ore together.", "通常版と深層岩版の銅鉱石を1つのスイッチで切り替えます。"),
-            entry(Target.MATERIAL_GOLD_ORE, "visualTargetMaterialGoldOre",
-                    "Ore: Gold", "鉱石：金",
-                    "Toggle normal and deepslate Gold Ore together.", "通常版と深層岩版の金鉱石を1つのスイッチで切り替えます。"),
-            entry(Target.MATERIAL_LAPIS_ORE, "visualTargetMaterialLapisOre",
-                    "Ore: Lapis", "鉱石：ラピスラズリ",
-                    "Toggle normal and deepslate Lapis Ore together.", "通常版と深層岩版のラピスラズリ鉱石を1つのスイッチで切り替えます。"),
-            entry(Target.MATERIAL_REDSTONE_ORE, "visualTargetMaterialRedstoneOre",
-                    "Ore: Redstone", "鉱石：レッドストーン",
-                    "Toggle normal and deepslate Redstone Ore together.", "通常版と深層岩版のレッドストーン鉱石を1つのスイッチで切り替えます。"),
-            entry(Target.MATERIAL_DIAMOND_ORE, "visualTargetMaterialDiamondOre",
-                    "Ore: Diamond", "鉱石：ダイヤモンド",
-                    "Toggle normal and deepslate Diamond Ore together.", "通常版と深層岩版のダイヤモンド鉱石を1つのスイッチで切り替えます。"),
-            entry(Target.MATERIAL_EMERALD_ORE, "visualTargetMaterialEmeraldOre",
-                    "Ore: Emerald", "鉱石：エメラルド",
-                    "Toggle normal and deepslate Emerald Ore together.", "通常版と深層岩版のエメラルド鉱石を1つのスイッチで切り替えます。"),
-            entry(Target.MATERIAL_NETHER_GOLD_ORE, "visualTargetMaterialNetherGoldOre",
-                    "Nether Resource: Gold Ore", "ネザー資源：金鉱石",
-                    "Highlight Nether Gold Ore without changing Netherrack.", "ネザーラックは変更せず、ネザー金鉱石だけを強調します。"),
-            entry(Target.MATERIAL_NETHER_QUARTZ_ORE, "visualTargetMaterialNetherQuartzOre",
-                    "Nether Resource: Quartz Ore", "ネザー資源：クォーツ鉱石",
-                    "Highlight Nether Quartz Ore without changing Netherrack.", "ネザーラックは変更せず、ネザークォーツ鉱石だけを強調します。"),
-            entry(Target.MATERIAL_ANCIENT_DEBRIS, "visualTargetMaterialAncientDebris",
-                    "Nether Resource: Ancient Debris", "ネザー資源：古代の残骸",
-                    "Highlight Ancient Debris with its own muted whorl identity.", "古代の残骸を独立した表現で強調します。"),
-            entry(Target.MATERIAL_OBSIDIAN, "visualTargetMaterialObsidian",
-                    "Special Material: Obsidian", "特殊資材：黒曜石",
-                    "Highlight Obsidian independently from Crying Obsidian.", "黒曜石を泣く黒曜石とは別に切り替えます。"),
-            entry(Target.MATERIAL_CRYING_OBSIDIAN, "visualTargetMaterialCryingObsidian",
-                    "Special Material: Crying Obsidian", "特殊資材：泣く黒曜石",
-                    "Highlight Crying Obsidian independently from normal Obsidian.", "泣く黒曜石を通常の黒曜石とは別に切り替えます。"),
-            entry(Target.TECHNICAL_TRIPWIRE, "visualTargetTechnicalTripwire",
-                    "Fine Thread: Tripwire", "細線：糸",
-                    "Allow Fine Thread Trace to mark tripwire.", "細線ハイライトで糸を表示対象にします。"),
-            entry(Target.TECHNICAL_TRIPWIRE_HOOK, "visualTargetTechnicalTripwireHook",
-                    "Fine Thread: Tripwire Hook", "細線：トリップワイヤーフック",
-                    "Allow Fine Thread Trace to mark tripwire hooks.", "細線ハイライトでトリップワイヤーフックを表示対象にします。"),
-            entry(Target.HIDDEN_BLUE_ICE, "visualTargetHiddenBlueIce",
-                    "Hidden Surface: Blue Ice", "隠面：青氷",
-                    "Allow Hidden Surface Trace to mark visible blue ice.", "隠面トレースで見えている青氷を表示対象にします。"),
-            entry(Target.HIDDEN_DEAD_CORAL, "visualTargetHiddenDeadCoral",
-                    "Hidden Surface: Dead Coral", "隠面：死んだサンゴ",
-                    "Allow Hidden Surface Trace to mark dead coral variants.", "隠面トレースで死んだサンゴ系ブロックを表示対象にします。"),
-            entry(Target.HIDDEN_POWDER_SNOW, "visualTargetHiddenPowderSnow",
-                    "Hidden Surface: Powder Snow", "隠面：粉雪",
-                    "Allow Hidden Surface Trace to mark visible powder snow.", "隠面トレースで見えている粉雪を表示対象にします。"),
-            entry(Target.HIDDEN_SCULK_CATALYST, "visualTargetHiddenSculkCatalyst",
-                    "Hidden Surface: Sculk Catalyst", "隠面：スカルクカタリスト",
-                    "Allow Hidden Surface Trace to mark sculk catalysts.", "隠面トレースでスカルクカタリストを表示対象にします。"));
+            entry(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre"),
+            entry(Target.MATERIAL_IRON_ORE, "visualTargetMaterialIronOre"),
+            entry(Target.MATERIAL_COPPER_ORE, "visualTargetMaterialCopperOre"),
+            entry(Target.MATERIAL_GOLD_ORE, "visualTargetMaterialGoldOre"),
+            entry(Target.MATERIAL_LAPIS_ORE, "visualTargetMaterialLapisOre"),
+            entry(Target.MATERIAL_REDSTONE_ORE, "visualTargetMaterialRedstoneOre"),
+            entry(Target.MATERIAL_DIAMOND_ORE, "visualTargetMaterialDiamondOre"),
+            entry(Target.MATERIAL_EMERALD_ORE, "visualTargetMaterialEmeraldOre"),
+            entry(Target.MATERIAL_NETHER_GOLD_ORE, "visualTargetMaterialNetherGoldOre"),
+            entry(Target.MATERIAL_NETHER_QUARTZ_ORE, "visualTargetMaterialNetherQuartzOre"),
+            entry(Target.MATERIAL_ANCIENT_DEBRIS, "visualTargetMaterialAncientDebris"),
+            entry(Target.MATERIAL_OBSIDIAN, "visualTargetMaterialObsidian"),
+            entry(Target.MATERIAL_CRYING_OBSIDIAN, "visualTargetMaterialCryingObsidian"),
+            entry(Target.TECHNICAL_TRIPWIRE, "visualTargetTechnicalTripwire"),
+            entry(Target.TECHNICAL_TRIPWIRE_HOOK, "visualTargetTechnicalTripwireHook"),
+            entry(Target.HIDDEN_BLUE_ICE, "visualTargetHiddenBlueIce"),
+            entry(Target.HIDDEN_DEAD_CORAL, "visualTargetHiddenDeadCoral"),
+            entry(Target.HIDDEN_POWDER_SNOW, "visualTargetHiddenPowderSnow"),
+            entry(Target.HIDDEN_SCULK_CATALYST, "visualTargetHiddenSculkCatalyst"));
 
     private VisualTargetSettings() {}
-
-    /** 起動処理の境界を明示するため残している。直接bindingのため状態同期処理は不要。 */
-    public static void init() {}
 
     public static synchronized void setAllOreHighlightTargets(boolean enabled) {
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
@@ -92,20 +51,10 @@ public final class VisualTargetSettings {
                 && (target.bitMask() & VisualTargetSelectionPolicy.ORE_HIGHLIGHT_TARGETS_MASK) != 0;
     }
 
-    private static ChiseBooleanSetting entry(
-            Target target,
-            String configName,
-            String englishName,
-            String japaneseName,
-            String englishComment,
-            String japaneseComment) {
+    private static ChiseBooleanSetting entry(Target target, String configName) {
         SimpleBooleanSetting option = new SimpleBooleanSetting(
                 configName,
                 true,
-                englishName,
-                japaneseName,
-                englishComment,
-                japaneseComment,
                 () -> VisualTargetSelectionPolicy.isEnabled(
                         LocalFeatureConfig.getInstance().visualTargetMask,
                         target),
