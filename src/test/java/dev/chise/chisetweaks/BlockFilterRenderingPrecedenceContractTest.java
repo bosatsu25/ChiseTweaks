@@ -61,20 +61,19 @@ final class BlockFilterRenderingPrecedenceContractTest {
     }
 
     @Test
-    void hidePrecedenceAlsoCoversIndependentChiseOverlayPaths() throws IOException {
+    void hidePrecedenceCoversEveryRetainedIndependentOverlayPath() throws IOException {
         String worksiteScanner = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java");
         String worksiteRenderer = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteOverlayRenderer.java");
-        String ancient = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
         String lava = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
 
         assertTrue(worksiteScanner.contains("BuilderFocusVisibility.shouldHide(state.getBlock())"));
         assertTrue(worksiteRenderer.contains("BuilderFocusVisibility.shouldHide(block)"));
-        assertTrue(ancient.contains("BuilderFocusVisibility.shouldHide(Blocks.ANCIENT_DEBRIS)"));
         assertTrue(lava.contains("BuilderFocusVisibility.shouldHide(Blocks.LAVA)"));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java")));
     }
 
     private static String source(String relativePath) throws IOException {
