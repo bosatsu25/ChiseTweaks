@@ -47,12 +47,12 @@ final class BlockFilterRenderingPrecedenceContractTest {
     }
 
     @Test
-    void brightSpecificTextureAssetsRemainRetired() {
-        assertFalse(Files.exists(ROOT.resolve(
+    void brightChestOwnsOnlyItsDedicatedChestTextures() {
+        assertTrue(Files.exists(ROOT.resolve(
                 "src/main/resources/assets/chisetweaks/textures/entity/chest/normal.png")));
-        assertFalse(Files.exists(ROOT.resolve(
+        assertTrue(Files.exists(ROOT.resolve(
                 "src/main/resources/assets/chisetweaks/textures/entity/chest/normal_left.png")));
-        assertFalse(Files.exists(ROOT.resolve(
+        assertTrue(Files.exists(ROOT.resolve(
                 "src/main/resources/assets/chisetweaks/textures/entity/chest/normal_right.png")));
         assertFalse(Files.exists(ROOT.resolve(
                 "src/main/resources/assets/chisetweaks/textures/block/visual/bright_white_concrete.png")));
