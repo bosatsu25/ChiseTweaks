@@ -20,25 +20,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 /**
- * Ore / Glass / Kelp が共有する fullbright overlay lifecycle。
- * feature 固有差分は対象判定・overlay key・geometry token だけに限定する。
+ * Chiseのblock-model視認機能が共有するfullbright model lifecycle。
+ * Overlayと置換表示の差だけをkindで保持し、lookup・fail-soft・geometry keyを共通化する。
  */
 final class FullbrightOverlayModel extends WrapperBlockStateModel {
     private static final int KIND_ORE = 0;
     private static final int KIND_GLASS = 1;
     private static final int KIND_KELP = 2;
+    private static final int KIND_BRIGHT_CONCRETE = 3;
     private static final int MAX_LOOKUP_ATTEMPTS = 3;
 
     private static final AtomicBoolean ORE_LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean GLASS_LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean KELP_LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
+    private static final AtomicBoolean CONCRETE_LOOKUP_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean ORE_EMIT_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean GLASS_EMIT_FAILURE_LOGGED = new AtomicBoolean();
     private static final AtomicBoolean KELP_EMIT_FAILURE_LOGGED = new AtomicBoolean();
+    private static final AtomicBoolean CONCRETE_EMIT_FAILURE_LOGGED = new AtomicBoolean();
 
     private final int kind;
     private final @Nullable Target target;
-    private final GlassHighlightTargetPolicy.Shape glassShape;
+    private final @Nullable GlassHighlightTargetPolicy.Shape glassShape;
     private final ExtraModelKey<BlockStateModel> staticKey;
     private final @Nullable ExtraModelKey<BlockStateModel> animatedKey;
 
@@ -53,7 +56,7 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
             BlockStateModel wrapped,
             int kind,
             @Nullable Target target,
-            GlassHighlightTargetPolicy.Shape glassShape,
+            @Nullable GlassHighlightTargetPolicy.Shape glassShape,
             ExtraModelKey<BlockStateModel> staticKey,
             @Nullable ExtraModelKey<BlockStateModel> animatedKey) {
         super(wrapped);
@@ -89,6 +92,13 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
                 wrapped, KIND_KELP, null, null, KelpHighlightOverlayCatalog.KEY, null);
     }
 
+    static FullbrightOverlayModel brightConcrete(
+            BlockStateModel wrapped,
+            ExtraModelKey<BlockStateModel> replacementKey) {
+        return new FullbrightOverlayModel(
+                wrapped, KIND_BRIGHT_CONCRETE, null, null, replacementKey, null);
+    }
+
     @Override
     public void emitQuads(
             QuadEmitter emitter,
@@ -97,10 +107,51 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
             BlockState state,
             RandomSource random,
             Predicate<@Nullable Direction> cullTest) {
-        super.emitQuads(emitter, level, pos, state, random, cullTest);
         VisualRenderState.Snapshot renderState = VisualRenderState.current();
-        if (!shouldRender(renderState)) return;
+        if (kind == KIND_BRIGHT_CONCRETE) {
+            emitReplacementOrBase(emitter, level, pos, state, random, cullTest, renderState);
+            return;
+        }
 
+        super.emitQuads(emitter, level, pos, state, random, cullTest);
+        if (!shouldRender(renderState)) return;
+        emitExtraModel(emitter, level, pos, state, random, cullTest, renderState);
+    }
+
+    private void emitReplacementOrBase(
+            QuadEmitter emitter,
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            RandomSource random,
+            Predicate<@Nullable Direction> cullTest,
+            VisualRenderState.Snapshot renderState) {
+        if (!shouldRender(renderState) || staticEmissionQuarantined) {
+            super.emitQuads(emitter, level, pos, state, random, cullTest);
+            return;
+        }
+        BlockStateModel replacement = overlayModel(false);
+        if (replacement == null) {
+            super.emitQuads(emitter, level, pos, state, random, cullTest);
+            return;
+        }
+        Throwable failure = FullbrightOverlayEmission.emit(
+                emitter, replacement, level, pos, state, random, cullTest);
+        if (failure == null) return;
+
+        quarantineEmission(false);
+        warnOnce(emissionWarningGate(), featureName() + " model emission", failure);
+        super.emitQuads(emitter, level, pos, state, random, cullTest);
+    }
+
+    private void emitExtraModel(
+            QuadEmitter emitter,
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            RandomSource random,
+            Predicate<@Nullable Direction> cullTest,
+            VisualRenderState.Snapshot renderState) {
         boolean animated = usesAnimatedOverlay(renderState);
         if (emissionQuarantined(animated)) return;
         BlockStateModel overlay = overlayModel(animated);
@@ -117,7 +168,8 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
     private boolean shouldRender(VisualRenderState.Snapshot renderState) {
         if (kind == KIND_ORE) return renderState.shouldRenderOre(target);
         if (kind == KIND_GLASS) return renderState.glassEnabled();
-        return renderState.kelpEnabled();
+        if (kind == KIND_KELP) return renderState.kelpEnabled();
+        return renderState.brightConcreteEnabled();
     }
 
     private boolean usesAnimatedOverlay(VisualRenderState.Snapshot renderState) {
@@ -198,31 +250,34 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
     private String featureName() {
         if (kind == KIND_ORE) return "Ore Highlight";
         if (kind == KIND_GLASS) return "Glass Highlight";
-        return "Kelp Highlight";
+        if (kind == KIND_KELP) return "Kelp Highlight";
+        return "Bright Concrete";
     }
 
     private AtomicBoolean lookupWarningGate() {
         if (kind == KIND_ORE) return ORE_LOOKUP_FAILURE_LOGGED;
         if (kind == KIND_GLASS) return GLASS_LOOKUP_FAILURE_LOGGED;
-        return KELP_LOOKUP_FAILURE_LOGGED;
+        if (kind == KIND_KELP) return KELP_LOOKUP_FAILURE_LOGGED;
+        return CONCRETE_LOOKUP_FAILURE_LOGGED;
     }
 
     private AtomicBoolean emissionWarningGate() {
         if (kind == KIND_ORE) return ORE_EMIT_FAILURE_LOGGED;
         if (kind == KIND_GLASS) return GLASS_EMIT_FAILURE_LOGGED;
-        return KELP_EMIT_FAILURE_LOGGED;
+        if (kind == KIND_KELP) return KELP_EMIT_FAILURE_LOGGED;
+        return CONCRETE_EMIT_FAILURE_LOGGED;
     }
 
     private record GeometryKey(
             Object wrappedKey,
             int kind,
             @Nullable Object token,
-            OreHighlightRuntimePolicy.Motion motion) {}
+            @Nullable OreHighlightRuntimePolicy.Motion motion) {}
 
     private static void warnOnce(AtomicBoolean gate, String operation, Throwable failure) {
         if (!gate.compareAndSet(false, true)) return;
         ChiseTweaksClient.LOGGER.warn(
-                "{} failed after {}; keeping the resource-pack base model without the Chise overlay",
+                "{} failed after {}; keeping the base model without the Chise visual layer",
                 operation,
                 failure.getClass().getSimpleName());
     }
