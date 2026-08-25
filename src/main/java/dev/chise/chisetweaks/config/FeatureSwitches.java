@@ -6,29 +6,21 @@ import java.util.List;
 
 public final class FeatureSwitches {
     public static final FeatureSwitch BUILDER_FOCUS_BLOCKS = create(
-            FeatureDefinition.BUILDER_FOCUS_BLOCKS,
-            "Apply explicit block visibility rules for inspection.");
+            FeatureDefinition.BUILDER_FOCUS_BLOCKS);
     public static final FeatureSwitch BUILDER_FOCUS_ENTITIES = create(
-            FeatureDefinition.BUILDER_FOCUS_ENTITIES,
-            "Apply explicit entity visibility rules for inspection.");
+            FeatureDefinition.BUILDER_FOCUS_ENTITIES);
     public static final FeatureSwitch FINE_THREAD_TRACE = create(
-            FeatureDefinition.FINE_THREAD_TRACE,
-            "Trace nearby visible tripwire and hooks within a bounded local radius.");
+            FeatureDefinition.FINE_THREAD_TRACE);
     public static final FeatureSwitch HIDDEN_SURFACE_TRACE = create(
-            FeatureDefinition.HIDDEN_SURFACE_TRACE,
-            "Identify nearby visible powder snow, blue ice, dead coral and sculk catalysts.");
+            FeatureDefinition.HIDDEN_SURFACE_TRACE);
     public static final FeatureSwitch GLASS_INSPECTION = create(
-            FeatureDefinition.GLASS_INSPECTION,
-            "Add sparse fullbright shape markers to vanilla glass blocks and panes without replacing their base model or stained color.");
+            FeatureDefinition.GLASS_INSPECTION);
     public static final FeatureSwitch MATERIAL_HIGHLIGHTS = create(
-            FeatureDefinition.MATERIAL_HIGHLIGHTS,
-            "Outline visible configured ores, ancient debris and obsidian without wall-through discovery.");
+            FeatureDefinition.MATERIAL_HIGHLIGHTS);
     public static final FeatureSwitch NETHER_PALETTE = create(
-            FeatureDefinition.NETHER_PALETTE,
-            "Apply bounded color-coded outlines to visible Nether construction materials.");
+            FeatureDefinition.NETHER_PALETTE);
     public static final FeatureSwitch KELP_HIGHLIGHT = create(
-            FeatureDefinition.KELP_HIGHLIGHT,
-            "Highlight visible kelp and kelp plants with a magenta and orange neon overlay.");
+            FeatureDefinition.KELP_HIGHLIGHT);
 
     public static final List<FeatureSwitch> VALUES = List.of(
             BUILDER_FOCUS_BLOCKS,
@@ -42,7 +34,7 @@ public final class FeatureSwitches {
 
     private FeatureSwitches() {}
 
-    private static FeatureSwitch create(FeatureDefinition definition, String fallbackComment) {
-        return new FeatureSwitch(definition, fallbackComment);
+    private static FeatureSwitch create(FeatureDefinition definition) {
+        return new FeatureSwitch(definition);
     }
 }
