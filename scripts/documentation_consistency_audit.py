@@ -79,9 +79,15 @@ def main() -> int:
         failures,
     )
     require(
-        r"13個のON/OFF機能",
+        r"14個のON/OFF機能",
         readme,
-        "README must explain the thirteen-toggle scope in beginner-facing language",
+        "README must explain the fourteen-toggle scope in beginner-facing language",
+        failures,
+    )
+    require(
+        r"### Air Placement",
+        readme,
+        "README must document Air Placement usage and boundaries",
         failures,
     )
     require(
@@ -103,7 +109,8 @@ def main() -> int:
         "exact CI-verified runtime JAR",
         f"`{jar_goal} bytes`",
         f"`{jar_max} bytes`",
-        "toggle可能なruntime featureは現在13個",
+        "toggle可能なruntime featureは現在14個",
+        "Air Placement",
         "GitHub Issues",
     ):
         if marker not in development:
