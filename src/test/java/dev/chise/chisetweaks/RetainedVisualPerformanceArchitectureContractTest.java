@@ -81,20 +81,20 @@ final class RetainedVisualPerformanceArchitectureContractTest {
 
     @Test
     void modelBackedHighlightsUseOneImmutableRuntimeSnapshot() throws IOException {
-        String ore = read("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOreHighlightModel.java");
-        String kelp = read("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightKelpHighlightModel.java");
-        String glass = read("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightGlassHighlightModel.java");
+        String model = read("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
         String state = read("src/main/java/dev/chise/chisetweaks/feature/rendering/model/VisualRenderState.java");
 
-        assertContainsAll(ore, "VisualRenderState.current()");
-        assertContainsAll(kelp, "VisualRenderState.current().kelpEnabled()");
-        assertContainsAll(glass, "VisualRenderState.current().glassEnabled()");
+        assertContainsAll(model,
+                "VisualRenderState.current()",
+                "renderState.shouldRenderOre(target)",
+                "renderState.kelpEnabled()",
+                "renderState.glassEnabled()");
         assertContainsAll(state, "private static volatile Snapshot current");
-        assertContainsNone(ore,
+        assertContainsNone(model,
                 "LocalFeatureConfig.getInstance()",
-                "FeatureSwitches.MATERIAL_HIGHLIGHTS");
-        assertContainsNone(kelp, "FeatureSwitches.KELP_HIGHLIGHT");
-        assertContainsNone(glass, "FeatureSwitches.GLASS_INSPECTION");
+                "FeatureSwitches.MATERIAL_HIGHLIGHTS",
+                "FeatureSwitches.KELP_HIGHLIGHT",
+                "FeatureSwitches.GLASS_INSPECTION");
     }
 
     @Test
