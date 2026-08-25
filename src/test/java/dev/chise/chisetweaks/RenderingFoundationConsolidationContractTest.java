@@ -36,23 +36,19 @@ final class RenderingFoundationConsolidationContractTest {
     }
 
     @Test
-    void throughWallAnalyzersShareRenderQuarantineLifecycleWithoutSharingScanners() throws IOException {
+    void retainedLavaAnalyzerUsesSharedRenderQuarantineLifecycle() throws IOException {
         String guard = source("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallRenderGuard.java");
         String lava = source("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
-        String debris = source("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
 
         assertTrue(guard.contains("catch (RuntimeException | LinkageError failure)"));
         assertTrue(guard.contains("RuntimeDiagnosticEvent.COMPONENT_QUARANTINE"));
         assertTrue(guard.contains("renderer.resetAfterFailure()"));
         assertTrue(lava.contains("new ThroughWallRenderGuard("));
-        assertTrue(debris.contains("new ThroughWallRenderGuard("));
         assertFalse(lava.contains("boolean renderQuarantined"));
-        assertFalse(debris.contains("boolean renderQuarantined"));
-
         assertTrue(lava.contains("scanLoadedSources("));
-        assertTrue(debris.contains("scanChunkIntoBuffer("));
         assertFalse(lava.contains("scanChunkIntoBuffer("));
-        assertFalse(debris.contains("scanLoadedSources("));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java")));
     }
 
     @Test
