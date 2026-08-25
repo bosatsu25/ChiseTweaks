@@ -9,6 +9,7 @@
   "client": [
     "rendering.BuilderFocusBlockMixin",
     "rendering.BlockEntityVisualStateMixin",
+    "rendering.ChestVisibilityMixin",
     "rendering.BuilderFocusEntityMixin",
     "rendering.FireVisibilityMixin"
   ],
