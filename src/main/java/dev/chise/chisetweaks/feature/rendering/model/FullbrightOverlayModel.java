@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 /**
- * Chiseのblock-model視認機能が共有するfullbright model lifecycle。
- * Overlayと置換表示の差だけをkindで保持し、lookup・fail-soft・geometry keyを共通化する。
+ * Chiseのblock-model視認機能が共有するmodel lifecycle。
+ * Ore / Glass / Kelpはfullbright overlay、Bright Concreteは通常照明の置換modelとして扱う。
  */
 final class FullbrightOverlayModel extends WrapperBlockStateModel {
     private static final int KIND_ORE = 0;
@@ -135,13 +135,13 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
             super.emitQuads(emitter, level, pos, state, random, cullTest);
             return;
         }
-        Throwable failure = FullbrightOverlayEmission.emit(
-                emitter, replacement, level, pos, state, random, cullTest);
-        if (failure == null) return;
-
-        quarantineEmission(false);
-        warnOnce(emissionWarningGate(), featureName() + " model emission", failure);
-        super.emitQuads(emitter, level, pos, state, random, cullTest);
+        try {
+            replacement.emitQuads(emitter, level, pos, state, random, cullTest);
+        } catch (RuntimeException | LinkageError failure) {
+            quarantineEmission(false);
+            warnOnce(emissionWarningGate(), featureName() + " model emission", failure);
+            super.emitQuads(emitter, level, pos, state, random, cullTest);
+        }
     }
 
     private void emitExtraModel(
