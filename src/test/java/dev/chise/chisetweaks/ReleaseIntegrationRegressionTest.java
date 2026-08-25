@@ -19,9 +19,9 @@ final class ReleaseIntegrationRegressionTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void allFourteenRuntimeFeaturesCanRemainEnabledAtTheSameTime() {
+    void allFifteenRuntimeFeaturesCanRemainEnabledAtTheSameTime() {
         List<ChiseBooleanSetting> switches = new ArrayList<>(FeatureSwitches.VALUES);
-        assertEquals(14, switches.size());
+        assertEquals(15, switches.size());
 
         boolean[] original = new boolean[switches.size()];
         for (int index = 0; index < switches.size(); index++) {
@@ -58,6 +58,8 @@ final class ReleaseIntegrationRegressionTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java");
         String debris = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java");
+        String warden = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/WardenRiskAnalyzerFeature.java");
         String lava = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
 
@@ -67,6 +69,7 @@ final class ReleaseIntegrationRegressionTest {
         assertTrue(manager.contains("resetSessionState"));
         assertTrue(worksite.contains("resetSession(Minecraft client)"));
         assertTrue(debris.contains("resetSession(Minecraft client)"));
+        assertTrue(warden.contains("resetSession(Minecraft client)"));
         assertTrue(lava.contains("resetSession(Minecraft client)"));
     }
 
