@@ -25,6 +25,7 @@ RETIRED_DOCUMENTS = (
     "docs/CI_SCOPE_SUMMARY.md",
     "docs/acceptance/0.9.4-prism.md",
     "docs/performance/0.9.4-baseline.md",
+    "docs/warden-risk-analyzer-feasibility.md",
 )
 
 
@@ -79,15 +80,9 @@ def main() -> int:
         failures,
     )
     require(
-        r"14個のON/OFF機能",
+        r"12個のON/OFF機能",
         readme,
-        "README must explain the fourteen-toggle scope in beginner-facing language",
-        failures,
-    )
-    require(
-        r"### Air Placement",
-        readme,
-        "README must document Air Placement usage and boundaries",
+        "README must explain the twelve-toggle scope in beginner-facing language",
         failures,
     )
     require(
@@ -109,18 +104,29 @@ def main() -> int:
         failures,
     )
 
+    for retired_heading in (
+        "### Air Placement",
+        "### Ancient Debris Analyzer",
+        "### Warden Risk Analyzer",
+    ):
+        if retired_heading in readme:
+            failures.append(f"README still documents retired feature: {retired_heading[4:]}")
+
     for marker in (
         "python scripts/bump_version.py patch",
         "python scripts/bump_version.py minor",
         "exact CI-verified runtime JAR",
         f"`{jar_goal} bytes`",
         f"`{jar_max} bytes`",
-        "toggle可能なruntime featureは現在14個",
-        "Air Placement",
+        "toggle可能なruntime featureは現在12個",
         "GitHub Issues",
     ):
         if marker not in development:
             failures.append(f"DEVELOPMENT.md is missing current contract marker: {marker}")
+
+    for retired_marker in ("Air Placement", "Ancient Debris Analyzer", "Warden Risk Analyzer"):
+        if retired_marker in development:
+            failures.append(f"DEVELOPMENT.md still treats retired feature as active: {retired_marker}")
 
     for relative in RETIRED_DOCUMENTS:
         if (ROOT / relative).exists():
