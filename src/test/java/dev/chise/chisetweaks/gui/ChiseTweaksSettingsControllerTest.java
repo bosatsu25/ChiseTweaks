@@ -42,6 +42,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.FILTER)).containsAll(
                 List.of("focusBlocks", "focusEntities", "editBlockFilter", "editEntityFilter")));
         assertEquals(List.of(
+                        "placement.tools", "airPlacement",
                         "inspector.title", "inspector.noTarget", "placement.title", "placement.none",
                         "pattern.title", "pattern.select", "pattern.inactive"),
                 ids(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR)));
@@ -58,6 +59,7 @@ final class ChiseTweaksSettingsControllerTest {
         var controller = new ChiseTweaksSettingsController();
         var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
         var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
+        var inspector = controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR);
         var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
 
@@ -69,6 +71,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals("Kelp Highlight", row(highlight, "kelp").name());
         assertEquals("Block Filter", row(visual, "focusBlocks").name());
         assertEquals("Entity Filter", row(visual, "focusEntities").name());
+        assertEquals("Air Placement", row(inspector, "airPlacement").name());
         assertEquals("Lava Analyzer", row(analyzer, "lava").name());
         assertEquals("Ancient Debris Analyzer", row(analyzer, "ancientDebrisAnalyzer").name());
         assertEquals("Low Fire", row(visibility, "fireVisibility").name());
@@ -81,6 +84,7 @@ final class ChiseTweaksSettingsControllerTest {
         var controller = new ChiseTweaksSettingsController();
         var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
         var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
+        var inspector = controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR);
         var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
 
@@ -93,6 +97,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertSame(FeatureSwitches.BUILDER_FOCUS_BLOCKS, row(visual, "focusBlocks").booleanConfig());
         assertSame(FeatureSwitches.BUILDER_FOCUS_ENTITIES, row(visual, "focusEntities").booleanConfig());
         assertSame(BuilderFocusConfig.REFRESH_RENDERER, row(visual, "refreshRenderer").booleanConfig());
+        assertSame(FeatureSwitches.AIR_PLACEMENT, row(inspector, "airPlacement").booleanConfig());
         assertSame(FeatureSwitches.LAVA_HIGHLIGHT, row(analyzer, "lava").booleanConfig());
         assertSame(FeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
                 row(analyzer, "ancientDebrisAnalyzer").booleanConfig());
