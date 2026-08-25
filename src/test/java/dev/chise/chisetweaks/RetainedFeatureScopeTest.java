@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class RetainedFeatureScopeTest {
     @Test
-    void canonicalScopeContainsExactlyTheFourteenRetainedFeatures() {
+    void canonicalScopeContainsExactlyTheFifteenRetainedFeatures() {
         assertEquals(List.of(
                 FeatureDefinition.AIR_PLACEMENT,
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
@@ -27,13 +27,14 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.NETHER_PALETTE,
                 FeatureDefinition.KELP_HIGHLIGHT,
                 FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
+                FeatureDefinition.WARDEN_RISK_ANALYZER,
                 FeatureDefinition.FIRE_VISIBILITY,
                 FeatureDefinition.LAVA_HIGHLIGHT,
                 FeatureDefinition.BRIGHT_CHEST,
                 FeatureDefinition.BRIGHT_CONCRETE), FeatureDefinition.VALUES);
-        assertEquals(14, FeatureDefinition.VALUES.size());
+        assertEquals(15, FeatureDefinition.VALUES.size());
         assertEquals(FeatureArea.BUILDING, FeatureDefinition.AIR_PLACEMENT.area());
-        assertEquals(13, FeatureDefinition.VALUES.stream()
+        assertEquals(14, FeatureDefinition.VALUES.stream()
                 .filter(definition -> definition.area() == FeatureArea.RENDERING)
                 .count());
         assertTrue(FeatureDefinition.VALUES.stream().allMatch(definition -> definition.dependency().isEmpty()));
@@ -68,6 +69,7 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.MATERIAL_HIGHLIGHTS,
                 FeatureDefinition.KELP_HIGHLIGHT,
                 FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
+                FeatureDefinition.WARDEN_RISK_ANALYZER,
                 FeatureDefinition.FIRE_VISIBILITY,
                 FeatureDefinition.LAVA_HIGHLIGHT,
                 FeatureDefinition.BRIGHT_CHEST,
@@ -78,7 +80,7 @@ final class RetainedFeatureScopeTest {
     }
 
     @Test
-    void unifiedSwitchRegistryContainsAllFourteenFeatureSwitches() {
+    void unifiedSwitchRegistryContainsAllFifteenFeatureSwitches() {
         assertEquals(List.of(
                 FeatureDefinition.AIR_PLACEMENT,
                 FeatureDefinition.BUILDER_FOCUS_BLOCKS,
@@ -91,12 +93,13 @@ final class RetainedFeatureScopeTest {
                 FeatureDefinition.KELP_HIGHLIGHT,
                 FeatureDefinition.LAVA_HIGHLIGHT,
                 FeatureDefinition.ANCIENT_DEBRIS_ANALYZER,
+                FeatureDefinition.WARDEN_RISK_ANALYZER,
                 FeatureDefinition.FIRE_VISIBILITY,
                 FeatureDefinition.BRIGHT_CHEST,
                 FeatureDefinition.BRIGHT_CONCRETE),
                 FeatureSwitches.VALUES.stream().map(value -> value.definition()).toList());
         assertEquals(9, FeatureSwitches.FEATURE_CONFIG_VALUES.size());
-        assertEquals(5, FeatureSwitches.LOCAL_CONFIG_VALUES.size());
+        assertEquals(6, FeatureSwitches.LOCAL_CONFIG_VALUES.size());
     }
 
     @Test
@@ -111,6 +114,7 @@ final class RetainedFeatureScopeTest {
         assertEquals("Nether Highlight", FeatureDefinition.NETHER_PALETTE.englishName());
         assertEquals("Kelp Highlight", FeatureDefinition.KELP_HIGHLIGHT.englishName());
         assertEquals("Ancient Debris Analyzer", FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.englishName());
+        assertEquals("Warden Risk Analyzer", FeatureDefinition.WARDEN_RISK_ANALYZER.englishName());
         assertEquals("Low Fire", FeatureDefinition.FIRE_VISIBILITY.englishName());
         assertEquals("Lava Analyzer", FeatureDefinition.LAVA_HIGHLIGHT.englishName());
         assertEquals("Bright Chest", FeatureDefinition.BRIGHT_CHEST.englishName());
