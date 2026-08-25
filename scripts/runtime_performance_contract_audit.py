@@ -8,13 +8,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION = ROOT / "src/main/java"
-TEXTURE_RELOAD_CONTROLLER = Path(
-    "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java"
-)
 FULL_RELOAD_CONTROLLER = Path(
     "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java"
 )
-RELOAD_CONTROLLERS = {TEXTURE_RELOAD_CONTROLLER, FULL_RELOAD_CONTROLLER}
+BRIGHT_RENDERING_PATHS = {
+    Path("src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java"),
+    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java"),
+    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java"),
+}
 ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"),
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/AncientDebrisAnalyzerFeature.java"),
@@ -29,22 +30,16 @@ PLAIN_GET_CHUNK = re.compile(r"\bgetChunk\s*\(")
 JAVA_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
 JAVA_LINE_COMMENT = re.compile(r"//.*?$", re.MULTILINE)
 
-# These controller files intentionally reserve every method literally named get(...) or join(...)
-# as forbidden syntax. This conservative rule avoids pretending a regex is a Java data-flow engine.
-# The one existing synchronous state-holder read is removed as a complete Java identifier token;
-# any prefixed/suffixed receiver or any other wait remains visible to the detector.
 ALLOWED_EXACT_SYNCHRONOUS_READS = (
     re.compile(r"(?<![\w$])TERMINAL_RECOVERY\s*\.\s*get\s*\(\s*\)"),
 )
 
 
 def java_code_only(text: str) -> str:
-    """Remove comments so API names in documentation cannot affect the audit."""
     return JAVA_LINE_COMMENT.sub("", JAVA_BLOCK_COMMENT.sub("", text))
 
 
 def strict_reload_controller_code(text: str) -> str:
-    """Return executable controller text after removing only explicitly approved synchronous reads."""
     code = java_code_only(text)
     for allowed in ALLOWED_EXACT_SYNCHRONOUS_READS:
         code = allowed.sub("", code)
@@ -52,73 +47,31 @@ def strict_reload_controller_code(text: str) -> str:
 
 
 def blocking_wait_syntax(text: str) -> list[str]:
-    """Reject every remaining .get(...) or .join(...) inside the two reload controllers."""
     code = strict_reload_controller_code(text)
     findings: list[str] = []
     for match in BLOCKING_WAIT_SYNTAX.finditer(code):
         start = max(0, match.start() - 48)
         end = min(len(code), match.end() + 48)
-        snippet = " ".join(code[start:end].split())
-        findings.append(snippet)
+        findings.append(" ".join(code[start:end].split()))
     return findings
 
 
 def detector_contract_failures() -> list[str]:
-    """Self-test the intentionally conservative syntax contract against prior review regressions."""
     cases = (
         ("TERMINAL_RECOVERY.get();", False, "the one exact AtomicReference read remains allowed"),
         ("TERMINAL_RECOVERY . get ( );", False, "formatting around the exact allowed read remains allowed"),
-        (
-            "OTHER_TERMINAL_RECOVERY.get();",
-            True,
-            "a receiver merely ending with the allowed identifier must remain forbidden",
-        ),
-        (
-            "TERMINAL_RECOVERY_EXTRA.get();",
-            True,
-            "a receiver extending the allowed identifier must remain forbidden",
-        ),
-        (
-            "TERMINAL_RECOVERY.get(); future.join();",
-            True,
-            "the allowed read must not mask another wait on the same line",
-        ),
-        ("// future.get();", False, "comment-only wait examples must be ignored"),
-        ("future.get();", True, "zero-argument get is forbidden in a reload controller"),
-        ("future.get(5, TimeUnit.SECONDS);", True, "timed get is forbidden in a reload controller"),
-        ("future.join();", True, "join is forbidden in a reload controller"),
-        ("(future).join();", True, "parenthesized receiver waits are forbidden"),
-        (
-            "client.reloadResourcePacks()\n    .thenApply(v -> { record(v); return v; })\n    .join();",
-            True,
-            "block-bodied completion stages cannot hide a terminal wait",
-        ),
-        (
-            "var reload = client.delayTextureReload();\nreload.get(5, TimeUnit.SECONDS);",
-            True,
-            "stored delayed texture reload Future timed waits are forbidden without data-flow analysis",
-        ),
-        (
-            "consume(client.reloadResourcePacks(), cache.get(key));",
-            True,
-            "ordinary get calls are deliberately forbidden in the tiny reload-controller boundary",
-        ),
-        (
-            "Supplier<CompletableFuture<Void>> reload = () -> client.delayTextureReload(); reload.get();",
-            True,
-            "Supplier.get is deliberately forbidden in the reload-controller boundary",
-        ),
-        (
-            "void first() { var result = client.reloadResourcePacks(); } "
-            "void second() { other.get(); }",
-            True,
-            "method-scope ambiguity cannot bypass the strict controller syntax rule",
-        ),
+        ("OTHER_TERMINAL_RECOVERY.get();", True, "suffix lookalike remains forbidden"),
+        ("TERMINAL_RECOVERY_EXTRA.get();", True, "extended identifier remains forbidden"),
+        ("TERMINAL_RECOVERY.get(); future.join();", True, "another wait remains visible"),
+        ("// future.get();", False, "comment-only wait examples are ignored"),
+        ("future.get();", True, "zero-argument get is forbidden"),
+        ("future.get(5, TimeUnit.SECONDS);", True, "timed get is forbidden"),
+        ("future.join();", True, "join is forbidden"),
+        ("(future).join();", True, "parenthesized wait is forbidden"),
     )
     failures: list[str] = []
     for sample, expected, label in cases:
-        actual = bool(blocking_wait_syntax(sample))
-        if actual != expected:
+        if bool(blocking_wait_syntax(sample)) != expected:
             failures.append(f"blocking-wait detector self-test failed: {label}: sample={sample!r}")
     return failures
 
@@ -143,30 +96,11 @@ def audit() -> list[str]:
             "full resource reload callers changed; expected only the model reload controller: "
             f"actual={sorted(map(str, full_reload_callers))}"
         )
-    if delayed_texture_reload_callers != {TEXTURE_RELOAD_CONTROLLER}:
+    if delayed_texture_reload_callers:
         failures.append(
-            "delayed texture reload callers changed; expected only the built-in visibility pack controller: "
+            "delayed texture reload callers returned after Bright pack retirement: "
             f"actual={sorted(map(str, delayed_texture_reload_callers))}"
         )
-
-    texture = ROOT / TEXTURE_RELOAD_CONTROLLER
-    texture_text = texture.read_text(encoding="utf-8")
-    texture_code = java_code_only(texture_text)
-    for marker in (
-        "ResourceReloadCoordinator",
-        "whenComplete",
-        "client.execute",
-        "markPending",
-        "delayTextureReload",
-    ):
-        if marker not in texture_code:
-            failures.append(f"{texture.relative_to(ROOT)}: missing non-blocking texture reload marker {marker}")
-    if FULL_RELOAD_CALL.search(texture_code):
-        failures.append(
-            f"{texture.relative_to(ROOT)}: Bright built-in packs must not invoke the foreground full resource reload"
-        )
-    for wait in blocking_wait_syntax(texture_text):
-        failures.append(f"{texture.relative_to(ROOT)}: forbidden get/join syntax in reload controller: {wait}")
 
     ore = ROOT / FULL_RELOAD_CONTROLLER
     ore_text = ore.read_text(encoding="utf-8")
@@ -178,6 +112,29 @@ def audit() -> list[str]:
         failures.append(f"{ore.relative_to(ROOT)}: model rebuild must not silently downgrade to texture-only reload")
     for wait in blocking_wait_syntax(ore_text):
         failures.append(f"{ore.relative_to(ROOT)}: forbidden get/join syntax in reload controller: {wait}")
+
+    for relative in BRIGHT_RENDERING_PATHS:
+        path = ROOT / relative
+        if not path.is_file():
+            failures.append(f"{relative}: required direct Bright rendering boundary is missing")
+            continue
+        code = java_code_only(path.read_text(encoding="utf-8"))
+        if FULL_RELOAD_CALL.search(code) or DELAYED_TEXTURE_RELOAD_CALL.search(code):
+            failures.append(f"{relative}: Bright rendering must not trigger resource reload")
+        if blocking_wait_syntax(code):
+            failures.append(f"{relative}: Bright rendering must not block on get/join")
+
+    concrete = java_code_only((ROOT / "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java").read_text(encoding="utf-8"))
+    replacement_start = concrete.find("private void emitReplacementOrBase")
+    overlay_start = concrete.find("private void emitExtraModel")
+    replacement = concrete[replacement_start:overlay_start]
+    if replacement_start < 0 or overlay_start <= replacement_start:
+        failures.append("Bright Concrete replacement boundary disappeared")
+    else:
+        if "replacement.emitQuads" not in replacement:
+            failures.append("Bright Concrete must emit the replacement model directly")
+        if "FullbrightOverlayEmission.emit" in replacement:
+            failures.append("Bright Concrete must preserve normal Minecraft lighting")
 
     for relative in ANALYZERS:
         path = ROOT / relative
@@ -226,7 +183,9 @@ def main() -> int:
     print("RUNTIME PERFORMANCE CONTRACT AUDIT: PASS")
     print("blocking_reload_waits=false")
     print("full_resource_reload_callers=1_model_controller")
-    print("visibility_pack_reload=delayed_texture")
+    print("visibility_pack_reload=removed")
+    print("bright_rendering_resource_reload=false")
+    print("bright_concrete_normal_lighting=true")
     print("reload_controllers_get_join_free=true")
     print("analyzers_force_chunk_load=false")
     print("analyzer_budgets=bounded")
