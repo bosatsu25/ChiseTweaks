@@ -34,7 +34,7 @@ final class ChiseTweaksSettingsController {
         return new ChiseTweaksSettingsController();
     }
 
-    /** Static setting bindings initialize on first use; retained as the screen lifecycle hook. */
+    /** static setting bindingは初回参照時に初期化されるため、画面ライフサイクル用hookだけを保持する。 */
     void initialize() {}
 
     List<ChiseTweaksSettingRowDefinition> rows() {
