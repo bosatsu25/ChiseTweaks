@@ -2,8 +2,6 @@ package dev.chise.chisetweaks;
 
 import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
-import dev.chise.chisetweaks.config.LocalFeatureSettings;
-import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.feature.rendering.model.ChiseVisualModelPlugin;
 import dev.chise.chisetweaks.feature.resource.ChiseTexturePackRegistrar;
 import dev.chise.chisetweaks.feature.resource.VisibilityPackMigrationService;
@@ -34,8 +32,6 @@ public final class ChiseTweaksClient implements ClientModInitializer {
                 VisibilityPackMigrationService.migrate(Minecraft.getInstance()));
         SafeStartup.run("local-config", () -> LocalFeatureConfig.getInstance().load());
         SafeStartup.run("feature-config", FeatureConfig::loadFromFile);
-        SafeStartup.run("local-settings", LocalFeatureSettings::init);
-        SafeStartup.run("visual-target-settings", VisualTargetSettings::init);
         SafeStartup.run("feature-bindings", FeatureControlBindings::init);
         SafeStartup.run("visual-model-plugin", ChiseVisualModelPlugin::register);
         SafeStartup.run("feature-manager", () -> FeatureManager.getInstance().init());
