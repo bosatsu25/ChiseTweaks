@@ -8,6 +8,7 @@ import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
+import dev.chise.chisetweaks.feature.rendering.WardenRiskAnalyzerFeature;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
@@ -33,10 +34,7 @@ final class ChiseTweaksSettingsCatalog {
         } else if (resolved == ChiseTweaksSettingsController.Surface.FILTER) {
             addFilterRows(rows);
         } else if (resolved == ChiseTweaksSettingsController.Surface.INSPECTOR) {
-            addInspectorRows(
-                    rows,
-                    CrosshairInspector.Snapshot.noTarget(),
-                    false);
+            addInspectorRows(rows, CrosshairInspector.Snapshot.noTarget(), false);
         } else if (resolved == ChiseTweaksSettingsController.Surface.ANALYZER) {
             addAnalyzerRows(rows);
         } else {
@@ -57,9 +55,7 @@ final class ChiseTweaksSettingsCatalog {
         if (surface == ChiseTweaksSettingsController.Surface.FILTER) return "Filter";
         if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) return "Inspector";
         if (surface == ChiseTweaksSettingsController.Surface.ANALYZER) return "Analyzer";
-        return surface == ChiseTweaksSettingsController.Surface.VISIBILITY
-                ? "Visibility"
-                : "Highlight";
+        return surface == ChiseTweaksSettingsController.Surface.VISIBILITY ? "Visibility" : "Highlight";
     }
 
     private static void addHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
@@ -106,29 +102,19 @@ final class ChiseTweaksSettingsCatalog {
                 "Automatically use the bounded Nether visibility profile when appropriate.");
 
         headerLiteral(rows, "detail.highlight.traceAppearance", "Trace Appearance");
-        integerLiteral(rows, "fineThreadColor",
-                LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET,
-                "Fine Line Highlight - Color",
-                "AUTO keeps the current Chise palette.", 1);
-        integerLiteral(rows, "fineThreadOpacity",
-                LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
-                "Fine Line Highlight - Opacity",
-                "20-100%", 5);
-        integerLiteral(rows, "hiddenSurfaceColor",
-                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
-                "Hidden Block Highlight - Color",
-                "AUTO keeps per-target colors.", 1);
-        integerLiteral(rows, "hiddenSurfaceOpacity",
-                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
-                "Hidden Block Highlight - Opacity",
-                "20-100%", 5);
+        integerLiteral(rows, "fineThreadColor", LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET,
+                "Fine Line Highlight - Color", "AUTO keeps the current Chise palette.", 1);
+        integerLiteral(rows, "fineThreadOpacity", LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
+                "Fine Line Highlight - Opacity", "20-100%", 5);
+        integerLiteral(rows, "hiddenSurfaceColor", LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
+                "Hidden Block Highlight - Color", "AUTO keeps per-target colors.", 1);
+        integerLiteral(rows, "hiddenSurfaceOpacity", LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
+                "Hidden Block Highlight - Opacity", "20-100%", 5);
 
         headerLiteral(rows, "detail.highlight.technicalTargets", "Fine Line Targets");
         for (ChiseBooleanSetting option : TECHNICAL_TARGETS) target(rows, option);
-
         header(rows, "detail.highlight.materialTargets", "screen.chisetweaks.settings.section.material_targets");
         for (ChiseBooleanSetting option : RESOURCE_TARGETS) target(rows, option);
-
         header(rows, "detail.highlight.hiddenTargets", "screen.chisetweaks.settings.section.hidden_targets");
         for (ChiseBooleanSetting option : VISIBILITY_TARGETS) target(rows, option);
     }
@@ -144,13 +130,11 @@ final class ChiseTweaksSettingsCatalog {
         bool(rows, "refreshRenderer", BuilderFocusConfig.REFRESH_RENDERER,
                 "config.option.refreshbuilderfocusrenderer.name",
                 "config.option.refreshbuilderfocusrenderer.comment");
-        action(rows, "editBlockFilter",
-                FeatureDefinition.BUILDER_FOCUS_BLOCKS.englishName(),
+        action(rows, "editBlockFilter", FeatureDefinition.BUILDER_FOCUS_BLOCKS.englishName(),
                 text("config.comment.builderfocusblocks"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER,
                 text("screen.chisetweaks.settings.action.settings"));
-        action(rows, "editEntityFilter",
-                FeatureDefinition.BUILDER_FOCUS_ENTITIES.englishName(),
+        action(rows, "editEntityFilter", FeatureDefinition.BUILDER_FOCUS_ENTITIES.englishName(),
                 text("config.comment.builderfocusentities"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER,
                 text("screen.chisetweaks.settings.action.settings"));
@@ -159,11 +143,13 @@ final class ChiseTweaksSettingsCatalog {
     private static void addAnalyzerRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.analyzer", "Analyzer");
         boolLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
-                FeatureDefinition.LAVA_HIGHLIGHT.englishName(),
-                text("config.comment.locallavahighlight"));
+                FeatureDefinition.LAVA_HIGHLIGHT.englishName(), text("config.comment.locallavahighlight"));
         boolLiteral(rows, "ancientDebrisAnalyzer", FeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
                 FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.englishName(),
                 text("config.comment.localancientdebrisanalyzer"));
+        boolLiteral(rows, "wardenRiskAnalyzer", FeatureSwitches.WARDEN_RISK_ANALYZER,
+                FeatureDefinition.WARDEN_RISK_ANALYZER.englishName(),
+                "Analyze loaded summon-capable Shriekers, Sculk Sensors and loaded Wardens without claiming server-only warning state.");
 
         headerLiteral(rows, "detail.analyzer.lava", "Lava Analyzer Settings");
         integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
@@ -186,13 +172,42 @@ final class ChiseTweaksSettingsCatalog {
         integer(rows, "ancientDebrisMaxMarkers", LocalFeatureSettings.ANCIENT_DEBRIS_ANALYZER_MAX_MARKERS,
                 "screen.chisetweaks.settings.debris_max.name",
                 "screen.chisetweaks.settings.debris_max.description", 8);
+
+        headerLiteral(rows, "detail.analyzer.warden", "Warden Risk Analyzer Settings");
+        integerLiteral(rows, "wardenRange", LocalFeatureSettings.WARDEN_RISK_ANALYZER_RANGE,
+                "Analysis Range", "Loaded chunks only. 16-64 blocks; default 48.", 16);
+        integerLiteral(rows, "wardenMaxMarkers", LocalFeatureSettings.WARDEN_RISK_ANALYZER_MAX_MARKERS,
+                "Danger Marker Limit", "Maximum retained summon-capable Shrieker markers.", 8);
+        addWardenStatusRows(rows);
+    }
+
+    private static void addWardenStatusRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        WardenRiskAnalyzerFeature.AnalysisSnapshot snapshot = WardenRiskAnalyzerFeature.currentSnapshot();
+        String inactive = "OFF";
+        info(rows, "warden.dangerous", "Dangerous Shriekers — AUTHORITATIVE",
+                snapshot.enabled() ? Integer.toString(snapshot.dangerousShriekers()) : inactive);
+        info(rows, "warden.other", "Other Shriekers — AUTHORITATIVE",
+                snapshot.enabled() ? Integer.toString(snapshot.otherShriekers()) : inactive);
+        String sensors = snapshot.sensorsCapped() ? snapshot.sensors() + "+" : Integer.toString(snapshot.sensors());
+        info(rows, "warden.sensors", "Nearby Sculk Sensors — AUTHORITATIVE",
+                snapshot.enabled() ? sensors : inactive);
+        info(rows, "warden.loaded", "Loaded Warden — AUTHORITATIVE",
+                snapshot.enabled()
+                        ? (snapshot.loadedWardenDetected() ? "DETECTED" : "NOT DETECTED IN LOADED SCOPE")
+                        : inactive);
+        info(rows, "warden.warning", "Server Warning Level", "UNAVAILABLE — server-owned state");
+        info(rows, "warden.risk", "Possible Risk Area — PREDICTED",
+                snapshot.enabled() && snapshot.dangerousShriekers() > 0
+                        ? "POSSIBLE near loaded summon-capable Shriekers"
+                        : "No loaded summon-capable Shrieker in current scope");
+        info(rows, "warden.vision", "Analysis Vision",
+                "UNAVAILABLE — Chise does not take persistent gamma or shader-fragile lightmap ownership");
     }
 
     private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.visibility", "Visibility");
         boolLiteral(rows, "fireVisibility", FeatureSwitches.FIRE_VISIBILITY,
-                FeatureDefinition.FIRE_VISIBILITY.englishName(),
-                "Lower only the first-person fire overlay.");
+                FeatureDefinition.FIRE_VISIBILITY.englishName(), "Lower only the first-person fire overlay.");
         boolLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
                 FeatureDefinition.BRIGHT_CHEST.englishName(), "Improve Chest and Double Chest visibility.");
         boolLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
@@ -208,77 +223,58 @@ final class ChiseTweaksSettingsCatalog {
                 : snapshot;
         header(rows, "inspector.title", "screen.chisetweaks.inspector.title");
         if (resolved.targetKind() == HitResult.Type.MISS) {
-            info(rows, "inspector.noTarget",
-                    text("screen.chisetweaks.inspector.no_target"),
+            info(rows, "inspector.noTarget", text("screen.chisetweaks.inspector.no_target"),
                     text("screen.chisetweaks.inspector.no_target.description"));
         } else {
             String targetLabel = resolved.targetKind() == HitResult.Type.BLOCK
                     ? text("screen.chisetweaks.inspector.target.block")
                     : text("screen.chisetweaks.inspector.target.entity");
             info(rows, "inspector.target", targetLabel, resolved.targetId());
-            if (resolved.targetKind() == HitResult.Type.BLOCK) {
-                addSemanticStateRows(rows, resolved.stateProperties());
-            }
-            info(rows, "inspector.filter",
-                    text("screen.chisetweaks.inspector.filter"),
+            if (resolved.targetKind() == HitResult.Type.BLOCK) addSemanticStateRows(rows, resolved.stateProperties());
+            info(rows, "inspector.filter", text("screen.chisetweaks.inspector.filter"),
                     text(resolved.filterDecision().hidden()
                             ? "screen.chisetweaks.inspector.filter.hidden"
                             : "screen.chisetweaks.inspector.filter.visible"));
-            info(rows, "inspector.matchedRule",
-                    text("screen.chisetweaks.inspector.matched_rule"),
+            info(rows, "inspector.matchedRule", text("screen.chisetweaks.inspector.matched_rule"),
                     filterReason(resolved.filterDecision()));
-            info(rows, "inspector.features",
-                    text("screen.chisetweaks.inspector.responsible_feature"),
+            info(rows, "inspector.features", text("screen.chisetweaks.inspector.responsible_feature"),
                     resolved.responsibleFeatures().isEmpty()
                             ? text("screen.chisetweaks.inspector.none")
                             : joinFeatures(resolved.responsibleFeatures(), false, false));
-            info(rows, "inspector.renderMode",
-                    text("screen.chisetweaks.inspector.render_mode"),
+            info(rows, "inspector.renderMode", text("screen.chisetweaks.inspector.render_mode"),
                     resolved.responsibleFeatures().isEmpty()
                             ? text("screen.chisetweaks.inspector.none")
-                            : joinFeatures(
-                                    resolved.responsibleFeatures(),
-                                    true,
-                                    resolved.filterDecision().hidden()));
+                            : joinFeatures(resolved.responsibleFeatures(), true, resolved.filterDecision().hidden()));
         }
         addPlacementRows(rows, resolved);
         addPatternConsistencyRows(rows);
         if (includeHelp) addCommonHelpRows(rows);
     }
 
-    private static void addPatternConsistencyRows(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+    private static void addPatternConsistencyRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         PatternConsistencyInspector pattern = PatternConsistencyInspector.activeInspector();
         header(rows, "pattern.title", "screen.chisetweaks.pattern.title");
-        action(rows, "pattern.select",
-                text("screen.chisetweaks.pattern.select.name"),
+        action(rows, "pattern.select", text("screen.chisetweaks.pattern.select.name"),
                 text("screen.chisetweaks.pattern.select.description"),
                 ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE,
                 text("screen.chisetweaks.pattern.select.action"));
         if (pattern == null || !pattern.hasReference()) {
-            info(rows, "pattern.inactive",
-                    text("screen.chisetweaks.inspector.none"),
+            info(rows, "pattern.inactive", text("screen.chisetweaks.inspector.none"),
                     text("screen.chisetweaks.pattern.inactive.description"));
             return;
         }
-        info(rows, "pattern.reference",
-                text("screen.chisetweaks.pattern.reference"),
+        info(rows, "pattern.reference", text("screen.chisetweaks.pattern.reference"),
                 pattern.referenceId() + "\n" + semanticProperties(pattern.referenceProperties()));
-        info(rows, "pattern.status",
-                text("screen.chisetweaks.pattern.status"),
-                Component.translatable(
-                        "screen.chisetweaks.pattern.status.value",
+        info(rows, "pattern.status", text("screen.chisetweaks.pattern.status"),
+                Component.translatable("screen.chisetweaks.pattern.status.value",
                         pattern.compared(), pattern.matches(), pattern.mismatchTotal()).getString());
         for (String group : PROPERTY_GROUPS) {
             String description = pattern.mismatchSummary(group);
             if (description.isEmpty()) continue;
             info(rows, "pattern.mismatch." + group,
-                    text("screen.chisetweaks.inspector.state." + group),
-                    description);
+                    text("screen.chisetweaks.inspector.state." + group), description);
         }
-        action(rows, "pattern.clear",
-                text("screen.chisetweaks.pattern.clear.action"),
-                "",
+        action(rows, "pattern.clear", text("screen.chisetweaks.pattern.clear.action"), "",
                 ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE,
                 text("screen.chisetweaks.pattern.clear.action"));
     }
@@ -289,40 +285,30 @@ final class ChiseTweaksSettingsCatalog {
         header(rows, "placement.title", "screen.chisetweaks.placement.title");
         boolean comparison = placement.placementResult() != PlacementComparisonTracker.NONE;
         if (!comparison && placement.clickedFace() == null) {
-            info(rows, "placement.none",
-                    text("screen.chisetweaks.inspector.none"),
-                    "");
+            info(rows, "placement.none", text("screen.chisetweaks.inspector.none"), "");
             return;
         }
         if (placement.predictedPlacement() == null) {
-            info(rows, "placement.impossible",
-                    text("screen.chisetweaks.placement.impossible"),
+            info(rows, "placement.impossible", text("screen.chisetweaks.placement.impossible"),
                     placementReason(placement));
             return;
         }
         var state = placement.predictedPlacement();
-        info(rows, "placement.predicted",
-                text("screen.chisetweaks.placement.predicted"),
+        info(rows, "placement.predicted", text("screen.chisetweaks.placement.predicted"),
                 semanticProperties(CrosshairInspector.placementStateProperties(state)));
         if (!comparison) {
-            info(rows, "placement.reason",
-                    text("screen.chisetweaks.inspector.matched_rule"),
+            info(rows, "placement.reason", text("screen.chisetweaks.inspector.matched_rule"),
                     placementReason(placement));
         } else if (placement.actualPlacement() == null) {
-            info(rows, "placement.actual",
-                    text("screen.chisetweaks.placement.actual"),
+            info(rows, "placement.actual", text("screen.chisetweaks.placement.actual"),
                     text("screen.chisetweaks.placement.awaiting_actual"));
         } else {
-            info(rows, "placement.actual",
-                    text("screen.chisetweaks.placement.actual"),
-                    semanticProperties(CrosshairInspector.actualPlacementStateProperties(
-                            placement.actualPlacement())));
-            info(rows, "placement.result",
-                    text("screen.chisetweaks.placement.result"),
+            info(rows, "placement.actual", text("screen.chisetweaks.placement.actual"),
+                    semanticProperties(CrosshairInspector.actualPlacementStateProperties(placement.actualPlacement())));
+            info(rows, "placement.result", text("screen.chisetweaks.placement.result"),
                     text(comparisonResultKey(placement.placementResult())));
             if (placement.placementResult() == PlacementComparisonTracker.ADJUSTED) {
-                info(rows, "placement.changed",
-                        text("screen.chisetweaks.placement.changed"),
+                info(rows, "placement.changed", text("screen.chisetweaks.placement.changed"),
                         changedPlacementProperties(state, placement.actualPlacement()));
             }
         }
@@ -339,8 +325,7 @@ final class ChiseTweaksSettingsCatalog {
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             List<String> properties) {
         if (properties.isEmpty()) {
-            info(rows, "inspector.blockState",
-                    text("screen.chisetweaks.inspector.block_state"),
+            info(rows, "inspector.blockState", text("screen.chisetweaks.inspector.block_state"),
                     text("screen.chisetweaks.inspector.none"));
             return;
         }
@@ -348,8 +333,7 @@ final class ChiseTweaksSettingsCatalog {
             String description = semanticProperties(properties, group);
             if (!description.isEmpty()) {
                 info(rows, "inspector.state." + group,
-                        text("screen.chisetweaks.inspector.state." + group),
-                        description);
+                        text("screen.chisetweaks.inspector.state." + group), description);
             }
         }
     }
@@ -385,9 +369,7 @@ final class ChiseTweaksSettingsCatalog {
             String name = property.substring(0, separator);
             if (requiredGroup != null && !requiredGroup.equals(semanticPropertyGroup(name))) continue;
             if (!result.isEmpty()) result.append('\n');
-            result.append(humanize(name))
-                    .append("  ")
-                    .append(humanize(property.substring(separator + 1)));
+            result.append(humanize(name)).append("  ").append(humanize(property.substring(separator + 1)));
         }
         return result.toString();
     }
@@ -402,10 +384,8 @@ final class ChiseTweaksSettingsCatalog {
             String actualProperty = findProperty(after, name);
             if (actualProperty == null || property.equals(actualProperty)) continue;
             if (!changed.isEmpty()) changed.append('\n');
-            changed.append(humanize(name))
-                    .append(": ")
-                    .append(humanize(property.substring(separator + 1)))
-                    .append(" → ")
+            changed.append(humanize(name)).append(": ")
+                    .append(humanize(property.substring(separator + 1))).append(" → ")
                     .append(humanize(actualProperty.substring(actualProperty.indexOf('=') + 1)));
         }
         return changed.toString();
@@ -413,9 +393,7 @@ final class ChiseTweaksSettingsCatalog {
 
     private static String findProperty(List<String> properties, String name) {
         String prefix = name + "=";
-        for (String property : properties) {
-            if (property.startsWith(prefix)) return property;
-        }
+        for (String property : properties) if (property.startsWith(prefix)) return property;
         return null;
     }
 
@@ -425,15 +403,11 @@ final class ChiseTweaksSettingsCatalog {
     }
 
     private static String filterReason(BuilderFocusVisibility.FilterDecision decision) {
-        String reason = text("screen.chisetweaks.inspector.reason."
-                + decision.reason());
+        String reason = text("screen.chisetweaks.inspector.reason." + decision.reason());
         return decision.matchedRule().isEmpty() ? reason : reason + ": " + decision.matchedRule();
     }
 
-    private static String joinFeatures(
-            List<FeatureDefinition> features,
-            boolean modes,
-            boolean hidden) {
+    private static String joinFeatures(List<FeatureDefinition> features, boolean modes, boolean hidden) {
         StringBuilder result = new StringBuilder();
         for (FeatureDefinition feature : features) {
             if (!result.isEmpty()) result.append('\n');
@@ -445,7 +419,8 @@ final class ChiseTweaksSettingsCatalog {
     static String renderModeKey(FeatureDefinition feature, boolean hidden) {
         if (hidden) return "screen.chisetweaks.inspector.render_mode.suppressed";
         boolean throughWall = feature == FeatureDefinition.LAVA_HIGHLIGHT
-                || feature == FeatureDefinition.ANCIENT_DEBRIS_ANALYZER;
+                || feature == FeatureDefinition.ANCIENT_DEBRIS_ANALYZER
+                || feature == FeatureDefinition.WARDEN_RISK_ANALYZER;
         return throughWall
                 ? "screen.chisetweaks.inspector.render_mode.through_wall"
                 : "screen.chisetweaks.inspector.render_mode.visible";
@@ -453,10 +428,8 @@ final class ChiseTweaksSettingsCatalog {
 
     private static void addCommonHelpRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         header(rows, "help.title", "screen.chisetweaks.help.title");
-        for (String section : List.of(
-                "highlight", "filter", "analyzer", "visibility", "settings", "troubleshooting")) {
-            info(rows, "help." + section,
-                    text("screen.chisetweaks.help." + section + ".name"),
+        for (String section : List.of("highlight", "filter", "analyzer", "visibility", "settings", "troubleshooting")) {
+            info(rows, "help." + section, text("screen.chisetweaks.help." + section + ".name"),
                     text("screen.chisetweaks.help." + section + ".description"));
         }
     }
@@ -476,8 +449,7 @@ final class ChiseTweaksSettingsCatalog {
 
     private static void feature(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
             ChiseBooleanSetting config, FeatureDefinition definition, String descriptionKey) {
-        rows.add(ChiseTweaksSettingRowDefinition.bool(
-                id, definition.englishName(), text(descriptionKey), config));
+        rows.add(ChiseTweaksSettingRowDefinition.bool(id, definition.englishName(), text(descriptionKey), config));
     }
 
     private static void bool(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
