@@ -35,17 +35,19 @@ final class HistoricalConfigFixtureTest {
     }
 
     @Test
-    void version092PreservesExplicitAnalyzerValues() throws IOException {
-        LocalFeatureConfig config = load("0.9.2-local.json");
+    void version092PreservesRetainedValuesAndIgnoresRetiredAnalyzerKeys() throws IOException {
+        String json = fixtureText("0.9.2-local.json");
+        assertTrue(json.contains("\"ancientDebrisAnalyzerEnabled\""));
+        assertTrue(json.contains("\"ancientDebrisAnalyzerRangeBlocks\""));
+        assertTrue(json.contains("\"ancientDebrisAnalyzerMaxMarkers\""));
+
+        LocalFeatureConfig config = loadDocument(json, "0.9.2-local.json");
         assertTrue(config.lavaHighlightEnabled);
-        assertTrue(config.ancientDebrisAnalyzerEnabled);
         assertTrue(config.fireVisibilityEnabled);
         assertEquals(7, config.lavaAnalyzerHorizontalRadius);
         assertEquals(2, config.lavaAnalyzerVerticalRadius);
         assertEquals(30, config.lavaAnalyzerIntervalTicks);
         assertEquals(21, config.lavaAnalyzerMaxOverlayResults);
-        assertEquals(192, config.ancientDebrisAnalyzerRangeBlocks);
-        assertEquals(96, config.ancientDebrisAnalyzerMaxMarkers);
         assertEquals(VisualTargetSelectionPolicy.ALL_TARGETS_MASK, config.visualTargetMask);
     }
 
@@ -59,13 +61,20 @@ final class HistoricalConfigFixtureTest {
     }
 
     private static LocalFeatureConfig load(String fixture) throws IOException {
+        return loadDocument(fixtureText(fixture), fixture);
+    }
+
+    private static LocalFeatureConfig loadDocument(String json, String fixture) {
+        LocalFeatureConfig config = new LocalFeatureConfig();
+        assertTrue(config.replaceFromJsonDocument(json), fixture);
+        return config;
+    }
+
+    private static String fixtureText(String fixture) throws IOException {
         String resource = "/config-fixtures/" + fixture;
         try (InputStream stream = HistoricalConfigFixtureTest.class.getResourceAsStream(resource)) {
             if (stream == null) throw new IOException("Missing fixture: " + resource);
-            String json = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-            LocalFeatureConfig config = new LocalFeatureConfig();
-            assertTrue(config.replaceFromJsonDocument(json), fixture);
-            return config;
+            return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 }
