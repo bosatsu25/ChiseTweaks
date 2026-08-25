@@ -20,14 +20,7 @@ public final class LocalFeatureSwitch extends ChiseBooleanSetting {
             String configName,
             Predicate<LocalFeatureConfig> getter,
             BiConsumer<LocalFeatureConfig, Boolean> setter) {
-        super(
-                configName,
-                DEFAULT_ENABLED,
-                definition.englishName(),
-                definition.englishName(),
-                "ChiseTweaks local visual feature.",
-                "ChiseTweaks のローカル描画機能です。",
-                SettingPersistence.LOCAL_CONFIG);
+        super(configName, DEFAULT_ENABLED, SettingPersistence.LOCAL_CONFIG);
         this.definition = Objects.requireNonNull(definition, "definition");
         this.getter = Objects.requireNonNull(getter, "getter");
         this.setter = Objects.requireNonNull(setter, "setter");
