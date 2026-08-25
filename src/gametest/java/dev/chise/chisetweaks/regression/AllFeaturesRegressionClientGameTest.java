@@ -55,9 +55,10 @@ public final class AllFeaturesRegressionClientGameTest implements FabricClientGa
                 level.setBlockAndUpdate(origin.offset(10, 0, 0), Blocks.KELP.defaultBlockState());
             });
 
-            context.waitTicks(40);
-            world.getConnection().waitForChunksRender();
-            context.waitTicks(20);
+            // Client-side chunk download already completed above. Keep the world alive for
+            // multiple render/tick cycles so block model, BlockEntity, overlay and analyzer
+            // paths all execute together without depending on non-portable test helpers.
+            context.waitTicks(60);
 
             context.runOnClient(client -> {
                 requireAllEnabled(switches);
