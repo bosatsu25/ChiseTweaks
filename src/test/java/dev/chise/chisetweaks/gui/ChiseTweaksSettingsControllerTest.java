@@ -1,11 +1,8 @@
 package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
-import dev.chise.chisetweaks.config.ChestVisibilitySetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
-import dev.chise.chisetweaks.config.LocalFeatureSwitches;
-import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -96,12 +93,12 @@ final class ChiseTweaksSettingsControllerTest {
         assertSame(FeatureSwitches.BUILDER_FOCUS_BLOCKS, row(visual, "focusBlocks").booleanConfig());
         assertSame(FeatureSwitches.BUILDER_FOCUS_ENTITIES, row(visual, "focusEntities").booleanConfig());
         assertSame(BuilderFocusConfig.REFRESH_RENDERER, row(visual, "refreshRenderer").booleanConfig());
-        assertSame(LocalFeatureSwitches.LAVA_HIGHLIGHT, row(analyzer, "lava").booleanConfig());
-        assertSame(LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
+        assertSame(FeatureSwitches.LAVA_HIGHLIGHT, row(analyzer, "lava").booleanConfig());
+        assertSame(FeatureSwitches.ANCIENT_DEBRIS_ANALYZER,
                 row(analyzer, "ancientDebrisAnalyzer").booleanConfig());
-        assertSame(LocalFeatureSwitches.FIRE_VISIBILITY, row(visibility, "fireVisibility").booleanConfig());
-        assertSame(ChestVisibilitySetting.INSTANCE, row(visibility, "chestVisibility").booleanConfig());
-        assertSame(WhiteConcreteVisibilitySetting.INSTANCE,
+        assertSame(FeatureSwitches.FIRE_VISIBILITY, row(visibility, "fireVisibility").booleanConfig());
+        assertSame(FeatureSwitches.BRIGHT_CHEST, row(visibility, "chestVisibility").booleanConfig());
+        assertSame(FeatureSwitches.BRIGHT_CONCRETE,
                 row(visibility, "whiteConcreteVisibility").booleanConfig());
     }
 
