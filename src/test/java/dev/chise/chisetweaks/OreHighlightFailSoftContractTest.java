@@ -14,16 +14,18 @@ final class OreHighlightFailSoftContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void resourcePackBaseIsEmittedBeforeAnyOptionalChiseWork() throws IOException {
+    void nonReplacementFeaturesEmitTheBaseBeforeOptionalOverlayWork() throws IOException {
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
-        int baseEmit = model.indexOf("super.emitQuads(emitter, level, pos, state, random, cullTest);");
-        int stateRead = model.indexOf("VisualRenderState.Snapshot renderState = VisualRenderState.current();", baseEmit);
-        int optionalBranch = model.indexOf("if (!shouldRender(renderState)) return;", stateRead);
+        int stateRead = model.indexOf("VisualRenderState.Snapshot renderState = VisualRenderState.current();");
+        int brightBranch = model.indexOf("if (kind == KIND_BRIGHT_CONCRETE)", stateRead);
+        int baseEmit = model.indexOf("super.emitQuads(emitter, level, pos, state, random, cullTest);", brightBranch);
+        int optionalBranch = model.indexOf("if (!shouldRender(renderState)) return;", baseEmit);
         int overlayEmit = model.indexOf("FullbrightOverlayEmission.emit(", optionalBranch);
-        assertTrue(baseEmit >= 0);
-        assertTrue(baseEmit < stateRead);
-        assertTrue(stateRead < optionalBranch);
+        assertTrue(stateRead >= 0);
+        assertTrue(brightBranch > stateRead);
+        assertTrue(baseEmit > brightBranch);
+        assertTrue(baseEmit < optionalBranch);
         assertTrue(optionalBranch < overlayEmit);
     }
 
@@ -49,6 +51,7 @@ final class OreHighlightFailSoftContractTest {
         assertTrue(model.contains("static FullbrightOverlayModel ore("));
         assertTrue(model.contains("static FullbrightOverlayModel glass("));
         assertTrue(model.contains("static FullbrightOverlayModel kelp("));
+        assertTrue(model.contains("static FullbrightOverlayModel brightConcrete("));
 
         assertTrue(emission.contains("boolean pushed = false"));
         assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
@@ -57,7 +60,7 @@ final class OreHighlightFailSoftContractTest {
         assertTrue(emission.contains("finally"));
         assertTrue(emission.contains("emitter.popTransform();"));
 
-        assertTrue(model.contains("keeping the resource-pack base model without the Chise overlay"));
+        assertTrue(model.contains("keeping the base model without the Chise visual layer"));
     }
 
     @Test
