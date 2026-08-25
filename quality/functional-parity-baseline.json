@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "baseline": {
     "version": "0.9.4+mc26.1.2",
     "commit": "397a2bf536d389fba86ee502bbaa12c2ad0fa4e8",
@@ -17,7 +17,9 @@
     "kelp_highlight",
     "ancient_debris_analyzer",
     "fire_visibility",
-    "lava_highlight"
+    "lava_highlight",
+    "bright_chest",
+    "bright_concrete"
   ],
   "settings": {
     "globalFeatureSwitches": {
@@ -33,7 +35,9 @@
     "localFeatureSwitches": {
       "localFireVisibility": false,
       "localLavaHighlight": false,
-      "localAncientDebrisAnalyzer": false
+      "localAncientDebrisAnalyzer": false,
+      "brightChest": true,
+      "brightConcrete": true
     },
     "localSettings": {
       "localOreHighlightAnimation": false,
@@ -83,19 +87,12 @@
       "builderFocusEntityRuleMode": "NONE",
       "builderFocusEntityWhitelist": [],
       "builderFocusEntityBlacklist": []
-    },
-    "visibilityPacks": {
-      "chestVisibility": true,
-      "whiteConcreteVisibility": true
     }
   },
-  "resourcePackIds": [
-    "chisetweaks:chise_chest_visibility",
-    "chisetweaks:chise_white_concrete_visibility"
-  ],
+  "resourcePackIds": [],
   "mixins": [
     "rendering.BuilderFocusBlockMixin",
-    "rendering.BuilderFocusBlockEntityMixin",
+    "rendering.BlockEntityVisualStateMixin",
     "rendering.BuilderFocusEntityMixin",
     "rendering.FireVisibilityMixin"
   ],
@@ -140,14 +137,7 @@
     "client-join",
     "client-disconnect",
     "component-init-quarantine",
-    "component-quarantine",
-    "resource-pack-selection-failure",
-    "resource-pack-rollback-failure",
-    "resource-reload-failure",
-    "resource-reload-terminal-failure",
-    "resource-reload-recovery",
-    "visibility-pack-migration",
-    "visibility-pack-migration-deferred"
+    "component-quarantine"
   ],
   "migrationFixtures": [
     "src/test/resources/config-fixtures/0.7.7-local.json",
