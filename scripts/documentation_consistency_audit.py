@@ -78,6 +78,24 @@ def main() -> int:
         "README must link to DEVELOPMENT.md",
         failures,
     )
+    require(
+        r"13個のON/OFF機能",
+        readme,
+        "README must explain the thirteen-toggle scope in beginner-facing language",
+        failures,
+    )
+    require(
+        r"Bright系は専用PNGを持ちません",
+        readme,
+        "README must explain the texture-free Bright rendering architecture",
+        failures,
+    )
+    require(
+        r"Resource Pack selection / reloadへ依存しない",
+        development,
+        "DEVELOPMENT.md must document Bright non-pack rendering ownership",
+        failures,
+    )
 
     for marker in (
         "python scripts/bump_version.py patch",
@@ -85,7 +103,7 @@ def main() -> int:
         "exact CI-verified runtime JAR",
         f"`{jar_goal} bytes`",
         f"`{jar_max} bytes`",
-        "runtime featureは現在11個",
+        "toggle可能なruntime featureは現在13個",
         "GitHub Issues",
     ):
         if marker not in development:

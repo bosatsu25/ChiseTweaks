@@ -1,7 +1,6 @@
 package dev.chise.chisetweaks.runtime;
 
 import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
-import dev.chise.chisetweaks.feature.resource.ChiseTexturePackController;
 import net.minecraft.client.Minecraft;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,14 +23,12 @@ public final class ClientSessionState {
         currentSessionId = SESSION_SEQUENCE.incrementAndGet();
         phase = SessionPhase.JOINED;
         reset(client);
-        ChiseTexturePackController.onSessionStart(client);
         RuntimeDiagnostics.log(RuntimeDiagnosticEvent.CLIENT_JOIN, client);
     }
 
     public static void onDisconnect(Minecraft client) {
         phase = SessionPhase.DISCONNECTING;
         RuntimeDiagnostics.log(RuntimeDiagnosticEvent.CLIENT_DISCONNECT, client);
-        ChiseTexturePackController.onSessionEnd(client);
         reset(client);
         phase = SessionPhase.DISCONNECTED;
     }

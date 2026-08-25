@@ -76,7 +76,7 @@ public final class FeatureConfig {
         readStringList(lists, BuilderFocusConfig.ENTITY_BLACKLIST);
 
         JsonObject toggles = object(safeRoot, "FeatureToggles");
-        for (FeatureSwitch toggle : FeatureSwitches.VALUES) readBoolean(toggles, toggle);
+        for (FeatureSwitch toggle : FeatureSwitches.FEATURE_CONFIG_VALUES) readBoolean(toggles, toggle);
     }
 
     static JsonObject writeToJson() {
@@ -98,7 +98,7 @@ public final class FeatureConfig {
         root.add("Lists", lists);
 
         JsonObject toggles = new JsonObject();
-        for (FeatureSwitch toggle : FeatureSwitches.VALUES) {
+        for (FeatureSwitch toggle : FeatureSwitches.FEATURE_CONFIG_VALUES) {
             toggles.addProperty(toggle.getName(), toggle.getBooleanValue());
         }
         root.add("FeatureToggles", toggles);
@@ -120,7 +120,7 @@ public final class FeatureConfig {
     }
 
     private static void resetForLoad() {
-        for (FeatureSwitch toggle : FeatureSwitches.VALUES) toggle.resetForConfigLoad();
+        for (FeatureSwitch toggle : FeatureSwitches.FEATURE_CONFIG_VALUES) toggle.resetForConfigLoad();
         BuilderFocusConfig.REFRESH_RENDERER.resetSilently();
         BuilderFocusConfig.BLOCK_RULE_MODE.setValueSilently(ChiseRuleMode.NONE);
         BuilderFocusConfig.BLOCK_WHITELIST.setStringsSilently(List.of());

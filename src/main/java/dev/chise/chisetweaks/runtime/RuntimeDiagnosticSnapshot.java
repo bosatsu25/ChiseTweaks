@@ -10,31 +10,15 @@ public record RuntimeDiagnosticSnapshot(
         String sessionPhase,
         String dimension,
         List<String> enabledFeatures,
-        List<String> selectedVisibilityPacks,
-        List<String> quarantinedComponents,
-        boolean resourceReloadInFlight,
-        boolean resourceRecoveryPending) {
+        List<String> quarantinedComponents) {
 
     public RuntimeDiagnosticSnapshot {
         version = requireText(version, "version");
         sessionPhase = requireText(sessionPhase, "sessionPhase");
         dimension = requireText(dimension, "dimension");
         enabledFeatures = List.copyOf(Objects.requireNonNull(enabledFeatures, "enabledFeatures"));
-        selectedVisibilityPacks = List.copyOf(
-                Objects.requireNonNull(selectedVisibilityPacks, "selectedVisibilityPacks"));
         quarantinedComponents = List.copyOf(
                 Objects.requireNonNull(quarantinedComponents, "quarantinedComponents"));
-    }
-
-    public String reloadState() {
-        return reloadState(resourceReloadInFlight, resourceRecoveryPending);
-    }
-
-    public static String reloadState(boolean reloadInFlight, boolean recoveryPending) {
-        if (reloadInFlight && recoveryPending) return "reloading_with_recovery";
-        if (reloadInFlight) return "reloading";
-        if (recoveryPending) return "recovery_pending";
-        return "idle";
     }
 
     public String toLogLine() {
@@ -43,9 +27,7 @@ public record RuntimeDiagnosticSnapshot(
                 + " phase=" + sessionPhase
                 + " dimension=" + dimension
                 + " enabled=" + listValue(enabledFeatures)
-                + " visibilityPacks=" + listValue(selectedVisibilityPacks)
-                + " quarantined=" + listValue(quarantinedComponents)
-                + " reloadState=" + reloadState();
+                + " quarantined=" + listValue(quarantinedComponents);
     }
 
     private static String listValue(List<String> values) {

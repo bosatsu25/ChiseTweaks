@@ -93,6 +93,22 @@ public enum FeatureDefinition {
             "Lava Analyzer",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
+            null),
+    BRIGHT_CHEST(
+            "bright_chest",
+            FeatureArea.RENDERING,
+            "config.name.brightchest",
+            "Bright Chest",
+            "",
+            FeatureHelpLevel.DIAGNOSTIC,
+            null),
+    BRIGHT_CONCRETE(
+            "bright_concrete",
+            FeatureArea.RENDERING,
+            "config.name.brightconcrete",
+            "Bright Concrete",
+            "",
+            FeatureHelpLevel.DIAGNOSTIC,
             null);
 
     public static final List<FeatureDefinition> VALUES = List.of(values());

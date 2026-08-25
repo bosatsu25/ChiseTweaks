@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-fast repository audit for the retained eleven-feature ChiseTweaks scope."""
+"""Fail-fast repository audit for the retained thirteen-feature ChiseTweaks scope."""
 from __future__ import annotations
 
 import json
@@ -22,6 +22,8 @@ RETAINED_ENGLISH_NAMES = (
     "Ancient Debris Analyzer",
     "Low Fire",
     "Lava Analyzer",
+    "Bright Chest",
+    "Bright Concrete",
 )
 
 FORBIDDEN_JAVA_TOKENS = (
@@ -43,6 +45,13 @@ FORBIDDEN_JAVA_TOKENS = (
     "setChestEnabled(",
     "isWhiteConcreteEnabled()",
     "setWhiteConcreteEnabled(",
+    "LocalFeatureSwitches",
+    "ChestVisibilitySetting",
+    "WhiteConcreteVisibilitySetting",
+    "ChiseTexturePackController",
+    "ChiseTexturePackRegistrar",
+    "VisibilityPackMigrationService",
+    "ResourceReloadCoordinator",
 )
 
 FORBIDDEN_PATHS = (
@@ -61,6 +70,14 @@ FORBIDDEN_PATHS = (
     "src/main/java/dev/chise/chisetweaks/config/ChiseTextureVisibilitySetting.java",
     "src/test/java/dev/chise/chisetweaks/core/policy/PreReleaseFeaturePolicyTest.java",
     "src/test/java/dev/chise/chisetweaks/gui/PreReleaseUiPolicyTest.java",
+    "src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitches.java",
+    "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java",
+    "src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java",
+    "src/main/java/dev/chise/chisetweaks/feature/resource",
+    "src/main/resources/resourcepacks/chise_chest_visibility",
+    "src/main/resources/resourcepacks/chise_white_concrete_visibility",
+    "src/main/java/dev/chise/chisetweaks/core/policy/ResourcePackSelectionPolicy.java",
+    "src/main/java/dev/chise/chisetweaks/core/policy/VisibilityPackMigrationPolicy.java",
     "src/main/resources/assets/chisetweaks/models/block/visual/diamond_ore.json",
     "src/main/resources/assets/chisetweaks/models/block/visual/deepslate_diamond_ore.json",
     "src/main/resources/assets/chisetweaks/textures/block/visual/diamond_ore_chise.png.mcmeta",
@@ -76,7 +93,9 @@ REQUIRED_PATHS = (
     "src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java",
     "src/main/java/dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicy.java",
     "src/main/java/dev/chise/chisetweaks/gui/UiAvailabilityPolicy.java",
-    "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java",
+    "src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java",
+    "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java",
+    "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java",
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticEvent.java",
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticDetail.java",
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticSnapshot.java",
@@ -124,11 +143,7 @@ def read_text(path: Path) -> str:
 def tracked_paths() -> list[Path]:
     try:
         completed = subprocess.run(
-            ["git", "ls-files", "-z"],
-            cwd=ROOT,
-            check=True,
-            capture_output=True,
-        )
+            ["git", "ls-files", "-z"], cwd=ROOT, check=True, capture_output=True)
         return [Path(value.decode("utf-8")) for value in completed.stdout.split(b"\0") if value]
     except (OSError, subprocess.CalledProcessError, UnicodeDecodeError):
         return [path.relative_to(ROOT) for path in ROOT.rglob("*") if path.is_file() and ".git" not in path.parts]
@@ -150,12 +165,10 @@ def audit_repository_hygiene(failures: list[str]) -> None:
         path = ROOT / relative
         if not path.is_file():
             continue
-
         if any(part in FORBIDDEN_TRACKED_DIRECTORY_NAMES for part in relative.parts):
             fail(f"{relative}: generated/runtime directory must not be tracked", failures)
         if path.suffix.lower() in FORBIDDEN_RESIDUE_SUFFIXES:
             fail(f"{relative}: generated/log/temp artifact must not be tracked", failures)
-
         if relative == SELF_PATH:
             continue
         if path.suffix.lower() not in AUDITED_TEXT_SUFFIXES and path.name not in AUDITED_TEXT_NAMES:
@@ -173,11 +186,9 @@ def audit_repository_hygiene(failures: list[str]) -> None:
 
 def audit() -> list[str]:
     failures: list[str] = []
-
     for relative in REQUIRED_PATHS:
         if not (ROOT / relative).is_file():
             fail(f"required file missing: {relative}", failures)
-
     for relative in FORBIDDEN_PATHS:
         if (ROOT / relative).exists():
             fail(f"removed path returned: {relative}", failures)
@@ -197,8 +208,16 @@ def audit() -> list[str]:
         for name in RETAINED_ENGLISH_NAMES:
             if f'"{name}"' not in feature_source:
                 fail(f"FeatureDefinition is missing retained name: {name}", failures)
-        if feature_source.count("FeatureArea.RENDERING") != 11:
-            fail("FeatureDefinition must contain exactly eleven retained rendering definitions", failures)
+        if feature_source.count("FeatureArea.RENDERING") != 13:
+            fail("FeatureDefinition must contain exactly thirteen retained rendering definitions", failures)
+
+    switches_path = ROOT / "src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java"
+    if switches_path.is_file():
+        switches = read_text(switches_path)
+        values = re.search(r"\bVALUES\s*=\s*List\.of\((.*?)\);", switches, re.DOTALL)
+        names = re.findall(r"\b[A-Z][A-Z0-9_]+\b", values.group(1)) if values else []
+        if len(names) != 13 or len(set(names)) != 13:
+            fail("FeatureSwitches.VALUES must contain exactly thirteen unique toggles", failures)
 
     fabric_path = ROOT / "src/main/resources/fabric.mod.json"
     if fabric_path.is_file():
@@ -207,52 +226,31 @@ def audit() -> list[str]:
         except (OSError, json.JSONDecodeError) as error:
             fail(f"fabric.mod.json is invalid JSON: {error}", failures)
         else:
-            if metadata.get("id") != "chisetweaks":
-                fail("fabric.mod.json id must be chisetweaks", failures)
-            if metadata.get("environment") != "client":
-                fail("fabric.mod.json environment must be client", failures)
+            if metadata.get("id") != "chisetweaks": fail("fabric.mod.json id must be chisetweaks", failures)
+            if metadata.get("environment") != "client": fail("fabric.mod.json environment must be client", failures)
             entrypoints = metadata.get("entrypoints", {})
-            if set(entrypoints) != {"client", "modmenu"}:
-                fail(f"unexpected entrypoint set: {sorted(entrypoints)}", failures)
-            if metadata.get("mixins") != ["chisetweaks.features.mixins.json"]:
-                fail("unexpected mixin configuration set", failures)
+            if set(entrypoints) != {"client", "modmenu"}: fail(f"unexpected entrypoint set: {sorted(entrypoints)}", failures)
+            if metadata.get("mixins") != ["chisetweaks.features.mixins.json"]: fail("unexpected mixin configuration set", failures)
             custom = metadata.get("custom", {}).get("chisetweaks", {})
             required_false = (
-                "serverInstallationRequired",
-                "customPlayProtocol",
-                "remoteModDetection",
-                "backgroundThreads",
-                "automaticModDownload",
-                "automaticJarReplacement",
-                "modMenuRequired",
+                "serverInstallationRequired", "customPlayProtocol", "remoteModDetection",
+                "backgroundThreads", "automaticModDownload", "automaticJarReplacement", "modMenuRequired",
             )
-            if custom.get("side") != "client-only":
-                fail("custom side metadata must remain client-only", failures)
+            if custom.get("side") != "client-only": fail("custom side metadata must remain client-only", failures)
             for key in required_false:
-                if custom.get(key) is not False:
-                    fail(f"custom metadata {key} must be false", failures)
+                if custom.get(key) is not False: fail(f"custom metadata {key} must be false", failures)
 
     build_path = ROOT / "build.gradle"
     if build_path.is_file():
         build = read_text(build_path)
         for marker in (
-            "id 'jacoco'",
-            "id 'info.solidsoft.pitest'",
-            "tasks.register('qualityGate')",
-            "tasks.register('ciGate')",
-            "mutationThreshold",
-            "testStrengthThreshold",
-            "WorksiteScanThrottlePolicy",
-            "WorksiteHighlightProfilePolicy",
-            "FeatureAvailabilityPolicy",
-            "ChiseTweaksSettingsLayout",
-            "UiAvailabilityPolicy",
-            "RuntimeDiagnosticSnapshot",
-            "FeatureManager$ComponentSlot",
-            "-Werror",
+            "id 'jacoco'", "id 'info.solidsoft.pitest'", "tasks.register('qualityGate')",
+            "tasks.register('ciGate')", "mutationThreshold", "testStrengthThreshold",
+            "WorksiteScanThrottlePolicy", "WorksiteHighlightProfilePolicy", "FeatureAvailabilityPolicy",
+            "ChiseTweaksSettingsLayout", "UiAvailabilityPolicy", "RuntimeDiagnosticSnapshot",
+            "FeatureManager$ComponentSlot", "-Werror",
         ):
-            if marker not in build:
-                fail(f"verification marker missing from build.gradle: {marker}", failures)
+            if marker not in build: fail(f"verification marker missing from build.gradle: {marker}", failures)
 
     audit_repository_hygiene(failures)
     return failures
@@ -266,7 +264,7 @@ def main() -> int:
             print(f"- {failure}", file=sys.stderr)
         return 1
     print("REPOSITORY AUDIT: PASS")
-    print("scope=11 retained rendering features")
+    print("scope=13 retained rendering features")
     print("client_only=true")
     print("canonical_architecture=true")
     print("removed_feature_residue=false")

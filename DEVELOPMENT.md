@@ -9,7 +9,8 @@
 - Fabric Loader `0.19.3` 以上
 - Fabric API `0.155.2+26.1.2` 以上
 - Java `25` 以上
-- runtime featureは現在11個
+- toggle可能なruntime featureは現在13個（Bright Chest / Bright Concreteを含む）
+- Bright Chest / Bright Concreteはbuilt-in Resource Pack selection / reloadへ依存しない
 - 明示仕様がない限り機能を相互排他にしない
 - all-features-onを回帰条件として扱う
 - custom packet / server installation / remote mod detection / auto downloader / automatic JAR replacementを実装しない

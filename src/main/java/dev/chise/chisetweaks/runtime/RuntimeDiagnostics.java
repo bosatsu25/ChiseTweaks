@@ -4,9 +4,6 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
 import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
-import dev.chise.chisetweaks.config.LocalFeatureConfig;
-import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-import dev.chise.chisetweaks.feature.resource.ChiseTexturePackController;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.Level;
 
@@ -26,10 +23,7 @@ public final class RuntimeDiagnostics {
                 ClientSessionState.phase().name().toLowerCase(Locale.ROOT),
                 dimension(client),
                 enabledFeatures(),
-                ChiseTexturePackController.selectedVisibilityPackIds(client),
-                FeatureManager.getInstance().diagnosticQuarantinedComponentIds(),
-                ChiseTexturePackController.isReloadInFlight(),
-                ChiseTexturePackController.hasPendingRecovery());
+                FeatureManager.getInstance().diagnosticQuarantinedComponentIds());
     }
 
     public static void log(RuntimeDiagnosticEvent event, Minecraft client) {
@@ -66,14 +60,10 @@ public final class RuntimeDiagnostics {
     }
 
     private static List<String> enabledFeatures() {
-        ArrayList<String> enabled = new ArrayList<>(FeatureDefinition.VALUES.size());
+        ArrayList<String> enabled = new ArrayList<>(FeatureSwitches.VALUES.size());
         for (FeatureSwitch featureSwitch : FeatureSwitches.VALUES) {
             if (featureSwitch.getBooleanValue()) enabled.add(featureSwitch.definition().id());
         }
-        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
-        if (local.lavaHighlightEnabled) enabled.add(FeatureDefinition.LAVA_HIGHLIGHT.id());
-        if (local.ancientDebrisAnalyzerEnabled) enabled.add(FeatureDefinition.ANCIENT_DEBRIS_ANALYZER.id());
-        if (local.fireVisibilityEnabled) enabled.add(FeatureDefinition.FIRE_VISIBILITY.id());
         return List.copyOf(enabled);
     }
 

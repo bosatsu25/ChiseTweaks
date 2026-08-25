@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail CI when size/UI work silently changes the frozen 0.9.4 runtime contract."""
+"""Fail CI when optimization silently changes the reviewed ChiseTweaks runtime contract."""
 from __future__ import annotations
 
 import json
@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE_PATH = ROOT / "quality" / "functional-parity-baseline.json"
 
 
 def read(path: str) -> str:
@@ -45,16 +44,10 @@ def int_constants(text: str) -> dict[str, int]:
 
 def scalar(value: str, constants: dict[str, int]) -> Any:
     token = value.strip()
-    if token == "true":
-        return True
-    if token == "false":
-        return False
-    if re.fullmatch(r"-?\d+", token):
-        return int(token)
-    name = token.rsplit(".", 1)[-1]
-    if name in constants:
-        return constants[name]
-    return token
+    if token == "true": return True
+    if token == "false": return False
+    if re.fullmatch(r"-?\d+", token): return int(token)
+    return constants.get(token.rsplit(".", 1)[-1], token)
 
 
 def diff(label: str, expected: Any, actual: Any, failures: list[str]) -> None:
@@ -62,44 +55,43 @@ def diff(label: str, expected: Any, actual: Any, failures: list[str]) -> None:
         failures.append(f"{label}: expected={expected!r}, actual={actual!r}")
 
 
+def list_body(text: str, name: str) -> str:
+    match = re.search(rf"\b{name}\s*=\s*List\.of\((.*?)\);", text, re.DOTALL)
+    return match.group(1) if match else ""
+
+
 def audit() -> list[str]:
     baseline = load_json("quality/functional-parity-baseline.json")
     failures: list[str] = []
-
-    # baseline.version/commit are provenance only. A release-version bump must not be interpreted
-    # as a feature-parity change; the actual product contract below remains frozen independently.
     if not baseline.get("baseline", {}).get("version") or not baseline.get("baseline", {}).get("commit"):
         failures.append("functional parity baseline provenance is incomplete")
 
     definition_text = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java")
     definition_map = enum_string_map(definition_text)
-    feature_ids = list(definition_map.values())
-    diff("feature ids", baseline["featureIds"], feature_ids, failures)
+    diff("feature ids", baseline["featureIds"], list(definition_map.values()), failures)
 
-    feature_switches = read("src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java")
-    feature_switch = read("src/main/java/dev/chise/chisetweaks/config/FeatureSwitch.java")
-    global_constants = re.findall(r"FeatureDefinition\.([A-Z][A-Z0-9_]*)", feature_switches)
-    global_constants = list(dict.fromkeys(global_constants))
+    switches = read("src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java")
+    feature_body = list_body(switches, "FEATURE_CONFIG_VALUES")
+    feature_constants = re.findall(r"\b([A-Z][A-Z0-9_]+)\b", feature_body)
     global_settings = {
         camel_case(definition_map[name]): False
-        for name in global_constants
-        if name in definition_map
+        for name in feature_constants if name in definition_map
     }
-    if "DEFAULT_ENABLED = false" not in feature_switch:
-        failures.append("global FeatureSwitch default is no longer false")
     diff("global feature switches", baseline["settings"]["globalFeatureSwitches"], global_settings, failures)
 
-    local_switches_text = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitches.java")
-    local_switch_text = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitch.java")
-    local_keys = re.findall(
-        r"new\s+LocalFeatureSwitch\(\s*FeatureDefinition\.[A-Z0-9_]+\s*,\s*\"([^\"]+)\"",
-        local_switches_text,
+    local_pairs = re.findall(
+        r"public\s+static\s+final\s+FeatureSwitch\s+[A-Z0-9_]+\s*=\s*local\(\s*"
+        r"FeatureDefinition\.[A-Z0-9_]+\s*,\s*\"([^\"]+)\"\s*,\s*(true|false)",
+        switches,
         re.DOTALL,
     )
-    local_switches = {name: False for name in local_keys}
-    if "DEFAULT_ENABLED = false" not in local_switch_text:
-        failures.append("local FeatureSwitch default is no longer false")
+    local_switches = {name: default == "true" for name, default in local_pairs}
     diff("local feature switches", baseline["settings"]["localFeatureSwitches"], local_switches, failures)
+
+    values_body = list_body(switches, "VALUES")
+    value_constants = re.findall(r"\b([A-Z][A-Z0-9_]+)\b", values_body)
+    if len(value_constants) != 13 or set(value_constants) != set(definition_map):
+        failures.append("FeatureSwitches.VALUES must contain each of the 13 FeatureDefinition entries exactly once")
 
     profile_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/WorksiteHighlightProfilePolicy.java")
     debris_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java")
@@ -115,10 +107,7 @@ def audit() -> list[str]:
 
     visual_targets_text = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java")
     visual_target_keys = re.findall(
-        r"entry\(Target\.[A-Z0-9_]+\s*,\s*\"([^\"]+)\"",
-        visual_targets_text,
-        re.DOTALL,
-    )
+        r"entry\(Target\.[A-Z0-9_]+\s*,\s*\"([^\"]+)\"", visual_targets_text, re.DOTALL)
     visual_targets = {name: True for name in visual_target_keys}
     if not re.search(r"new\s+SimpleBooleanSetting\(\s*configName\s*,\s*true\s*,", visual_targets_text):
         failures.append("visual target default is no longer true")
@@ -127,42 +116,29 @@ def audit() -> list[str]:
     builder_text = read("src/main/java/dev/chise/chisetweaks/config/BuilderFocusConfig.java")
     builder: dict[str, Any] = {}
     for name, default in re.findall(
-        r"new\s+SimpleBooleanSetting\(\s*\"([^\"]+)\"\s*,\s*(true|false)",
-        builder_text,
-        re.DOTALL,
-    ):
+        r"new\s+SimpleBooleanSetting\(\s*\"([^\"]+)\"\s*,\s*(true|false)", builder_text, re.DOTALL):
         builder[name] = default == "true"
     for name, mode in re.findall(
-        r"new\s+ChiseRuleModeSetting\(\s*\"([^\"]+)\"\s*,\s*ChiseRuleMode\.([A-Z_]+)",
-        builder_text,
-        re.DOTALL,
-    ):
+        r"new\s+ChiseRuleModeSetting\(\s*\"([^\"]+)\"\s*,\s*ChiseRuleMode\.([A-Z_]+)", builder_text, re.DOTALL):
         builder[name] = mode
-    # Only the first two constructor arguments define the frozen default. Additional metadata
-    # such as persistence domain must not make the parity audit depend on constructor shape.
     for name in re.findall(
-        r"new\s+ChiseStringListSetting\(\s*\"([^\"]+)\"\s*,\s*List\.of\(\)",
-        builder_text,
-        re.DOTALL,
-    ):
+        r"new\s+ChiseStringListSetting\(\s*\"([^\"]+)\"\s*,\s*List\.of\(\)", builder_text, re.DOTALL):
         builder[name] = []
     diff("Builder Focus defaults", baseline["settings"]["builderFocus"], builder, failures)
 
-    visibility_settings: dict[str, bool] = {}
-    for path in (
+    pack_root = ROOT / "src/main/resources/resourcepacks"
+    pack_ids = [] if not pack_root.exists() else sorted(
+        f"chisetweaks:{path.name}" for path in pack_root.iterdir() if path.is_dir())
+    diff("built-in resource pack ids", baseline["resourcePackIds"], pack_ids, failures)
+
+    for removed in (
+        "src/main/java/dev/chise/chisetweaks/feature/resource",
+        "src/main/java/dev/chise/chisetweaks/config/LocalFeatureSwitches.java",
         "src/main/java/dev/chise/chisetweaks/config/ChestVisibilitySetting.java",
         "src/main/java/dev/chise/chisetweaks/config/WhiteConcreteVisibilitySetting.java",
     ):
-        text = read(path)
-        match = re.search(r"super\(\s*\"([^\"]+)\"\s*,\s*(true|false)", text, re.DOTALL)
-        if match:
-            visibility_settings[match.group(1)] = match.group(2) == "true"
-    diff("visibility setting defaults", baseline["settings"]["visibilityPacks"], visibility_settings, failures)
-
-    visibility_pack_text = read("src/main/java/dev/chise/chisetweaks/feature/resource/VisibilityPack.java")
-    pack_paths = re.findall(r"^\s*[A-Z_]+\(\"([^\"]+)\"\s*,", visibility_pack_text, re.MULTILINE)
-    pack_ids = [f"chisetweaks:{path}" for path in pack_paths]
-    diff("built-in resource pack ids", baseline["resourcePackIds"], pack_ids, failures)
+        if (ROOT / removed).exists():
+            failures.append(f"obsolete visual feature foundation returned: {removed}")
 
     mixins = load_json("src/main/resources/chisetweaks.features.mixins.json")
     diff("Mixin list", baseline["mixins"], mixins.get("client", []), failures)
@@ -185,23 +161,15 @@ def audit() -> list[str]:
     diff("UI actions", baseline["uiActions"], actions, failures)
 
     diagnostic_text = read("src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticEvent.java")
-    diagnostic_events = list(enum_string_map(diagnostic_text).values())
-    diff("diagnostic events", baseline["diagnosticEvents"], diagnostic_events, failures)
+    diff("diagnostic events", baseline["diagnosticEvents"], list(enum_string_map(diagnostic_text).values()), failures)
 
-    missing_fixtures = [
-        path for path in baseline["migrationFixtures"]
-        if not (ROOT / path).is_file()
-    ]
+    missing_fixtures = [path for path in baseline["migrationFixtures"] if not (ROOT / path).is_file()]
     if missing_fixtures:
         failures.append(f"migration fixtures missing: {missing_fixtures}")
 
     analyzer_constants = int_constants(debris_policy)
-    analyzer_budget = {
-        name: analyzer_constants.get(name)
-        for name in baseline["analyzerBudget"]
-    }
+    analyzer_budget = {name: analyzer_constants.get(name) for name in baseline["analyzerBudget"]}
     diff("Ancient Debris analyzer budget", baseline["analyzerBudget"], analyzer_budget, failures)
-
     return failures
 
 

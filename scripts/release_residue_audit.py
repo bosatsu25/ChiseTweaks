@@ -15,12 +15,20 @@ FORBIDDEN_EXACT_ENTRIES = {
     "assets/chisetweaks/textures/block/visual/diamond_ore_chise.png.mcmeta",
     "assets/chisetweaks/textures/block/visual/deepslate_diamond_ore_chise.png.mcmeta",
 }
+FORBIDDEN_ENTRY_PREFIXES = (
+    "resourcepacks/chise_chest_visibility/",
+    "resourcepacks/chise_white_concrete_visibility/",
+)
 FORBIDDEN_ENTRY_TOKENS = (
     "BuilderEntityVisibilityPolicy",
     "ModVersionPolicy",
     "PreReleaseFeaturePolicy",
     "PreReleaseUiPolicy",
     "ChiseTextureVisibilitySetting",
+    "ChiseTexturePackController",
+    "ChiseTexturePackRegistrar",
+    "ChestVisibilitySetting",
+    "WhiteConcreteVisibilitySetting",
     "PreReleaseMixinConfigPlugin",
 )
 
@@ -44,6 +52,12 @@ def audit_jar(path: Path) -> None:
         exact = sorted(names & FORBIDDEN_EXACT_ENTRIES)
         if exact:
             raise RuntimeError(f"legacy visual asset returned to {path.name}: {exact}")
+        prefixed = sorted(
+            name for name in names
+            if any(name.startswith(prefix) for prefix in FORBIDDEN_ENTRY_PREFIXES)
+        )
+        if prefixed:
+            raise RuntimeError(f"retired Bright resource-pack entry returned to {path.name}: {prefixed[:8]}")
         for token in FORBIDDEN_ENTRY_TOKENS:
             matches = sorted(name for name in names if token in name)
             if matches:
@@ -59,6 +73,7 @@ def main() -> int:
         audit_jar(LIBS / f"{base}-{version}-sources.jar")
         print("RELEASE RESIDUE AUDIT: PASS")
         print("legacy_architecture_residue=false")
+        print("bright_resource_pack_residue=false")
         return 0
     except (OSError, KeyError, zipfile.BadZipFile, RuntimeError) as error:
         print(f"RELEASE RESIDUE AUDIT: FAIL: {error}", file=sys.stderr)

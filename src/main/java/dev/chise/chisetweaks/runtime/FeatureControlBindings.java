@@ -32,6 +32,8 @@ public final class FeatureControlBindings {
                 ignored -> refreshVisualStateAndInvalidate());
         FeatureSwitches.GLASS_INSPECTION.addValueChangeListener(
                 ignored -> refreshVisualStateAndInvalidate());
+        FeatureSwitches.BRIGHT_CONCRETE.addValueChangeListener(
+                ignored -> refreshVisualStateAndInvalidate());
         LocalFeatureSettings.setOreHighlightChangedCallback(
                 FeatureControlBindings::refreshVisualStateAndInvalidate);
         VisualTargetSettings.setMaterialTargetsChangedCallback(

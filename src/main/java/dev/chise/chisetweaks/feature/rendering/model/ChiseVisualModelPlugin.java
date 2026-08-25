@@ -10,6 +10,7 @@ import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier;
 import net.fabricmc.fabric.api.client.model.loading.v1.PreparableModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.model.loading.v1.SimpleUnbakedExtraModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -18,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ChiseVisualModelPlugin {
-    public static final String REVISION = "visual-model-overlay-11-shared-wrapper";
+    public static final String REVISION = "visual-model-13-unified-features";
 
     private static volatile boolean modelPipelineReady;
 
@@ -52,7 +53,6 @@ public final class ChiseVisualModelPlugin {
                             GlassHighlightOverlayCatalog.PANE_KEY,
                             SimpleUnbakedExtraModel.blockStateModel(GlassHighlightOverlayCatalog.PANE_MODEL));
 
-                    // 1回のリソースモデル再読み込み中は分類結果を固定し、再読み込みをまたいで古い分類を持ち越さない。
                     ConcurrentHashMap<Block, VisualModelClassification> classificationCache =
                             new ConcurrentHashMap<>();
                     pluginContext.modifyBlockModelAfterBake().register(
@@ -72,8 +72,8 @@ public final class ChiseVisualModelPlugin {
         return modelPipelineReady;
     }
 
-    private static net.minecraft.client.renderer.block.dispatch.BlockStateModel wrap(
-            net.minecraft.client.renderer.block.dispatch.BlockStateModel model,
+    private static BlockStateModel wrap(
+            BlockStateModel model,
             BlockState state,
             ConcurrentHashMap<Block, VisualModelClassification> classificationCache) {
         if (state == null) return model;
@@ -93,6 +93,7 @@ public final class ChiseVisualModelPlugin {
                     classification.target(),
                     classification.overlay().staticKey(),
                     classification.overlay().animatedKey());
+            case BRIGHT_CONCRETE -> FullbrightOverlayModel.brightConcrete(model);
         };
     }
 
@@ -102,6 +103,9 @@ public final class ChiseVisualModelPlugin {
         String namespace = blockId.getNamespace();
         String path = blockId.getPath();
 
+        if ("minecraft".equals(namespace) && "white_concrete".equals(path)) {
+            return VisualModelClassification.brightConcrete();
+        }
         if ("minecraft".equals(namespace)
                 && ("kelp".equals(path) || "kelp_plant".equals(path))) {
             return VisualModelClassification.kelp();
@@ -126,7 +130,8 @@ public final class ChiseVisualModelPlugin {
         NONE,
         KELP,
         GLASS,
-        ORE
+        ORE,
+        BRIGHT_CONCRETE
     }
 
     private record VisualModelClassification(
@@ -160,6 +165,14 @@ public final class ChiseVisualModelPlugin {
                     GlassHighlightTargetPolicy.Shape.NONE,
                     target,
                     overlay);
+        }
+
+        private static VisualModelClassification brightConcrete() {
+            return new VisualModelClassification(
+                    VisualKind.BRIGHT_CONCRETE,
+                    GlassHighlightTargetPolicy.Shape.NONE,
+                    null,
+                    null);
         }
     }
 }

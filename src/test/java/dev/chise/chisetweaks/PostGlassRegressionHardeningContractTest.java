@@ -46,9 +46,12 @@ final class PostGlassRegressionHardeningContractTest {
         String plugin = source("src/main/java/dev/chise/chisetweaks/mixin/FeatureAvailabilityMixinConfigPlugin.java");
         assertTrue(config.contains("\"plugin\": \"dev.chise.chisetweaks.mixin.FeatureAvailabilityMixinConfigPlugin\""));
         assertTrue(plugin.contains("BuilderFocusBlockMixin"));
+        assertTrue(plugin.contains("BlockEntityVisualStateMixin"));
         assertTrue(plugin.contains("BuilderFocusEntityMixin"));
         assertTrue(plugin.contains("FireVisibilityMixin"));
-        assertTrue(plugin.contains("return feature != null && FeatureAvailabilityPolicy.isAvailable(feature);"));
+        assertTrue(plugin.contains("List.of(FeatureDefinition.BUILDER_FOCUS_BLOCKS, FeatureDefinition.BRIGHT_CHEST)"));
+        assertTrue(plugin.contains("for (FeatureDefinition feature : features)"));
+        assertTrue(plugin.contains("if (FeatureAvailabilityPolicy.isAvailable(feature)) return true;"));
         assertFalse(plugin.contains("import net.minecraft"));
     }
 
