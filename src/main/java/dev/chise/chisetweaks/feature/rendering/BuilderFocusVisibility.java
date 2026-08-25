@@ -257,15 +257,21 @@ public final class BuilderFocusVisibility {
         }
     }
 
-    private record BlockRules(
-            boolean enabled,
-            ChiseRuleMode mode,
-            Set<Block> blacklist,
-            Set<Block> whitelist) {
-        private BlockRules {
-            Objects.requireNonNull(mode, "mode");
-            blacklist = Set.copyOf(blacklist);
-            whitelist = Set.copyOf(whitelist);
+    private static final class BlockRules {
+        private final boolean enabled;
+        private final ChiseRuleMode mode;
+        private final Set<Block> blacklist;
+        private final Set<Block> whitelist;
+
+        private BlockRules(
+                boolean enabled,
+                ChiseRuleMode mode,
+                Set<Block> blacklist,
+                Set<Block> whitelist) {
+            this.enabled = enabled;
+            this.mode = Objects.requireNonNull(mode, "mode");
+            this.blacklist = Set.copyOf(blacklist);
+            this.whitelist = Set.copyOf(whitelist);
         }
 
         static BlockRules none() {
@@ -290,14 +296,18 @@ public final class BuilderFocusVisibility {
         }
     }
 
-    private record EntityRules(
-            ChiseRuleMode mode,
-            Set<EntityType<?>> blacklist,
-            Set<EntityType<?>> whitelist) {
-        private EntityRules {
-            Objects.requireNonNull(mode, "mode");
-            blacklist = Set.copyOf(blacklist);
-            whitelist = Set.copyOf(whitelist);
+    private static final class EntityRules {
+        private final ChiseRuleMode mode;
+        private final Set<EntityType<?>> blacklist;
+        private final Set<EntityType<?>> whitelist;
+
+        private EntityRules(
+                ChiseRuleMode mode,
+                Set<EntityType<?>> blacklist,
+                Set<EntityType<?>> whitelist) {
+            this.mode = Objects.requireNonNull(mode, "mode");
+            this.blacklist = Set.copyOf(blacklist);
+            this.whitelist = Set.copyOf(whitelist);
         }
 
         static EntityRules none() {

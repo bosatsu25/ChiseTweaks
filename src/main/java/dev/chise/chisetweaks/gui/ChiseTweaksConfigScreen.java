@@ -228,12 +228,13 @@ public final class ChiseTweaksConfigScreen extends Screen {
                     this, ChiseSceneFilterEditorScreen.Target.ENTITIES));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT) {
             minecraft.setScreen(new ChiseOreCompatibilityScreen(this));
-        } else if (action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE) {
-            PatternConsistencyInspector.selectReference(minecraft);
-            patternRevision = PatternConsistencyInspector.currentRevision();
-            rebuildInspectorRows();
-        } else if (action == ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE) {
-            PatternConsistencyInspector.clearReference();
+        } else if (action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE
+                || action == ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE) {
+            if (action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE) {
+                PatternConsistencyInspector.selectReference(minecraft);
+            } else {
+                PatternConsistencyInspector.clearReference();
+            }
             patternRevision = PatternConsistencyInspector.currentRevision();
             rebuildInspectorRows();
         }

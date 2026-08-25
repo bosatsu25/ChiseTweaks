@@ -35,7 +35,20 @@ public final class ChiseTweaksSettingsLayout {
         int panelHeight = Math.max(1, footerY - PANEL_Y - 6);
         Rect panel = new Rect(contentX, PANEL_Y, contentWidth, panelHeight);
         Rect footer = new Rect(contentX, footerY, contentWidth, Math.min(20, safeHeight - footerY));
-        FooterButtons footerButtons = footerButtons(footer);
+        Rect contextButton;
+        Rect doneButton;
+        int preferredFooterWidth = CONTEXT_WIDTH + FOOTER_GAP + DONE_WIDTH;
+        if (footer.width() >= preferredFooterWidth) {
+            doneButton = new Rect(footer.right() - DONE_WIDTH, footer.y(), DONE_WIDTH, footer.height());
+            contextButton = new Rect(doneButton.x() - FOOTER_GAP - CONTEXT_WIDTH,
+                    footer.y(), CONTEXT_WIDTH, footer.height());
+        } else {
+            int usableFooterWidth = Math.max(2, footer.width() - FOOTER_GAP);
+            int contextWidth = usableFooterWidth / 2;
+            contextButton = new Rect(footer.x(), footer.y(), contextWidth, footer.height());
+            doneButton = new Rect(contextButton.right() + FOOTER_GAP, footer.y(),
+                    usableFooterWidth - contextWidth, footer.height());
+        }
 
         int panelPadding = clamp(contentWidth / 24, 6, 16);
         int toggleWidth = clamp(contentWidth / 7, 64, 84);
@@ -58,8 +71,8 @@ public final class ChiseTweaksSettingsLayout {
                 tabs,
                 panel,
                 footer,
-                footerButtons.context(),
-                footerButtons.done(),
+                contextButton,
+                doneButton,
                 toggleWidth,
                 actionWidth,
                 nameX,
@@ -86,28 +99,9 @@ public final class ChiseTweaksSettingsLayout {
         return List.copyOf(result);
     }
 
-    private static FooterButtons footerButtons(Rect footer) {
-        int preferred = CONTEXT_WIDTH + FOOTER_GAP + DONE_WIDTH;
-        if (footer.width() >= preferred) {
-            Rect done = new Rect(footer.right() - DONE_WIDTH, footer.y(), DONE_WIDTH, footer.height());
-            Rect context = new Rect(done.x() - FOOTER_GAP - CONTEXT_WIDTH,
-                    footer.y(), CONTEXT_WIDTH, footer.height());
-            return new FooterButtons(context, done);
-        }
-
-        int usable = Math.max(2, footer.width() - FOOTER_GAP);
-        int contextWidth = usable / 2;
-        int doneWidth = usable - contextWidth;
-        Rect context = new Rect(footer.x(), footer.y(), contextWidth, footer.height());
-        Rect done = new Rect(context.right() + FOOTER_GAP, footer.y(), doneWidth, footer.height());
-        return new FooterButtons(context, done);
-    }
-
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }
-
-    private record FooterButtons(Rect context, Rect done) {}
 
     public record Geometry(
             Rect content,

@@ -5,24 +5,47 @@ import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 
 import java.util.Objects;
 
-record ChiseTweaksSettingRowDefinition(
-        Kind kind,
-        SettingRowId settingId,
-        String name,
-        String description,
-        ChiseBooleanSetting booleanConfig,
-        ChiseIntegerSetting integerConfig,
-        int step,
-        Action action,
-        String actionLabel) {
+final class ChiseTweaksSettingRowDefinition {
+    private final Kind kind;
+    private final SettingRowId settingId;
+    private final String name;
+    private final String description;
+    private final ChiseBooleanSetting booleanConfig;
+    private final ChiseIntegerSetting integerConfig;
+    private final int step;
+    private final Action action;
+    private final String actionLabel;
 
-    ChiseTweaksSettingRowDefinition {
-        Objects.requireNonNull(kind, "kind");
-        Objects.requireNonNull(settingId, "settingId");
-        name = name == null ? "" : name;
-        description = description == null ? "" : description;
-        actionLabel = actionLabel == null ? "" : actionLabel;
+    private ChiseTweaksSettingRowDefinition(
+            Kind kind,
+            SettingRowId settingId,
+            String name,
+            String description,
+            ChiseBooleanSetting booleanConfig,
+            ChiseIntegerSetting integerConfig,
+            int step,
+            Action action,
+            String actionLabel) {
+        this.kind = Objects.requireNonNull(kind, "kind");
+        this.settingId = Objects.requireNonNull(settingId, "settingId");
+        this.name = name == null ? "" : name;
+        this.description = description == null ? "" : description;
+        this.booleanConfig = booleanConfig;
+        this.integerConfig = integerConfig;
+        this.step = step;
+        this.action = action;
+        this.actionLabel = actionLabel == null ? "" : actionLabel;
     }
+
+    Kind kind() { return kind; }
+    SettingRowId settingId() { return settingId; }
+    String name() { return name; }
+    String description() { return description; }
+    ChiseBooleanSetting booleanConfig() { return booleanConfig; }
+    ChiseIntegerSetting integerConfig() { return integerConfig; }
+    int step() { return step; }
+    Action action() { return action; }
+    String actionLabel() { return actionLabel; }
 
     String id() {
         return settingId.value();

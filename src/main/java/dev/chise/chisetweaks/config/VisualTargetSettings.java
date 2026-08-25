@@ -10,7 +10,7 @@ public final class VisualTargetSettings {
     private static final Runnable NOOP = () -> {};
     private static Runnable materialTargetsChangedCallback = NOOP;
 
-    private static final List<Entry> ENTRIES = List.of(
+    public static final List<ChiseBooleanSetting> ALL_OPTIONS = List.of(
             entry(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre",
                     "Ore: Coal", "鉱石：石炭",
                     "Toggle normal and deepslate Coal Ore together.", "通常版と深層岩版の石炭鉱石を1つのスイッチで切り替えます。"),
@@ -69,10 +69,6 @@ public final class VisualTargetSettings {
                     "Hidden Surface: Sculk Catalyst", "隠面：スカルクカタリスト",
                     "Allow Hidden Surface Trace to mark sculk catalysts.", "隠面トレースでスカルクカタリストを表示対象にします。"));
 
-    public static final List<ChiseBooleanSetting> ALL_OPTIONS = ENTRIES.stream()
-            .map(entry -> (ChiseBooleanSetting) entry.option())
-            .toList();
-
     private VisualTargetSettings() {}
 
     /** 起動処理の境界を明示するため残している。直接bindingのため状態同期処理は不要。 */
@@ -96,7 +92,7 @@ public final class VisualTargetSettings {
                 && (target.bitMask() & VisualTargetSelectionPolicy.ORE_HIGHLIGHT_TARGETS_MASK) != 0;
     }
 
-    private static Entry entry(
+    private static ChiseBooleanSetting entry(
             Target target,
             String configName,
             String englishName,
@@ -124,8 +120,6 @@ public final class VisualTargetSettings {
         if (isMaterialTarget(target)) {
             option.setValueChangeCallback(ignored -> materialTargetsChangedCallback.run());
         }
-        return new Entry(option);
+        return option;
     }
-
-    private record Entry(SimpleBooleanSetting option) {}
 }
