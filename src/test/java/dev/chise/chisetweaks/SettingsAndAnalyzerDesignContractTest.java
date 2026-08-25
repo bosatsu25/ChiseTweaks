@@ -9,7 +9,6 @@ import static dev.chise.chisetweaks.SourceContractSupport.assertContainsNone;
 import static dev.chise.chisetweaks.SourceContractSupport.exists;
 import static dev.chise.chisetweaks.SourceContractSupport.read;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Guards the design boundaries introduced by the settings/rendering cleanup. */
 final class SettingsAndAnalyzerDesignContractTest {
@@ -139,7 +138,26 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "ChiseTweaksHelpScreen");
         assertContainsNone(sceneFilter, "boolean japanese");
         assertContainsNone(oreCompat, "boolean japanese");
-        assertTrue(english.contains("\"screen.chisetweaks.scene_filter.title\""));
-        assertTrue(japanese.contains("\"screen.chisetweaks.ore_compat.title\""));
+
+        assertContainsAll(english,
+                "\"config.name.brightchest\": \"Bright Chest\"",
+                "\"config.name.brightconcrete\": \"Bright Concrete\"",
+                "Browse the 13 ChiseTweaks toggles",
+                "direct lighting-only Bright features");
+        assertContainsNone(english,
+                "config.option.localworksitevisibilityexclusivemode",
+                "Single Visibility Mode",
+                "built-in Resource Pack");
+
+        assertContainsAll(japanese,
+                "\"config.name.brightchest\": \"Bright Chest\"",
+                "\"config.name.brightconcrete\": \"Bright Concrete\"",
+                "13個の切り替え機能",
+                "Bright切替のためのResource Pack再読み込みは行いません");
+        assertContainsNone(japanese,
+                "config.option.localworksitevisibilityexclusivemode",
+                "視認ガイド単独表示",
+                "保持した11機能",
+                "built-in Resource Pack");
     }
 }
