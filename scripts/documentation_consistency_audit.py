@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the two-document ownership model and runtime metadata synchronized."""
+"""Keep current user/developer docs, runtime translations, and metadata synchronized."""
 from __future__ import annotations
 
 import json
@@ -28,10 +28,48 @@ RETIRED_DOCUMENTS = (
     "docs/warden-risk-analyzer-feasibility.md",
 )
 
+RETIRED_TRANSLATION_FRAGMENTS = (
+    "airplacement",
+    "air_placement",
+    "localancientdebrisanalyzer",
+    "ancient_debris_analyzer",
+    "settings.debris_",
+    "settings.section.ancient_debris",
+)
+
 
 def require(pattern: str, text: str, label: str, failures: list[str]) -> None:
     if re.search(pattern, text, flags=re.MULTILINE) is None:
         failures.append(label)
+
+
+def audit_language(
+        locale: str,
+        values: dict[str, object],
+        expected_subtitle: str,
+        failures: list[str]) -> None:
+    for key in values:
+        normalized = key.lower()
+        for retired in RETIRED_TRANSLATION_FRAGMENTS:
+            if retired in normalized:
+                failures.append(f"{locale} runtime translation still contains retired key: {key}")
+
+    subtitle = values.get("screen.chisetweaks.help.subtitle")
+    if subtitle != expected_subtitle:
+        failures.append(f"{locale} help subtitle must describe the 12-toggle / 10-default-off scope")
+
+    analyzer_help = str(values.get("screen.chisetweaks.help.analyzer.description", ""))
+    if not analyzer_help or "Ancient Debris" in analyzer_help or "古代の残骸" in analyzer_help:
+        failures.append(f"{locale} Analyzer help must describe retained Lava Analyzer only")
+
+    expected_names = {
+        "config.name.localfirevisibility": "Low Fire",
+        "config.name.locallavahighlight": "Lava Analyzer",
+        "config.name.materialhighlights": "Ore Highlights",
+    }
+    for key, expected in expected_names.items():
+        if values.get(key) != expected:
+            failures.append(f"{locale} canonical feature name drift: {key} must be {expected}")
 
 
 def main() -> int:
@@ -40,6 +78,8 @@ def main() -> int:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     development = (ROOT / "DEVELOPMENT.md").read_text(encoding="utf-8")
     fabric = json.loads((ROOT / "src/main/resources/fabric.mod.json").read_text(encoding="utf-8"))
+    en_us = json.loads((ROOT / "src/main/resources/assets/chisetweaks/lang/en_us.json").read_text(encoding="utf-8"))
+    ja_jp = json.loads((ROOT / "src/main/resources/assets/chisetweaks/lang/ja_jp.json").read_text(encoding="utf-8"))
 
     minecraft = props["minecraft_version"]
     loader = props["loader_version"]
@@ -128,6 +168,19 @@ def main() -> int:
         if retired_marker in development:
             failures.append(f"DEVELOPMENT.md still treats retired feature as active: {retired_marker}")
 
+    audit_language(
+        "en_us",
+        en_us,
+        "Browse the 12 ChiseTweaks toggles. Bright Chest and Bright Concrete start enabled; the other 10 start disabled.",
+        failures,
+    )
+    audit_language(
+        "ja_jp",
+        ja_jp,
+        "12個の切り替え機能を確認できます。Bright Chest / Bright Concreteは初期ON、ほか10機能は初期OFFです。",
+        failures,
+    )
+
     for relative in RETIRED_DOCUMENTS:
         if (ROOT / relative).exists():
             failures.append(f"retired duplicate documentation returned: {relative}")
@@ -154,6 +207,8 @@ def main() -> int:
     print("DOCUMENTATION CONSISTENCY AUDIT: PASS")
     print("user_doc=README.md")
     print("development_doc=DEVELOPMENT.md")
+    print("runtime_translation_scope=12_retained_features")
+    print("retired_translation_residue=false")
     print("retired_duplicate_docs=false")
     print(f"minecraft={minecraft}")
     print(f"runtime_jar_goal={jar_goal}")
