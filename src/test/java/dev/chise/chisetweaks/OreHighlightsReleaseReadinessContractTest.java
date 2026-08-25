@@ -174,7 +174,7 @@ final class OreHighlightsReleaseReadinessContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayEmission.java");
         String lighting = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayLighting.java");
-        assertTrue(plugin.contains("visual-model-overlay-"));
+        assertTrue(plugin.contains("visual-model-13-unified-features"));
         assertTrue(plugin.contains("zero-scan"));
         assertTrue(model.contains("FullbrightOverlayEmission.emit("));
         assertTrue(emission.contains("FullbrightOverlayLighting.apply(quad)"));
@@ -215,8 +215,11 @@ final class OreHighlightsReleaseReadinessContractTest {
     @Test
     void firstLaunchDefaultsAreNonIntrusiveReducedMotionAndReadyWhenEnabled() throws IOException {
         String featureSwitch = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitch.java");
+        String switches = source("src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java");
         String localConfig = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
-        assertTrue(featureSwitch.contains("private static final boolean DEFAULT_ENABLED = false"));
+        assertTrue(featureSwitch.contains("false,\n                null,\n                null,\n                SettingPersistence.FEATURE_CONFIG"));
+        assertTrue(switches.contains("FeatureDefinition.BRIGHT_CHEST,\n            \"brightChest\",\n            true,"));
+        assertTrue(switches.contains("FeatureDefinition.BRIGHT_CONCRETE,\n            \"brightConcrete\",\n            true,"));
         assertTrue(localConfig.contains("public boolean oreHighlightAnimationEnabled = false"));
         assertTrue(localConfig.contains(
                 "public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK"));
