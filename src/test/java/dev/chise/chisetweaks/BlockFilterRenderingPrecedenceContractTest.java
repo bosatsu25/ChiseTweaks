@@ -13,9 +13,9 @@ final class BlockFilterRenderingPrecedenceContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void blockEntitiesAreStoppedAtTheCommonStateExtractionBoundary() throws IOException {
+    void blockEntitiesAreStoppedAtTheSharedVisualStateBoundary() throws IOException {
         String mixin = source(
-                "src/main/java/dev/chise/chisetweaks/mixin/rendering/BuilderFocusBlockEntityMixin.java");
+                "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java");
         String mixinConfig = source("src/main/resources/chisetweaks.features.mixins.json");
         String plugin = source(
                 "src/main/java/dev/chise/chisetweaks/mixin/FeatureAvailabilityMixinConfigPlugin.java");
@@ -24,12 +24,13 @@ final class BlockFilterRenderingPrecedenceContractTest {
         assertTrue(mixin.contains("method = \"tryExtractRenderState\""));
         assertTrue(mixin.contains("at = @At(\"HEAD\")"));
         assertTrue(mixin.contains("BuilderFocusVisibility.shouldHide(blockEntity.getBlockState().getBlock())"));
-        assertTrue(mixin.contains("result.setReturnValue(null)"));
-        assertTrue(mixinConfig.contains("rendering.BuilderFocusBlockEntityMixin"));
-        assertTrue(plugin.contains("BuilderFocusBlockEntityMixin"));
+        assertTrue(mixin.contains("callbackInfo.setReturnValue(null)"));
+        assertTrue(mixin.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
+        assertTrue(mixinConfig.contains("rendering.BlockEntityVisualStateMixin"));
+        assertTrue(plugin.contains("BlockEntityVisualStateMixin"));
         assertTrue(plugin.contains("FeatureDefinition.BUILDER_FOCUS_BLOCKS"));
+        assertTrue(plugin.contains("FeatureDefinition.BRIGHT_CHEST"));
 
-        assertFalse(mixin.contains("ChestBlockEntity"));
         assertFalse(mixin.contains("SignBlockEntity"));
         assertFalse(mixin.contains("BannerBlockEntity"));
         assertFalse(mixin.contains("ShulkerBoxBlockEntity"));
