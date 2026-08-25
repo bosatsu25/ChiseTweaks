@@ -26,11 +26,17 @@ final class BlockFilterRenderingPrecedenceContractTest {
         assertTrue(mixin.contains("BuilderFocusVisibility.shouldHide(blockEntity.getBlockState().getBlock())"));
         assertTrue(mixin.contains("callbackInfo.setReturnValue(null)"));
         assertTrue(mixin.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
+        assertTrue(mixin.contains("state instanceof ChestRenderState chest"));
+        assertTrue(mixin.contains("chest.lightCoords = LightCoordsUtil.FULL_BRIGHT"));
         assertTrue(mixinConfig.contains("rendering.BlockEntityVisualStateMixin"));
         assertTrue(plugin.contains("BlockEntityVisualStateMixin"));
         assertTrue(plugin.contains("FeatureDefinition.BUILDER_FOCUS_BLOCKS"));
         assertTrue(plugin.contains("FeatureDefinition.BRIGHT_CHEST"));
 
+        assertFalse(mixin.contains("customSprite"));
+        assertFalse(mixin.contains("SpriteId"));
+        assertFalse(mixin.contains("CHEST_MAPPER"));
+        assertFalse(mixin.contains("entity/chest/"));
         assertFalse(mixin.contains("SignBlockEntity"));
         assertFalse(mixin.contains("BannerBlockEntity"));
         assertFalse(mixin.contains("ShulkerBoxBlockEntity"));
@@ -38,6 +44,20 @@ final class BlockFilterRenderingPrecedenceContractTest {
         assertFalse(mixin.contains("saveWith"));
         assertFalse(mixin.contains("getUpdateTag"));
         assertFalse(mixin.contains("getComponents"));
+    }
+
+    @Test
+    void brightSpecificTextureAssetsRemainRetired() {
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/resources/assets/chisetweaks/textures/entity/chest/normal.png")));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/resources/assets/chisetweaks/textures/entity/chest/normal_left.png")));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/resources/assets/chisetweaks/textures/entity/chest/normal_right.png")));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/resources/assets/chisetweaks/textures/block/visual/bright_white_concrete.png")));
+        assertFalse(Files.exists(ROOT.resolve(
+                "src/main/resources/assets/chisetweaks/models/block/visual/bright_concrete.json")));
     }
 
     @Test
