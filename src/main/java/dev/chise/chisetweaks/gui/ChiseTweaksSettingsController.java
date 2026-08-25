@@ -1,16 +1,13 @@
 package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
-import dev.chise.chisetweaks.config.ChestVisibilitySetting;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
-import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.config.SettingPersistence;
 import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
-import dev.chise.chisetweaks.config.WhiteConcreteVisibilitySetting;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
 import java.util.EnumSet;
@@ -70,15 +67,15 @@ final class ChiseTweaksSettingsController {
             }
             case INSPECTOR -> EnumSet.noneOf(SettingPersistence.class);
             case ANALYZER -> {
-                LocalFeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
-                LocalFeatureSwitches.ANCIENT_DEBRIS_ANALYZER.resetToDefault();
+                FeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
+                FeatureSwitches.ANCIENT_DEBRIS_ANALYZER.resetToDefault();
                 resetAnalyzerDetails();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
             case VISIBILITY -> {
-                LocalFeatureSwitches.FIRE_VISIBILITY.resetToDefault();
-                ChestVisibilitySetting.INSTANCE.resetToDefault();
-                WhiteConcreteVisibilitySetting.INSTANCE.resetToDefault();
+                FeatureSwitches.FIRE_VISIBILITY.resetToDefault();
+                FeatureSwitches.BRIGHT_CHEST.resetToDefault();
+                FeatureSwitches.BRIGHT_CONCRETE.resetToDefault();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
         };
