@@ -38,7 +38,7 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
 
     private final int kind;
     private final @Nullable Target target;
-    private final @Nullable GlassHighlightTargetPolicy.Shape glassShape;
+    private final GlassHighlightTargetPolicy.Shape glassShape;
     private final ExtraModelKey<BlockStateModel> staticKey;
     private final @Nullable ExtraModelKey<BlockStateModel> animatedKey;
 
@@ -53,7 +53,7 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
             BlockStateModel wrapped,
             int kind,
             @Nullable Target target,
-            @Nullable GlassHighlightTargetPolicy.Shape glassShape,
+            GlassHighlightTargetPolicy.Shape glassShape,
             ExtraModelKey<BlockStateModel> staticKey,
             @Nullable ExtraModelKey<BlockStateModel> animatedKey) {
         super(wrapped);
@@ -217,7 +217,7 @@ final class FullbrightOverlayModel extends WrapperBlockStateModel {
             Object wrappedKey,
             int kind,
             @Nullable Object token,
-            @Nullable OreHighlightRuntimePolicy.Motion motion) {}
+            OreHighlightRuntimePolicy.Motion motion) {}
 
     private static void warnOnce(AtomicBoolean gate, String operation, Throwable failure) {
         if (!gate.compareAndSet(false, true)) return;
