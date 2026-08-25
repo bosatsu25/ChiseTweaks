@@ -8,7 +8,7 @@
   },
   "client": [
     "rendering.BuilderFocusBlockMixin",
-    "rendering.BuilderFocusBlockEntityMixin",
+    "rendering.BlockEntityVisualStateMixin",
     "rendering.BuilderFocusEntityMixin",
     "rendering.FireVisibilityMixin"
   ],
