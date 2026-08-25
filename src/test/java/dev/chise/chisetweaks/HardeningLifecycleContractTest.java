@@ -42,8 +42,8 @@ final class HardeningLifecycleContractTest {
                 "src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java"));
         String controller = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/resource/ChiseTexturePackController.java"));
-        String lava = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"));
+        String renderGuard = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallRenderGuard.java"));
         assertTrue(manager.contains("RuntimeDiagnosticEvent.COMPONENT_INIT_QUARANTINE"));
         assertTrue(manager.contains("RuntimeDiagnosticEvent.COMPONENT_QUARANTINE"));
         assertTrue(manager.contains("diagnosticQuarantinedComponentIds"));
@@ -51,7 +51,9 @@ final class HardeningLifecycleContractTest {
         assertTrue(controller.contains("RuntimeDiagnosticEvent.RESOURCE_RELOAD_TERMINAL_FAILURE"));
         assertTrue(controller.contains("TERMINAL_RECOVERY"));
         assertTrue(controller.contains("RELOADS.cancel("));
-        assertTrue(lava.contains("RuntimeDiagnosticEvent.COMPONENT_QUARANTINE"));
-        assertTrue(lava.contains("RuntimeDiagnosticDetail.of(\"stage\", \"render\")"));
+        assertTrue(renderGuard.contains("RuntimeDiagnosticEvent.COMPONENT_QUARANTINE"));
+        assertTrue(renderGuard.contains("RuntimeDiagnosticDetail.of(\"stage\", \"render\")"));
+        assertTrue(renderGuard.contains("snapshot.clear()"));
+        assertTrue(renderGuard.contains("renderer.resetAfterFailure()"));
     }
 }
