@@ -35,8 +35,6 @@
   "config.option.builderfocusentityrulemode.name": "Entity visibility list mode",
   "config.option.builderfocusentitywhitelist.comment": "Entity IDs kept visible by Visual Filter.",
   "config.option.builderfocusentitywhitelist.name": "Entities kept visible",
-  "config.option.localworksitevisibilityexclusivemode.comment": "Keep one worksite-visibility tool active at a time. Disable this to combine selected overlays.",
-  "config.option.localworksitevisibilityexclusivemode.name": "Single Visibility Mode",
   "config.option.localworksitevisibilityhorizontalradius.comment": "Horizontal radius for bounded local visibility scans.",
   "config.option.localworksitevisibilityhorizontalradius.name": "Visibility Horizontal Radius",
   "config.option.localworksitevisibilityintervalticks.comment": "Ticks between local visibility scans.",
