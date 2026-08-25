@@ -4,7 +4,8 @@
 
 ChiseTweaksは、**見つける・隠す・調べる・置き方を確認する**ための視認／検証機能を1つにまとめています。自動建築やサーバー側のワールド変更は行いません。
 
-Current version: **`0.13.4+mc26.1.2`**
+Current version: **`0.13.4+mc26.1.2`**  
+開発・QA・CI・Releaseの現在契約は [`DEVELOPMENT.md`](DEVELOPMENT.md) を参照してください。
 
 ## 必要環境
 
