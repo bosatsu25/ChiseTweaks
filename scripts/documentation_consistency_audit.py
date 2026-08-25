@@ -78,7 +78,18 @@ def main() -> int:
         "README must link to DEVELOPMENT.md",
         failures,
     )
-    require(r"^## 13 Feature$", readme, "README must document the thirteen-feature scope", failures)
+    require(
+        r"13個のON/OFF機能",
+        readme,
+        "README must explain the thirteen-toggle scope in beginner-facing language",
+        failures,
+    )
+    require(
+        r"Bright系は専用PNGを持ちません",
+        readme,
+        "README must explain the texture-free Bright rendering architecture",
+        failures,
+    )
     require(
         r"Resource Pack selection / reloadへ依存しない",
         development,
