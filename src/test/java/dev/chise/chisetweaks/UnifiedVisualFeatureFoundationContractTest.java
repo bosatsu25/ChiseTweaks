@@ -69,8 +69,11 @@ class UnifiedVisualFeatureFoundationContractTest {
         assertTrue(chest.contains("Sheets.BLOCKS_MAPPER.apply"));
         assertTrue(chest.contains("white_concrete"));
         assertTrue(chest.contains("FeatureSwitches.BRIGHT_CHEST.getBooleanValue()"));
-        assertTrue(chest.contains("state.blockState.is(Blocks.CHEST)"));
+        assertTrue(chest.contains("ChestMaterialType.REGULAR"));
         assertTrue(chest.contains("Sheets;chooseSprite"));
+        assertFalse(chest.contains("state.blockState"));
+        assertFalse(chest.contains("Blocks.CHEST"));
+        assertFalse(chest.contains("@Local"));
         assertFalse(chest.contains("resourcepacks/"));
         assertFalse(chest.contains(".png"));
 
