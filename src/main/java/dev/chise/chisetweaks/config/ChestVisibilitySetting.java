@@ -1,23 +1,9 @@
 package dev.chise.chisetweaks.config;
 
-import dev.chise.chisetweaks.feature.resource.ChiseTexturePackController;
-import dev.chise.chisetweaks.feature.resource.VisibilityPack;
+/** @deprecated Bright Chestは通常Featureへ統合済み。段階的なsource migration用alias。 */
+@Deprecated(forRemoval = true)
+public final class ChestVisibilitySetting {
+    public static final FeatureSwitch INSTANCE = FeatureSwitches.BRIGHT_CHEST;
 
-/** Bright Chest built-in resource packと設定UIを接続する。 */
-public final class ChestVisibilitySetting extends ChiseBooleanSetting {
-    public static final ChestVisibilitySetting INSTANCE = new ChestVisibilitySetting();
-
-    private ChestVisibilitySetting() {
-        super("chestVisibility", true, SettingPersistence.EXTERNAL);
-    }
-
-    @Override
-    protected boolean readValue() {
-        return ChiseTexturePackController.isEnabled(VisibilityPack.CHEST);
-    }
-
-    @Override
-    protected void writeValue(boolean value) {
-        ChiseTexturePackController.setEnabled(VisibilityPack.CHEST, value);
-    }
+    private ChestVisibilitySetting() {}
 }
