@@ -2,7 +2,6 @@ package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
-import dev.chise.chisetweaks.config.LocalFeatureSwitches;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
@@ -385,9 +384,6 @@ final class CrosshairInspector {
     private static long enabledFeatureMask() {
         long mask = 0L;
         for (var setting : FeatureSwitches.VALUES) {
-            if (setting.getBooleanValue()) mask |= 1L << setting.definition().ordinal();
-        }
-        for (var setting : LocalFeatureSwitches.VALUES) {
             if (setting.getBooleanValue()) mask |= 1L << setting.definition().ordinal();
         }
         return mask;
