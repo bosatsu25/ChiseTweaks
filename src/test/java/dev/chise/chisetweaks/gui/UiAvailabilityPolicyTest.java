@@ -23,13 +23,18 @@ final class UiAvailabilityPolicyTest {
     }
 
     @Test
-    void inspectorRowsAreDisplayOnly() {
+    void inspectorRowsExposeOnlyExplicitSessionActions() {
         var controller = new ChiseTweaksSettingsController();
         for (ChiseTweaksSettingRowDefinition row
                 : controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR)) {
             if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) continue;
-            assertFalse(UiAvailabilityPolicy.isRowInteractive(
-                    ChiseTweaksSettingsController.Surface.INSPECTOR, row), row.id());
+            if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.ACTION) {
+                assertTrue(UiAvailabilityPolicy.isRowInteractive(
+                        ChiseTweaksSettingsController.Surface.INSPECTOR, row), row.id());
+            } else {
+                assertFalse(UiAvailabilityPolicy.isRowInteractive(
+                        ChiseTweaksSettingsController.Surface.INSPECTOR, row), row.id());
+            }
         }
     }
 
@@ -50,6 +55,12 @@ final class UiAvailabilityPolicyTest {
         assertFalse(UiAvailabilityPolicy.isActionInteractive(
                 ChiseTweaksSettingsController.Surface.ANALYZER,
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT));
+        assertTrue(UiAvailabilityPolicy.isActionInteractive(
+                ChiseTweaksSettingsController.Surface.INSPECTOR,
+                ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE));
+        assertTrue(UiAvailabilityPolicy.isActionInteractive(
+                ChiseTweaksSettingsController.Surface.INSPECTOR,
+                ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE));
     }
 
     @Test

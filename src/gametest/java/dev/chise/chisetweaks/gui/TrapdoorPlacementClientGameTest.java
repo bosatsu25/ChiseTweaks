@@ -168,6 +168,8 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                 assertComplexPlacements(level, player, origin);
                 assertComparisonLifecycle(
                         level, server.getLevel(Level.NETHER), player, origin, 52);
+                assertPatternConsistency(
+                        level, server.getLevel(Level.NETHER), origin.offset(40, 0, 40));
             });
         }
     }
@@ -629,6 +631,86 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                         == PlacementComparisonTracker.UNAVAILABLE,
                 "missing prediction must be unavailable");
         tracker.clear();
+    }
+
+    private static void assertPatternConsistency(
+            ServerLevel level,
+            ServerLevel otherDimension,
+            BlockPos origin) {
+        require(otherDimension != null, "Nether test level is unavailable");
+        PatternConsistencyInspector inspector = new PatternConsistencyInspector();
+        BlockState reference = Blocks.OAK_TRAPDOOR.defaultBlockState()
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
+                .setValue(BlockStateProperties.HALF, Half.BOTTOM)
+                .setValue(BlockStateProperties.OPEN, false);
+        level.setBlockAndUpdate(origin, reference);
+        level.setBlockAndUpdate(origin.east(), reference);
+        level.setBlockAndUpdate(origin.east(2), reference
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST));
+        level.setBlockAndUpdate(origin.east(3), reference
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH)
+                .setValue(BlockStateProperties.HALF, Half.TOP)
+                .setValue(BlockStateProperties.OPEN, true));
+        level.setBlockAndUpdate(origin.east(4), Blocks.STONE.defaultBlockState());
+
+        require(inspector.selectReference(level, origin), "pattern reference selection failed");
+        inspector.scanTick(level);
+        require(inspector.scanCursor() == PatternConsistencyInspector.MAX_BLOCKS_PER_TICK,
+                "pattern scan must enforce its per-tick block budget");
+        completePatternScan(inspector, level);
+        require(inspector.scanCursor() == 0, "pattern scan did not complete");
+        require(inspector.compared() == 3
+                        && inspector.matches() == 1
+                        && inspector.mismatchTotal() == 2,
+                "pattern scan must ignore different Block IDs and compare same-ID states");
+        require(inspector.retainedMismatches() == 2,
+                "pattern scan must retain each mismatch within capacity");
+        require(inspector.mismatchSummary("orientation").equals("Facing  2")
+                        && inspector.mismatchSummary("shape").equals("Half  1")
+                        && inspector.mismatchSummary("interaction").equals("Open  1"),
+                "pattern mismatch reasons must be deterministic");
+
+        BlockPos denseOrigin = origin.offset(0, 0, 24);
+        level.setBlockAndUpdate(denseOrigin, reference);
+        int placed = 0;
+        for (int x = -7; x <= 7 && placed < 70; x++) {
+            for (int z = -7; z <= 7 && placed < 70; z++) {
+                if (x == 0 && z == 0) continue;
+                level.setBlockAndUpdate(denseOrigin.offset(x, 0, z), reference
+                        .setValue(BlockStateProperties.OPEN, true));
+                placed++;
+            }
+        }
+        require(inspector.selectReference(level, denseOrigin),
+                "replacement pattern reference selection failed");
+        require(inspector.compared() == 0,
+                "new explicit reference must invalidate previous results");
+        completePatternScan(inspector, level);
+        require(inspector.mismatchTotal() == 70,
+                "dense pattern scan must report every same-ID mismatch");
+        require(inspector.retainedMismatches() == PatternConsistencyInspector.MAX_RETAINED_MISMATCHES,
+                "pattern mismatch retention must stop at the hard result budget");
+
+        level.setBlockAndUpdate(denseOrigin, Blocks.STONE.defaultBlockState());
+        inspector.scanTick(level);
+        require(!inspector.hasReference(),
+                "replacement of the selected source block must clear the reference");
+        level.setBlockAndUpdate(origin, reference);
+        require(inspector.selectReference(level, origin), "dimension clear setup failed");
+        inspector.scanTick(otherDimension);
+        require(!inspector.hasReference(), "dimension change must clear pattern state");
+        require(inspector.selectReference(level, origin), "disconnect clear setup failed");
+        inspector.resetSession(null);
+        require(!inspector.hasReference(), "disconnect must clear pattern state");
+    }
+
+    private static void completePatternScan(
+            PatternConsistencyInspector inspector,
+            ServerLevel level) {
+        int ticks = (PatternConsistencyInspector.TOTAL_BLOCKS
+                + PatternConsistencyInspector.MAX_BLOCKS_PER_TICK - 1)
+                / PatternConsistencyInspector.MAX_BLOCKS_PER_TICK;
+        for (int tick = 0; tick < ticks; tick++) inspector.scanTick(level);
     }
 
     private static Vec3 hitLocation(BlockPos pos, Direction face, double clickY) {

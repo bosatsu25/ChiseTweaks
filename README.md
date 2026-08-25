@@ -75,7 +75,13 @@ NBT、看板本文、本、chat、inventory、container内容、UUIDは取得し
 
 通常のvanilla配置後はその1座標だけを短時間観測し、PredictedとActualを `MATCH` または `ADJUSTED` として関連付け、変化したpropertyを表示します。別blockが置かれた場合は比較せず、timeout、disconnect、dimension変更でpending stateを破棄します。
 
-packet送信、world変更、click / key注入、追加raycast / scan、設定保存、配置履歴は行いません。Stairsなど複雑block、3D ghost、offhandは今後のIssueで扱います。
+packet送信、world変更、click / key注入、追加raycast / scan、設定保存、配置履歴は行いません。3D ghostとoffhandは対象外です。
+
+### Pattern Consistency
+
+Inspectorで照準中のブロックをReferenceとして明示選択すると、読み込み済みclient chunk内の同じBlock IDだけを比較し、Orientation / Shape / Connection / Interaction / Fluid / Other別に不一致property数を表示します。Referenceは多数決や最近傍ではなく、ユーザーが選んだBlockStateだけを正本にします。
+
+v1の走査はReferenceを中心に水平8・上下4、1 tick最大256ブロック、保持mismatch最大64件、再走査間隔20 tickへ固定しています。状態はmemory-onlyで画面を閉じても同一session中は維持し、Reference置換、dimension変更、disconnectで破棄します。chunk強制読み込み、world変更、自動修正、座標logging、BlockEntity NBT取得は行いません。
 
 ## Filter precedence
 

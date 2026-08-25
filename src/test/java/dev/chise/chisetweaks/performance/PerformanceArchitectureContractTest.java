@@ -110,4 +110,14 @@ final class PerformanceArchitectureContractTest {
         assertFalse(source.contains("if (!\"minecraft\".equals(namespace))"),
                 "Non-Minecraft blocks must not be wrapped unconditionally in the steady-state visual path");
     }
+
+    @Test
+    void patternConsistencyBudgetsArePartOfTheRepositoryPerformanceAudit() throws IOException {
+        String audit = Files.readString(ROOT.resolve("scripts/runtime_performance_contract_audit.py"));
+
+        assertTrue(audit.contains("PATTERN_INSPECTOR"));
+        assertTrue(audit.contains("MAX_BLOCKS_PER_TICK = 256"));
+        assertTrue(audit.contains("MAX_RETAINED_MISMATCHES = 64"));
+        assertTrue(audit.contains("pattern_consistency_scan=bounded_loaded_chunks_only"));
+    }
 }
