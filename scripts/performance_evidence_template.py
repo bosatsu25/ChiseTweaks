@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate empty, comparable performance evidence sheets for the five required Prism scenarios."""
+"""Generate empty, comparable performance evidence sheets for retained Prism scenarios."""
 from __future__ import annotations
 
 import argparse
@@ -8,7 +8,7 @@ from pathlib import Path
 SCENARIOS = (
     "chise-absent",
     "chise-all-off",
-    "analyzers-on",
+    "lava-analyzer-on",
     "highlights-on",
     "maximum-supported-load",
 )
@@ -39,7 +39,7 @@ def main() -> int:
     output = args.output
     output.mkdir(parents=True, exist_ok=True)
     for scenario in SCENARIOS:
-        for variant in ("baseline-0.9.3", "candidate-0.9.4"):
+        for variant in ("baseline", "candidate"):
             destination = output / f"{scenario}-{variant}.csv"
             if destination.exists():
                 raise SystemExit(f"refusing to overwrite existing evidence: {destination.name}")
