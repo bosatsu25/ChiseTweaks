@@ -124,17 +124,40 @@ def audit() -> list[str]:
         if blocking_wait_syntax(code):
             failures.append(f"{relative}: Bright rendering must not block on get/join")
 
-    concrete = java_code_only((ROOT / "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java").read_text(encoding="utf-8"))
-    replacement_start = concrete.find("private void emitReplacementOrBase")
+    chest_path = ROOT / "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java"
+    chest = java_code_only(chest_path.read_text(encoding="utf-8"))
+    for marker in (
+        "FeatureSwitches.BRIGHT_CHEST.getBooleanValue()",
+        "state instanceof ChestRenderState chest",
+        "chest.lightCoords = LightCoordsUtil.FULL_BRIGHT",
+    ):
+        if marker not in chest:
+            failures.append(f"Bright Chest lightweight lighting boundary changed or disappeared: {marker}")
+    for forbidden in ("customSprite", "SpriteId", "CHEST_MAPPER", "entity/chest/"):
+        if forbidden in chest:
+            failures.append(f"Bright Chest must reuse vanilla geometry/texture instead of custom assets: {forbidden}")
+
+    concrete_path = ROOT / "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java"
+    concrete = java_code_only(concrete_path.read_text(encoding="utf-8"))
+    bright_start = concrete.find("private void emitBrightConcrete")
     overlay_start = concrete.find("private void emitExtraModel")
-    replacement = concrete[replacement_start:overlay_start]
-    if replacement_start < 0 or overlay_start <= replacement_start:
-        failures.append("Bright Concrete replacement boundary disappeared")
+    bright = concrete[bright_start:overlay_start]
+    if bright_start < 0 or overlay_start <= bright_start:
+        failures.append("Bright Concrete lightweight lighting boundary disappeared")
     else:
-        if "replacement.emitQuads" not in replacement:
-            failures.append("Bright Concrete must emit the replacement model directly")
-        if "FullbrightOverlayEmission.emit" in replacement:
-            failures.append("Bright Concrete must preserve normal Minecraft lighting")
+        for marker in ("emitter.pushTransform", "FullbrightOverlayLighting.apply(quad)", "super.emitQuads", "emitter.popTransform"):
+            if marker not in bright:
+                failures.append(f"Bright Concrete must transform the vanilla model in-place: {marker}")
+        for forbidden in ("overlayModel(", "replacement.emitQuads", "FullbrightOverlayEmission.emit"):
+            if forbidden in bright:
+                failures.append(f"Bright Concrete must not emit a replacement/extra model: {forbidden}")
+
+    plugin = java_code_only((ROOT / "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java").read_text(encoding="utf-8"))
+    if "FullbrightOverlayModel.brightConcrete(model)" not in plugin:
+        failures.append("Bright Concrete must wrap the vanilla White Concrete model directly")
+    for forbidden in ("BRIGHT_CONCRETE_MODEL", "BRIGHT_CONCRETE_KEY", "block/visual/bright_concrete"):
+        if forbidden in plugin:
+            failures.append(f"Bright Concrete custom model dependency returned: {forbidden}")
 
     for relative in ANALYZERS:
         path = ROOT / relative
@@ -185,7 +208,9 @@ def main() -> int:
     print("full_resource_reload_callers=1_model_controller")
     print("visibility_pack_reload=removed")
     print("bright_rendering_resource_reload=false")
-    print("bright_concrete_normal_lighting=true")
+    print("bright_custom_assets=false")
+    print("bright_chest=vanilla_texture_fullbright_lightcoords")
+    print("bright_concrete=vanilla_model_fullbright_quad_transform")
     print("reload_controllers_get_join_free=true")
     print("analyzers_force_chunk_load=false")
     print("analyzer_budgets=bounded")
