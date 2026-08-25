@@ -12,23 +12,27 @@ import java.util.Set;
 
 /** 互換性影響の大きいMixinを、対応する現行featureが利用可能な場合だけ適用する。 */
 public final class FeatureAvailabilityMixinConfigPlugin implements IMixinConfigPlugin {
-    private static final Map<String, FeatureDefinition> MIXIN_FEATURES = Map.of(
+    private static final Map<String, List<FeatureDefinition>> MIXIN_FEATURES = Map.of(
             "dev.chise.chisetweaks.mixin.rendering.BuilderFocusBlockMixin",
-            FeatureDefinition.BUILDER_FOCUS_BLOCKS,
-            "dev.chise.chisetweaks.mixin.rendering.BuilderFocusBlockEntityMixin",
-            FeatureDefinition.BUILDER_FOCUS_BLOCKS,
+            List.of(FeatureDefinition.BUILDER_FOCUS_BLOCKS),
+            "dev.chise.chisetweaks.mixin.rendering.BlockEntityVisualStateMixin",
+            List.of(FeatureDefinition.BUILDER_FOCUS_BLOCKS, FeatureDefinition.BRIGHT_CHEST),
             "dev.chise.chisetweaks.mixin.rendering.BuilderFocusEntityMixin",
-            FeatureDefinition.BUILDER_FOCUS_ENTITIES,
+            List.of(FeatureDefinition.BUILDER_FOCUS_ENTITIES),
             "dev.chise.chisetweaks.mixin.rendering.FireVisibilityMixin",
-            FeatureDefinition.FIRE_VISIBILITY);
+            List.of(FeatureDefinition.FIRE_VISIBILITY));
 
     @Override public void onLoad(String mixinPackage) {}
     @Override public String getRefMapperConfig() { return null; }
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        FeatureDefinition feature = MIXIN_FEATURES.get(mixinClassName);
-        return feature != null && FeatureAvailabilityPolicy.isAvailable(feature);
+        List<FeatureDefinition> features = MIXIN_FEATURES.get(mixinClassName);
+        if (features == null) return false;
+        for (FeatureDefinition feature : features) {
+            if (FeatureAvailabilityPolicy.isAvailable(feature)) return true;
+        }
+        return false;
     }
 
     @Override public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {}
