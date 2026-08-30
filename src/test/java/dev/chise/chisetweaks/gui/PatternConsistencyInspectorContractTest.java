@@ -54,19 +54,19 @@ final class PatternConsistencyInspectorContractTest {
     }
 
     @Test
-    void patternToolReusesInspectorUiWithoutBecomingATopLevelFeature() throws Exception {
+    void patternToolLivesInsideBuilderAssistWithoutBecomingALowLevelToggle() throws Exception {
         String manager = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java"));
-        String inspectorRows = Files.readString(Path.of(
-                "src/main/java/dev/chise/chisetweaks/gui/InspectorSettingsRows.java"));
+        String assistRows = Files.readString(Path.of(
+                "src/main/java/dev/chise/chisetweaks/gui/BuilderAssistRows.java"));
         String definitions = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java"));
         String pattern = Files.readString(SOURCE);
 
         assertTrue(manager.contains("registerComponent(new PatternConsistencyInspector())"));
-        assertTrue(inspectorRows.contains("addPatternConsistencyRows"));
+        assertTrue(assistRows.contains("addPatternConsistencyRows"));
         assertTrue(pattern.contains("semanticPropertyGroup(property)"));
         assertFalse(definitions.contains("PATTERN_CONSISTENCY"));
-        assertEquals(6, ChiseTweaksSettingsController.Surface.values().length);
+        assertEquals(7, ChiseTweaksSettingsController.Surface.values().length);
     }
 }
