@@ -52,9 +52,13 @@ public final class ChiseListEditorScreen extends Screen {
     private String feedback = "";
 
     public ChiseListEditorScreen(Screen parent, Target target) {
-        super(ChiseListEditorBackend.screenTitle(target));
+        this(parent, ChiseListEditorBackend.create(target));
+    }
+
+    private ChiseListEditorScreen(Screen parent, ChiseListEditorBackend backend) {
+        super(backend.title());
         this.parent = parent;
-        this.backend = ChiseListEditorBackend.create(target);
+        this.backend = backend;
     }
 
     @Override
