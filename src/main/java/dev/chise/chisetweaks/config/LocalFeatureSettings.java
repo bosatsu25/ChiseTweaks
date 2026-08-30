@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.config;
 
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
+import dev.chise.chisetweaks.core.vision.FireVisibilityPolicy;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -13,6 +14,15 @@ import java.util.function.IntSupplier;
 public final class LocalFeatureSettings {
     private static final Runnable NOOP = () -> {};
     private static Runnable oreHighlightChangedCallback = NOOP;
+
+    public static final ChiseIntegerSetting FIRE_VISIBILITY_SIZE = integer(
+            "localFireVisibilitySizePreset",
+            FireVisibilityPolicy.DEFAULT_SIZE_PRESET,
+            FireVisibilityPolicy.MIN_SIZE_PRESET,
+            FireVisibilityPolicy.MAX_SIZE_PRESET,
+            () -> config().fireVisibilitySizePreset,
+            value -> config().fireVisibilitySizePreset = value,
+            FireVisibilityPolicy::sizeLabel);
 
     public static final SimpleBooleanSetting ORE_HIGHLIGHT_ANIMATION = bool(
             "localOreHighlightAnimation", false,
