@@ -47,7 +47,8 @@ final class UiAvailabilityPolicy {
         return resolved == ChiseTweaksSettingsController.Surface.INTEGRATIONS
                 && (action == ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT
                 || action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD
-                || action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD);
+                || action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD
+                || action == ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE);
     }
 
     private static boolean isReleasedHighlightRow(SettingRowId id) {
