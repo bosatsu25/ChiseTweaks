@@ -56,6 +56,18 @@ final class PlacementInspectorContractTest {
     }
 
     @Test
+    void vanillaPlacementContextIsOwnedByOneSharedProbe() throws Exception {
+        String inspector = Files.readString(Path.of(
+                "src/main/java/dev/chise/chisetweaks/gui/CrosshairInspector.java"));
+        String placement = Files.readString(TRACKER);
+
+        assertTrue(inspector.contains("static PlacementProbe placementProbe("));
+        assertEquals(1, occurrences(inspector, "new BlockPlaceContext("));
+        assertFalse(placement.contains("new BlockPlaceContext("));
+        assertTrue(placement.contains("CrosshairInspector.placementProbe("));
+    }
+
+    @Test
     void unifiedPlacementInspectorUsesOneRuntimeLifecycleWithoutBecomingAFeature() throws Exception {
         String manager = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java"));
@@ -67,4 +79,10 @@ final class PlacementInspectorContractTest {
         assertFalse(manager.contains("registerComponent(new PlacementComparisonTracker())"));
         assertTrue(session.contains("FeatureManager.getInstance().resetSessionState(client)"));
     }
+    private static int occurrences(String text, String token) {
+        int count = 0;
+        for (int index = 0; (index = text.indexOf(token, index)) >= 0; index += token.length()) count++;
+        return count;
+    }
+
 }
