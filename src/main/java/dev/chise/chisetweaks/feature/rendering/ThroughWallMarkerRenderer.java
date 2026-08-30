@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Optional;
@@ -138,13 +139,12 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
     }
 
     private String hiddenBlockIdAt(Minecraft client, int x, int y, int z) {
-        if (client == null || client.level == null
-                || client.level.getChunkSource().getChunkNow(x >> 4, z >> 4) == null) {
-            return "";
-        }
+        if (client == null || client.level == null) return "";
+        LevelChunk sourceChunk = client.level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+        if (sourceChunk == null) return "";
         paletteCursor.set(x, y, z);
         Identifier id = BuiltInRegistries.BLOCK.getKey(
-                client.level.getBlockState(paletteCursor).getBlock());
+                sourceChunk.getBlockState(paletteCursor).getBlock());
         return id == null ? "" : id.toString();
     }
 
