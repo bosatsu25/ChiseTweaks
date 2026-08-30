@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseTweaksSettingRowViewTest {
@@ -34,6 +35,30 @@ final class ChiseTweaksSettingRowViewTest {
 
         previous.removeWidgets(host::remove);
         assertTrue(host.isEmpty());
+    }
+
+
+    @Test
+    void compatibleInspectorRowsReuseViewsWhileBindingChangesRequireReplacement() {
+        var firstInfo = ChiseTweaksSettingRowDefinition.info("inspector.target", "Stone", "First");
+        var nextInfo = ChiseTweaksSettingRowDefinition.info("inspector.target", "Glass", "Second");
+        ChiseTweaksSettingRowView info =
+                new ChiseTweaksSettingRowView(firstInfo, null, null, null, null);
+
+        assertTrue(info.canReuse(nextInfo));
+        info.rebind(nextInfo);
+        assertEquals("Glass", info.definition.name());
+
+        var firstSetting = new dev.chise.chisetweaks.config.ChiseBooleanSetting("first", false);
+        var secondSetting = new dev.chise.chisetweaks.config.ChiseBooleanSetting("second", false);
+        var firstBoolean = ChiseTweaksSettingRowDefinition.bool(
+                "inspector.toggle", "Toggle", "", firstSetting);
+        var secondBoolean = ChiseTweaksSettingRowDefinition.bool(
+                "inspector.toggle", "Toggle", "", secondSetting);
+        ChiseTweaksSettingRowView boolView =
+                new ChiseTweaksSettingRowView(firstBoolean, button("toggle"), null, null, null);
+
+        assertFalse(boolView.canReuse(secondBoolean));
     }
 
     private static Button button(String label) {
