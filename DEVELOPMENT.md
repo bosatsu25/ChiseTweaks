@@ -238,7 +238,8 @@ Security/configではmalformed UTF-8、unsafe path、symlink、oversized payload
 
 Installable artifactはruntime JARだけです。
 
-- final target: `358400 bytes` 以下（350 KiB）
+- target: `296960 bytes` 以下（290 KiB）
+- stretch: `256000 bytes` 以下（250 KiB）
 - frozen / effective hard ceiling: `446814 bytes`
 - feature parity / correctnessを壊す削減は禁止
 - hard ceilingを機能追加の都合で引き上げない
