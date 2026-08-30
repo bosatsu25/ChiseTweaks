@@ -3,6 +3,8 @@ package dev.chise.chisetweaks.feature.rendering;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
+import dev.chise.chisetweaks.config.LocalFeatureConfig;
+import dev.chise.chisetweaks.core.policy.HiddenBlockAnalyzerPalettePolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
@@ -16,7 +18,8 @@ import java.util.Optional;
 /** 上限付きAnalyzerで共有する、地形越しの輪郭＋半透明面を描画する保持型renderer。 */
 final class ThroughWallMarkerRenderer implements AutoCloseable {
     enum Style {
-        LAVA_SOURCE
+        LAVA_SOURCE,
+        HIDDEN_BLOCK
     }
 
     private static final RenderPipeline THROUGH_WALL_PIPELINE = RenderPipelines.register(
@@ -26,6 +29,7 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
                     .withDepthStencilState(Optional.empty())
                     .build());
 
+    private final Style style;
     private final ThroughWallPositionSnapshot.Capture capture;
     private final RetainedThroughWallBuffer retainedBuffer;
 
@@ -38,6 +42,7 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
             String bufferLabel,
             String renderLabel) {
         if (style == null) throw new IllegalArgumentException("style must not be null");
+        this.style = style;
         this.capture = new ThroughWallPositionSnapshot.Capture(capacity);
         this.retainedBuffer = new RetainedThroughWallBuffer(bufferLabel, renderLabel);
     }
@@ -77,22 +82,42 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
             double dy = y + 0.5 - state.eyeY();
             double dz = z + 0.5 - state.eyeZ();
             double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            float edgeThickness = LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS;
-            float boxInset = LavaVisionPalettePolicy.ANALYZER_BOX_INSET;
+            int outlineColor;
+            int fillColor;
+            float edgeThickness;
+            float boxInset;
+            if (style == Style.HIDDEN_BLOCK) {
+                LocalFeatureConfig local = LocalFeatureConfig.getInstance();
+                outlineColor = HiddenBlockAnalyzerPalettePolicy.colorForDistance(
+                        distance,
+                        local.hiddenSurfaceTraceColorPreset,
+                        local.hiddenSurfaceTraceOpacityPercent);
+                fillColor = HiddenBlockAnalyzerPalettePolicy.fillColorForDistance(
+                        distance,
+                        local.hiddenSurfaceTraceColorPreset,
+                        local.hiddenSurfaceTraceOpacityPercent);
+                edgeThickness = HiddenBlockAnalyzerPalettePolicy.ANALYZER_EDGE_THICKNESS;
+                boxInset = HiddenBlockAnalyzerPalettePolicy.ANALYZER_BOX_INSET;
+            } else {
+                outlineColor = LavaVisionPalettePolicy.colorForDistance(distance);
+                fillColor = LavaVisionPalettePolicy.fillColorForDistance(distance);
+                edgeThickness = LavaVisionPalettePolicy.ANALYZER_EDGE_THICKNESS;
+                boxInset = LavaVisionPalettePolicy.ANALYZER_BOX_INSET;
+            }
 
             ThroughWallWireBoxGeometry.drawFilledBox(
                     buffer,
                     x - anchorX,
                     y - anchorY,
                     z - anchorZ,
-                    LavaVisionPalettePolicy.fillColorForDistance(distance),
+                    fillColor,
                     boxInset + edgeThickness);
             ThroughWallWireBoxGeometry.drawWireBox(
                     buffer,
                     x - anchorX,
                     y - anchorY,
                     z - anchorZ,
-                    LavaVisionPalettePolicy.colorForDistance(distance),
+                    outlineColor,
                     edgeThickness,
                     boxInset);
         }
