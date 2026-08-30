@@ -4,6 +4,7 @@ package dev.chise.chisetweaks.config;
 public enum SettingPersistence {
     FEATURE_CONFIG(true),
     LOCAL_CONFIG(true),
+    INTEGRATION_CONFIG(true),
     EXTERNAL(false);
 
     private final boolean applyManaged;
