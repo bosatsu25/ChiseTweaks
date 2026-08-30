@@ -196,7 +196,7 @@ GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button o
 - shared runtime（Lava/Hidden、Beacon/Lightning Rod、Worksite overlay）でもuser-facing toggleは独立する
 - source contractのPASSは実ピクセル描画の保証ではないため、release acceptanceではClient GameTest / Prism実機確認を別途行う
 
-Builder Focus list、Ore compatibility、Masa list/mapの編集画面は`ChiseListEditorScreen`へ集約し、paging / remove / clear / footer / row renderingを共有する。各domainのvalidation・保存先・Ore model reloadは統合せず、それぞれの既存contractを維持する。
+Builder Focus list、Ore compatibility、Masa list/mapは`ChiseListEditorScreen`でwidget lifecycle（layout / paging / footer / row rendering）のみ共有する。validation・mode遷移・add/remove/clear・保存責務は`SceneFilterBackend` / `MasaListBackend` / `OreCompatibilityBackend`へ分離し、Screenへdomain configやregistry lookupを戻さない。Ore model reloadも`OreCompatibilityBackend`だけが所有する。
 
 Settings row metadataは`ChiseTweaksSettingsController`を正本とし、Controller専用のCatalog/Compatibility row wrapperを別classへ戻さない。Integrationsも同一row bufferへ直接追加し、visual target rowは`VisualTargetSettings.ALL_OPTIONS`から必要時に展開する。
 
