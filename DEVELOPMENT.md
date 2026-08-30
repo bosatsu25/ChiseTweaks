@@ -170,18 +170,37 @@ Coverageはblack-box / runtime acceptanceの代替ではありません。CIの�
 
 ## 7. Test design
 
-回帰設計ではJSTQB Foundation相当の以下を組み合わせます。
+### Risk-based traceability
 
-- equivalence partitioning
+`quality/risk-register.json` を、主要なプロダクトリスクと検証根拠を結ぶmachine-readableな正本として扱います。各riskは最低限、次を明示します。
+
+- quality characteristic
+- likelihood / impact / priority（軽量なordinal assessment）
+- test technique
+- oracle
+- automated / manual evidence
+- exit criteria
+
+品質判定はcoverage率だけで完了させません。JaCoCo / PITはwhite-box evidenceとして維持しつつ、重要riskにはそのriskを直接軽減するoracleとevidenceを割り当てます。high / critical riskは、可能な限り異なる層のevidenceを複数持たせます。
+
+回帰設計ではriskに応じて以下を組み合わせます。
+
+- equivalence partitioning / domain testing
 - boundary value analysis
 - decision table testing
 - state transition testing
+- scenario-based / combination testing
 - deterministic white-box coverage
-- error guessing
+- fault injection / dynamic analysis
+- checklist-based review / error guessing
+
+source-text contractは、dependency direction、禁止API、loaded-chunk-only、hot-path禁止処理など**静的にしか保証できないarchitecture / security / performance constraint**へ限定します。private helper名や現在の実装手順そのものは、可能な限りbehavior testで保証します。
+
+不具合修正PRでは `.github/pull_request_template.md` のRCA欄を使い、root cause、escape point、similar-risk search、regression test、preventive actionを残します。単なる修正で終わらせず、類似欠陥の再発を防ぐGateへフィードバックします。
 
 Minecraft placement予測では、production側の式をtest側へ複製しません。**実際のvanilla placement結果をoracle**にします。Placement Preview / Actual Comparisonは読み取り・比較capabilityであり、実際の入力や配置操作は変更しません。
 
-配置予測のproduction正本は`CrosshairInspector.placementProbe()`とし、Actual ComparisonとLitematica Schematic comparisonは1つの`PlacementInspector` runtimeで共有する。`UseBlockCallback`は常に`PASS`を返し、入力注入・自動配置・packet送信を追加しない。
+配置予測のproduction正本は`PlacementInspector.placementProbe()`とし、Actual ComparisonとLitematica Schematic comparisonも同じ`PlacementInspector` runtimeで共有する。Crosshair Inspectorは既存hitの観測・cache・snapshot lifecycleだけを所有し、Block/Entity snapshot derivationは`CrosshairSnapshotPolicy`へ分離する。`UseBlockCallback`は常に`PASS`を返し、入力注入・自動配置・packet送信を追加しない。
 
 Pattern Consistencyは不一致Blockの座標列を保持せず、比較件数・一致件数・property別不一致countだけをbounded memoryに保持する。
 
