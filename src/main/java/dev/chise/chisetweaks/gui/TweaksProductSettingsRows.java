@@ -8,7 +8,6 @@ import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.MasaIntegrationSettings;
-import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.gui.ChiseTweaksSettingsController.Surface;
 import dev.chise.chisetweaks.integration.masa.MasaModAvailability;
@@ -417,7 +416,7 @@ final class TweaksProductSettingsRows {
     }
 
     private static void addTargets(ArrayList<ChiseTweaksSettingRowDefinition> rows, String prefix) {
-        for (ChiseBooleanSetting option : VisualTargetSettings.ALL_OPTIONS) {
+        for (ChiseBooleanSetting option : LocalFeatureSettings.VISUAL_TARGETS) {
             if (!option.getName().startsWith(prefix)) continue;
             String base = "screen.chisetweaks.settings.target." + option.getName();
             rows.add(ChiseTweaksSettingRowDefinition.bool(
