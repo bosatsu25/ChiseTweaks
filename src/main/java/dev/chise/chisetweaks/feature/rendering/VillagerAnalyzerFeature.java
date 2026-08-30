@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
-import dev.chise.chisetweaks.core.policy.VillagerWorkstationPolicy;
 import dev.chise.chisetweaks.feature.TickingFeature;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -16,8 +15,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -26,18 +23,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-/** Shows the relationship between nearby villagers and their known/fallback workstation. */
+/** Visualizes only villager job-site relationships already known by Minecraft. */
 public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwareRuntimeComponent {
     private static final int HORIZONTAL_RADIUS = 16;
     private static final int VERTICAL_RADIUS = 8;
-    private static final int FALLBACK_WORKSTATION_RADIUS = 8;
     private static final int MAX_VILLAGERS = 12;
     private static final int SCAN_INTERVAL_TICKS = 20;
-    private static final int PRIMARY_COLOR = 0xFF72FF9F;
-    private static final int FALLBACK_COLOR = 0xFFFFC857;
+    private static final int LINK_COLOR = 0xFF72FF9F;
 
-    private final BlockPos.MutableBlockPos workstationCursor = new BlockPos.MutableBlockPos();
-    private final LoadedChunkWindow workstationChunks = new LoadedChunkWindow(9);
     private volatile List<Link> links = List.of();
     private int ticksUntilScan;
     private ClientLevel lastLevel;
@@ -73,10 +66,10 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
             return;
         }
         ticksUntilScan = SCAN_INTERVAL_TICKS - 1;
-        links = scan(client);
+        links = collectKnownLinks(client);
     }
 
-    private List<Link> scan(Minecraft client) {
+    private List<Link> collectKnownLinks(Minecraft client) {
         Vec3 player = client.player.position();
         AABB bounds = new AABB(
                 player.x - HORIZONTAL_RADIUS,
@@ -94,68 +87,14 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         ArrayList<Link> result = new ArrayList<>(villagers.size());
         for (Villager villager : villagers) {
             Optional<GlobalPos> memory = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE);
-            if (memory.isPresent() && memory.get().dimension().equals(client.level.dimension())) {
-                result.add(new Link(
-                        villager.getX(),
-                        villager.getY() + villager.getBbHeight() * 0.65,
-                        villager.getZ(),
-                        memory.get().pos(),
-                        true));
-                continue;
-            }
-
-            Block workstation = VillagerWorkstationPolicy.workstation(
-                    villager.getVillagerData().profession().getRegisteredName());
-            BlockPos fallback = workstation == null
-                    ? null
-                    : findNearestLoadedWorkstation(client.level, villager.blockPosition(), workstation);
-            if (fallback != null) {
-                result.add(new Link(
-                        villager.getX(),
-                        villager.getY() + villager.getBbHeight() * 0.65,
-                        villager.getZ(),
-                        fallback,
-                        false));
-            }
+            if (memory.isEmpty() || !memory.get().dimension().equals(client.level.dimension())) continue;
+            result.add(new Link(
+                    villager.getX(),
+                    villager.getY() + villager.getBbHeight() * 0.65,
+                    villager.getZ(),
+                    memory.get().pos()));
         }
         return List.copyOf(result);
-    }
-
-    private BlockPos findNearestLoadedWorkstation(
-            ClientLevel level,
-            BlockPos origin,
-            Block workstation) {
-        BlockPos best = null;
-        double bestDistance = Double.MAX_VALUE;
-        int radius = FALLBACK_WORKSTATION_RADIUS;
-        int originX = origin.getX();
-        int originY = origin.getY();
-        int originZ = origin.getZ();
-        int minX = originX - radius;
-        int maxX = originX + radius;
-        int minZ = originZ - radius;
-        int maxZ = originZ + radius;
-        if (!workstationChunks.load(level, minX, maxX, minZ, maxZ)) return null;
-
-        for (int z = minZ; z <= maxZ; z++) {
-            for (int x = minX; x <= maxX; x++) {
-                LevelChunk sourceChunk = workstationChunks.atBlock(x, z);
-                if (sourceChunk == null) continue;
-                int dx = x - originX;
-                int dz = z - originZ;
-                for (int y = originY - radius; y <= originY + radius; y++) {
-                    workstationCursor.set(x, y, z);
-                    if (!sourceChunk.getBlockState(workstationCursor).is(workstation)) continue;
-                    int dy = y - originY;
-                    double distance = (double) dx * dx + (double) dy * dy + (double) dz * dz;
-                    if (distance < bestDistance) {
-                        bestDistance = distance;
-                        best = new BlockPos(x, y, z);
-                    }
-                }
-            }
-        }
-        return best;
     }
 
     private void render(LevelRenderContext context) {
@@ -175,7 +114,6 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
                     RenderTypes.lines(),
                     (pose, vertices) -> {
                         for (Link link : snapshot) {
-                            int color = link.claimed() ? PRIMARY_COLOR : FALLBACK_COLOR;
                             float endX = link.jobSite().getX() + 0.5f;
                             float endY = link.jobSite().getY() + 0.5f;
                             float endZ = link.jobSite().getZ() + 0.5f;
@@ -183,9 +121,9 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
                                     vertices, pose,
                                     (float) link.villagerX(), (float) link.villagerY(), (float) link.villagerZ(),
                                     endX, endY, endZ,
-                                    color, 2.4f);
+                                    LINK_COLOR, 2.4f);
                             SurfaceLinePrimitives.drawFaceFrame(
-                                    vertices, pose, link.jobSite(), color, 2.0f);
+                                    vertices, pose, link.jobSite(), LINK_COLOR, 2.0f);
                         }
                     });
         } finally {
@@ -202,7 +140,6 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         links = List.of();
         ticksUntilScan = 0;
         lastLevel = null;
-        workstationChunks.clear();
     }
 
     @Override
@@ -219,6 +156,5 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
             double villagerX,
             double villagerY,
             double villagerZ,
-            BlockPos jobSite,
-            boolean claimed) {}
+            BlockPos jobSite) {}
 }
