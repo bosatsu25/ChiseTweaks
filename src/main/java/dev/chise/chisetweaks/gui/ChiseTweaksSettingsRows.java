@@ -18,51 +18,76 @@ import net.minecraft.network.chat.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Pure presentation model for the six settings surfaces. */
+/** Pure presentation model for the seven Tweaks product groups. */
 final class ChiseTweaksSettingsRows {
     private ChiseTweaksSettingsRows() {}
 
     static List<ChiseTweaksSettingRowDefinition> rows() {
-        return rows(Surface.HIGHLIGHT);
+        return rows(Surface.VISUAL);
     }
 
     static List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
         ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
-        Surface resolved = surface == null
-                ? Surface.HIGHLIGHT
-                : surface;
-        if (resolved == Surface.HIGHLIGHT) {
-            addHighlightRows(rows);
-        } else if (resolved == Surface.FILTER) {
-            addFilterRows(rows);
-        } else if (resolved == Surface.INSPECTOR) {
-            InspectorSettingsRows.addRows(rows, CrosshairInspector.Snapshot.noTarget(), false);
-        } else if (resolved == Surface.ANALYZER) {
-            addAnalyzerRows(rows);
-        } else if (resolved == Surface.VISIBILITY) {
-            addVisibilityRows(rows);
-        } else {
-            addIntegrationRows(rows);
-            addCompatibilityRows(rows);
+        Surface resolved = surface == null ? Surface.VISUAL : surface;
+        switch (resolved) {
+            case VISUAL -> addVisualRows(rows);
+            case BUILDER_HIGHLIGHTS -> addBuilderHighlightRows(rows);
+            case TECHNICAL_VISUALIZATION -> addTechnicalVisualizationRows(rows);
+            case SCENE_FILTER -> addSceneFilterRows(rows);
+            case BUILDER_ASSIST -> BuilderAssistRows.addRows(
+                    rows, CrosshairInspector.Snapshot.noTarget(), false);
+            case WORKFLOW -> rows.addAll(WorkflowRows.rows());
+            case INTEGRATIONS -> {
+                addIntegrationRows(rows);
+                addCompatibilityRows(rows);
+            }
         }
         return List.copyOf(rows);
     }
 
     static String surfaceTitle(Surface surface) {
-        Surface resolved = surface == null ? Surface.HIGHLIGHT : surface;
+        Surface resolved = surface == null ? Surface.VISUAL : surface;
         return text("screen.chisetweaks.settings.tab."
                 + resolved.name().toLowerCase(java.util.Locale.ROOT));
     }
 
-    private static void addHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.highlight", text("screen.chisetweaks.settings.tab.highlight"));
+    private static void addVisualRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "visual.firstPerson",
+                text("screen.chisetweaks.settings.group.first_person"));
+        featureLiteral(rows, "fireVisibility", FeatureSwitches.FIRE_VISIBILITY,
+                text("screen.chisetweaks.settings.copy.fire_visibility.description"));
+        integer(rows, "fireVisibilitySize", LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
+                "screen.chisetweaks.settings.fire_size.name",
+                "screen.chisetweaks.settings.fire_size.description", 1);
+
+        featureLiteral(rows, "handheldSize", FeatureSwitches.HANDHELD_SIZE,
+                text("screen.chisetweaks.settings.copy.handheld_size.description"));
+        integer(rows, "handheldBlockScale", LocalFeatureSettings.HANDHELD_BLOCK_SCALE,
+                "screen.chisetweaks.settings.handheld_block.name",
+                "screen.chisetweaks.settings.handheld_block.description", 5);
+        integer(rows, "handheldItemScale", LocalFeatureSettings.HANDHELD_ITEM_SCALE,
+                "screen.chisetweaks.settings.handheld_item.name",
+                "screen.chisetweaks.settings.handheld_item.description", 5);
+        integer(rows, "handheldToolScale", LocalFeatureSettings.HANDHELD_TOOL_SCALE,
+                "screen.chisetweaks.settings.handheld_tool.name",
+                "screen.chisetweaks.settings.handheld_tool.description", 5);
+
+        headerLiteral(rows, "visual.brightBlocks",
+                text("screen.chisetweaks.settings.group.bright_blocks"));
+        featureLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
+                text("screen.chisetweaks.settings.copy.bright_chest.description"));
+        featureLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
+                text("screen.chisetweaks.settings.copy.bright_concrete.description"));
+    }
+
+    private static void addBuilderHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "builderHighlights.visible",
+                text("screen.chisetweaks.settings.group.visible_highlights"));
         feature(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS);
         feature(rows, "nether", FeatureSwitches.NETHER_PALETTE);
-        feature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE);
         feature(rows, "glass", FeatureSwitches.GLASS_INSPECTION);
         feature(rows, "kelp", FeatureSwitches.KELP_HIGHLIGHT);
 
-        header(rows, "detail.highlight.general", "screen.chisetweaks.settings.section.shared");
         bool(rows, "oreMotion", LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION,
                 "screen.chisetweaks.settings.ore_motion.name",
                 "screen.chisetweaks.settings.ore_motion.description");
@@ -70,6 +95,9 @@ final class ChiseTweaksSettingsRows {
                 "screen.chisetweaks.settings.modded_ore.name",
                 "screen.chisetweaks.settings.modded_ore.description",
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT);
+
+        headerLiteral(rows, "builderHighlights.visibleBudget",
+                text("screen.chisetweaks.settings.group.local_overlay_budget"));
         configInteger(rows, "highlightRange", LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS, 1);
         configInteger(rows, "highlightVerticalRange", LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS, 1);
         configInteger(rows, "highlightInterval", LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL, 5);
@@ -80,8 +108,49 @@ final class ChiseTweaksSettingsRows {
                 text("screen.chisetweaks.settings.copy.dimension_preset.name"),
                 text("screen.chisetweaks.settings.copy.dimension_preset.description"));
 
-        headerLiteral(rows, "detail.highlight.traceAppearance",
-                text("screen.chisetweaks.settings.copy.trace_appearance"));
+        header(rows, "builderHighlights.materialTargets",
+                "screen.chisetweaks.settings.section.material_targets");
+        addTargets(rows, "visualTargetMaterial");
+
+        headerLiteral(rows, "builderHighlights.occluded",
+                text("screen.chisetweaks.settings.group.occluded_highlights"));
+        featureLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
+                text("config.comment.locallavahighlight"));
+        featureLiteral(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
+                text("config.comment.hiddensurfacetrace"));
+
+        integer(rows, "occludedRange", LocalFeatureSettings.OCCLUDED_HIGHLIGHT_HORIZONTAL_RADIUS,
+                "screen.chisetweaks.settings.occluded_range.name",
+                "screen.chisetweaks.settings.occluded_range.description", 1);
+        integer(rows, "occludedVerticalRange", LocalFeatureSettings.OCCLUDED_HIGHLIGHT_VERTICAL_RADIUS,
+                "screen.chisetweaks.settings.occluded_vertical.name",
+                "screen.chisetweaks.settings.occluded_vertical.description", 1);
+        integer(rows, "occludedInterval", LocalFeatureSettings.OCCLUDED_HIGHLIGHT_INTERVAL,
+                "screen.chisetweaks.settings.occluded_interval.name",
+                "screen.chisetweaks.settings.occluded_interval.description", 5);
+        integer(rows, "occludedMaxOverlays", LocalFeatureSettings.OCCLUDED_HIGHLIGHT_MAX_OVERLAYS,
+                "screen.chisetweaks.settings.occluded_max.name",
+                "screen.chisetweaks.settings.occluded_max.description", 1);
+
+        integerLiteral(rows, "hiddenSurfaceColor",
+                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
+                text("screen.chisetweaks.settings.copy.hidden_color.name"),
+                text("screen.chisetweaks.settings.copy.hidden_color.description"), 1);
+        integerLiteral(rows, "hiddenSurfaceOpacity",
+                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
+                text("screen.chisetweaks.settings.copy.hidden_opacity.name"),
+                text("screen.chisetweaks.settings.copy.opacity_range"), 5);
+
+        header(rows, "builderHighlights.hiddenTargets",
+                "screen.chisetweaks.settings.section.hidden_targets");
+        addTargets(rows, "visualTargetHidden");
+    }
+
+    private static void addTechnicalVisualizationRows(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "technical.traces",
+                text("screen.chisetweaks.settings.group.technical_traces"));
+        feature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE);
         integerLiteral(rows, "fineThreadColor",
                 LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET,
                 text("screen.chisetweaks.settings.copy.fine_line_color.name"),
@@ -90,21 +159,28 @@ final class ChiseTweaksSettingsRows {
                 LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
                 text("screen.chisetweaks.settings.copy.fine_line_opacity.name"),
                 text("screen.chisetweaks.settings.copy.opacity_range"), 5);
-        headerLiteral(rows, "detail.highlight.technicalTargets",
-                text("screen.chisetweaks.settings.copy.fine_line_targets"));
         addTargets(rows, "visualTargetTechnical");
 
-        header(rows, "detail.highlight.materialTargets", "screen.chisetweaks.settings.section.material_targets");
-        addTargets(rows, "visualTargetMaterial");
+        headerLiteral(rows, "technical.ranges",
+                text("screen.chisetweaks.settings.group.ranges"));
+        featureLiteral(rows, "beaconRange", FeatureSwitches.BEACON_RANGE,
+                text("screen.chisetweaks.settings.copy.beacon_range.description"));
+        featureLiteral(rows, "lightningRodRange", FeatureSwitches.LIGHTNING_ROD_RANGE,
+                text("screen.chisetweaks.settings.copy.lightning_rod_range.description"));
 
+        headerLiteral(rows, "technical.links",
+                text("screen.chisetweaks.settings.group.links"));
+        featureLiteral(rows, "villagerLinks", FeatureSwitches.VILLAGER_ANALYZER,
+                text("screen.chisetweaks.settings.copy.villager_links.description"));
     }
 
-    private static void addFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.filter", text("screen.chisetweaks.settings.tab.filter"));
+    private static void addSceneFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "sceneFilter.targets",
+                text("screen.chisetweaks.settings.tab.scene_filter"));
         feature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS);
         feature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES);
 
-        headerLiteral(rows, "detail.visualFilter.behavior",
+        headerLiteral(rows, "sceneFilter.behavior",
                 text("screen.chisetweaks.settings.copy.filter_settings"));
         configBool(rows, "refreshRenderer", BuilderFocusConfig.REFRESH_RENDERER);
         action(rows, "editBlockFilter",
@@ -119,91 +195,9 @@ final class ChiseTweaksSettingsRows {
                 text("screen.chisetweaks.settings.action.settings"));
     }
 
-    private static void addAnalyzerRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.analyzer", text("screen.chisetweaks.settings.tab.analyzer"));
-        featureLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
-                text("config.comment.locallavahighlight"));
-        featureLiteral(rows, "villagerAnalyzer", FeatureSwitches.VILLAGER_ANALYZER,
-                text("screen.chisetweaks.settings.copy.villager_analyzer.description"));
-        featureLiteral(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
-                text("config.comment.hiddensurfacetrace"));
-
-        analyzerBudgetRows(
-                rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
-                LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
-                LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
-                LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
-                LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS);
-
-        analyzerBudgetRows(
-                rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
-                LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
-                LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
-                LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL,
-                LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS);
-        integerLiteral(rows, "hiddenSurfaceColor",
-                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
-                text("screen.chisetweaks.settings.copy.hidden_color.name"),
-                text("screen.chisetweaks.settings.copy.hidden_color.description"), 1);
-        integerLiteral(rows, "hiddenSurfaceOpacity",
-                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
-                text("screen.chisetweaks.settings.copy.hidden_opacity.name"),
-                text("screen.chisetweaks.settings.copy.opacity_range"), 5);
-
-        header(rows, "detail.analyzer.hiddenTargets", "screen.chisetweaks.settings.section.hidden_targets");
-        addTargets(rows, "visualTargetHidden");
-    }
-
-    private static void analyzerBudgetRows(
-            ArrayList<ChiseTweaksSettingRowDefinition> rows,
-            String prefix,
-            FeatureSwitch feature,
-            ChiseIntegerSetting horizontal,
-            ChiseIntegerSetting vertical,
-            ChiseIntegerSetting interval,
-            ChiseIntegerSetting maxOverlays) {
-        headerLiteral(rows, "detail.analyzer." + prefix,
-                Component.translatable(
-                        "screen.chisetweaks.settings.copy.feature_settings",
-                        feature.definition().englishName()).getString());
-        String key = "screen.chisetweaks.settings." + prefix;
-        integer(rows, prefix + "Range", horizontal, key + "_range.name", key + "_range.description", 1);
-        integer(rows, prefix + "VerticalRange", vertical, key + "_vertical.name", key + "_vertical.description", 1);
-        integer(rows, prefix + "Interval", interval, key + "_interval.name", key + "_interval.description", 5);
-        integer(rows, prefix + "MaxOverlays", maxOverlays, key + "_max.name", key + "_max.description", 1);
-    }
-
-    private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.visibility", text("screen.chisetweaks.settings.tab.visibility"));
-        featureLiteral(rows, "fireVisibility", FeatureSwitches.FIRE_VISIBILITY,
-                text("screen.chisetweaks.settings.copy.fire_visibility.description"));
-        integer(rows, "fireVisibilitySize", LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
-                "screen.chisetweaks.settings.fire_size.name",
-                "screen.chisetweaks.settings.fire_size.description", 1);
-        featureLiteral(rows, "handheldSize", FeatureSwitches.HANDHELD_SIZE,
-                text("screen.chisetweaks.settings.copy.handheld_size.description"));
-        integer(rows, "handheldBlockScale", LocalFeatureSettings.HANDHELD_BLOCK_SCALE,
-                "screen.chisetweaks.settings.handheld_block.name",
-                "screen.chisetweaks.settings.handheld_block.description", 5);
-        integer(rows, "handheldItemScale", LocalFeatureSettings.HANDHELD_ITEM_SCALE,
-                "screen.chisetweaks.settings.handheld_item.name",
-                "screen.chisetweaks.settings.handheld_item.description", 5);
-        integer(rows, "handheldToolScale", LocalFeatureSettings.HANDHELD_TOOL_SCALE,
-                "screen.chisetweaks.settings.handheld_tool.name",
-                "screen.chisetweaks.settings.handheld_tool.description", 5);
-        featureLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
-                text("screen.chisetweaks.settings.copy.bright_chest.description"));
-        featureLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
-                text("screen.chisetweaks.settings.copy.bright_concrete.description"));
-        featureLiteral(rows, "beaconRange", FeatureSwitches.BEACON_RANGE,
-                text("screen.chisetweaks.settings.copy.beacon_range.description"));
-        featureLiteral(rows, "lightningRodRange", FeatureSwitches.LIGHTNING_ROD_RANGE,
-                text("screen.chisetweaks.settings.copy.lightning_rod_range.description"));
-    }
-
     private static void addIntegrationRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         MasaModAvailability.Snapshot installed = MasaModAvailability.snapshot();
-        headerLiteral(rows, "header.integrations",
+        headerLiteral(rows, "integrations.masa",
                 text("screen.chisetweaks.settings.tab.integrations"));
         info(rows, "masa.summary",
                 text("screen.chisetweaks.settings.copy.masa_summary.name"),
@@ -227,6 +221,10 @@ final class ChiseTweaksSettingsRows {
         info(rows, "masa.syncmatica", "Syncmatica", installedLabel(installed.syncmatica()));
 
         headerLiteral(rows, "masa.litematica.settings", "Litematica");
+        boolLiteral(rows, "schematicPlacementInspector",
+                LocalFeatureSettings.SCHEMATIC_PLACEMENT_INSPECTOR,
+                text("screen.chisetweaks.integrations.litematica_placement.name"),
+                text("screen.chisetweaks.integrations.litematica_placement.description"));
         boolLiteral(rows, "litematicaPickRedirect",
                 MasaIntegrationSettings.LITEMATICA_PICK_REDIRECT,
                 text("screen.chisetweaks.settings.copy.pick_redirect.name"),
@@ -283,7 +281,6 @@ final class ChiseTweaksSettingsRows {
                 ? "screen.chisetweaks.settings.copy.installed"
                 : "screen.chisetweaks.settings.copy.not_installed");
     }
-
 
     static void header(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id, String translationKey) {
         rows.add(ChiseTweaksSettingRowDefinition.header(id, text(translationKey)));
@@ -352,7 +349,7 @@ final class ChiseTweaksSettingsRows {
         rows.add(ChiseTweaksSettingRowDefinition.integer(id, text(nameKey), text(descriptionKey), config, step));
     }
 
-    private static void integerLiteral(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
+    static void integerLiteral(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
             ChiseIntegerSetting config, String name, String description, int step) {
         rows.add(ChiseTweaksSettingRowDefinition.integer(id, name, description, config, step));
     }
@@ -390,48 +387,45 @@ final class ChiseTweaksSettingsRows {
             ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         boolean nvidiumInstalled = FabricLoader.getInstance().isModLoaded("nvidium");
         rows.add(ChiseTweaksSettingRowDefinition.header(
-                                "compatibility.renderer.header",
-                                text("screen.chisetweaks.settings.copy.renderer_compatibility")));
+                "compatibility.renderer.header",
+                text("screen.chisetweaks.settings.copy.renderer_compatibility")));
         rows.add(ChiseTweaksSettingRowDefinition.info(
-                                "compatibility.nvidium.status",
-                                "Nvidium",
-                                text(nvidiumInstalled
-                                        ? "screen.chisetweaks.settings.copy.installed"
-                                        : "screen.chisetweaks.settings.copy.nvidium_not_installed")));
+                "compatibility.nvidium.status",
+                "Nvidium",
+                text(nvidiumInstalled
+                        ? "screen.chisetweaks.settings.copy.installed"
+                        : "screen.chisetweaks.settings.copy.nvidium_not_installed")));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
-                                "worldBorderFixEnabled",
-                                text("screen.chisetweaks.settings.copy.world_border_fix.name"),
-                                text("screen.chisetweaks.settings.copy.world_border_fix.description"),
-                                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_ENABLED));
+                "worldBorderFixEnabled",
+                text("screen.chisetweaks.settings.copy.world_border_fix.name"),
+                text("screen.chisetweaks.settings.copy.world_border_fix.description"),
+                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_ENABLED));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
-                                "worldBorderFixXray",
-                                text("screen.chisetweaks.settings.copy.world_border_xray.name"),
-                                text("screen.chisetweaks.settings.copy.world_border_xray.description"),
-                                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_XRAY));
+                "worldBorderFixXray",
+                text("screen.chisetweaks.settings.copy.world_border_xray.name"),
+                text("screen.chisetweaks.settings.copy.world_border_xray.description"),
+                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_XRAY));
         rows.add(ChiseTweaksSettingRowDefinition.integer(
-                                "worldBorderFixDistance",
-                                text("screen.chisetweaks.settings.copy.border_distance.name"),
-                                text("screen.chisetweaks.settings.copy.border_distance.description"),
-                                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_DISTANCE,
-                                16));
+                "worldBorderFixDistance",
+                text("screen.chisetweaks.settings.copy.border_distance.name"),
+                text("screen.chisetweaks.settings.copy.border_distance.description"),
+                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_DISTANCE,
+                16));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
-                                "worldBorderFixFarCoords",
-                                text("screen.chisetweaks.settings.copy.far_coords.name"),
-                                text("screen.chisetweaks.settings.copy.far_coords.description"),
-                                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_FAR_COORDS));
+                "worldBorderFixFarCoords",
+                text("screen.chisetweaks.settings.copy.far_coords.name"),
+                text("screen.chisetweaks.settings.copy.far_coords.description"),
+                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_FAR_COORDS));
         rows.add(ChiseTweaksSettingRowDefinition.integer(
-                                "worldBorderFixCoordThreshold",
-                                text("screen.chisetweaks.settings.copy.coord_threshold.name"),
-                                text("screen.chisetweaks.settings.copy.coord_threshold.description"),
-                                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_COORD_THRESHOLD,
-                                1000));
+                "worldBorderFixCoordThreshold",
+                text("screen.chisetweaks.settings.copy.coord_threshold.name"),
+                text("screen.chisetweaks.settings.copy.coord_threshold.description"),
+                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_COORD_THRESHOLD,
+                1000));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
-                                "worldBorderFixAutoReenable",
-                                text("screen.chisetweaks.settings.copy.nvidium_reenable.name"),
-                                text("screen.chisetweaks.settings.copy.nvidium_reenable.description"),
-                                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_AUTO_REENABLE));
+                "worldBorderFixAutoReenable",
+                text("screen.chisetweaks.settings.copy.nvidium_reenable.name"),
+                text("screen.chisetweaks.settings.copy.nvidium_reenable.description"),
+                CompatibilityIntegrationSettings.WORLD_BORDER_FIX_AUTO_REENABLE));
     }
-
-
-
 }
