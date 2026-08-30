@@ -21,7 +21,7 @@ final class SimplePlacementPreviewTest {
 
     @Test
     void descriptorKeepsPredictionSeparateFromActualPlacement() {
-        List<ChiseTweaksSettingRowDefinition> rows = new ChiseTweaksSettingsCatalog().inspectorRows(
+        List<ChiseTweaksSettingRowDefinition> rows = new ChiseTweaksSettingsController().inspectorRows(
                 CrosshairInspector.Snapshot.noTarget(), false);
 
         assertTrue(rows.stream().anyMatch(row -> row.id().equals("placement.none")));
@@ -68,7 +68,7 @@ final class SimplePlacementPreviewTest {
         assertTrue(source.contains("snapshot.clickedFace() == clickedFace"));
         assertTrue(source.contains("snapshot.upperClick() == upperClick"));
         String catalog = Files.readString(Path.of(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java"));
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java"));
         assertTrue(catalog.contains("CrosshairInspector.placementStateProperties(state)"));
         assertTrue(catalog.contains("CrosshairInspector.actualPlacementStateProperties"));
         for (String forbidden : new String[]{
