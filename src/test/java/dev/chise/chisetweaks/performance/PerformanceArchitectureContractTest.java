@@ -118,8 +118,9 @@ final class PerformanceArchitectureContractTest {
                 "src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java"));
 
         assertTrue(infrastructure.contains("BlockPos.MutableBlockPos scanCursor"));
-        assertTrue(infrastructure.contains("LevelChunk[] loadedChunkBuffer"));
-        assertTrue(infrastructure.contains("loadedChunkAt("));
+        assertTrue(infrastructure.contains("LoadedChunkWindow loadedChunks"));
+        assertTrue(infrastructure.contains("loadedChunks.load("));
+        assertTrue(infrastructure.contains("loadedChunks.atBlock("));
         assertTrue(infrastructure.contains("LevelChunk sourceChunk"));
         assertTrue(infrastructure.contains("sourceChunk.getBlockState(scanCursor)"));
         assertFalse(infrastructure.contains("BlockPos pos = new BlockPos(x, y, z)"));
@@ -141,6 +142,9 @@ final class PerformanceArchitectureContractTest {
         assertTrue(analyzers.contains("FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue()"));
         assertTrue(analyzers.contains("int dueMask = 0"));
         assertTrue(analyzers.contains("int horizontalRadius = Math.max(lavaHorizontal, hiddenHorizontal)"));
+        assertTrue(analyzers.contains("LoadedChunkWindow loadedChunks"));
+        assertTrue(analyzers.contains("loadedChunks.load("));
+        assertTrue(analyzers.contains("loadedChunks.atBlock("));
         assertTrue(analyzers.contains("getChunkNow("));
         assertTrue(analyzers.contains(
                 "BlockState state = hiddenCandidate ? sourceChunk.getBlockState(cursor) : null"));
@@ -151,15 +155,18 @@ final class PerformanceArchitectureContractTest {
         assertFalse(manager.contains("new HiddenBlockAnalyzerFeature()"));
 
         assertTrue(villager.contains("BlockPos.MutableBlockPos workstationCursor"));
-        assertTrue(villager.contains("LevelChunk[] workstationChunkBuffer"));
-        assertTrue(villager.contains("workstationChunkBuffer[loadedIndex]"));
+        assertTrue(villager.contains("LoadedChunkWindow workstationChunks"));
+        assertTrue(villager.contains("workstationChunks.load("));
+        assertTrue(villager.contains("workstationChunks.atBlock("));
         assertTrue(villager.contains("LevelChunk sourceChunk"));
         assertTrue(villager.contains("sourceChunk.getBlockState(workstationCursor)"));
         assertFalse(villager.contains("getChunkNow(x >> 4, z >> 4)"));
         assertFalse(villager.contains("BlockPos candidate = new BlockPos(x, y, z)"));
         assertFalse(villager.contains("level.getBlockState(workstationCursor)"));
 
-        assertTrue(worksite.contains("LevelChunk[] loadedChunkBuffer"));
+        assertTrue(worksite.contains("LoadedChunkWindow loadedChunks"));
+        assertTrue(worksite.contains("loadedChunks.load("));
+        assertTrue(worksite.contains("loadedChunks.atBlock("));
         assertTrue(worksite.contains("sourceChunk.getBlockState(position)"));
         assertFalse(worksite.contains("client.level.getBlockState(position)"));
     }
