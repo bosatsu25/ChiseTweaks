@@ -14,14 +14,15 @@ RETAINED_ENGLISH_NAMES = (
     "Block Filter",
     "Entity Filter",
     "Fine Line Highlight",
-    "Hidden Block Analyzer",
+    "Hidden Material Highlight",
     "Glass Highlight",
     "Ore Highlights",
     "Nether Highlight",
     "Kelp Highlight",
     "Low Fire",
-    "Lava Analyzer",
-    "Villager Analyzer",
+    "Handheld Size",
+    "Lava Source Highlight",
+    "Villager Job Site Links",
     "Beacon Range",
     "Lightning Rod Range",
     "Bright Chest",
@@ -102,12 +103,17 @@ REQUIRED_PATHS = (
     "src/main/resources/fabric.mod.json",
     "src/main/resources/chisetweaks.features.mixins.json",
     "src/main/resources/chisetweaks.integrations.mixins.json",
+    "src/main/resources/chisetweaks.inspector.mixins.json",
     "src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java",
+    "src/main/java/dev/chise/chisetweaks/core/definition/TweaksProductGroup.java",
+    "src/main/java/dev/chise/chisetweaks/core/definition/TweaksProductGroupPolicy.java",
     "src/main/java/dev/chise/chisetweaks/integration/IntegrationDefinition.java",
     "src/main/java/dev/chise/chisetweaks/config/MasaIntegrationConfig.java",
     "src/main/java/dev/chise/chisetweaks/mixin/IntegrationMixinConfigPlugin.java",
     "src/main/java/dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicy.java",
     "src/main/java/dev/chise/chisetweaks/gui/UiAvailabilityPolicy.java",
+    "src/main/java/dev/chise/chisetweaks/gui/TweaksProductSettingsRows.java",
+    "src/main/java/dev/chise/chisetweaks/gui/TweaksBuilderAssistRows.java",
     "src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java",
     "src/main/java/dev/chise/chisetweaks/mixin/rendering/BlockEntityVisualStateMixin.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java",
@@ -257,6 +263,7 @@ def audit() -> list[str]:
             if metadata.get("mixins") != [
                     "chisetweaks.features.mixins.json",
                     "chisetweaks.integrations.mixins.json",
+                    "chisetweaks.inspector.mixins.json",
             ]:
                 fail("unexpected mixin configuration set", failures)
             custom = metadata.get("custom", {}).get("chisetweaks", {})
@@ -293,13 +300,12 @@ def main() -> int:
         return 1
     print("REPOSITORY AUDIT: PASS")
     print(f"scope={len(RETAINED_ENGLISH_NAMES)} retained rendering features")
+    print("tweaks_product_groups=4")
     print("building_action_features=0")
     print("client_only=true")
     print("canonical_architecture=true")
     print("removed_feature_residue=false")
     print("local_machine_paths=false")
-    print("non_loopback_ipv4_literals=false")
-    print("tracked_runtime_residue=false")
     return 0
 
 
