@@ -229,7 +229,7 @@ public final class BuilderFocusVisibility {
         LinkedHashSet<Block> resolved = new LinkedHashSet<>();
         for (String raw : entries) {
             Identifier id = Identifier.tryParse(raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT));
-            if (id == null) continue;
+            if (id == null || !BuiltInRegistries.BLOCK.containsKey(id)) continue;
             Block block = BuiltInRegistries.BLOCK.getValue(id);
             if (block != null) resolved.add(block);
         }
@@ -241,7 +241,7 @@ public final class BuilderFocusVisibility {
         LinkedHashSet<EntityType<?>> resolved = new LinkedHashSet<>();
         for (String raw : entries) {
             Identifier id = Identifier.tryParse(raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT));
-            if (id == null) continue;
+            if (id == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(id)) continue;
             EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(id);
             if (type != null) resolved.add(type);
         }
