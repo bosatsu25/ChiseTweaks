@@ -30,7 +30,7 @@ final class VisualFilterVisibilityReleaseContractTest {
     @Test
     void worksiteHighlightsHaveNoRuntimeOrConfigMutualExclusionResidue() throws IOException {
         String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
-        String rows = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsRows.java");
+        String rows = source("src/main/java/dev/chise/chisetweaks/gui/TweaksProductSettingsRows.java");
         String localConfig = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
         String localSettings = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
         String featureDefinition = source("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
@@ -59,7 +59,7 @@ final class VisualFilterVisibilityReleaseContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
-        String rows = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsRows.java");
+        String rows = source("src/main/java/dev/chise/chisetweaks/gui/TweaksProductSettingsRows.java");
 
         assertTrue(switches.contains("BRIGHT_CHEST = local("));
         assertTrue(switches.contains("BRIGHT_CONCRETE = local("));
