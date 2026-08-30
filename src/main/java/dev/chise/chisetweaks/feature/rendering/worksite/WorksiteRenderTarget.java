@@ -29,7 +29,9 @@ record WorksiteRenderTarget(
         List<String> details = source.presentation().details();
         String blockId = source.presentation().blockId();
         Identifier id = blockId == null ? null : Identifier.tryParse(blockId);
-        Block expectedBlock = id == null ? null : BuiltInRegistries.BLOCK.getValue(id);
+        Block expectedBlock = id == null || !BuiltInRegistries.BLOCK.containsKey(id)
+                ? null
+                : BuiltInRegistries.BLOCK.getValue(id);
         return new WorksiteRenderTarget(
                 source.position(),
                 source.presentation(),
