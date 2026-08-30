@@ -130,8 +130,9 @@ public class ChiseBooleanSetting {
     }
 
     public final void setBooleanValueSilently(boolean requested) {
-        boolean next = availability.getAsBoolean() && requested;
-        if (reader.getAsBoolean() != next) writer.accept(next);
+        if (getBooleanValue() != requested) {
+            writer.accept(availability.getAsBoolean() && requested);
+        }
     }
 
     public final boolean toggleBooleanValue() {
