@@ -289,6 +289,14 @@ final class ChiseTweaksSettingsCatalog {
                 ? CrosshairInspector.Snapshot.noTarget()
                 : snapshot;
         header(rows, "inspector.title", "screen.chisetweaks.inspector.title");
+        boolLiteral(rows, "interactionHistory",
+                LocalFeatureSettings.INTERACTION_HISTORY,
+                "Interaction History",
+                "直近64件までの配置・破壊・Item使用・Entity操作をメモリ内だけに保持します。チャット、看板、本、Container内容は記録しません。");
+        boolLiteral(rows, "schematicPlacementInspector",
+                LocalFeatureSettings.SCHEMATIC_PLACEMENT_INSPECTOR,
+                "Schematic Placement Inspector",
+                "Litematicaの設計図と現在の配置予測をMATCH / COMPATIBLE / DIFFERENTで比較します。配置自体は止めません。");
         if (resolved.targetKind() == HitResult.Type.MISS) {
             info(rows, "inspector.noTarget",
                     text("screen.chisetweaks.inspector.no_target"),
@@ -324,8 +332,51 @@ final class ChiseTweaksSettingsCatalog {
                                     resolved.filterDecision().hidden()));
         }
         addPlacementRows(rows, resolved);
+        addSchematicPlacementRows(rows);
         addPatternConsistencyRows(rows);
+        addInteractionHistoryRows(rows);
         if (includeHelp) addCommonHelpRows(rows);
+    }
+
+    private static void addSchematicPlacementRows(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "schematicPlacement.title", "Schematic Placement");
+        SchematicPlacementInspector.Snapshot schematic = SchematicPlacementInspector.snapshot();
+        if (!schematic.available()) {
+            info(rows, "schematicPlacement.none",
+                    "No active schematic comparison",
+                    "Litematica + Schematic Placement Inspectorが有効で、設計図上へBlockを配置すると比較結果を表示します。");
+            return;
+        }
+        info(rows, "schematicPlacement.expected",
+                "Expected / 設計図",
+                schematic.expectedId());
+        info(rows, "schematicPlacement.predicted",
+                "Predicted / 配置予測",
+                schematic.predictedId());
+        info(rows, "schematicPlacement.result",
+                "Result",
+                schematic.resultLabel());
+    }
+
+    private static void addInteractionHistoryRows(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        headerLiteral(rows, "interactionHistory.title", "Interaction History");
+        List<InteractionHistory.Entry> history = InteractionHistory.snapshot();
+        if (history.isEmpty()) {
+            info(rows, "interactionHistory.empty",
+                    "No history",
+                    "Interaction Historyが有効になると、直近の読み取り専用interactionをここに表示します。");
+            return;
+        }
+        int shown = Math.min(5, history.size());
+        for (int index = 0; index < shown; index++) {
+            InteractionHistory.Entry entry = history.get(index);
+            info(rows,
+                    "interactionHistory." + entry.sequence(),
+                    entry.type().name().replace('_', ' '),
+                    entry.summary());
+        }
     }
 
     private static void addPatternConsistencyRows(

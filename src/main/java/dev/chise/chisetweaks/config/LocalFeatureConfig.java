@@ -34,6 +34,8 @@ public final class LocalFeatureConfig {
     public boolean brightChestEnabled = true;
     public boolean brightConcreteEnabled = true;
     public boolean oreHighlightAnimationEnabled = false;
+    public boolean interactionHistoryEnabled = false;
+    public boolean schematicPlacementInspectorEnabled = false;
 
     public int worksiteVisibilityHorizontalRadius = 5;
     public int worksiteVisibilityVerticalRadius = 3;
@@ -206,6 +208,8 @@ public final class LocalFeatureConfig {
         brightChestEnabled = loaded.brightChestEnabled;
         brightConcreteEnabled = loaded.brightConcreteEnabled;
         oreHighlightAnimationEnabled = loaded.oreHighlightAnimationEnabled;
+        interactionHistoryEnabled = loaded.interactionHistoryEnabled;
+        schematicPlacementInspectorEnabled = loaded.schematicPlacementInspectorEnabled;
         worksiteVisibilityHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
         worksiteVisibilityVerticalRadius = loaded.worksiteVisibilityVerticalRadius;
         worksiteVisibilityIntervalTicks = loaded.worksiteVisibilityIntervalTicks;
