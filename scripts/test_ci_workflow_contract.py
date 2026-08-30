@@ -16,13 +16,21 @@ def main() -> int:
     release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
 
     require(ci, "name: verify / Java 25 quality gate", "required status-check name")
+    require(ci, "actions: read", "prior-run artifact permission")
+    require(ci, "- name: Resolve prior PR verification", "main provenance resolver")
+    require(ci, "commits/${HEAD_SHA}/pulls", "merged PR lookup")
+    require(ci, "event=pull_request&status=success", "successful PR CI lookup")
+    require(ci, "name: chise-ci-provenance", "provenance artifact")
     require(ci, "python3 scripts/ci_scope.py --file-list", "scope classifier")
+    require(ci, "python3 scripts/ci_provenance.py decide", "tree provenance decision")
     require(ci, "--diff-filter=ACDMRTUXB", "deletion-aware diff")
-    require(ci, "if [[ \"$EVENT_NAME\" != 'pull_request' ]]", "main/workflow_dispatch full gate")
-    require(ci, "if [[ \"$scope\" == 'full' ]]", "only full scope enters heavy gate")
-    require(ci, "python scripts/test_ci_scope.py", "scope self-test")
-    require(ci, "python scripts/test_ci_workflow_contract.py", "workflow self-test")
-    require(ci, "success() && steps.scope.outputs.heavy == 'true'", "artifact upload heavy gate")
+    require(ci, "reason=direct-or-unverified-main", "fail-closed main fallback")
+    require(ci, "- name: Download tree-identical verified runtime", "runtime promotion download")
+    require(ci, "python scripts/promoted_artifact_audit.py", "promoted artifact audit")
+    require(ci, "python scripts/test_ci_provenance.py", "provenance self-test")
+    require(ci, "- name: Write reusable PR provenance", "provenance writer")
+    require(ci, "tested_tree", "tested tree capture")
+    require(ci, "steps.runtime.outputs.runtime_jar != ''", "runtime upload gate")
 
     require(ci, "- ready_for_review", "draft-to-ready trigger")
     require(ci, "github.event.pull_request.draft == false", "draft PR skip")
@@ -31,15 +39,17 @@ def main() -> int:
     require(ci, "vars.CHISE_CI_RUNS_ON", "runner override")
     require(release, "vars.CHISE_CI_RUNS_ON", "release runner override")
     require(release, "timeout-minutes: 5", "release runaway budget cap")
+    require(release, "skip_reason=no-runtime-artifact", "non-runtime main release skip")
 
     heavy_condition = "if: ${{ steps.scope.outputs.heavy == 'true' }}"
     if ci.count(heavy_condition) < 6:
         raise AssertionError("heavy runtime steps are no longer consistently scope-gated")
 
     audit_index = ci.index("- name: Audit repository contracts")
+    promotion_index = ci.index("- name: Download tree-identical verified runtime")
     java_index = ci.index("- name: Set up Java 25")
-    if audit_index >= java_index:
-        raise AssertionError("static contract audits must fail fast before Java/Gradle setup")
+    if not (audit_index < promotion_index < java_index):
+        raise AssertionError("static audits must fail fast before promotion or Java/Gradle execution")
 
     print("CI WORKFLOW CONTRACT TESTS: PASS")
     return 0
