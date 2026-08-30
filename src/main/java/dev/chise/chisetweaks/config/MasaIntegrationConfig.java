@@ -48,29 +48,44 @@ public final class MasaIntegrationConfig {
     public List<String> tweakerooToolSwitchWhitelist = new ArrayList<>();
     public List<String> tweakerooToolSwitchBlacklist = new ArrayList<>();
 
-    private MasaIntegrationConfig() {}
+    MasaIntegrationConfig() {}
 
     public static MasaIntegrationConfig getInstance() {
         return INSTANCE;
     }
 
     public synchronized boolean load() {
-        resetToDefaults();
         try {
             Optional<String> document = SecureConfigStorage.readUtf8(
                     FabricLoader.getInstance().getConfigDir(), CONFIG_FILE_NAME);
-            if (document.isEmpty()) return true;
-            JsonObject source = JsonParser.parseString(document.get()).getAsJsonObject();
-            MasaIntegrationConfig loaded = GSON.fromJson(source, MasaIntegrationConfig.class);
-            if (loaded == null) return false;
-            copyFrom(loaded);
-            sanitize();
-            return true;
+            if (document.isEmpty()) {
+                resetToDefaults();
+                return true;
+            }
+            if (replaceFromJsonDocument(document.get())) return true;
+            ChiseTweaksClient.LOGGER.warn("Rejected Masa integration config; using safe defaults");
+            return false;
         } catch (java.io.IOException | RuntimeException failure) {
             resetToDefaults();
             ChiseTweaksClient.LOGGER.warn(
                     "Unable to load Masa integration config after {}",
                     failure.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    boolean replaceFromJsonDocument(String json) {
+        resetToDefaults();
+        if (json == null || json.isBlank()) return false;
+        try {
+            JsonObject source = JsonParser.parseString(json).getAsJsonObject();
+            MasaIntegrationConfig loaded = GSON.fromJson(source, MasaIntegrationConfig.class);
+            if (loaded == null) return false;
+            copyFrom(loaded);
+            sanitize();
+            return true;
+        } catch (RuntimeException failure) {
+            resetToDefaults();
             return false;
         }
     }

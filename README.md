@@ -43,7 +43,7 @@ flowchart LR
 | Java | `25` 以上 |
 | 導入先 | **クライアントのみ** |
 | Mod Menu | 任意。**初めて使う場合は導入推奨** |
-| Sodium | 任意 |
+| Sodium | ChiseTweaks単体では任意。**Nvidiumを使う場合はNvidium側の要件として必須** |
 
 サーバー側へChiseTweaksを入れる必要はありません。
 
@@ -107,6 +107,8 @@ Lava Analyzerはflowing lavaではなく**source lava**が対象です。未ロ�
 
 Hidden Block Analyzerは、これまでのHidden Block Highlightの対象選択と色・不透明度設定を引き継ぎつつ、Lava Analyzerと同じ**bounded / loaded-chunk-only / through-wall**方式へ統合しています。対象はBlue Ice / Dead Coral / Powder Snow / Sculk Catalystから個別に選べます。
 
+> **サーバールールを先に確認してください。** Lava Analyzer / Hidden Block Analyzerは、クライアントへ既に届いている読み込み済みchunk内の情報を壁越しmarkerとして表示します。サーバーによっては実装方式に関係なくthrough-wall表示をX-Ray / 透視機能として禁止している場合があります。ChiseTweaksは独自のscan packetを送らず、未ロードchunkも強制読み込みしません。また、サーバー側がAnti-X-Ray等でchunk情報を隠す・置き換える場合、その情報を迂回して復元せず、markerが出ない・実際と異なる場合があります。
+
 Villager Analyzerは、村人の職業とJob Siteの対応を確認したい交易所などで便利です。
 
 ### Visibility — 普段の視界を改善する
@@ -165,6 +167,17 @@ ChiseTweaksは、MaLiLib / Litematica / Tweakeroo / TweakerMore / Syncmaticaを*
 
 > **これらのMasa系MOD本体はChiseTweaksに同梱されません。** 必要なMODは別途導入してください。
 
+### Optional MODのバージョン互換
+
+ChiseTweaks `0.15.0+mc26.1.2` は、Masa系MODやNvidiumを**hard dependencyとして固定していません**。現時点では、検証していない外部MODのバージョンを「対応済み」とは記載しません。
+
+- 外部MODが未導入なら、そのintegrationだけno-opになります。
+- Masa連携はoptional Mixin / reflection境界をfail-softにし、外部側のclass / methodが変わった場合もChiseTweaks全体へ障害を広げにくくしています。
+- ただし、外部MOD自身がMinecraft / Fabric / 依存MODと互換性を満たしていない場合、その外部MOD側の起動エラーまではChiseTweaksで防げません。
+- 不具合報告では **Minecraft / Fabric Loader / ChiseTweaks / 対象Masa MOD / Nvidium / Sodiumの実際のバージョン** を併記してください。
+
+確認済みversion matrixを正式に公開する場合は、Prism実機acceptanceで確認した組み合わせだけを記載します。
+
 ### Masa Japanese UI
 
 Masa系MODは英語の設定名が多いため、重要な項目を**日本語 + 元の英語名**で分かりやすくします。
@@ -212,6 +225,8 @@ Integrations画面から、次の内容を日本語で確認できます。
 ### World Border Fix
 
 Nvidium使用時に、World Border付近や非常に遠い座標で描画が不安定になる環境向けのoptional compatibility機能です。
+
+**NvidiumはSodium上で動作するrendererです。** Nvidiumを利用する場合は、Nvidiumが要求するMinecraft / Sodiumの対応組み合わせを満たしてください。ChiseTweaksはNvidiumやSodiumを同梱・自動更新しません。
 
 - Nvidium未導入なら何もしません
 - World Border付近 / 遠距離座標を条件にNvidiumを一時抑制します
@@ -297,6 +312,8 @@ ChiseTweaksはクライアント側の建築支援に範囲を絞っています
 
 通常は設定ファイルを直接編集する必要はありません。
 
+古い設定や将来版の設定を読んだ場合も、**未知の項目だけでゲーム全体を落とさない**ことを基本方針にしています。既知項目は可能な範囲で引き継ぎ、壊れたJSONや型が互換でない値は、その設定domainを安全なdefaultへ戻して起動を継続します。設定名や型を変更するreleaseでは、migrationと回帰fixtureを追加してから変更します。
+
 ---
 
 ## よくある質問
@@ -315,7 +332,9 @@ ChiseTweaksはクライアント側の建築支援に範囲を絞っています
 
 ### Ore HighlightsはX-Rayですか？
 
-見えている対象を強調するHighlightで、壁の向こうの鉱石を広域探索する機能ではありません。Lava Analyzerのみ、読み込み済み近傍のsource lavaを限定的に壁越し表示します。
+Ore Highlights自体は、見えている対象を強調するHighlightで、壁の向こうの鉱石を広域探索する機能ではありません。
+
+一方、**Lava Analyzer / Hidden Block Analyzerは読み込み済み近傍を限定的に壁越し表示します。** サーバー管理者がthrough-wall表示をX-Ray / 透視として禁止している場合は使用しないでください。ChiseTweaksは独自scan packetや強制chunk loadを行わず、サーバー側Anti-X-Rayの難読化も迂回しません。
 
 ### Masa系MODの英語設定が分かりません
 
