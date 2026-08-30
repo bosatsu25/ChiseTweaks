@@ -3,7 +3,7 @@
   "id": "chisetweaks",
   "version": "${version}",
   "name": "ChiseTweaks",
-  "description": "Standalone client-only visual inspection tools for large Minecraft builds and technical facilities.",
+  "description": "Client-only visual and workflow tweaks for Minecraft builders and technical facilities.",
   "license": [
     "MIT",
     "Apache-2.0"
@@ -24,7 +24,7 @@
   "mixins": [
     "chisetweaks.features.mixins.json",
     "chisetweaks.integrations.mixins.json",
-    "chisetweaks.inspector.mixins.json"
+    "chisetweaks.workflow.mixins.json"
   ],
   "depends": {
     "minecraft": "${minecraft_version}",
