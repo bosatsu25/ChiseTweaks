@@ -23,6 +23,7 @@
 - all-features-on（15機能）を回帰条件として扱う
 - custom packet / server installation / remote mod detection / auto downloader / automatic JAR replacementを実装しない
 - Lava Analyzerはloaded chunks only。未ロードchunkを強制loadしない
+- Lava Analyzer / Hidden Block Analyzerはuser-facing toggle・radius・vertical radius・interval・max overlaysを独立維持しつつ、同一tickでscan期限が重なった場合は1つの`ThroughWallAnalyzerFeature`でloaded-chunk traversalを共有する
 - Hidden Block Analyzerは旧Hidden Block Highlightの対象選択・色・opacityを維持し、Lava Analyzerと同じbounded / loaded-chunk-only / through-wall描画へ統合する。Blue Ice / Dead Coral / Powder Snow / Sculk Catalystだけを対象とし、隠れ資源探索へ拡張しない
 - サーバー側ゲーム進行を変える配置補助や、隠れ資源・server-only状態を探索／推測するAnalyzerは現行スコープ外
 - through-wall Analyzerはサーバーへ独自scan packetを送らず、server-side Anti-X-Ray / obfuscationを迂回しない。クライアントへ届いたloaded-chunk stateだけを入力とする
