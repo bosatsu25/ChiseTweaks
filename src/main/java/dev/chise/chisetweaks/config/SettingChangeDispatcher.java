@@ -16,7 +16,7 @@ public final class SettingChangeDispatcher {
         return REVISION.get();
     }
 
-    static void markChanged() {
+    public static void markChanged() {
         REVISION.incrementAndGet();
     }
 
