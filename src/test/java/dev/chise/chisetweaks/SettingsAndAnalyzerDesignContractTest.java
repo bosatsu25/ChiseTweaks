@@ -67,17 +67,22 @@ final class SettingsAndAnalyzerDesignContractTest {
     @Test
     void settingsPresentationUsesTweaksProductComposition() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
+        String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         String productRows = read("src/main/java/dev/chise/chisetweaks/gui/TweaksProductSettingsRows.java");
         String assistRows = read("src/main/java/dev/chise/chisetweaks/gui/TweaksBuilderAssistRows.java");
         String grouping = read("src/main/java/dev/chise/chisetweaks/core/definition/TweaksProductGroupPolicy.java");
         String definition = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
 
         assertContainsAll(controller,
-                "TweaksProductSettingsRows.rows",
-                "TweaksBuilderAssistRows.rows",
                 "resetTechnicalVisualizationDetails",
                 "resetOccludedHighlightDetails",
                 "SettingPersistenceCoordinator.production()");
+        assertContainsNone(controller,
+                "TweaksProductSettingsRows.rows(",
+                "TweaksBuilderAssistRows.rows(");
+        assertContainsAll(screen,
+                "TweaksProductSettingsRows.rows(",
+                "TweaksBuilderAssistRows.rows(");
         assertContainsAll(productRows,
                 "screen.chisetweaks.product.builder_highlights",
                 "screen.chisetweaks.product.scene_filter",
