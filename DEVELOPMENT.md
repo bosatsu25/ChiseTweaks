@@ -25,6 +25,8 @@
 - Lava Analyzerはloaded chunks only。未ロードchunkを強制loadしない
 - Hidden Block Analyzerは旧Hidden Block Highlightの対象選択・色・opacityを維持し、Lava Analyzerと同じbounded / loaded-chunk-only / through-wall描画へ統合する。Blue Ice / Dead Coral / Powder Snow / Sculk Catalystだけを対象とし、隠れ資源探索へ拡張しない
 - サーバー側ゲーム進行を変える配置補助や、隠れ資源・server-only状態を探索／推測するAnalyzerは現行スコープ外
+- through-wall Analyzerはサーバーへ独自scan packetを送らず、server-side Anti-X-Ray / obfuscationを迂回しない。クライアントへ届いたloaded-chunk stateだけを入力とする
+- public serverではthrough-wall表示自体が規約違反になり得るため、READMEで利用前のserver rule確認を明示する
 
 ### Masa integration contract
 
@@ -33,6 +35,10 @@
 - integration設定は`chisetweaks-integrations.json`へ分離し、FeatureDefinitionの15機能と混在させない
 - 外部AutomationをChise自身が開始しない
 - Syncmatica等の外部packet ownershipをChiseへ移さない
+- optional Mixinは対象MOD導入時だけapplyし、`@Pseudo` / `require = 0` / mixin config `required: false`のfail-soft境界を維持する
+- reflection-only integrationは`ReflectiveOperationException`と`LinkageError`を境界内で処理し、外部API driftをChise全体の起動障害へ広げない
+- Masa GuideはFabric Loaderのmod metadataだけで導入有無を案内し、Guideを開くだけでMasa内部classをhard loadしない
+- 未検証の外部MOD versionをsupported / confirmedとして文書化しない。version matrixはPrism acceptanceで確認した組み合わせだけをcurrent documentationへ記録する
 
 ## 2. Toolchain
 
@@ -180,6 +186,18 @@ GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button o
 
 Security/configではmalformed UTF-8、unsafe path、symlink、oversized payload、atomic write failureなどをfail-closed条件として扱います。
 
+### Config migration contract
+
+4つのJSON domainは、release間の互換性を次の条件で管理します。
+
+- missing fieldは現在versionのdefaultを維持する
+- unknown future fieldは既知設定へ影響させない
+- malformed JSON / incompatible typeは例外をstartupへ伝播させず、そのdomainをsafe defaultへ戻す
+- field rename / type change / semantic changeを行う場合は、変更と同じPRでmigration処理とhistorical fixture regressionを追加する
+- `chisetweaks-visual.json`のschema migrationは`LocalFeatureConfig.replaceFromJsonDocument`とhistorical/future fixturesを正本とする
+- `chisetweaks-integrations.json` / `chisetweaks-compatibility.json`も文字列documentから直接検証できるparse boundaryを維持し、unknown field / malformed typeのJUnit regressionを持つ
+- config parse failureを理由に他domainの設定やruntime stateまでresetしない
+
 ## 8. Runtime JAR policy
 
 Installable artifactはruntime JARだけです。
@@ -224,7 +242,8 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - Bright Chest / Bright Concrete（White Concrete）が独立して切り替わる
 - Low FireのLarge / Medium / Smallが一人称overlayだけへ反映され、通常炎／魂の炎の現在spriteとworld fireを壊さない
 - all-features-on（15機能）をOverworld / Netherでsmoke
-- Lava Analyzerに強制chunk loadや長時間停止がない
+- Lava Analyzer / Hidden Block Analyzerに強制chunk loadや独自scan packetがなく、server-side obfuscationを迂回しない
+- public server acceptanceではAnalyzer利用可否をserver rule側で確認し、禁止serverではAnalyzerをONにしない
 - disconnect / dimension changeでstale session stateが残らない
 
 ログ監査には次を使用します。
@@ -269,7 +288,7 @@ Bright Chestは既存Chest draw pathでspriteだけを切り替え、追加world
 - no custom play packet / packet automation
 - no automatic click/key injection
 - no autonomous world mutation
-- no hidden-resource scanner
+- no hidden-resource scanner / no Anti-X-Ray bypass
 - no server-only threat-state inference
 - no sign/book/chat content capture
 - no inventory/container content capture
