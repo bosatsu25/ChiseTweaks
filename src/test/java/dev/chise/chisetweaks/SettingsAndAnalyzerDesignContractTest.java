@@ -69,8 +69,8 @@ final class SettingsAndAnalyzerDesignContractTest {
         String catalog = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         String definition = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
-        String sceneFilter = read("src/main/java/dev/chise/chisetweaks/gui/ChiseSceneFilterEditorScreen.java");
-        String oreCompat = read("src/main/java/dev/chise/chisetweaks/gui/ChiseOreCompatibilityScreen.java");
+        String sceneFilter = read("src/main/java/dev/chise/chisetweaks/gui/ChiseListEditorScreen.java");
+        String oreCompat = read("src/main/java/dev/chise/chisetweaks/gui/ChiseListEditorScreen.java");
         String english = read("src/main/resources/assets/chisetweaks/lang/en_us.json");
         String japanese = read("src/main/resources/assets/chisetweaks/lang/ja_jp.json");
 
