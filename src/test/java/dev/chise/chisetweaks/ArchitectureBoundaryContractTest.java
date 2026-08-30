@@ -45,6 +45,31 @@ final class ArchitectureBoundaryContractTest {
     }
 
     @Test
+    void runtimeGuiDependencyIsRestrictedToTheCompositionRootInspectorAdapters() throws IOException {
+        Path runtimeRoot = MAIN.resolve("runtime");
+        List<String> allowedImports = List.of(
+                "import dev.chise.chisetweaks.gui.InteractionHistory;",
+                "import dev.chise.chisetweaks.gui.PatternConsistencyInspector;",
+                "import dev.chise.chisetweaks.gui.PlacementInspector;");
+
+        try (var paths = Files.walk(runtimeRoot)) {
+            for (Path sourcePath : paths.filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .toList()) {
+                String source = Files.readString(sourcePath);
+                for (String line : source.lines()
+                        .filter(value -> value.startsWith("import dev.chise.chisetweaks.gui."))
+                        .toList()) {
+                    assertFalse(!sourcePath.getFileName().toString().equals("FeatureManager.java")
+                                    || !allowedImports.contains(line),
+                            () -> "runtime GUI dependency is outside the composition-root allowlist: "
+                                    + sourcePath + " -> " + line);
+                }
+            }
+        }
+    }
+
+    @Test
     void coreRemainsIndependentFromApplicationBootstrap() throws IOException {
         Path core = MAIN.resolve("core");
         try (var paths = Files.walk(core)) {
