@@ -59,6 +59,7 @@ jobs:
       - name: Test repository tooling
         run: |
           python scripts/test_ci_scope.py
+          python scripts/test_ci_workflow_contract.py
           python scripts/test_versioning_tools.py
           python scripts/test_prism_acceptance_audit.py
           python scripts/test_resource_pack_retirement_audit.py
