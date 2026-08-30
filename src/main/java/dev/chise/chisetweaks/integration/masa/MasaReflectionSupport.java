@@ -3,6 +3,8 @@ package dev.chise.chisetweaks.integration.masa;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.config.MasaIntegrationConfig;
 
+import net.minecraft.client.gui.screens.Screen;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
@@ -45,14 +47,7 @@ public final class MasaReflectionSupport {
     }
 
     public static boolean isShiftDown() {
-        try {
-            Class<?> screen = Class.forName("net.minecraft.client.gui.screens.Screen");
-            Method method = screen.getMethod("hasShiftDown");
-            Object value = method.invoke(null);
-            return value instanceof Boolean result && result;
-        } catch (ReflectiveOperationException | LinkageError failure) {
-            return false;
-        }
+        return Screen.hasShiftDown();
     }
 
     public static boolean isSyncmaticaRemoveListener(Object listener) {
