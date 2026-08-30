@@ -124,7 +124,7 @@ final class RepositoryScopeContractTest {
         assertEquals(List.of(
                         "chisetweaks.features.mixins.json",
                         "chisetweaks.integrations.mixins.json",
-                        "chisetweaks.inspector.mixins.json"),
+                        "chisetweaks.workflow.mixins.json"),
                 root.getAsJsonArray("mixins").asList().stream()
                         .map(element -> element.getAsString())
                         .toList());
