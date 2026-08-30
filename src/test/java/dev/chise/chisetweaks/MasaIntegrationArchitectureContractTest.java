@@ -34,6 +34,7 @@ final class MasaIntegrationArchitectureContractTest {
         assertTrue(plugin.contains("MasaModAvailability.isLoaded(modId)"));
 
         for (String path : new String[]{
+                "src/main/java/dev/chise/chisetweaks/mixin/masa/MaLiLibTranslationMixin.java",
                 "src/main/java/dev/chise/chisetweaks/mixin/masa/LitematicaMaterialCacheMixin.java",
                 "src/main/java/dev/chise/chisetweaks/mixin/masa/TweakerooToolSwitchMixin.java",
                 "src/main/java/dev/chise/chisetweaks/mixin/masa/TweakerMoreAutoPickMixin.java",
