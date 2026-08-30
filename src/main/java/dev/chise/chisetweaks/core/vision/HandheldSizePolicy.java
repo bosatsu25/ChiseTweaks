@@ -12,10 +12,9 @@ import net.minecraft.world.item.Items;
 /**
  * Semantic first-person item scaling without resource-pack model replacement.
  *
- * <p>The defaults are relative multipliers chosen from the visual intent of the supplied
- * Small Handhelds pack rather than copies of its absolute model transforms:
- * blocks 0.28/0.40 ~= 70%, generated items 0.40/0.68 ~= 59%, and handheld tools
- * 0.50/0.68 ~= 74%. Chise rounds these to stable 70/60/75 presets.</p>
+ * <p>Chise applies bounded relative multipliers to Minecraft's existing first-person
+ * rendering result. Models, textures, animation transforms and resource-pack ownership
+ * remain unchanged.</p>
  */
 public final class HandheldSizePolicy {
     public static final int MIN_SCALE_PERCENT = 40;
