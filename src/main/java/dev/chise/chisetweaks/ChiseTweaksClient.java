@@ -1,5 +1,6 @@
 package dev.chise.chisetweaks;
 
+import dev.chise.chisetweaks.config.CompatibilityIntegrationConfig;
 import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.MasaIntegrationConfig;
@@ -29,6 +30,7 @@ public final class ChiseTweaksClient implements ClientModInitializer {
     public void onInitializeClient() {
         SafeStartup.run("local-config", () -> LocalFeatureConfig.getInstance().load());
         SafeStartup.run("integration-config", () -> MasaIntegrationConfig.getInstance().load());
+        SafeStartup.run("compatibility-config", () -> CompatibilityIntegrationConfig.getInstance().load());
         SafeStartup.run("feature-config", FeatureConfig::loadFromFile);
         SafeStartup.run("feature-bindings", FeatureControlBindings::init);
         SafeStartup.run("visual-model-plugin", ChiseVisualModelPlugin::register);
