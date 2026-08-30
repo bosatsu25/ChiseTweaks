@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject deterministic runtime patterns that can regress startup/reload/analyzer responsiveness."""
+"""Reject deterministic runtime patterns that can regress startup, reload or visualization responsiveness."""
 from __future__ import annotations
 
 import re
@@ -17,8 +17,8 @@ BRIGHT_RENDERING_PATHS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java"),
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java"),
 }
-ANALYZERS = {
-    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java"),
+OCCLUDED_VISUALIZATIONS = {
+    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java"),
 }
 LOADED_CHUNK_WINDOW = Path(
     "src/main/java/dev/chise/chisetweaks/feature/rendering/LoadedChunkWindow.java"
@@ -185,14 +185,14 @@ def audit() -> list[str]:
         if forbidden in plugin:
             failures.append(f"Bright Concrete custom model dependency returned: {forbidden}")
 
-    for relative in ANALYZERS:
+    for relative in OCCLUDED_VISUALIZATIONS:
         path = ROOT / relative
         if not path.is_file():
-            failures.append(f"{relative}: retained analyzer implementation is missing")
+            failures.append(f"{relative}: retained occluded visualization implementation is missing")
             continue
         text = java_code_only(path.read_text(encoding="utf-8"))
         if "getChunkNow(" not in text:
-            failures.append(f"{relative}: analyzer must inspect only already-loaded chunks")
+            failures.append(f"{relative}: occluded visualization must inspect only already-loaded chunks")
         if PLAIN_GET_CHUNK.search(text):
             failures.append(f"{relative}: potentially force-loading getChunk call detected")
 
@@ -241,9 +241,9 @@ def main() -> int:
     print("bright_chest=chest_atlas_sprite_selection_plus_fullbright_lightcoords")
     print("bright_concrete=vanilla_model_fullbright_quad_transform")
     print("reload_controllers_get_join_free=true")
-    print("analyzer_force_chunk_load=false")
+    print("occluded_visualization_force_chunk_load=false")
     print("loaded_chunk_window_force_load=false")
-    print(f"retained_analyzers={len(ANALYZERS)}")
+    print(f"retained_occluded_visualizations={len(OCCLUDED_VISUALIZATIONS)}")
     print("pattern_consistency_scan=bounded_loaded_chunks_only")
     print("pattern_consistency_position_retention=false")
     print("detector_self_test=true")
