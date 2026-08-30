@@ -57,15 +57,15 @@ final class ReleaseIntegrationRegressionTest {
         String manager = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
         String worksite = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java");
-        String lava = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
+        String analyzer = source(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
 
         assertTrue(session.contains("public static void onJoin"));
         assertTrue(session.contains("public static void onDisconnect"));
         assertTrue(session.contains("FeatureManager.getInstance().resetSessionState(client)"));
         assertTrue(manager.contains("resetSessionState"));
         assertTrue(worksite.contains("resetSession(Minecraft client)"));
-        assertTrue(lava.contains("resetSession(Minecraft client)"));
+        assertTrue(analyzer.contains("resetSession(Minecraft client)"));
     }
 
     @Test
