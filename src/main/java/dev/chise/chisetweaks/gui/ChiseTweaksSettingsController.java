@@ -71,6 +71,7 @@ final class ChiseTweaksSettingsController {
             case INSPECTOR -> EnumSet.noneOf(SettingPersistence.class);
             case ANALYZER -> {
                 FeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
+                FeatureSwitches.VILLAGER_ANALYZER.resetToDefault();
                 resetAnalyzerDetails();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
@@ -79,6 +80,8 @@ final class ChiseTweaksSettingsController {
                 LocalFeatureSettings.FIRE_VISIBILITY_SIZE.resetToDefault();
                 FeatureSwitches.BRIGHT_CHEST.resetToDefault();
                 FeatureSwitches.BRIGHT_CONCRETE.resetToDefault();
+                FeatureSwitches.BEACON_RANGE.resetToDefault();
+                FeatureSwitches.LIGHTNING_ROD_RANGE.resetToDefault();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
             case INTEGRATIONS -> {
