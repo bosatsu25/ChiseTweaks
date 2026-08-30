@@ -15,6 +15,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseListEditorBackendPolicyTest {
     @Test
+    void targetDecisionTableKeepsSixEditorProfilesStable() {
+        record Case(
+                ChiseListEditorScreen.Target target,
+                Class<?> backendType,
+                boolean mode,
+                boolean secondInput,
+                boolean oreLayout) {}
+
+        List<Case> cases = List.of(
+                new Case(ChiseListEditorScreen.Target.BLOCK_FILTER, SceneFilterBackend.class, true, false, false),
+                new Case(ChiseListEditorScreen.Target.ENTITY_FILTER, SceneFilterBackend.class, true, false, false),
+                new Case(ChiseListEditorScreen.Target.ORE_COMPATIBILITY, OreCompatibilityBackend.class, false, false, true),
+                new Case(ChiseListEditorScreen.Target.LITEMATICA_PICK_REDIRECT, MasaListBackend.class, false, true, false),
+                new Case(ChiseListEditorScreen.Target.TWEAKERMORE_AUTO_PICK_GUARD, MasaListBackend.class, true, false, false),
+                new Case(ChiseListEditorScreen.Target.TWEAKEROO_TOOL_SWITCH_GUARD, MasaListBackend.class, true, false, false));
+
+        for (Case testCase : cases) {
+            ChiseListEditorBackend backend = ChiseListEditorBackend.create(testCase.target());
+            assertEquals(testCase.backendType(), backend.getClass(), testCase.target().name());
+            assertEquals(testCase.mode(), backend.hasMode(), testCase.target().name());
+            assertEquals(testCase.secondInput(), backend.hasSecondInput(), testCase.target().name());
+            assertEquals(testCase.oreLayout(), backend.usesOreLayout(), testCase.target().name());
+        }
+    }
+
+    @Test
     void sceneRuleModeCyclesThroughDisabledDenyAllow() {
         assertEquals(ChiseRuleMode.BLACKLIST, SceneFilterBackend.nextMode(ChiseRuleMode.NONE));
         assertEquals(ChiseRuleMode.WHITELIST, SceneFilterBackend.nextMode(ChiseRuleMode.BLACKLIST));
