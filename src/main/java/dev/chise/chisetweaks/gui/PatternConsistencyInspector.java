@@ -21,7 +21,6 @@ public final class PatternConsistencyInspector
     static final int HORIZONTAL_RADIUS = 8;
     static final int VERTICAL_RADIUS = 4;
     static final int MAX_BLOCKS_PER_TICK = 256;
-    static final int MAX_RETAINED_MISMATCHES = 64;
     static final int RESCAN_INTERVAL_TICKS = 20;
     static final int MAX_PROPERTIES = 32;
     static final int TOTAL_BLOCKS = (HORIZONTAL_RADIUS * 2 + 1)
@@ -31,7 +30,6 @@ public final class PatternConsistencyInspector
     private static volatile PatternConsistencyInspector active;
 
     private final BlockPos.MutableBlockPos cursorPos = new BlockPos.MutableBlockPos();
-    private final long[] retainedMismatchPositions = new long[MAX_RETAINED_MISMATCHES];
     private Level referenceLevel;
     private BlockPos referencePos;
     private BlockState referenceState;
@@ -42,7 +40,6 @@ public final class PatternConsistencyInspector
     private int compared;
     private int matches;
     private int mismatchTotal;
-    private int retainedMismatchCount;
     private long revision;
 
     @Override
@@ -113,7 +110,6 @@ public final class PatternConsistencyInspector
         compared = 0;
         matches = 0;
         mismatchTotal = 0;
-        retainedMismatchCount = 0;
         revision++;
         return true;
     }
@@ -166,7 +162,6 @@ public final class PatternConsistencyInspector
         compared = 0;
         matches = 0;
         mismatchTotal = 0;
-        retainedMismatchCount = 0;
         java.util.Arrays.fill(mismatchCounts, 0);
         revision++;
     }
@@ -188,9 +183,6 @@ public final class PatternConsistencyInspector
             return;
         }
         mismatchTotal++;
-        if (retainedMismatchCount < retainedMismatchPositions.length) {
-            retainedMismatchPositions[retainedMismatchCount++] = cursorPos.asLong();
-        }
     }
 
     private static <T extends Comparable<T>> boolean sameValue(
@@ -212,7 +204,6 @@ public final class PatternConsistencyInspector
         compared = 0;
         matches = 0;
         mismatchTotal = 0;
-        retainedMismatchCount = 0;
         revision++;
     }
 
@@ -243,10 +234,6 @@ public final class PatternConsistencyInspector
 
     int mismatchTotal() {
         return mismatchTotal;
-    }
-
-    int retainedMismatches() {
-        return retainedMismatchCount;
     }
 
     String mismatchSummary(String group) {
