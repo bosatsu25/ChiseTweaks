@@ -17,6 +17,7 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -131,12 +132,13 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         int originZ = origin.getZ();
         for (int z = originZ - radius; z <= originZ + radius; z++) {
             for (int x = originX - radius; x <= originX + radius; x++) {
-                if (!level.getChunkSource().hasChunk(x >> 4, z >> 4)) continue;
+                LevelChunk sourceChunk = level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+                if (sourceChunk == null) continue;
                 int dx = x - originX;
                 int dz = z - originZ;
                 for (int y = originY - radius; y <= originY + radius; y++) {
                     workstationCursor.set(x, y, z);
-                    if (!level.getBlockState(workstationCursor).is(workstation)) continue;
+                    if (!sourceChunk.getBlockState(workstationCursor).is(workstation)) continue;
                     int dy = y - originY;
                     double distance = (double) dx * dx + (double) dy * dy + (double) dz * dz;
                     if (distance < bestDistance) {
