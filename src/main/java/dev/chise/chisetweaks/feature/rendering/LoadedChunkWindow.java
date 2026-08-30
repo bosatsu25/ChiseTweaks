@@ -35,7 +35,7 @@ public final class LoadedChunkWindow {
         int resolvedMaxChunkZ = maxBlockZ >> 4;
         int resolvedSpanX = resolvedMaxChunkX - resolvedMinChunkX + 1;
         int resolvedSpanZ = resolvedMaxChunkZ - resolvedMinChunkZ + 1;
-        int required = resolvedSpanX * resolvedSpanZ;
+        long required = (long) resolvedSpanX * resolvedSpanZ;
         if (required > chunks.length) return false;
 
         minChunkX = resolvedMinChunkX;
@@ -48,7 +48,7 @@ public final class LoadedChunkWindow {
                 chunks[index++] = level.getChunkSource().getChunkNow(chunkX, chunkZ);
             }
         }
-        used = required;
+        used = (int) required;
         return true;
     }
 
