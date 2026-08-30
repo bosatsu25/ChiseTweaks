@@ -103,9 +103,19 @@ SemVer判定は`scripts/version_policy.py`と`scripts/versioning_core.py`を正�
 
 ## 6. CI quality model
 
-`.github/workflows/ci.yml`が品質pipelineの正本です。
+`.github/workflows/ci.yml`が品質pipelineの正本です。Required check名は `verify / Java 25 quality gate` を維持します。
 
-Verification layers:
+CI v2は**品質ゲートを削らず、PRの変更scopeだけを分類**します。
+
+- `pull_request`: `scripts/ci_scope.py` が変更ファイルを fail-closed で分類する
+- `README.md` / `DEVELOPMENT.md` / `docs/**` だけのPRは `docs-only`
+- source / test / config / workflow / scripts / quality baseline / mixed change / 空集合はすべて `full`
+- `docs-only` でもPython tooling test、Version progression、Repository / Source Usage / Documentation / Compatibility / Functional Parity auditsは実行する
+- `docs-only` だけJava / Gradle / JUnit / JaCoCo / PIT / Client GameTest / distribution artifact生成を省略する
+- `push: main` と `workflow_dispatch` は常に `full`
+- Official Releaseは従来どおり、成功したmain FULL CIのexact artifactだけを昇格する
+
+FULL verification layers:
 
 - JUnit: functional contracts、state transition、boundary、UI/config regression
 - JaCoCo: retained deterministic scope。line coverage threshold `96%`
@@ -115,7 +125,7 @@ Verification layers:
 - Artifact / Visual Asset / Release Residue audits
 - Prism runtime acceptance: 実GPU、描画、入力、実機組み合わせ
 
-Coverageはblack-box / runtime acceptanceの代替ではありません。
+Coverageはblack-box / runtime acceptanceの代替ではありません。CI scope最適化を理由にruntime変更の品質基準を下げません。
 
 ## 7. Test design
 
