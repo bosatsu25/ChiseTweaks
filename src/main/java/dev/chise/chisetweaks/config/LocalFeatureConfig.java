@@ -53,15 +53,10 @@ public final class LocalFeatureConfig {
     public int hiddenSurfaceTraceColorPreset = WorksiteHighlightProfilePolicy.DEFAULT_COLOR_PRESET;
     public int hiddenSurfaceTraceOpacityPercent = WorksiteHighlightProfilePolicy.DEFAULT_OPACITY_PERCENT;
 
-    public int lavaAnalyzerHorizontalRadius = 5;
-    public int lavaAnalyzerVerticalRadius = 3;
-    public int lavaAnalyzerIntervalTicks = 10;
-    public int lavaAnalyzerMaxOverlayResults = 12;
-
-    public int hiddenAnalyzerHorizontalRadius = 5;
-    public int hiddenAnalyzerVerticalRadius = 3;
-    public int hiddenAnalyzerIntervalTicks = 10;
-    public int hiddenAnalyzerMaxOverlayResults = 12;
+    public int occludedHighlightHorizontalRadius = 5;
+    public int occludedHighlightVerticalRadius = 3;
+    public int occludedHighlightIntervalTicks = 10;
+    public int occludedHighlightMaxOverlayResults = 12;
 
     public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
     public int visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
@@ -109,30 +104,7 @@ public final class LocalFeatureConfig {
             LocalFeatureConfig loaded = GSON.fromJson(merged, LocalFeatureConfig.class);
             if (loaded == null) return false;
 
-            if (!source.has("lavaAnalyzerHorizontalRadius")) {
-                loaded.lavaAnalyzerHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
-            }
-            if (!source.has("lavaAnalyzerVerticalRadius")) {
-                loaded.lavaAnalyzerVerticalRadius = loaded.worksiteVisibilityVerticalRadius;
-            }
-            if (!source.has("lavaAnalyzerIntervalTicks")) {
-                loaded.lavaAnalyzerIntervalTicks = loaded.worksiteVisibilityIntervalTicks;
-            }
-            if (!source.has("lavaAnalyzerMaxOverlayResults")) {
-                loaded.lavaAnalyzerMaxOverlayResults = loaded.worksiteVisibilityMaxOverlayResults;
-            }
-            if (!source.has("hiddenAnalyzerHorizontalRadius")) {
-                loaded.hiddenAnalyzerHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
-            }
-            if (!source.has("hiddenAnalyzerVerticalRadius")) {
-                loaded.hiddenAnalyzerVerticalRadius = loaded.worksiteVisibilityVerticalRadius;
-            }
-            if (!source.has("hiddenAnalyzerIntervalTicks")) {
-                loaded.hiddenAnalyzerIntervalTicks = loaded.worksiteVisibilityIntervalTicks;
-            }
-            if (!source.has("hiddenAnalyzerMaxOverlayResults")) {
-                loaded.hiddenAnalyzerMaxOverlayResults = loaded.worksiteVisibilityMaxOverlayResults;
-            }
+            migrateLegacyOccludedBudget(source, loaded);
 
             int sourceSchemaVersion = source.has("visualTargetSchemaVersion")
                     ? source.get("visualTargetSchemaVersion").getAsInt()
@@ -214,22 +186,14 @@ public final class LocalFeatureConfig {
                 WorksiteHighlightProfilePolicy.clampColorPreset(hiddenSurfaceTraceColorPreset);
         hiddenSurfaceTraceOpacityPercent =
                 WorksiteHighlightProfilePolicy.clampOpacityPercent(hiddenSurfaceTraceOpacityPercent);
-        lavaAnalyzerHorizontalRadius =
-                WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(lavaAnalyzerHorizontalRadius);
-        lavaAnalyzerVerticalRadius =
-                WorksiteVisibilityBudgetPolicy.clampVerticalRadius(lavaAnalyzerVerticalRadius);
-        lavaAnalyzerIntervalTicks =
-                WorksiteVisibilityBudgetPolicy.clampIntervalTicks(lavaAnalyzerIntervalTicks);
-        lavaAnalyzerMaxOverlayResults =
-                WorksiteVisibilityBudgetPolicy.clampOverlayResults(lavaAnalyzerMaxOverlayResults);
-        hiddenAnalyzerHorizontalRadius =
-                WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(hiddenAnalyzerHorizontalRadius);
-        hiddenAnalyzerVerticalRadius =
-                WorksiteVisibilityBudgetPolicy.clampVerticalRadius(hiddenAnalyzerVerticalRadius);
-        hiddenAnalyzerIntervalTicks =
-                WorksiteVisibilityBudgetPolicy.clampIntervalTicks(hiddenAnalyzerIntervalTicks);
-        hiddenAnalyzerMaxOverlayResults =
-                WorksiteVisibilityBudgetPolicy.clampOverlayResults(hiddenAnalyzerMaxOverlayResults);
+        occludedHighlightHorizontalRadius =
+                WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(occludedHighlightHorizontalRadius);
+        occludedHighlightVerticalRadius =
+                WorksiteVisibilityBudgetPolicy.clampVerticalRadius(occludedHighlightVerticalRadius);
+        occludedHighlightIntervalTicks =
+                WorksiteVisibilityBudgetPolicy.clampIntervalTicks(occludedHighlightIntervalTicks);
+        occludedHighlightMaxOverlayResults =
+                WorksiteVisibilityBudgetPolicy.clampOverlayResults(occludedHighlightMaxOverlayResults);
         visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
     }
@@ -260,16 +224,66 @@ public final class LocalFeatureConfig {
         fineThreadTraceOpacityPercent = loaded.fineThreadTraceOpacityPercent;
         hiddenSurfaceTraceColorPreset = loaded.hiddenSurfaceTraceColorPreset;
         hiddenSurfaceTraceOpacityPercent = loaded.hiddenSurfaceTraceOpacityPercent;
-        lavaAnalyzerHorizontalRadius = loaded.lavaAnalyzerHorizontalRadius;
-        lavaAnalyzerVerticalRadius = loaded.lavaAnalyzerVerticalRadius;
-        lavaAnalyzerIntervalTicks = loaded.lavaAnalyzerIntervalTicks;
-        lavaAnalyzerMaxOverlayResults = loaded.lavaAnalyzerMaxOverlayResults;
-        hiddenAnalyzerHorizontalRadius = loaded.hiddenAnalyzerHorizontalRadius;
-        hiddenAnalyzerVerticalRadius = loaded.hiddenAnalyzerVerticalRadius;
-        hiddenAnalyzerIntervalTicks = loaded.hiddenAnalyzerIntervalTicks;
-        hiddenAnalyzerMaxOverlayResults = loaded.hiddenAnalyzerMaxOverlayResults;
+        occludedHighlightHorizontalRadius = loaded.occludedHighlightHorizontalRadius;
+        occludedHighlightVerticalRadius = loaded.occludedHighlightVerticalRadius;
+        occludedHighlightIntervalTicks = loaded.occludedHighlightIntervalTicks;
+        occludedHighlightMaxOverlayResults = loaded.occludedHighlightMaxOverlayResults;
         visualTargetMask = loaded.visualTargetMask;
         visualTargetSchemaVersion = loaded.visualTargetSchemaVersion;
+    }
+
+    private static void migrateLegacyOccludedBudget(JsonObject source, LocalFeatureConfig loaded) {
+        if (!source.has("occludedHighlightHorizontalRadius")) {
+            loaded.occludedHighlightHorizontalRadius = legacyExtrema(
+                    source, true, loaded.worksiteVisibilityHorizontalRadius,
+                    "lavaAnalyzerHorizontalRadius", "hiddenAnalyzerHorizontalRadius");
+        }
+        if (!source.has("occludedHighlightVerticalRadius")) {
+            loaded.occludedHighlightVerticalRadius = legacyExtrema(
+                    source, true, loaded.worksiteVisibilityVerticalRadius,
+                    "lavaAnalyzerVerticalRadius", "hiddenAnalyzerVerticalRadius");
+        }
+        if (!source.has("occludedHighlightIntervalTicks")) {
+            loaded.occludedHighlightIntervalTicks = legacyExtrema(
+                    source, false, loaded.worksiteVisibilityIntervalTicks,
+                    "lavaAnalyzerIntervalTicks", "hiddenAnalyzerIntervalTicks");
+        }
+        if (!source.has("occludedHighlightMaxOverlayResults")) {
+            loaded.occludedHighlightMaxOverlayResults = legacyExtrema(
+                    source, true, loaded.worksiteVisibilityMaxOverlayResults,
+                    "lavaAnalyzerMaxOverlayResults", "hiddenAnalyzerMaxOverlayResults");
+        }
+    }
+
+    /**
+     * Legacy Lava/Hidden budgets used separate knobs. The shared visualization budget keeps the
+     * union of those settings: larger ranges/results and the shorter requested interval.
+     */
+    private static int legacyExtrema(
+            JsonObject source,
+            boolean maximum,
+            int fallback,
+            String firstKey,
+            String secondKey) {
+        Integer first = legacyInt(source, firstKey);
+        Integer second = legacyInt(source, secondKey);
+        if (first == null && second == null) return fallback;
+        if (first == null) return second;
+        if (second == null) return first;
+        return maximum ? Math.max(first, second) : Math.min(first, second);
+    }
+
+    private static Integer legacyInt(JsonObject source, String key) {
+        if (!source.has(key)) return null;
+        var value = source.get(key);
+        if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
+            throw new IllegalArgumentException("invalid legacy integer config field: " + key);
+        }
+        try {
+            return value.getAsBigDecimal().intValueExact();
+        } catch (ArithmeticException failure) {
+            throw new IllegalArgumentException("invalid legacy integer config field: " + key, failure);
+        }
     }
 
     private static boolean needsLegacyBrightMigration(String document) {
