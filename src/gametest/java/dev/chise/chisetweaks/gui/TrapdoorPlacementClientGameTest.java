@@ -302,8 +302,8 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
         require(result.actuallyPlaced() == expectedPossible,
                 "vanilla placement possibility mismatch for " + targetKind);
         require(result.comparisonResult() == (expectedPossible
-                        ? PlacementComparisonTracker.MATCH
-                        : PlacementComparisonTracker.NONE),
+                        ? PlacementInspector.MATCH
+                        : PlacementInspector.NONE),
                 "trapdoor comparison mismatch for " + targetKind);
         if (!expectedPossible) return;
         BlockState predicted = result.predicted();
@@ -342,7 +342,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                 TargetKind.SOLID, false, Direction.SOUTH);
         require(result.predicted() != null && result.actuallyPlaced(),
                 "axis block must be placeable on " + face);
-        require(result.comparisonResult() == PlacementComparisonTracker.MATCH,
+        require(result.comparisonResult() == PlacementInspector.MATCH,
                 "axis comparison must match vanilla placement");
         Direction.Axis predicted = result.predicted().getValue(BlockStateProperties.AXIS);
         Direction.Axis actual = result.actual().getValue(BlockStateProperties.AXIS);
@@ -368,7 +368,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                 targetKind, false, Direction.SOUTH);
         require(result.predicted() != null && result.actuallyPlaced(),
                 "slab must be placeable for " + targetKind + " on " + face);
-        require(result.comparisonResult() == PlacementComparisonTracker.MATCH,
+        require(result.comparisonResult() == PlacementInspector.MATCH,
                 "slab comparison must match vanilla placement");
         SlabType predictedType = result.predicted().getValue(BlockStateProperties.SLAB_TYPE);
         SlabType actualType = result.actual().getValue(BlockStateProperties.SLAB_TYPE);
@@ -424,12 +424,12 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
         require(result.actuallyPlaced() == expectedPossible,
                 "vanilla complex placement possibility mismatch for " + block + " / " + targetKind);
         if (!expectedPossible) {
-            require(result.comparisonResult() == PlacementComparisonTracker.NONE,
+            require(result.comparisonResult() == PlacementInspector.NONE,
                     "impossible complex placement must not create a comparison");
             return result;
         }
-        require(result.comparisonResult() == PlacementComparisonTracker.MATCH
-                        || result.comparisonResult() == PlacementComparisonTracker.ADJUSTED,
+        require(result.comparisonResult() == PlacementInspector.MATCH
+                        || result.comparisonResult() == PlacementInspector.ADJUSTED,
                 "complex comparison must match or explain a vanilla adjustment for " + block);
         require(propertyNames(CrosshairInspector.placementStateProperties(result.predicted()))
                         .equals(predictedProperties),
@@ -532,7 +532,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                     previewStack,
                     hit,
                     true);
-            PlacementComparisonTracker comparison = new PlacementComparisonTracker();
+            PlacementInspector comparison = new PlacementInspector();
             player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(block));
             long captureTick = level.getGameTime();
             boolean captured = comparison.capture(
@@ -548,16 +548,16 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
             BlockPos actualPos = actualContext.getClickedPos();
             ((BlockItem) actualStack.getItem()).place(actualContext);
             BlockState actual = level.getBlockState(actualPos);
-            comparison.observe(level, captureTick + PlacementComparisonTracker.SETTLE_TICKS);
+            comparison.observe(level, captureTick + PlacementInspector.SETTLE_TICKS);
             require(captured == (predicted != null), "comparison capture must follow prediction availability");
             return new PlacementResult(
                     predicted,
                     actual,
                     actual.getBlock() == block,
                     captured
-                            ? PlacementComparisonTracker.compare(
+                            ? PlacementInspector.compare(
                                     comparison.predictedState, comparison.actualState)
-                            : PlacementComparisonTracker.NONE);
+                            : PlacementInspector.NONE);
         } finally {
             player.setShiftKeyDown(false);
         }
@@ -582,7 +582,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
         BlockPos target = clicked.above();
         long tick = level.getGameTime();
 
-        PlacementComparisonTracker tracker = new PlacementComparisonTracker();
+        PlacementInspector tracker = new PlacementInspector();
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
         require(!tracker.capture(level, player, InteractionHand.MAIN_HAND, hit, tick),
                 "non-BlockItem must not create pending comparison state");
@@ -595,9 +595,9 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
         require(tracker.predictedState.getBlock() == Blocks.OAK_LOG,
                 "pending comparison must retain predicted block identity");
         level.setBlockAndUpdate(target, Blocks.STONE.defaultBlockState());
-        tracker.observe(level, tick + PlacementComparisonTracker.SETTLE_TICKS);
-        require(PlacementComparisonTracker.compare(tracker.predictedState, tracker.actualState)
-                        == PlacementComparisonTracker.UNAVAILABLE,
+        tracker.observe(level, tick + PlacementInspector.SETTLE_TICKS);
+        require(PlacementInspector.compare(tracker.predictedState, tracker.actualState)
+                        == PlacementInspector.UNAVAILABLE,
                 "unrelated actual block must not consume pending comparison");
 
         tracker.resetSession(null);
@@ -605,30 +605,30 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
         level.setBlockAndUpdate(target, Blocks.AIR.defaultBlockState());
         require(tracker.capture(level, player, InteractionHand.MAIN_HAND, hit, tick),
                 "dimension test capture failed");
-        tracker.observe(otherDimension, tick + PlacementComparisonTracker.SETTLE_TICKS);
+        tracker.observe(otherDimension, tick + PlacementInspector.SETTLE_TICKS);
         require(tracker.predictedState == null, "dimension change must clear pending state");
 
         require(tracker.capture(level, player, InteractionHand.MAIN_HAND, hit, tick),
                 "timeout test capture failed");
-        tracker.observe(level, tick + PlacementComparisonTracker.EXPIRY_TICKS + 1L);
+        tracker.observe(level, tick + PlacementInspector.EXPIRY_TICKS + 1L);
         require(tracker.predictedState == null, "expired pending state must be cleared");
 
         require(tracker.capture(level, player, InteractionHand.MAIN_HAND, hit, tick),
                 "adjusted comparison capture failed");
         level.setBlockAndUpdate(target, Blocks.OAK_LOG.defaultBlockState()
                 .setValue(BlockStateProperties.AXIS, Direction.Axis.X));
-        tracker.observe(level, tick + PlacementComparisonTracker.SETTLE_TICKS);
-        require(PlacementComparisonTracker.compare(tracker.predictedState, tracker.actualState)
-                        == PlacementComparisonTracker.ADJUSTED,
+        tracker.observe(level, tick + PlacementInspector.SETTLE_TICKS);
+        require(PlacementInspector.compare(tracker.predictedState, tracker.actualState)
+                        == PlacementInspector.ADJUSTED,
                 "same block with changed property must be adjusted");
-        require(PlacementComparisonTracker.compare(tracker.predictedState, tracker.predictedState)
-                        == PlacementComparisonTracker.MATCH,
+        require(PlacementInspector.compare(tracker.predictedState, tracker.predictedState)
+                        == PlacementInspector.MATCH,
                 "equal states must match");
-        require(PlacementComparisonTracker.compare(tracker.predictedState, Blocks.STONE.defaultBlockState())
-                        == PlacementComparisonTracker.DIFFERENT,
+        require(PlacementInspector.compare(tracker.predictedState, Blocks.STONE.defaultBlockState())
+                        == PlacementInspector.DIFFERENT,
                 "different blocks must be modeled as different");
-        require(PlacementComparisonTracker.compare(null, tracker.actualState)
-                        == PlacementComparisonTracker.UNAVAILABLE,
+        require(PlacementInspector.compare(null, tracker.actualState)
+                        == PlacementInspector.UNAVAILABLE,
                 "missing prediction must be unavailable");
         tracker.clear();
     }
