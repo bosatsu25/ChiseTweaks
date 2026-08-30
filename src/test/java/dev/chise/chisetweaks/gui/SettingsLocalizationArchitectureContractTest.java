@@ -17,12 +17,12 @@ final class SettingsLocalizationArchitectureContractTest {
     @Test
     void settingsInspectorAndMasaOperationalCopyLivesInLanguageResources() throws Exception {
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
-        String rows = Files.readString(GUI.resolve("ChiseTweaksSettingsRows.java"));
+        String rows = Files.readString(GUI.resolve("TweaksProductSettingsRows.java"));
         String inspector = Files.readString(GUI.resolve("InspectorSettingsRows.java"));
         String masa = Files.readString(GUI.resolve("MasaListBackend.java"));
 
         assertTrue(screen.contains("screen.chisetweaks.settings.apply_changes"));
-        assertTrue(rows.contains("screen.chisetweaks.settings.copy.villager_analyzer.description"));
+        assertTrue(rows.contains("screen.chisetweaks.product.villager_links.description"));
         assertTrue(inspector.contains("screen.chisetweaks.inspector.schematic.none.description"));
         assertTrue(masa.contains("screen.chisetweaks.masa_editor.feedback.save_failed"));
 
