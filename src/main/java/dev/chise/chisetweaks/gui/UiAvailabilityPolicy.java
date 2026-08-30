@@ -7,12 +7,13 @@ final class UiAvailabilityPolicy {
     private static final String MATERIAL_PREFIX = "visualTargetMaterial";
     private static final String TECHNICAL_PREFIX = "visualTargetTechnical";
     private static final String HIDDEN_PREFIX = "visualTargetHidden";
-    private static final Set<String> HIGHLIGHT_FEATURES = Set.of(
-            "materials", "nether", "thread", "kelp", "glass");
-    private static final Set<String> HIGHLIGHT_DETAIL_INTERACTIVE = Set.of(
-            "oreMotion", "moddedOreTargets", "highlightRange", "highlightVerticalRange",
-            "highlightInterval", "highlightMaxOverlays", "highlightWorldOverlay",
-            "highlightDimensionPresets", "fineThreadColor", "fineThreadOpacity");
+    private static final Set<String> BUILDER_HIGHLIGHT_FEATURES = Set.of(
+            "materials", "nether", "kelp", "glass", "lava", "hidden");
+    private static final Set<String> BUILDER_HIGHLIGHT_DETAILS = Set.of(
+            "oreMotion", "moddedOreTargets",
+            "lavaRange", "lavaVerticalRange", "lavaInterval", "lavaMaxOverlays",
+            "hiddenRange", "hiddenVerticalRange", "hiddenInterval", "hiddenMaxOverlays",
+            "hiddenSurfaceColor", "hiddenSurfaceOpacity");
 
     private UiAvailabilityPolicy() {}
 
@@ -29,7 +30,7 @@ final class UiAvailabilityPolicy {
             return isActionInteractive(resolved, row.action());
         }
         if (resolved == ChiseTweaksSettingsController.Surface.HIGHLIGHT) {
-            return isReleasedHighlightRow(row.id());
+            return isBuilderHighlightRow(row.id());
         }
         return resolved != ChiseTweaksSettingsController.Surface.INSPECTOR;
     }
@@ -59,12 +60,11 @@ final class UiAvailabilityPolicy {
                 || action == ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE);
     }
 
-    private static boolean isReleasedHighlightRow(String id) {
+    private static boolean isBuilderHighlightRow(String id) {
         if (id == null) return false;
-        return HIGHLIGHT_FEATURES.contains(id)
-                || HIGHLIGHT_DETAIL_INTERACTIVE.contains(id)
+        return BUILDER_HIGHLIGHT_FEATURES.contains(id)
+                || BUILDER_HIGHLIGHT_DETAILS.contains(id)
                 || id.startsWith(MATERIAL_PREFIX)
-                || id.startsWith(TECHNICAL_PREFIX)
                 || id.startsWith(HIDDEN_PREFIX);
     }
 }
