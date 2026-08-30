@@ -241,8 +241,8 @@
       "oracle": "When disabled or outside FIRST_PERSON_LEFT/RIGHT, rendering remains vanilla. When enabled, only the submitted first-person item pose is scaled while Minecraft retains model, texture, animation and input ownership.",
       "evidence": [
         "src/test/java/dev/chise/chisetweaks/core/vision/HandheldSizePolicyTest.java",
-        "src/test/java/dev/chise/chisetweaks/RuntimeFeatureUsabilityRegressionTest.java",
-        "src/main/java/dev/chise/chisetweaks/mixin/rendering/HandheldSizeMixin.java"
+        "src/test/java/dev/chise/chisetweaks/HandheldSizeRenderingContractTest.java",
+        "src/test/java/dev/chise/chisetweaks/RuntimeFeatureUsabilityRegressionTest.java"
       ],
       "manual_evidence": [
         "Prism acceptance with block items, generic items, tools/weapons, shield, main hand/offhand and a representative external resource pack."
