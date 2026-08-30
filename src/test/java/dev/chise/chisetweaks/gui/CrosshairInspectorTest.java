@@ -81,14 +81,14 @@ final class CrosshairInspectorTest {
     void stateFormattingSortsKnownAndUnknownPropertiesWithoutAssumingTheirPresence() {
         assertEquals(
                 List.of("custom_property=safe_value", "facing=north", "half=top", "open=false"),
-                CrosshairInspector.formatStateProperties(Map.of(
+                CrosshairSnapshotPolicy.formatStateProperties(Map.of(
                         "open", "false",
                         "half", "top",
                         "facing", "north",
                         "custom_property", "safe_value")));
-        assertTrue(CrosshairInspector.formatStateProperties(Map.of()).isEmpty());
-        assertTrue(CrosshairInspector.formatStateProperties(null).isEmpty());
-        assertEquals(List.of("facing=north"), CrosshairInspector.formatStateProperties(Map.of(
+        assertTrue(CrosshairSnapshotPolicy.formatStateProperties(Map.of()).isEmpty());
+        assertTrue(CrosshairSnapshotPolicy.formatStateProperties(null).isEmpty());
+        assertEquals(List.of("facing=north"), CrosshairSnapshotPolicy.formatStateProperties(Map.of(
                 "facing", "north",
                 "unsafe", "line\nbreak",
                 "bad key", "value")));
@@ -96,30 +96,30 @@ final class CrosshairInspectorTest {
 
     @Test
     void semanticPropertyGroupsPreserveKnownMeaningsAndUnknownFallback() {
-        assertEquals("orientation", CrosshairInspector.semanticPropertyGroup("facing"));
-        assertEquals("orientation", CrosshairInspector.semanticPropertyGroup("axis"));
-        assertEquals("shape", CrosshairInspector.semanticPropertyGroup("shape"));
-        assertEquals("connection", CrosshairInspector.semanticPropertyGroup("north"));
-        assertEquals("interaction", CrosshairInspector.semanticPropertyGroup("powered"));
-        assertEquals("fluid", CrosshairInspector.semanticPropertyGroup("waterlogged"));
-        assertEquals("other", CrosshairInspector.semanticPropertyGroup("modded_property"));
+        assertEquals("orientation", CrosshairSnapshotPolicy.semanticPropertyGroup("facing"));
+        assertEquals("orientation", CrosshairSnapshotPolicy.semanticPropertyGroup("axis"));
+        assertEquals("shape", CrosshairSnapshotPolicy.semanticPropertyGroup("shape"));
+        assertEquals("connection", CrosshairSnapshotPolicy.semanticPropertyGroup("north"));
+        assertEquals("interaction", CrosshairSnapshotPolicy.semanticPropertyGroup("powered"));
+        assertEquals("fluid", CrosshairSnapshotPolicy.semanticPropertyGroup("waterlogged"));
+        assertEquals("other", CrosshairSnapshotPolicy.semanticPropertyGroup("modded_property"));
     }
 
     @Test
     void comparisonResultKeysCoverEveryBoundedState() {
         assertEquals("screen.chisetweaks.placement.result.match",
-                CrosshairInspector.comparisonResultKey(PlacementInspector.MATCH));
+                InspectorSettingsRows.comparisonResultKey(PlacementInspector.MATCH));
         assertEquals("screen.chisetweaks.placement.result.adjusted",
-                CrosshairInspector.comparisonResultKey(PlacementInspector.ADJUSTED));
+                InspectorSettingsRows.comparisonResultKey(PlacementInspector.ADJUSTED));
         assertEquals("screen.chisetweaks.placement.result.different",
-                CrosshairInspector.comparisonResultKey(PlacementInspector.DIFFERENT));
+                InspectorSettingsRows.comparisonResultKey(PlacementInspector.DIFFERENT));
         assertEquals("screen.chisetweaks.placement.result.unavailable",
-                CrosshairInspector.comparisonResultKey(PlacementInspector.UNAVAILABLE));
+                InspectorSettingsRows.comparisonResultKey(PlacementInspector.UNAVAILABLE));
     }
 
     @Test
     void allEnabledVisualFeaturesRemainIndependentAndReportTheirActualRenderModes() {
-        long all = CrosshairInspector.enabledFeatureMask(
+        long all = CrosshairSnapshotPolicy.enabledFeatureMask(
                 FeatureDefinition.FINE_THREAD_TRACE,
                 FeatureDefinition.HIDDEN_SURFACE_TRACE,
                 FeatureDefinition.MATERIAL_HIGHLIGHTS,
@@ -151,18 +151,18 @@ final class CrosshairInspectorTest {
                 FeatureDefinition.LAVA_HIGHLIGHT), observed);
         assertEquals(List.of(FeatureDefinition.MATERIAL_HIGHLIGHTS), ancient);
         assertEquals("screen.chisetweaks.inspector.render_mode.visible",
-                CrosshairInspector.renderModeKey(
+                InspectorSettingsRows.renderModeKey(
                         FeatureDefinition.MATERIAL_HIGHLIGHTS, false));
         assertEquals("screen.chisetweaks.inspector.render_mode.through_wall",
-                CrosshairInspector.renderModeKey(
+                InspectorSettingsRows.renderModeKey(
                         FeatureDefinition.LAVA_HIGHLIGHT, false));
     }
 
     @Test
     void filterHideSuppressesEveryOtherwiseResponsibleFeature() {
-        long enabled = CrosshairInspector.enabledFeatureMask(
+        long enabled = CrosshairSnapshotPolicy.enabledFeatureMask(
                 FeatureDefinition.MATERIAL_HIGHLIGHTS);
-        List<FeatureDefinition> impacts = CrosshairInspector.responsibleFeatures(
+        List<FeatureDefinition> impacts = CrosshairSnapshotPolicy.responsibleFeatures(
                 "minecraft:ancient_debris",
                 BlockInspectionPolicy.categories("minecraft:ancient_debris"),
                 Target.MATERIAL_ANCIENT_DEBRIS,
@@ -174,7 +174,7 @@ final class CrosshairInspectorTest {
 
         assertFalse(impacts.isEmpty());
         assertEquals("screen.chisetweaks.inspector.render_mode.suppressed",
-                CrosshairInspector.renderModeKey(impacts.get(0), true));
+                InspectorSettingsRows.renderModeKey(impacts.get(0), true));
     }
 
     @Test
@@ -193,7 +193,7 @@ final class CrosshairInspectorTest {
             boolean oreResolved,
             boolean sourceLava,
             long enabledFeatures) {
-        return CrosshairInspector.responsibleFeatures(
+        return CrosshairSnapshotPolicy.responsibleFeatures(
                 id,
                 BlockInspectionPolicy.categories(id),
                 oreTarget,
