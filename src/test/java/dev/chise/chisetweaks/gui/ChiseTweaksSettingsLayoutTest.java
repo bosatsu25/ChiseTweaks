@@ -13,7 +13,7 @@ final class ChiseTweaksSettingsLayoutTest {
 
         assertTrue(geometry.content().x() >= 0);
         assertTrue(geometry.content().right() <= 320);
-        assertEquals(5, geometry.tabs().size());
+        assertEquals(7, geometry.tabs().size());
         for (var tab : geometry.tabs()) {
             assertTrue(geometry.content().contains(tab));
         }
@@ -25,9 +25,9 @@ final class ChiseTweaksSettingsLayoutTest {
     }
 
     @Test
-    void fiveTabsStayOrderedAndNonOverlapping() {
+    void sevenTabsStayOrderedAndNonOverlapping() {
         var geometry = ChiseTweaksSettingsLayout.calculate(854, 480);
-        assertEquals(5, geometry.tabs().size());
+        assertEquals(7, geometry.tabs().size());
         for (int index = 0; index < geometry.tabs().size() - 1; index++) {
             var current = geometry.tabs().get(index);
             var next = geometry.tabs().get(index + 1);
