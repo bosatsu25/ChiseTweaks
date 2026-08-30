@@ -17,6 +17,13 @@ public final class MasaIntegrationRegistry {
             MasaModAvailability.Snapshot availability) {
         if (definition == null || availability == null) return false;
         if (definition == IntegrationDefinition.MASA_GUIDE) return true;
+        if (definition == IntegrationDefinition.MASA_JAPANESE_UI) {
+            return availability.malilib()
+                    || availability.litematica()
+                    || availability.tweakeroo()
+                    || availability.tweakermore()
+                    || availability.syncmatica();
+        }
         return availability.loaded(definition.modId());
     }
 }
