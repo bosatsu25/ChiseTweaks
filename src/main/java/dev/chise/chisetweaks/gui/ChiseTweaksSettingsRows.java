@@ -49,13 +49,13 @@ final class ChiseTweaksSettingsRows {
     }
 
     static String surfaceTitle(Surface surface) {
-        String value = (surface == null ? Surface.HIGHLIGHT : surface)
-                .name().toLowerCase(java.util.Locale.ROOT);
-        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+        Surface resolved = surface == null ? Surface.HIGHLIGHT : surface;
+        return text("screen.chisetweaks.settings.tab."
+                + resolved.name().toLowerCase(java.util.Locale.ROOT));
     }
 
     private static void addHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.highlight", "Highlight");
+        headerLiteral(rows, "header.highlight", text("screen.chisetweaks.settings.tab.highlight"));
         feature(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS);
         feature(rows, "nether", FeatureSwitches.NETHER_PALETTE);
         feature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE);
@@ -77,19 +77,21 @@ final class ChiseTweaksSettingsRows {
         configBool(rows, "highlightWorldOverlay", LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY);
         boolLiteral(rows, "highlightDimensionPresets",
                 LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS,
-                "Dimension Preset",
-                "Automatically use the bounded Nether visibility profile when appropriate.");
+                text("screen.chisetweaks.settings.copy.dimension_preset.name"),
+                text("screen.chisetweaks.settings.copy.dimension_preset.description"));
 
-        headerLiteral(rows, "detail.highlight.traceAppearance", "Trace Appearance");
+        headerLiteral(rows, "detail.highlight.traceAppearance",
+                text("screen.chisetweaks.settings.copy.trace_appearance"));
         integerLiteral(rows, "fineThreadColor",
                 LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET,
-                "Fine Line Highlight - Color",
-                "AUTO keeps the current Chise palette.", 1);
+                text("screen.chisetweaks.settings.copy.fine_line_color.name"),
+                text("screen.chisetweaks.settings.copy.fine_line_color.description"), 1);
         integerLiteral(rows, "fineThreadOpacity",
                 LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
-                "Fine Line Highlight - Opacity",
-                "20-100%", 5);
-        headerLiteral(rows, "detail.highlight.technicalTargets", "Fine Line Targets");
+                text("screen.chisetweaks.settings.copy.fine_line_opacity.name"),
+                text("screen.chisetweaks.settings.copy.opacity_range"), 5);
+        headerLiteral(rows, "detail.highlight.technicalTargets",
+                text("screen.chisetweaks.settings.copy.fine_line_targets"));
         addTargets(rows, "visualTargetTechnical");
 
         header(rows, "detail.highlight.materialTargets", "screen.chisetweaks.settings.section.material_targets");
@@ -98,11 +100,12 @@ final class ChiseTweaksSettingsRows {
     }
 
     private static void addFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.filter", "Filter");
+        headerLiteral(rows, "header.filter", text("screen.chisetweaks.settings.tab.filter"));
         feature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS);
         feature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES);
 
-        headerLiteral(rows, "detail.visualFilter.behavior", "Filter Settings");
+        headerLiteral(rows, "detail.visualFilter.behavior",
+                text("screen.chisetweaks.settings.copy.filter_settings"));
         configBool(rows, "refreshRenderer", BuilderFocusConfig.REFRESH_RENDERER);
         action(rows, "editBlockFilter",
                 FeatureSwitches.BUILDER_FOCUS_BLOCKS.definition().englishName(),
@@ -117,11 +120,11 @@ final class ChiseTweaksSettingsRows {
     }
 
     private static void addAnalyzerRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.analyzer", "Analyzer");
+        headerLiteral(rows, "header.analyzer", text("screen.chisetweaks.settings.tab.analyzer"));
         featureLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
                 text("config.comment.locallavahighlight"));
         featureLiteral(rows, "villagerAnalyzer", FeatureSwitches.VILLAGER_ANALYZER,
-                "Nearby villagers are linked to their claimed job site. If client JOB_SITE memory is unavailable, a bounded loaded-world workstation fallback is used.");
+                text("screen.chisetweaks.settings.copy.villager_analyzer.description"));
         featureLiteral(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
                 text("config.comment.hiddensurfacetrace"));
 
@@ -140,12 +143,12 @@ final class ChiseTweaksSettingsRows {
                 LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS);
         integerLiteral(rows, "hiddenSurfaceColor",
                 LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
-                "Hidden Block Analyzer - Color",
-                "AUTO keeps the Chise hidden-block palette.", 1);
+                text("screen.chisetweaks.settings.copy.hidden_color.name"),
+                text("screen.chisetweaks.settings.copy.hidden_color.description"), 1);
         integerLiteral(rows, "hiddenSurfaceOpacity",
                 LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
-                "Hidden Block Analyzer - Opacity",
-                "20-100%", 5);
+                text("screen.chisetweaks.settings.copy.hidden_opacity.name"),
+                text("screen.chisetweaks.settings.copy.opacity_range"), 5);
 
         header(rows, "detail.analyzer.hiddenTargets", "screen.chisetweaks.settings.section.hidden_targets");
         addTargets(rows, "visualTargetHidden");
@@ -168,20 +171,20 @@ final class ChiseTweaksSettingsRows {
     }
 
     private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.visibility", "Visibility");
+        headerLiteral(rows, "header.visibility", text("screen.chisetweaks.settings.tab.visibility"));
         featureLiteral(rows, "fireVisibility", FeatureSwitches.FIRE_VISIBILITY,
-                "Lower only the first-person fire overlay.");
+                text("screen.chisetweaks.settings.copy.fire_visibility.description"));
         integer(rows, "fireVisibilitySize", LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
                 "screen.chisetweaks.settings.fire_size.name",
                 "screen.chisetweaks.settings.fire_size.description", 1);
         featureLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
-                "Improve Chest and Double Chest visibility.");
+                text("screen.chisetweaks.settings.copy.bright_chest.description"));
         featureLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
-                "Improve White Concrete visibility.");
+                text("screen.chisetweaks.settings.copy.bright_concrete.description"));
         featureLiteral(rows, "beaconRange", FeatureSwitches.BEACON_RANGE,
-                "Show the horizontal effect radius of nearby active Beacons.");
+                text("screen.chisetweaks.settings.copy.beacon_range.description"));
         featureLiteral(rows, "lightningRodRange", FeatureSwitches.LIGHTNING_ROD_RANGE,
-                "Show the Vanilla 128-block horizontal Lightning Rod attraction range.");
+                text("screen.chisetweaks.settings.copy.lightning_rod_range.description"));
     }
 
     private static void addIntegrationRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
