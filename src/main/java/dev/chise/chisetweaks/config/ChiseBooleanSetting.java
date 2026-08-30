@@ -145,6 +145,7 @@ public class ChiseBooleanSetting {
         if (previous == requested) return false;
         writeValue(requested);
         if (getBooleanValue() == previous) return false;
+        SettingChangeDispatcher.markChanged();
         notifyChangeListeners();
         return true;
     }
