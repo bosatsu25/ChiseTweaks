@@ -58,18 +58,41 @@ final class ConfigMigrationMatrixTest {
     }
 
     @Test
-    void retiredAnalyzerFieldsDoNotReenterCurrentConfig() throws Exception {
+    void legacyAnalyzerBudgetMigratesIntoSharedOccludedHighlightBudget() throws Exception {
         LocalFeatureConfig config = load("0.9.2-local.json");
 
         assertTrue(config.lavaHighlightEnabled);
         assertTrue(config.fireVisibilityEnabled);
-        assertEquals(7, config.lavaAnalyzerHorizontalRadius);
-        assertEquals(2, config.lavaAnalyzerVerticalRadius);
-        assertEquals(30, config.lavaAnalyzerIntervalTicks);
-        assertEquals(21, config.lavaAnalyzerMaxOverlayResults);
+        assertEquals(7, config.occludedHighlightHorizontalRadius);
+        assertEquals(2, config.occludedHighlightVerticalRadius);
+        assertEquals(30, config.occludedHighlightIntervalTicks);
+        assertEquals(21, config.occludedHighlightMaxOverlayResults);
         assertEquals(
                 VisualTargetSelectionPolicy.sanitizeMask(1073739776),
                 config.visualTargetMask);
+    }
+
+    @Test
+    void differingLegacyLavaAndHiddenBudgetsPreserveUnionSemantics() {
+        LocalFeatureConfig config = new LocalFeatureConfig();
+        assertTrue(config.replaceFromJsonDocument("""
+                {
+                  "lavaAnalyzerHorizontalRadius": 4,
+                  "hiddenAnalyzerHorizontalRadius": 7,
+                  "lavaAnalyzerVerticalRadius": 2,
+                  "hiddenAnalyzerVerticalRadius": 5,
+                  "lavaAnalyzerIntervalTicks": 40,
+                  "hiddenAnalyzerIntervalTicks": 20,
+                  "lavaAnalyzerMaxOverlayResults": 10,
+                  "hiddenAnalyzerMaxOverlayResults": 19,
+                  "visualTargetMask": 0,
+                  "visualTargetSchemaVersion": 3
+                }
+                """));
+        assertEquals(7, config.occludedHighlightHorizontalRadius);
+        assertEquals(5, config.occludedHighlightVerticalRadius);
+        assertEquals(20, config.occludedHighlightIntervalTicks);
+        assertEquals(19, config.occludedHighlightMaxOverlayResults);
     }
 
     @Test
