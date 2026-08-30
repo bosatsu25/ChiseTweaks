@@ -389,5 +389,14 @@
   "screen.chisetweaks.settings.handheld_item.description": "Relative scale for first-person non-block, non-tool items. Default 60%.",
   "screen.chisetweaks.settings.handheld_tool.name": "Weapons & Tools Size",
   "screen.chisetweaks.settings.handheld_tool.description": "Relative scale for tools and weapons detected by item components or vanilla weapon/tool classes. Default 75%.",
-  "screen.chisetweaks.placement.reason": "Placement basis"
+  "screen.chisetweaks.placement.reason": "Placement basis",
+  "screen.chisetweaks.product.builder_highlights": "Builder Highlights",
+  "screen.chisetweaks.product.scene_filter": "Scene Filter",
+  "screen.chisetweaks.product.builder_assist": "Builder Assist",
+  "screen.chisetweaks.product.technical": "Technical",
+  "screen.chisetweaks.product.visual_tweaks": "Visual Tweaks",
+  "screen.chisetweaks.product.integrations": "Integrations",
+  "screen.chisetweaks.product.lava.description": "Show nearby loaded lava source blocks as bounded occluded highlights.",
+  "screen.chisetweaks.product.hidden.description": "Show selected hidden building materials as bounded occluded highlights.",
+  "screen.chisetweaks.product.villager_links.description": "Draw links only for villager job sites already known by Minecraft; no workstation guessing scan is used."
 }
