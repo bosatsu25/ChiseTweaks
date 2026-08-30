@@ -1,16 +1,11 @@
 package dev.chise.chisetweaks.gui;
 
-import dev.chise.chisetweaks.config.LocalFeatureConfig;
-import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
-import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -20,26 +15,19 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Observes the existing Minecraft crosshair hit and maintains one privacy-safe Inspector snapshot.
+ * Observes Minecraft's existing crosshair hit and maintains one builder-facing snapshot.
  *
- * <p>Placement rules and snapshot derivation live in dedicated policies; this class owns only
- * hit lifecycle, cache invalidation and the immutable snapshot boundary.</p>
+ * <p>This class owns hit lifecycle, cache invalidation and placement state only. Filter diagnostics,
+ * responsible-feature analysis and render-mode classification are intentionally absent.</p>
  */
 final class CrosshairInspector {
     private static final Snapshot NO_TARGET = new Snapshot(
-            HitResult.Type.MISS, "", List.of(), null, List.of(), null, null,
+            HitResult.Type.MISS, "", List.of(), null, null,
             PlacementInspector.NONE, null, false);
 
     private HitResult.Type cachedKind;
     private BlockState cachedBlockState;
     private EntityType<?> cachedEntityType;
-    private boolean cachedSelf;
-    private long cachedFeatureMask = Long.MIN_VALUE;
-    private int cachedVisualTargetMask = Integer.MIN_VALUE;
-    private boolean cachedWorldOverlay;
-    private boolean cachedInNether;
-    private long cachedFilterRevision = Long.MIN_VALUE;
-    private long cachedOreRevision = Long.MIN_VALUE;
     private Snapshot snapshot = NO_TARGET;
 
     Snapshot snapshot() {
@@ -69,11 +57,10 @@ final class CrosshairInspector {
         }
         HitResult hit = client.hitResult;
         if (hit.getType() == HitResult.Type.BLOCK && hit instanceof BlockHitResult blockHit) {
-            BlockState state = client.level.getBlockState(blockHit.getBlockPos());
-            return updateBlock(client, blockHit, state, Level.NETHER.equals(client.level.dimension()));
+            return updateBlock(client, blockHit, client.level.getBlockState(blockHit.getBlockPos()));
         }
         if (hit.getType() == HitResult.Type.ENTITY && hit instanceof EntityHitResult entityHit) {
-            return updateEntity(client, entityHit.getEntity());
+            return updateEntity(entityHit.getEntity());
         }
         return updateNoTarget();
     }
@@ -90,12 +77,7 @@ final class CrosshairInspector {
     private boolean updateBlock(
             Minecraft client,
             BlockHitResult hit,
-            BlockState state,
-            boolean inNether) {
-        LocalFeatureConfig local = LocalFeatureConfig.getInstance();
-        long featureMask = CrosshairSnapshotPolicy.currentEnabledFeatureMask();
-        long filterRevision = BuilderFocusVisibility.revision();
-        long oreRevision = OreHighlightResolver.revision();
+            BlockState state) {
         PlacementInspector comparison = PlacementInspector.activeAt(
                 client.level, hit.getBlockPos());
         ItemStack stack = client.player == null ? null : client.player.getMainHandItem();
@@ -115,14 +97,9 @@ final class CrosshairInspector {
         int placementResult = comparison == null
                 ? PlacementInspector.NONE
                 : PlacementInspector.compare(predictedPlacement, actualPlacement);
+
         if (cachedKind == HitResult.Type.BLOCK
                 && cachedBlockState == state
-                && cachedFeatureMask == featureMask
-                && cachedVisualTargetMask == local.visualTargetMask
-                && cachedWorldOverlay == local.worksiteVisibilityWorldOverlay
-                && cachedInNether == inNether
-                && cachedFilterRevision == filterRevision
-                && cachedOreRevision == oreRevision
                 && snapshot.predictedPlacement() == predictedPlacement
                 && snapshot.actualPlacement() == actualPlacement
                 && snapshot.placementResult() == placementResult
@@ -134,17 +111,8 @@ final class CrosshairInspector {
         cachedKind = HitResult.Type.BLOCK;
         cachedBlockState = state;
         cachedEntityType = null;
-        cachedFeatureMask = featureMask;
-        cachedVisualTargetMask = local.visualTargetMask;
-        cachedWorldOverlay = local.worksiteVisibilityWorldOverlay;
-        cachedInNether = inNether;
-        cachedFilterRevision = filterRevision;
-        cachedOreRevision = oreRevision;
         snapshot = CrosshairSnapshotPolicy.blockSnapshot(
                 state,
-                featureMask,
-                local.visualTargetMask,
-                local.worksiteVisibilityWorldOverlay,
                 predictedPlacement,
                 actualPlacement,
                 placementResult,
@@ -153,22 +121,13 @@ final class CrosshairInspector {
         return true;
     }
 
-    private boolean updateEntity(Minecraft client, Entity entity) {
+    private boolean updateEntity(Entity entity) {
         EntityType<?> type = entity == null ? null : entity.getType();
-        boolean self = entity != null && entity == client.player;
-        long filterRevision = BuilderFocusVisibility.revision();
-        if (cachedKind == HitResult.Type.ENTITY
-                && cachedEntityType == type
-                && cachedSelf == self
-                && cachedFilterRevision == filterRevision) {
-            return false;
-        }
+        if (cachedKind == HitResult.Type.ENTITY && cachedEntityType == type) return false;
 
         cachedKind = HitResult.Type.ENTITY;
         cachedBlockState = null;
         cachedEntityType = type;
-        cachedSelf = self;
-        cachedFilterRevision = filterRevision;
         snapshot = CrosshairSnapshotPolicy.entitySnapshot(entity);
         return true;
     }
@@ -177,8 +136,6 @@ final class CrosshairInspector {
             HitResult.Type targetKind,
             String targetId,
             List<String> stateProperties,
-            BuilderFocusVisibility.FilterDecision filterDecision,
-            List<FeatureDefinition> responsibleFeatures,
             BlockState predictedPlacement,
             BlockState actualPlacement,
             int placementResult,
@@ -188,11 +145,10 @@ final class CrosshairInspector {
             Objects.requireNonNull(targetKind);
             targetId = targetId == null ? "" : targetId;
             stateProperties = List.copyOf(Objects.requireNonNull(stateProperties));
-            responsibleFeatures = List.copyOf(Objects.requireNonNull(responsibleFeatures));
-            if (targetKind == HitResult.Type.MISS && (!targetId.isEmpty() || filterDecision != null)) {
+            if (targetKind == HitResult.Type.MISS && !targetId.isEmpty()) {
                 throw new IllegalArgumentException();
             }
-            if (targetKind != HitResult.Type.MISS && (targetId.isEmpty() || filterDecision == null)) {
+            if (targetKind != HitResult.Type.MISS && targetId.isEmpty()) {
                 throw new IllegalArgumentException();
             }
             if (targetKind != HitResult.Type.BLOCK && !stateProperties.isEmpty()) {
