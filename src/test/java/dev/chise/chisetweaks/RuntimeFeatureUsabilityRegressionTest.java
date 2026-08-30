@@ -52,7 +52,7 @@ final class RuntimeFeatureUsabilityRegressionTest {
     @Test
     void everyFeatureRemainsReachableFromTheSettingsUi() throws IOException {
         String rows = source(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsRows.java");
+                "src/main/java/dev/chise/chisetweaks/gui/TweaksProductSettingsRows.java");
         for (String toggle : new String[]{
                 "BUILDER_FOCUS_BLOCKS",
                 "BUILDER_FOCUS_ENTITIES",
