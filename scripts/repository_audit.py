@@ -111,6 +111,8 @@ REQUIRED_PATHS = (
     "src/main/java/dev/chise/chisetweaks/feature/rendering/NearestPositionBuffer.java",
     ".github/workflows/ci.yml",
     ".github/workflows/release.yml",
+    "scripts/ci_scope.py",
+    "scripts/test_ci_scope.py",
     "scripts/artifact_audit.py",
     "scripts/release_residue_audit.py",
     "scripts/documentation_consistency_audit.py",
