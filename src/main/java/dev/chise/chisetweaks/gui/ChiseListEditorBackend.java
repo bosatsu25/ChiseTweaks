@@ -204,7 +204,7 @@ final class SceneFilterBackend implements ChiseListEditorBackend {
         ChiseRuleMode previous = setting.getValue();
         ChiseRuleMode next = nextMode(previous);
         if (!setting.setValue(next)) return Mutation.none("");
-        if (!persist(setting)) {
+        if (!persist(setting.persistence())) {
             setting.setValue(previous);
             return Mutation.none(text("screen.chisetweaks.scene_filter.feedback.save_failed"));
         }
@@ -313,7 +313,7 @@ final class SceneFilterBackend implements ChiseListEditorBackend {
             return Mutation.none(text("screen.chisetweaks.scene_filter.feedback.rejected"));
         }
         if (!setting.setStrings(sanitized)) return Mutation.none("");
-        if (!persist(setting)) {
+        if (!persist(setting.persistence())) {
             setting.setStrings(previous);
             return Mutation.none(text("screen.chisetweaks.scene_filter.feedback.save_failed"));
         }
@@ -332,7 +332,7 @@ final class SceneFilterBackend implements ChiseListEditorBackend {
         ArrayList<String> updated = new ArrayList<>(previous);
         updated.remove(index);
         if (!setting.setStrings(updated)) return Mutation.none("");
-        if (!persist(setting)) {
+        if (!persist(setting.persistence())) {
             setting.setStrings(previous);
             return Mutation.none(text("screen.chisetweaks.scene_filter.feedback.save_failed"));
         }
@@ -349,7 +349,7 @@ final class SceneFilterBackend implements ChiseListEditorBackend {
         if (setting == null) return Mutation.none("");
         List<String> previous = setting.getStrings();
         if (!setting.setStrings(List.of())) return Mutation.none("");
-        if (!persist(setting)) {
+        if (!persist(setting.persistence())) {
             setting.setStrings(previous);
             return Mutation.none(text("screen.chisetweaks.scene_filter.feedback.save_failed"));
         }
@@ -385,8 +385,8 @@ final class SceneFilterBackend implements ChiseListEditorBackend {
         return false;
     }
 
-    private boolean persist(dev.chise.chisetweaks.config.ChiseSetting<?> setting) {
-        return persistence.save(Set.of(setting.persistence())).successful();
+    private boolean persist(dev.chise.chisetweaks.config.SettingPersistence domain) {
+        return persistence.save(Set.of(domain)).successful();
     }
 }
 
