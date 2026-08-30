@@ -6,38 +6,44 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** S7: proves that each quality risk has an owned verification layer. */
+/** S7: proves that each quality risk has an explicit executable verification owner. */
 final class TestResponsibilitySGradeContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
-    private static final Path TESTS = ROOT.resolve("src/test/java/dev/chise/chisetweaks");
-    private static final Path SELF = ROOT.resolve(
-            "src/test/java/dev/chise/chisetweaks/TestResponsibilitySGradeContractTest.java");
 
     @Test
     void deterministicPolicyBehaviorHasJUnitAndMutationEvidence() throws IOException {
-        assertExists("build.gradle");
         String build = Files.readString(ROOT.resolve("build.gradle"));
         assertTrue(build.contains("jacocoTestCoverageVerification"));
         assertTrue(build.contains("pitest {"));
         assertTrue(build.contains("mutationThreshold"));
         assertTrue(build.contains("testStrengthThreshold"));
-        assertAnyOtherTestMentions("WorksiteVisibilityBudgetPolicy");
-        assertAnyOtherTestMentions("VisualTargetSelectionPolicy");
+
+        assertExists("src/test/java/dev/chise/chisetweaks/VisualTargetSelectionPolicyTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/LightweightRuntimeBudgetContractTest.java");
     }
 
     @Test
     void runtimeFeatureWiringAndFaultIsolationHaveExecutableRegressionEvidence() {
         assertExists("src/test/java/dev/chise/chisetweaks/RuntimeFeatureUsabilityRegressionTest.java");
         assertExists("src/test/java/dev/chise/chisetweaks/runtime/FeatureManagerFaultInjectionSGradeTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/runtime/FeatureManagerTickSlotTest.java");
     }
 
     @Test
-    void performanceHasStructuralAndRealDeviceEvidenceLayers() throws IOException {
-        assertAnyOtherTestMentions("PerformanceArchitectureContract");
+    void guiResponsibilityHasArchitectureEvidence() {
+        assertExists("src/test/java/dev/chise/chisetweaks/gui/GuiResponsibilitySGradeContractTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/gui/SettingsResponsibilityArchitectureContractTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/gui/ChiseListEditorScreenArchitectureContractTest.java");
+    }
+
+    @Test
+    void performanceHasStructuralAcceptanceAndRealDeviceEvidenceLayers() throws IOException {
+        assertExists("src/test/java/dev/chise/chisetweaks/performance/PerformanceArchitectureContractTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/performance/PerformanceAcceptanceSGradeTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/performance/JfrPerformanceAnalyzerTest.java");
         assertExists("scripts/performance_evidence_template.py");
         assertExists("scripts/prism_acceptance_audit.py");
         String build = Files.readString(ROOT.resolve("build.gradle"));
@@ -45,12 +51,22 @@ final class TestResponsibilitySGradeContractTest {
     }
 
     @Test
-    void configAndSecurityHaveAdversarialTestOwnership() {
+    void configAndSecurityHaveAdversarialMigrationAndStorageEvidence() {
         assertExists("src/test/java/dev/chise/chisetweaks/core/security/ConfigAdversarialSGradeTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/core/security/SecureConfigStorageTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/config/HistoricalConfigFixtureTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/config/ConfigMigrationDowngradeTest.java");
+    }
+
+    @Test
+    void productScopeHasIndependentExecutableEvidence() {
+        assertExists("src/test/java/dev/chise/chisetweaks/ProductScopeSGradeContractTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/RepositoryScopeContractTest.java");
     }
 
     @Test
     void releaseRegressionHasArtifactParityAndProvenanceLayers() {
+        assertExists("src/test/java/dev/chise/chisetweaks/ReleaseEvidenceSGradeContractTest.java");
         for (String path : List.of(
                 "scripts/artifact_audit.py",
                 "scripts/functional_parity_audit.py",
@@ -61,27 +77,10 @@ final class TestResponsibilitySGradeContractTest {
     }
 
     @Test
-    void minecraftSemanticsHaveClientGameTestSourceSet() throws IOException {
-        Path clientTests = ROOT.resolve("src/clientTest/java");
-        assertTrue(Files.isDirectory(clientTests), "Client GameTest source set is missing");
-        try (Stream<Path> files = Files.walk(clientTests)) {
-            assertTrue(files.anyMatch(path -> path.toString().endsWith(".java")),
-                    "Client GameTest must contain executable Java tests");
-        }
-    }
-
-    private static void assertAnyOtherTestMentions(String marker) throws IOException {
-        try (Stream<Path> files = Files.walk(TESTS)) {
-            boolean found = false;
-            for (Path path : files.filter(p -> p.toString().endsWith(".java")).toList()) {
-                if (path.toAbsolutePath().normalize().equals(SELF)) continue;
-                if (Files.readString(path).contains(marker)) {
-                    found = true;
-                    break;
-                }
-            }
-            assertTrue(found, () -> "No independent JUnit evidence found for " + marker);
-        }
+    void minecraftSemanticsHaveClientGameTestEvidence() {
+        assertExists("src/gametest/java/dev/chise/chisetweaks/regression/AllFeaturesRegressionClientGameTest.java");
+        assertExists("src/gametest/java/dev/chise/chisetweaks/gui/TrapdoorPlacementClientGameTest.java");
+        assertExists("src/gametest/resources/fabric.mod.json");
     }
 
     private static void assertExists(String relativePath) {
