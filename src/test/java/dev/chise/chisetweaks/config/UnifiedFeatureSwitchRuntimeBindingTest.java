@@ -1,5 +1,6 @@
 package dev.chise.chisetweaks.config;
 
+import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -11,9 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class UnifiedFeatureSwitchRuntimeBindingTest {
     @Test
-    void allTwelveSwitchesRemainIndependentWhenEnabledTogether() {
+    void allRegisteredSwitchesRemainIndependentWhenEnabledTogether() {
         List<FeatureSwitch> switches = FeatureSwitches.VALUES;
-        assertEquals(12, switches.size());
+        assertEquals(FeatureDefinition.VALUES.size(), switches.size());
 
         ArrayList<Boolean> original = new ArrayList<>(switches.size());
         for (FeatureSwitch feature : switches) original.add(feature.getBooleanValue());
