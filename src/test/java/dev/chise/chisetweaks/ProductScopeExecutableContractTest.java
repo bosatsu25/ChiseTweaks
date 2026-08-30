@@ -71,7 +71,7 @@ final class ProductScopeExecutableContractTest {
         assertEquals(List.of(
                         "chisetweaks.features.mixins.json",
                         "chisetweaks.integrations.mixins.json",
-                        "chisetweaks.inspector.mixins.json"),
+                        "chisetweaks.workflow.mixins.json"),
                 mixins.asList().stream().map(element -> element.getAsString()).toList());
 
         JsonObject custom = root.getAsJsonObject("custom").getAsJsonObject("chisetweaks");
