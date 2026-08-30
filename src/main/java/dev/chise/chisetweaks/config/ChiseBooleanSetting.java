@@ -39,6 +39,18 @@ public class ChiseBooleanSetting {
                 null, null, AVAILABLE, SettingPersistence.FEATURE_CONFIG);
     }
 
+    protected ChiseBooleanSetting(
+            String name,
+            boolean defaultValue,
+            String englishName,
+            String japaneseName,
+            String englishComment,
+            String japaneseComment,
+            SettingPersistence persistence) {
+        this(name, defaultValue, englishName, japaneseName, englishComment, japaneseComment,
+                null, null, AVAILABLE, persistence);
+    }
+
     ChiseBooleanSetting(
             String name,
             boolean defaultValue,
@@ -103,8 +115,16 @@ public class ChiseBooleanSetting {
 
     public final String getName() { return name; }
 
-    public final boolean getBooleanValue() {
+    protected boolean readValue() {
         return availability.getAsBoolean() && reader.getAsBoolean();
+    }
+
+    protected void writeValue(boolean requested) {
+        writeValue(requested);
+    }
+
+    public final boolean getBooleanValue() {
+        return readValue();
     }
 
     public final boolean getDefaultBooleanValue() { return defaultValue; }
@@ -130,9 +150,7 @@ public class ChiseBooleanSetting {
     }
 
     public final void setBooleanValueSilently(boolean requested) {
-        if (getBooleanValue() != requested) {
-            writer.accept(availability.getAsBoolean() && requested);
-        }
+        if (readValue() != requested) writeValue(requested);
     }
 
     public final boolean toggleBooleanValue() {
