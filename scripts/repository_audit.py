@@ -113,6 +113,7 @@ REQUIRED_PATHS = (
     ".github/workflows/release.yml",
     "scripts/ci_scope.py",
     "scripts/test_ci_scope.py",
+    "scripts/test_ci_workflow_contract.py",
     "scripts/artifact_audit.py",
     "scripts/release_residue_audit.py",
     "scripts/documentation_consistency_audit.py",
