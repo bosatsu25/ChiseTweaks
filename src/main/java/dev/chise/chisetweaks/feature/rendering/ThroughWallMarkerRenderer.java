@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
@@ -30,6 +31,7 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
                     .build());
 
     private final Style style;
+    private final BlockPos.MutableBlockPos paletteCursor = new BlockPos.MutableBlockPos();
     private final ThroughWallPositionSnapshot.Capture capture;
     private final RetainedThroughWallBuffer retainedBuffer;
 
@@ -88,12 +90,15 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
             float boxInset;
             if (style == Style.HIDDEN_BLOCK) {
                 LocalFeatureConfig local = LocalFeatureConfig.getInstance();
+                String blockId = hiddenBlockIdAt(x, y, z);
                 outlineColor = HiddenBlockAnalyzerPalettePolicy.colorForDistance(
                         distance,
+                        blockId,
                         local.hiddenSurfaceTraceColorPreset,
                         local.hiddenSurfaceTraceOpacityPercent);
                 fillColor = HiddenBlockAnalyzerPalettePolicy.fillColorForDistance(
                         distance,
+                        blockId,
                         local.hiddenSurfaceTraceColorPreset,
                         local.hiddenSurfaceTraceOpacityPercent);
                 edgeThickness = HiddenBlockAnalyzerPalettePolicy.ANALYZER_EDGE_THICKNESS;
@@ -128,6 +133,18 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
         } finally {
             builtBuffer.close();
         }
+    }
+
+    private String hiddenBlockIdAt(int x, int y, int z) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.level == null
+                || client.level.getChunkSource().getChunkNow(x >> 4, z >> 4) == null) {
+            return "";
+        }
+        paletteCursor.set(x, y, z);
+        Identifier id = BuiltInRegistries.BLOCK.getKey(
+                client.level.getBlockState(paletteCursor).getBlock());
+        return id == null ? "" : id.toString();
     }
 
     void resetAfterFailure() {
