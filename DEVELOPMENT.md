@@ -189,6 +189,13 @@ Bright Chestではsingle / double-left / double-rightの3専用textureが存在�
 
 GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button overlapを境界条件として扱います。
 
+15 runtime featureの回帰では、`RuntimeFeatureUsabilityRegressionTest`で以下を必須とする。
+- `FeatureDefinition` / `FeatureSwitches` が15機能で1:1対応する
+- 各機能がSettings UIから到達可能である
+- 各機能に少なくとも1つのconcrete runtime / mixin / model rendering routeが存在する
+- shared runtime（Lava/Hidden、Beacon/Lightning Rod、Worksite overlay）でもuser-facing toggleは独立する
+- source contractのPASSは実ピクセル描画の保証ではないため、release acceptanceではClient GameTest / Prism実機確認を別途行う
+
 Builder Focus list、Ore compatibility、Masa list/mapの編集画面は`ChiseListEditorScreen`へ集約し、paging / remove / clear / footer / row renderingを共有する。各domainのvalidation・保存先・Ore model reloadは統合せず、それぞれの既存contractを維持する。
 
 Settings row metadataは`ChiseTweaksSettingsController`を正本とし、Controller専用のCatalog/Compatibility row wrapperを別classへ戻さない。Integrationsも同一row bufferへ直接追加し、visual target rowは`VisualTargetSettings.ALL_OPTIONS`から必要時に展開する。
