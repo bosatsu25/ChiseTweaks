@@ -56,7 +56,7 @@ public final class ChiseListEditorScreen extends Screen {
     }
 
     private ChiseListEditorScreen(Screen parent, ChiseListEditorBackend backend) {
-        super(backend.title());
+        super(backend.screenTitle());
         this.parent = parent;
         this.backend = backend;
     }
