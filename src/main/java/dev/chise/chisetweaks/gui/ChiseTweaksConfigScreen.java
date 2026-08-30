@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.ChiseTweaksMetadata;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
+import dev.chise.chisetweaks.config.SettingChangeDispatcher;
 import dev.chise.chisetweaks.config.SettingPersistence;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -34,6 +35,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private int maxScroll;
     private boolean inspectorHelpVisible;
     private long patternRevision = Long.MIN_VALUE;
+    private long lastSettingRevision = Long.MIN_VALUE;
 
     public ChiseTweaksConfigScreen() {
         super(Component.literal(ChiseTweaksMetadata.MOD_NAME));
@@ -52,7 +54,8 @@ public final class ChiseTweaksConfigScreen extends Screen {
         geometry = ChiseTweaksSettingsLayout.calculate(width, height);
         createTabs();
         createFooter();
-        createAllRows();
+        rowsBySurface.clear();
+        ensureSurfaceRows(surface);
         selectSurface(surface, false);
     }
 
@@ -68,7 +71,8 @@ public final class ChiseTweaksConfigScreen extends Screen {
             }
             if (changed) rebuildInspectorRows();
         }
-        refreshRowButtons();
+        long currentSettingRevision = SettingChangeDispatcher.revision();
+        if (currentSettingRevision != lastSettingRevision) refreshRowButtons();
     }
 
     private void createTabs() {
@@ -102,22 +106,21 @@ public final class ChiseTweaksConfigScreen extends Screen {
                 .build());
     }
 
-    private void createAllRows() {
-        rowsBySurface.clear();
-        for (ChiseTweaksSettingsController.Surface candidate : ChiseTweaksSettingsController.Surface.values()) {
-            ArrayList<ChiseTweaksSettingRowView> views = new ArrayList<>();
-            List<ChiseTweaksSettingRowDefinition> definitions =
-                    candidate == ChiseTweaksSettingsController.Surface.INSPECTOR
-                            ? controller.inspectorRows(inspector.snapshot(), inspectorHelpVisible)
-                            : controller.rows(candidate);
-            for (ChiseTweaksSettingRowDefinition definition : definitions) {
-                ChiseTweaksSettingRowView row = createRow(candidate, definition);
-                row.renderVisible = false;
-                row.setWidgetsVisible(false);
-                views.add(row);
-            }
-            rowsBySurface.put(candidate, views);
+    private void ensureSurfaceRows(ChiseTweaksSettingsController.Surface candidate) {
+        if (candidate == null || rowsBySurface.containsKey(candidate)) return;
+        if (candidate == ChiseTweaksSettingsController.Surface.INSPECTOR) {
+            rebuildInspectorRows();
+            return;
         }
+
+        ArrayList<ChiseTweaksSettingRowView> views = new ArrayList<>();
+        for (ChiseTweaksSettingRowDefinition definition : controller.rows(candidate)) {
+            ChiseTweaksSettingRowView row = createRow(candidate, definition);
+            row.renderVisible = false;
+            row.setWidgetsVisible(false);
+            views.add(row);
+        }
+        rowsBySurface.put(candidate, views);
     }
 
     private ChiseTweaksSettingRowView createRow(
@@ -130,6 +133,14 @@ public final class ChiseTweaksConfigScreen extends Screen {
             case INTEGER -> createIntegerRow(definition);
             case ACTION -> createActionRow(definition);
         };
+        prepareRowPresentation(owner, row);
+        return row;
+    }
+
+    private void prepareRowPresentation(
+            ChiseTweaksSettingsController.Surface owner,
+            ChiseTweaksSettingRowView row) {
+        ChiseTweaksSettingRowDefinition definition = row.definition;
         if (definition.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO) {
             row.infoTextLayout = ChiseTweaksInfoTextLayout.create(
                     definition.name(),
@@ -141,7 +152,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
         }
         applyTooltip(row);
         applyAvailabilityInteractivity(owner, row);
-        return row;
     }
 
     private static void applyTooltip(ChiseTweaksSettingRowView row) {
@@ -265,6 +275,8 @@ public final class ChiseTweaksConfigScreen extends Screen {
             inspector.invalidate();
             inspector.refresh(minecraft);
             rebuildInspectorRows();
+        } else {
+            ensureSurfaceRows(surface);
         }
         maxScroll = 0;
         for (int index = 0; index < tabButtons.size(); index++) {
@@ -291,20 +303,48 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void rebuildInspectorRows() {
         ArrayList<ChiseTweaksSettingRowView> previous = rowsBySurface.get(
                 ChiseTweaksSettingsController.Surface.INSPECTOR);
-        if (previous != null) {
-            for (ChiseTweaksSettingRowView row : previous) {
-                row.renderVisible = false;
-                row.setWidgetsVisible(false);
-                row.removeWidgets(this::removeWidget);
-            }
-        }
+        if (previous == null) previous = new ArrayList<>();
+        boolean[] reused = new boolean[previous.size()];
         ArrayList<ChiseTweaksSettingRowView> next = new ArrayList<>();
+
         for (ChiseTweaksSettingRowDefinition definition
                 : controller.inspectorRows(inspector.snapshot(), inspectorHelpVisible)) {
-            next.add(createRow(ChiseTweaksSettingsController.Surface.INSPECTOR, definition));
+            ChiseTweaksSettingRowView row = reusableInspectorRow(previous, reused, definition);
+            if (row == null) {
+                row = createRow(ChiseTweaksSettingsController.Surface.INSPECTOR, definition);
+            } else {
+                row.rebind(definition);
+                prepareRowPresentation(ChiseTweaksSettingsController.Surface.INSPECTOR, row);
+            }
+            row.renderVisible = false;
+            row.setWidgetsVisible(false);
+            next.add(row);
         }
+
+        for (int index = 0; index < previous.size(); index++) {
+            if (reused[index]) continue;
+            ChiseTweaksSettingRowView row = previous.get(index);
+            row.renderVisible = false;
+            row.setWidgetsVisible(false);
+            row.removeWidgets(this::removeWidget);
+        }
+
         rowsBySurface.put(ChiseTweaksSettingsController.Surface.INSPECTOR, next);
         if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) updateRowPositions();
+    }
+
+    private static ChiseTweaksSettingRowView reusableInspectorRow(
+            ArrayList<ChiseTweaksSettingRowView> previous,
+            boolean[] reused,
+            ChiseTweaksSettingRowDefinition definition) {
+        for (int index = 0; index < previous.size(); index++) {
+            if (reused[index]) continue;
+            ChiseTweaksSettingRowView candidate = previous.get(index);
+            if (!candidate.canReuse(definition)) continue;
+            reused[index] = true;
+            return candidate;
+        }
+        return null;
     }
 
     private void resetCurrentSurface() {
@@ -572,6 +612,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
             contextButton.visible = true;
             contextButton.active = true;
         }
+        lastSettingRevision = SettingChangeDispatcher.revision();
     }
 
     private List<ChiseTweaksSettingRowView> selectedRows() {
