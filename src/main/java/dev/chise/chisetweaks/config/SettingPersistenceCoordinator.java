@@ -31,7 +31,11 @@ public final class SettingPersistenceCoordinator {
         return new SettingPersistenceCoordinator(
                 FeatureConfig::saveToFile,
                 () -> LocalFeatureConfig.getInstance().save(),
-                () -> MasaIntegrationConfig.getInstance().save());
+                () -> {
+                    boolean masa = MasaIntegrationConfig.getInstance().save();
+                    boolean compatibility = CompatibilityIntegrationConfig.getInstance().save();
+                    return masa && compatibility;
+                });
     }
 
     public SaveResult save(Set<SettingPersistence> requestedDomains) {

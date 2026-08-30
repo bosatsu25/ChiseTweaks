@@ -22,7 +22,9 @@ public enum IntegrationDefinition {
     MASA_JAPANESE_UI(
             "masa_japanese_ui", "malilib", "Masa Japanese UI"),
     MASA_GUIDE(
-            "masa_guide", "malilib", "Masa Guide");
+            "masa_guide", "malilib", "Masa Guide"),
+    NVIDIUM_WORLD_BORDER_FIX(
+            "nvidium_world_border_fix", "nvidium", "World Border Fix");
 
     public static final List<IntegrationDefinition> VALUES = List.of(values());
 
