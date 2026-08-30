@@ -5,9 +5,11 @@ import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
+import dev.chise.chisetweaks.config.MasaIntegrationSettings;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
+import dev.chise.chisetweaks.integration.masa.MasaModAvailability;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
@@ -36,8 +38,10 @@ final class ChiseTweaksSettingsCatalog {
             addInspectorRows(rows, CrosshairInspector.Snapshot.noTarget(), false);
         } else if (resolved == ChiseTweaksSettingsController.Surface.ANALYZER) {
             addAnalyzerRows(rows);
-        } else {
+        } else if (resolved == ChiseTweaksSettingsController.Surface.VISIBILITY) {
             addVisibilityRows(rows);
+        } else {
+            addIntegrationRows(rows);
         }
         return List.copyOf(rows);
     }
@@ -54,8 +58,9 @@ final class ChiseTweaksSettingsCatalog {
         if (surface == ChiseTweaksSettingsController.Surface.FILTER) return "Filter";
         if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) return "Inspector";
         if (surface == ChiseTweaksSettingsController.Surface.ANALYZER) return "Analyzer";
-        return surface == ChiseTweaksSettingsController.Surface.VISIBILITY
-                ? "Visibility"
+        if (surface == ChiseTweaksSettingsController.Surface.VISIBILITY) return "Visibility";
+        return surface == ChiseTweaksSettingsController.Surface.INTEGRATIONS
+                ? "Integrations"
                 : "Highlight";
     }
 
@@ -186,6 +191,65 @@ final class ChiseTweaksSettingsCatalog {
                 FeatureDefinition.BRIGHT_CHEST.englishName(), "Improve Chest and Double Chest visibility.");
         boolLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
                 FeatureDefinition.BRIGHT_CONCRETE.englishName(), "Improve White Concrete visibility.");
+    }
+
+    private static void addIntegrationRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
+        MasaModAvailability.Snapshot installed = MasaModAvailability.snapshot();
+        headerLiteral(rows, "header.integrations", "Masa Ecosystem");
+        info(rows, "masa.summary",
+                "Masa Integration",
+                "Masa系MODの既存機能を補助・制御するoptional integrationです。ChiseTweaks自身は自動操作を実行しません。");
+        integerLiteral(rows, "masaJapaneseUiMode",
+                MasaIntegrationSettings.JAPANESE_UI_MODE,
+                "Masa Japanese UI",
+                "AutoはMinecraftが日本語のときだけ日本語UX補助を有効にします。", 1);
+
+        headerLiteral(rows, "masa.installed", "Installed Mods");
+        info(rows, "masa.malilib", "MaLiLib", installedLabel(installed.malilib()));
+        info(rows, "masa.litematica", "Litematica", installedLabel(installed.litematica()));
+        info(rows, "masa.tweakeroo", "Tweakeroo", installedLabel(installed.tweakeroo()));
+        info(rows, "masa.tweakermore", "TweakerMore", installedLabel(installed.tweakermore()));
+        info(rows, "masa.syncmatica", "Syncmatica", installedLabel(installed.syncmatica()));
+
+        headerLiteral(rows, "masa.litematica.settings", "Litematica");
+        boolLiteral(rows, "litematicaPickRedirect",
+                MasaIntegrationSettings.LITEMATICA_PICK_REDIRECT,
+                "Pick Redirect",
+                "Litematicaが要求するblock itemが無い場合に、設定済みの代替blockを候補にします。");
+
+        headerLiteral(rows, "masa.tweakeroo.settings", "Tweakeroo");
+        boolLiteral(rows, "tweakerooToolSwitchGuard",
+                MasaIntegrationSettings.TWEAKEROO_TOOL_SWITCH_GUARD,
+                "Selective Tool Switch Guard",
+                "TweakerooのTool SwitchをChiseのallow/deny policyで制御します。");
+        boolLiteral(rows, "tweakerooPersistentGammaOverride",
+                MasaIntegrationSettings.TWEAKEROO_PERSISTENT_GAMMA,
+                "Persistent Gamma Override",
+                "Tweakerooが所有するGamma Override状態の復元だけを補助します。");
+
+        headerLiteral(rows, "masa.tweakermore.settings", "TweakerMore");
+        boolLiteral(rows, "tweakermoreAutoPickGuard",
+                MasaIntegrationSettings.TWEAKERMORE_AUTO_PICK_GUARD,
+                "Selective Auto Pick Guard",
+                "TweakerMoreのAuto Pickをitem allow/deny policyで制御します。");
+        boolLiteral(rows, "tweakermoreMaterialListRefresh",
+                MasaIntegrationSettings.TWEAKERMORE_MATERIAL_REFRESH,
+                "Material List Refresh",
+                "TweakerMoreのMaterial collect完了後に既存Material List表示を同期します。");
+
+        headerLiteral(rows, "masa.syncmatica.settings", "Syncmatica");
+        boolLiteral(rows, "syncmaticaRemoveDisabled",
+                MasaIntegrationSettings.SYNCMATICA_REMOVE_DISABLED,
+                "Disable Remove",
+                "共有Schematicの削除操作をguardします。");
+        boolLiteral(rows, "syncmaticaRemoveRequireShift",
+                MasaIntegrationSettings.SYNCMATICA_REQUIRE_SHIFT,
+                "Require Shift To Remove",
+                "共有Schematic削除時にShift押下を要求します。");
+    }
+
+    private static String installedLabel(boolean installed) {
+        return installed ? "Installed / 導入済み" : "Not installed / 未導入";
     }
 
     private static void addInspectorRows(

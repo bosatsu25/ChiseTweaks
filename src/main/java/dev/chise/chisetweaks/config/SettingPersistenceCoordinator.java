@@ -10,16 +10,28 @@ import java.util.function.BooleanSupplier;
 public final class SettingPersistenceCoordinator {
     private final BooleanSupplier featureSaver;
     private final BooleanSupplier localSaver;
+    private final BooleanSupplier integrationSaver;
 
-    SettingPersistenceCoordinator(BooleanSupplier featureSaver, BooleanSupplier localSaver) {
+    SettingPersistenceCoordinator(
+            BooleanSupplier featureSaver,
+            BooleanSupplier localSaver) {
+        this(featureSaver, localSaver, () -> true);
+    }
+
+    SettingPersistenceCoordinator(
+            BooleanSupplier featureSaver,
+            BooleanSupplier localSaver,
+            BooleanSupplier integrationSaver) {
         this.featureSaver = featureSaver;
         this.localSaver = localSaver;
+        this.integrationSaver = integrationSaver;
     }
 
     public static SettingPersistenceCoordinator production() {
         return new SettingPersistenceCoordinator(
                 FeatureConfig::saveToFile,
-                () -> LocalFeatureConfig.getInstance().save());
+                () -> LocalFeatureConfig.getInstance().save(),
+                () -> MasaIntegrationConfig.getInstance().save());
     }
 
     public SaveResult save(Set<SettingPersistence> requestedDomains) {
@@ -34,7 +46,11 @@ public final class SettingPersistenceCoordinator {
     private boolean saveDomain(SettingPersistence domain) {
         BooleanSupplier saver = domain == SettingPersistence.FEATURE_CONFIG
                 ? featureSaver
-                : domain == SettingPersistence.LOCAL_CONFIG ? localSaver : null;
+                : domain == SettingPersistence.LOCAL_CONFIG
+                        ? localSaver
+                        : domain == SettingPersistence.INTEGRATION_CONFIG
+                                ? integrationSaver
+                                : null;
         if (saver == null) return true;
         try {
             return saver.getAsBoolean();

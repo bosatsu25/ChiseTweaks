@@ -10,6 +10,9 @@
 - Fabric API `0.155.2+26.1.2` 以上
 - Java `25` 以上
 - toggle可能なruntime featureは現在12個
+- 上記12個はruntime visual / inspection featureであり、Masa integration capabilityは数へ含めない
+- Masa ecosystem integrationはruntime visual feature数へ含めず、optional compatibility / UX capabilityとして別registryで管理する
+- ChiseTweaks自身はAutomationを実装しない。外部MODが所有する操作にGuard / policy / refreshを追加することだけをIntegrationとして許可する
 - 12機能はすべてrendering / inspection-orientedで、building-action featureは持たない
 - Bright Chest / Bright Concreteはbuilt-in Resource Pack selection / reloadへ依存しない
 - Low FireはMinecraftが`ScreenEffectRenderer.renderFire`へ渡す現在のspriteを再利用し、Large / Medium / Smallの3段階geometryだけを一人称overlayへ適用する。通常炎・魂の炎ごとのChise専用PNG/model、world-fire置換、Resource Pack reloadを持たない
@@ -21,6 +24,14 @@
 - custom packet / server installation / remote mod detection / auto downloader / automatic JAR replacementを実装しない
 - Lava Analyzerはloaded chunks only。未ロードchunkを強制loadしない
 - サーバー側ゲーム進行を変える配置補助や、隠れ資源・server-only状態を探索／推測するAnalyzerは現行スコープ外
+
+### Masa integration contract
+
+- MaLiLib / Litematica / Tweakeroo / TweakerMore / Syncmaticaはhard dependencyにしない
+- 対象MODが存在しない場合、対応integrationはno-opかつChise起動を妨げない
+- integration設定は`chisetweaks-integrations.json`へ分離し、FeatureDefinitionの12機能と混在させない
+- 外部AutomationをChise自身が開始しない
+- Syncmatica等の外部packet ownershipをChiseへ移さない
 
 ## 2. Toolchain
 
@@ -204,7 +215,7 @@ Release publicationはruntime JARを再build・再pack・version rewriteしま�
 CIは実GPU / Windows display pathを再現できないため、release acceptanceではPrismで最低限次を確認します。
 
 - clean startup、Mixin errorなし
-- 日本語/英語と代表GUI scaleで5タブが使用可能
+- 日本語/英語と代表GUI scaleで6タブが使用可能
 - Crosshair Inspector / Placement Previewが読める
 - unsupported itemでmisleading previewを出さない
 - Block FilterがBlockEntity / Bright Chestを正しく抑制

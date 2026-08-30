@@ -9,7 +9,7 @@ public final class ChiseTweaksSettingsLayout {
     private static final int TAB_Y = 30;
     private static final int TAB_HEIGHT = 20;
     private static final int TAB_GAP = 4;
-    private static final int TAB_COUNT = 5;
+    private static final int TAB_COUNT = 6;
     private static final int PANEL_Y = 56;
     private static final int CONTROL_GAP = 6;
     private static final int TEXT_CONTROL_GAP = 12;

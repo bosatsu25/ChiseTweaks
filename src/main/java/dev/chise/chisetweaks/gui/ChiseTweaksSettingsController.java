@@ -5,6 +5,8 @@ import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
+import dev.chise.chisetweaks.config.MasaIntegrationConfig;
+import dev.chise.chisetweaks.config.MasaIntegrationSettings;
 import dev.chise.chisetweaks.config.SettingPersistence;
 import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
@@ -21,7 +23,8 @@ final class ChiseTweaksSettingsController {
         FILTER,
         INSPECTOR,
         ANALYZER,
-        VISIBILITY
+        VISIBILITY,
+        INTEGRATIONS
     }
 
     private final ChiseTweaksSettingsCatalog catalog = new ChiseTweaksSettingsCatalog();
@@ -77,6 +80,10 @@ final class ChiseTweaksSettingsController {
                 FeatureSwitches.BRIGHT_CHEST.resetToDefault();
                 FeatureSwitches.BRIGHT_CONCRETE.resetToDefault();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
+            }
+            case INTEGRATIONS -> {
+                MasaIntegrationConfig.getInstance().resetToDefaults();
+                yield EnumSet.of(SettingPersistence.INTEGRATION_CONFIG);
             }
         };
     }
