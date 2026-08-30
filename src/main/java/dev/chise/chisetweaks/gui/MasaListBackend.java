@@ -3,10 +3,8 @@ package dev.chise.chisetweaks.gui;
 import dev.chise.chisetweaks.api.ore.OreHighlightStyle;
 import dev.chise.chisetweaks.config.MasaIntegrationConfig;
 import dev.chise.chisetweaks.core.policy.MasaIdListPolicy;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -297,11 +295,8 @@ final class MasaListBackend implements ChiseListEditorBackend {
     private static boolean validRegisteredId(String raw, boolean itemTarget) {
         Identifier id = Identifier.tryParse(raw);
         if (id == null) return false;
-        if (!itemTarget) return ChiseListEditorBackend.isRegisteredBlock(id);
-
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (id.equals(BuiltInRegistries.ITEM.getKey(item))) return true;
-        }
-        return false;
+        return itemTarget
+                ? ChiseListEditorBackend.isRegisteredItem(id)
+                : ChiseListEditorBackend.isRegisteredBlock(id);
     }
 }
