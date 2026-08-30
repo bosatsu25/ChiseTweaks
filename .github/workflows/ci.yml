@@ -1,9 +1,8 @@
 name: CI
 
-# Feature Expansion Mode (temporary)
-# Automatic PR/main execution is intentionally paused while the queued feature set is merged.
-# Restore pull_request/push triggers in the post-expansion stabilization PR.
+# Post-expansion stabilization verification.
 on:
+  pull_request:
   workflow_dispatch:
 
 permissions:
