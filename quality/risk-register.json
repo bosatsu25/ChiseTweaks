@@ -22,7 +22,7 @@
   "risks": [
     {
       "id": "R-001",
-      "title": "Analyzer scanning or rendering causes a user-visible performance regression",
+      "title": "Bounded builder visualization scanning or rendering causes a user-visible performance regression",
       "quality_characteristics": [
         "performance_efficiency"
       ],
@@ -46,7 +46,7 @@
       "exit_criteria": [
         "All eight required performance metrics have at least three baseline and candidate samples.",
         "Every metric remains within the S-grade regression budget.",
-        "Analyzer scan budgets and loaded-chunk-only constraints remain enforced."
+        "Occluded Highlights scan budgets and loaded-chunk-only constraints remain enforced."
       ]
     },
     {
@@ -80,7 +80,7 @@
     },
     {
       "id": "R-003",
-      "title": "Placement Preview reports a BlockState that differs from vanilla placement semantics",
+      "title": "Placement Assist reports a BlockState that differs from vanilla placement semantics",
       "quality_characteristics": [
         "functional_suitability"
       ],
@@ -164,7 +164,7 @@
     },
     {
       "id": "R-006",
-      "title": "Automation, custom protocol ownership or background execution enters the client-only inspection product scope",
+      "title": "Automation, custom protocol ownership or background execution enters the client-only Tweaks product scope",
       "quality_characteristics": [
         "functional_suitability",
         "security"
@@ -176,7 +176,7 @@
         "static_analysis",
         "checklist_based"
       ],
-      "oracle": "The executable product contract remains client-only, rendering/inspection focused, with no custom play protocol or input automation.",
+      "oracle": "The executable product contract remains client-only and builder-oriented, with no custom play protocol or input automation.",
       "evidence": [
         "src/test/java/dev/chise/chisetweaks/ProductScopeExecutableContractTest.java",
         "src/main/resources/fabric.mod.json",
@@ -186,14 +186,14 @@
         "Pull request scope review checklist."
       ],
       "exit_criteria": [
-        "The runtime feature registry remains exactly 16 rendering/inspection features.",
+        "The compatibility registry remains exactly 16 low-level toggles while the product UI remains seven Tweaks groups.",
         "No prohibited packet, input-injection or background-thread primitives are introduced.",
         "Server installation remains unnecessary."
       ]
     },
     {
       "id": "R-007",
-      "title": "Settings refactoring loses pending changes, misroutes persistence or makes a user-facing feature unreachable",
+      "title": "Seven-group settings refactoring loses pending changes, misroutes persistence or makes a retained capability unreachable",
       "quality_characteristics": [
         "functional_suitability",
         "usability",
@@ -218,7 +218,7 @@
       ],
       "exit_criteria": [
         "Failed persistence domains remain pending while successful domains clear.",
-        "All 16 runtime features remain reachable from the Settings UI.",
+        "All retained capabilities remain reachable through the seven Tweaks product groups.",
         "Screen code does not reacquire config-domain ownership."
       ]
     },
@@ -251,6 +251,61 @@
         "Disabled, GUI and non-first-person contexts retain scale factor 1.0.",
         "Block, item and tool percentages remain bounded to 40-100%; shield remains near vanilla at 95%.",
         "The feature ships no copied Small Handhelds model JSON or textures and does not replace the active resource pack."
+      ]
+    },
+    {
+      "id": "R-009",
+      "title": "Legacy Lava/Hidden settings migration shrinks the user's previous occluded visualization coverage",
+      "quality_characteristics": [
+        "functional_suitability",
+        "reliability"
+      ],
+      "likelihood": "medium",
+      "impact": "medium",
+      "priority": "medium",
+      "test_techniques": [
+        "boundary_value",
+        "state_transition",
+        "combination_test"
+      ],
+      "oracle": "When legacy Lava and Hidden budgets differ, the shared Occluded Highlights migration preserves their union by taking larger ranges/result limits and the shorter interval before applying safety clamps.",
+      "evidence": [
+        "src/test/java/dev/chise/chisetweaks/config/ConfigMigrationMatrixTest.java",
+        "src/test/java/dev/chise/chisetweaks/config/HiddenBlockAnalyzerConfigIsolationTest.java"
+      ],
+      "manual_evidence": [],
+      "exit_criteria": [
+        "Legacy Lava-only and shared historical fixtures migrate successfully.",
+        "Differing legacy Lava/Hidden values preserve the documented union semantics.",
+        "Migrated values remain inside WorksiteVisibilityBudgetPolicy bounds."
+      ]
+    },
+    {
+      "id": "R-010",
+      "title": "Villager Job Site visualization invents a workstation relation that Minecraft does not know",
+      "quality_characteristics": [
+        "functional_suitability",
+        "performance_efficiency"
+      ],
+      "likelihood": "low",
+      "impact": "medium",
+      "priority": "medium",
+      "test_techniques": [
+        "static_analysis",
+        "scenario_based"
+      ],
+      "oracle": "A link is rendered only from MemoryModuleType.JOB_SITE in the current dimension; no workstation block scan or profession-based fallback inference exists.",
+      "evidence": [
+        "src/test/java/dev/chise/chisetweaks/SettingsAndAnalyzerDesignContractTest.java",
+        "src/test/java/dev/chise/chisetweaks/performance/PerformanceArchitectureContractTest.java"
+      ],
+      "manual_evidence": [
+        "Prism acceptance with linked and currently unknown/unlinked villagers."
+      ],
+      "exit_criteria": [
+        "Known JOB_SITE memory produces a link.",
+        "Missing JOB_SITE memory produces no guessed link.",
+        "No fallback workstation traversal is present in production."
       ]
     }
   ]
