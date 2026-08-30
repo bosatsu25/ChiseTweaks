@@ -7,7 +7,8 @@ ChiseTweaksは、ブロックや設備を**見やすくする・状態を確認�
 **Auto Eat / Auto Restock / Auto Move / Auto Totem / Auto Repair / Auto Fill Schematic Inventory / Auto Void Trade などの自動操作機能は、意図的に実装しません。**  
 ChiseTweaksはプレイヤーの代わりに操作するMODではなく、**見る・調べる・比較する・外部MODを安全に使う**ことに範囲を絞っています。
 
-Current version: **`0.15.0+mc26.1.2`**
+Repository version: **`0.15.0+mc26.1.2`**  
+このREADMEは`main`ブランチの現在仕様を説明します。配布済みReleaseより先行している場合があります。
 
 ---
 
@@ -299,6 +300,63 @@ ChiseTweaksはクライアント側の建築支援に範囲を絞っています
 
 ---
 
+## 品質保証 — S-grade hardening
+
+ChiseTweaksは、機能数だけでなく**壊れにくさ・回帰検出・性能・配布物の再現性**も製品品質として扱います。  
+`0.15.0+mc26.1.2` のmainでは、S1〜S9の品質強化を実装しています。
+
+| 領域 | 現在の保証 |
+| --- | --- |
+| **S1 Architecture** | core / config / feature / integrationなどの依存境界をテストし、禁止された逆依存を検出 |
+| **S2 GUI responsibility** | Screenへ保存・registry lookup・domain mutation責務が戻らないよう契約テストで保護 |
+| **S3 Analyzer performance** | Hidden Block Analyzerのscan hot-pathからBlock ID文字列化・正規化を除去し、Block identity + bit maskで判定 |
+| **S4 Performance acceptance** | startup / p50 / p95 / p99 frametime / heap / allocation / render-thread CPU / FPSの8指標を同一環境で比較 |
+| **S5 Runtime safety** | component障害をquarantineし、他機能へ障害を広げないことをfault injectionで検証 |
+| **S6 Config / Security** | malformed / oversized / deep JSON、Unicode、budget境界、migrationを敵対テスト |
+| **S7 Test responsibility** | policy / runtime / UI / performance / Minecraft GameTest / distributionの各リスクに検証責務を割り当て |
+| **S8 Release evidence** | tested tree SHA・runtime SHA-256・provenanceを記録し、検証したJARそのものをReleaseへ昇格 |
+| **S9 Product scope** | client-only / no custom play protocol / no input automation / no packet ownershipを実行可能contractで固定 |
+
+### PerformanceのS判定
+
+Performanceはコード上の設計だけでS判定しません。**同一Prism環境で実測した証拠**を使用します。
+
+必須metric:
+
+- startup time
+- p50 / p95 / p99 frametime
+- heap usage
+- allocation MiB/s
+- render-thread CPU
+- average FPS
+
+S-grade regression budget:
+
+| Metric | 許容regression |
+| --- | ---: |
+| startup | 10% |
+| p50 frametime | 5% |
+| p95 frametime | 5% |
+| p99 frametime | 10% |
+| heap | 10% |
+| allocation | 10% |
+| render-thread CPU | 10% |
+| average FPS | 5%低下まで |
+
+実GPU / Windows / Prism / JFRの測定値が無い状態では、**tooling ready / measurement pending**として扱い、測定値を推測してS判定しません。
+
+### Runtime JARの容量方針
+
+配布用runtime JARは、機能を壊して小さくするのではなく、**機能等価性を維持したまま容量を削減**します。
+
+- 最終目標: **350 KiB / 358,400 bytes以下**
+- hard ceiling: **446,814 bytes**
+- SourceFile / LineNumberを容量削減のために削除しない
+- shrinker / obfuscationだけで数値を達成しない
+- 容量削減でも15機能・Inspector・optional integrationの回帰を許容しない
+
+---
+
 ## 設定ファイル
 
 設定画面から変更した内容は、役割ごとに分けて保存されます。
@@ -344,6 +402,26 @@ Ore Highlights自体は、見えている対象を強調するHighlightで、壁
 
 ## 開発者向け
 
-実装・互換性・QA・CI・Release契約は [`DEVELOPMENT.md`](DEVELOPMENT.md) を参照してください。
+実装・互換性・QA・CI・Release・Performance契約は [`DEVELOPMENT.md`](DEVELOPMENT.md) を参照してください。
 
-ChiseTweaksの現在仕様はソース上の `FeatureDefinition` / `FeatureSwitches` / `IntegrationDefinition` を正本として扱います。
+代表的な検証コマンド:
+
+```bash
+./gradlew --stacktrace ciGate
+./gradlew --stacktrace runClientGameTest
+```
+
+`ciGate`はJUnit / JaCoCo / PIT / buildをまとめて実行し、Client GameTestではMinecraft runtime上のplacement oracleと15機能同時ONの回帰を確認します。
+
+現在の主な品質閾値:
+
+- JaCoCo line coverage: **96%**
+- PIT coverage: **96%**
+- Mutation score: **96%**
+- Test strength: **96%**
+- runtime JAR target: **358,400 bytes**
+- runtime JAR hard ceiling: **446,814 bytes**
+
+Releaseではruntime JARを再buildせず、CIで検証したartifactのtree SHA / SHA-256 / provenanceを確認して同一byte列を公開する設計です。
+
+ChiseTweaksのuser-facingな15機能はソース上の `FeatureDefinition` / `FeatureSwitches` を正本とし、optional integrationはruntime機能数と分離して管理します。
