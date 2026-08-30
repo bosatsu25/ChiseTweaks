@@ -9,18 +9,19 @@
 - Fabric Loader `0.19.3` 以上
 - Fabric API `0.155.2+26.1.2` 以上
 - Java `25` 以上
-- toggle可能なruntime featureは現在15個
-- 上記15個はruntime visual / inspection featureであり、Masa integration capabilityは数へ含めない
+- toggle可能なruntime featureは現在16個
+- 上記16個はruntime visual / inspection featureであり、Masa integration capabilityは数へ含めない
 - Masa ecosystem integrationはruntime visual feature数へ含めず、optional compatibility / UX capabilityとして別registryで管理する
 - ChiseTweaks自身はAutomationを実装しない。外部MODが所有する操作にGuard / policy / refreshを追加することだけをIntegrationとして許可する
-- 15機能はすべてrendering / inspection-orientedで、building-action featureは持たない
+- 16機能はすべてrendering / inspection-orientedで、building-action featureは持たない
 - Bright Chest / Bright Concreteはbuilt-in Resource Pack selection / reloadへ依存しない
 - Low FireはMinecraftが`ScreenEffectRenderer.renderFire`へ渡す現在のspriteを再利用し、Large / Medium / Smallの3段階geometryだけを一人称overlayへ適用する。通常炎・魂の炎ごとのChise専用PNG/model、world-fire置換、Resource Pack reloadを持たない
+- Handheld Sizeは`ItemInHandRenderer.renderItem`の一人称Item submitだけへ相対scaleを適用する。Block / Item / Weapons & Toolsを意味分類し、defaultは70% / 60% / 75%。Shieldは95%。GUI・三人称・world item、Vanilla animation、Item model/texture、Resource Pack、inputを所有・置換しない
 - Bright ChestはChiseTweaks内蔵のChest専用`normal.png` / `normal_left.png` / `normal_right.png`をvanilla CHEST atlas経路で選択し、Chest model・金具・蓋・double-chest分割・開閉animationを維持する
 - Bright ChestはWhite Concrete spriteをChestへ流用しない。White Concreteの描画責務はBright Concreteだけが持つ
 - Bright Concreteはvanilla White Concrete model / textureを維持し、quad lightingだけをfull-bright化する
 - 明示仕様がない限り機能を相互排他にしない
-- all-features-on（15機能）を回帰条件として扱う
+- all-features-on（16機能）を回帰条件として扱う
 - custom packet / server installation / remote mod detection / auto downloader / automatic JAR replacementを実装しない
 - Lava Analyzerはloaded chunks only。未ロードchunkを強制loadしない
 - Lava Analyzer / Hidden Block Analyzerはuser-facing toggle・radius・vertical radius・interval・max overlaysを独立維持しつつ、同一tickでscan期限が重なった場合は1つの`ThroughWallAnalyzerFeature`でloaded-chunk traversalを共有する
@@ -33,7 +34,7 @@
 
 - MaLiLib / Litematica / Tweakeroo / TweakerMore / Syncmaticaはhard dependencyにしない
 - 対象MODが存在しない場合、対応integrationはno-opかつChise起動を妨げない
-- integration設定は`chisetweaks-integrations.json`へ分離し、FeatureDefinitionの15機能と混在させない
+- integration設定は`chisetweaks-integrations.json`へ分離し、FeatureDefinitionの16機能と混在させない
 - 外部AutomationをChise自身が開始しない
 - Syncmatica等の外部packet ownershipをChiseへ移さない
 - optional Mixinは対象MOD導入時だけapplyし、`@Pseudo` / `require = 0` / mixin config `required: false`のfail-soft境界を維持する
@@ -161,7 +162,7 @@ FULL verification layers:
 - JUnit: functional contracts、state transition、boundary、UI/config regression
 - JaCoCo: retained deterministic scope。line coverage threshold `96%`
 - PIT: semantic policy/state-transition scope。mutation score / test strength threshold `96%`
-- Client GameTest: Minecraft runtimeでvanilla placement stateをoracleとして比較し、全15機能同時ONを検証
+- Client GameTest: Minecraft runtimeでvanilla placement stateをoracleとして比較し、全16機能同時ONを検証
 - Repository / Source Usage / Documentation / Compatibility / Functional Parity audits
 - Artifact / Visual Asset / Release Residue audits
 - Prism runtime acceptance: 実GPU、描画、入力、実機組み合わせ
@@ -208,8 +209,8 @@ Bright Chestではsingle / double-left / double-rightの3専用textureが存在�
 
 GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button overlapを境界条件として扱います。
 
-15 runtime featureの回帰では、`RuntimeFeatureUsabilityRegressionTest`で以下を必須とする。
-- `FeatureDefinition` / `FeatureSwitches` が15機能で1:1対応する
+16 runtime featureの回帰では、`RuntimeFeatureUsabilityRegressionTest`で以下を必須とする。
+- `FeatureDefinition` / `FeatureSwitches` が16機能で1:1対応する
 - 各機能がSettings UIから到達可能である
 - 各機能に少なくとも1つのconcrete runtime / mixin / model rendering routeが存在する
 - shared runtime（Lava/Hidden、Beacon/Lightning Rod、Worksite overlay）でもuser-facing toggleは独立する
@@ -276,7 +277,8 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - Bright Chestがsingle / double chestともチェスト形状・金具・蓋・開閉animationを維持した白いChestとして描画され、White Concrete面へ退行しない
 - Bright Chest / Bright Concrete（White Concrete）が独立して切り替わる
 - Low FireのLarge / Medium / Smallが一人称overlayだけへ反映され、通常炎／魂の炎の現在spriteとworld fireを壊さない
-- all-features-on（15機能）をOverworld / Netherでsmoke
+- Handheld SizeのBlock / Item / Weapons & Tools倍率がmain hand / offhandへ反映され、GUI・三人称・active Resource Packのmodel/textureへ影響しない。Shieldは95%で防御姿勢を維持する
+- all-features-on（16機能）をOverworld / Netherでsmoke
 - Lava Analyzer / Hidden Block Analyzerに強制chunk loadや独自scan packetがなく、server-side obfuscationを迂回しない
 - public server acceptanceではAnalyzer利用可否をserver rule側で確認し、禁止serverではAnalyzerをONにしない
 - disconnect / dimension changeでstale session stateが残らない
@@ -330,6 +332,8 @@ S-grade regression budget:
 CIでは決定的contractとして、blocking wait禁止、Analyzer force-load禁止、scan budget / cache上限、artifact sizeなどを監査します。
 
 Bright Chestは既存Chest draw pathでspriteだけを切り替え、追加world scan・追加draw call・Resource Pack reloadを持ちません。3枚の専用textureによるJAR増加も既存hard ceiling内で管理します。
+
+Handheld Sizeはworld scan・追加draw call・Resource reloadを持たず、既存Item submitのPoseStackへ定数時間の分類とscaleだけを追加します。
 
 ## 12. Security / privacy
 
