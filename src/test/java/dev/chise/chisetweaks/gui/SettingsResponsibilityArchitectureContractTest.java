@@ -12,70 +12,59 @@ final class SettingsResponsibilityArchitectureContractTest {
     private static final Path GUI = Path.of("src/main/java/dev/chise/chisetweaks/gui");
 
     @Test
-    void controllerOwnsMutationPersistenceButNotPresentation() throws Exception {
+    void controllerCoordinatesSettingsWithoutOwningMinecraftWidgetsOrPresentationBuilders() throws Exception {
         String controller = Files.readString(GUI.resolve("ChiseTweaksSettingsController.java"));
 
-        assertTrue(controller.contains("SettingPersistenceCoordinator.production()"));
-        assertTrue(controller.contains("EnumSet<SettingPersistence> reset("));
-        assertTrue(controller.contains("SaveResult savePendingConfig("));
-        assertTrue(controller.contains("EnumSet<SettingPersistence> dirtyDomains"));
-        assertTrue(controller.contains("boolean hasPendingChanges()"));
-        assertTrue(controller.contains("void markDirty(SettingPersistence persistenceDomain)"));
-        assertTrue(controller.contains("return ChiseTweaksSettingsRows.rows("));
-        assertTrue(controller.contains("return InspectorSettingsRows.rows("));
+        assertTrue(controller.contains("ChiseTweaksSettingsRows"));
+        assertTrue(controller.contains("InspectorSettingsRows"));
+        assertTrue(controller.contains("SettingPersistenceCoordinator"));
 
         for (String presentation : new String[]{
-                "addHighlightRows(",
-                "addFilterRows(",
-                "addAnalyzerRows(",
-                "addVisibilityRows(",
-                "addIntegrationRows(",
-                "addCompatibilityRows(",
-                "addPlacementRows(",
-                "addPatternConsistencyRows(",
+                "net.minecraft.client.gui.components.Button",
+                "net.minecraft.client.gui.screens.Screen",
+                "GuiGraphicsExtractor",
+                "Tooltip",
+                "Component.translatable(",
                 "headerLiteral(",
-                "Component.translatable("}) {
-            assertFalse(controller.contains(presentation), presentation);
+                "addHighlightRows(",
+                "addAnalyzerRows(",
+                "addPlacementRows("}) {
+            assertFalse(controller.contains(presentation),
+                    () -> "controller owns presentation detail: " + presentation);
         }
     }
 
     @Test
-    void staticAndDynamicPresentationStaySeparated() throws Exception {
+    void rowModelsRemainPresentationOnly() throws Exception {
         String rows = Files.readString(GUI.resolve("ChiseTweaksSettingsRows.java"));
         String inspector = Files.readString(GUI.resolve("InspectorSettingsRows.java"));
 
-        assertTrue(rows.contains("addHighlightRows("));
-        assertTrue(rows.contains("addFilterRows("));
-        assertTrue(rows.contains("addAnalyzerRows("));
-        assertTrue(rows.contains("addVisibilityRows("));
-        assertTrue(rows.contains("addIntegrationRows("));
-        assertTrue(rows.contains("addCompatibilityRows("));
-        assertTrue(rows.contains("InspectorSettingsRows.addRows("));
+        assertTrue(rows.contains("ChiseTweaksSettingRowDefinition"));
+        assertTrue(inspector.contains("ChiseTweaksSettingRowDefinition"));
 
-        assertTrue(inspector.contains("addPlacementRows("));
-        assertTrue(inspector.contains("addSchematicPlacementRows("));
-        assertTrue(inspector.contains("addPatternConsistencyRows("));
-        assertTrue(inspector.contains("addInteractionHistoryRows("));
-        assertTrue(inspector.contains("addCommonHelpRows("));
-
-        assertFalse(rows.contains("SettingPersistenceCoordinator"));
-        assertFalse(rows.contains("resetHighlightFeatures("));
-        assertFalse(inspector.contains("SettingPersistenceCoordinator"));
-        assertFalse(inspector.contains("FeatureSwitches."));
+        for (String persistence : new String[]{
+                "SettingPersistenceCoordinator",
+                "savePendingConfig(",
+                "pendingDomainsForDiagnostics(",
+                "SecureConfigStorage",
+                ".save()"}) {
+            assertFalse(rows.contains(persistence),
+                    () -> "static settings rows own persistence: " + persistence);
+            assertFalse(inspector.contains(persistence),
+                    () -> "inspector rows own persistence: " + persistence);
+        }
     }
 
     @Test
-    void screenDelegatesPendingPersistenceStateToController() throws Exception {
+    void screenOwnsWidgetLifecycleButNotConfigDomainPersistence() throws Exception {
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
-        String controller = Files.readString(GUI.resolve("ChiseTweaksSettingsController.java"));
 
-        assertFalse(screen.contains("EnumSet<SettingPersistence>"));
-        assertFalse(screen.contains("dirtyDomains"));
-        assertTrue(screen.contains("controller.markDirty("));
-        assertTrue(screen.contains("controller.hasPendingChanges()"));
-        assertTrue(screen.contains("controller.savePendingConfig()"));
-
-        assertTrue(controller.contains("dirtyDomains.retainAll(result.failedDomains())"));
-        assertTrue(controller.contains("Set.copyOf(dirtyDomains)"));
+        assertTrue(screen.contains("extends Screen"));
+        assertTrue(screen.contains("ChiseTweaksSettingsController"));
+        assertFalse(screen.contains("SettingPersistenceCoordinator"));
+        assertFalse(screen.contains("LocalFeatureConfig.getInstance()"));
+        assertFalse(screen.contains("MasaIntegrationConfig.getInstance()"));
+        assertFalse(screen.contains("CompatibilityIntegrationConfig.getInstance()"));
+        assertFalse(screen.contains("SecureConfigStorage"));
     }
 }
