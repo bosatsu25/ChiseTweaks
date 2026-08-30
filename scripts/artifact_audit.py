@@ -45,7 +45,7 @@ def gradle_properties() -> dict[str, str]:
     return result
 
 
-def audit_runtime_size() -> tuple[int, int, int, int]:
+def audit_runtime_size() -> tuple[int, int, int, int, int]:
     properties = gradle_properties()
     version = properties["mod_version"]
     base_name = properties["archives_base_name"]
@@ -54,6 +54,7 @@ def audit_runtime_size() -> tuple[int, int, int, int]:
         raise RuntimeError(f"runtime JAR is missing for size audit: {runtime.name}")
 
     goal = int(properties["runtime_jar_target_bytes"])
+    stretch = int(properties["runtime_jar_stretch_bytes"])
     baseline = int(properties["runtime_jar_baseline_bytes"])
     max_growth = int(properties["runtime_jar_max_growth_bytes"])
     absolute_max = int(properties["runtime_jar_max_bytes"])
@@ -87,10 +88,10 @@ def audit_runtime_size() -> tuple[int, int, int, int]:
                 f"{extra_field_entries[:5]}"
             )
 
-    return size, baseline, goal, effective_max
+    return size, baseline, goal, stretch, effective_max
 
 
-def update_summary(size: int, baseline: int, goal: int, effective_max: int) -> None:
+def update_summary(size: int, baseline: int, goal: int, stretch: int, effective_max: int) -> None:
     summary = core.CI_DIR / "artifact-summary.md"
     if not summary.is_file():
         return
@@ -102,7 +103,8 @@ def update_summary(size: int, baseline: int, goal: int, effective_max: int) -> N
         "- Bright rendering: **existing Minecraft models/textures + lighting-only transforms**\n"
         f"- Runtime JAR size: **{size} bytes**\n"
         f"- Frozen hard-size baseline: **{baseline} bytes**\n"
-        f"- 350 KiB final goal: **<= {goal} bytes**\n"
+        f"- Runtime target: **<= {goal} bytes (290 KiB)**\n"
+        f"- Runtime stretch: **<= {stretch} bytes (250 KiB)**\n"
         f"- Reduction from hard-size baseline: **{reduction} bytes**\n"
         f"- Remaining to goal: **{remaining} bytes**\n"
         f"- ZIP metadata compaction: **descriptor-free / extra-field-free**\n"
@@ -117,15 +119,15 @@ def main() -> int:
         return result
     try:
         audit_bright_resource_pack_residue()
-        size, baseline, goal, effective_max = audit_runtime_size()
+        size, baseline, goal, stretch, effective_max = audit_runtime_size()
     except (KeyError, ValueError, OSError, RuntimeError) as failure:
         print(f"ARTIFACT AUDIT DISTRIBUTION CONTRACT: FAIL: {failure}", file=sys.stderr)
         return 1
-    update_summary(size, baseline, goal, effective_max)
+    update_summary(size, baseline, goal, stretch, effective_max)
     print("BRIGHT RESOURCE-PACK RESIDUE: PASS legacy_entries=false")
     print(
         "ARTIFACT SIZE CONTRACT: PASS "
-        f"size={size} baseline={baseline} goal={goal} "
+        f"size={size} baseline={baseline} goal={goal} stretch={stretch} "
         f"remaining={max(0, size - goal)} effective_max={effective_max} "
         "zip_metadata=compact"
     )
