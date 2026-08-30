@@ -55,7 +55,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
         createTabs();
         createFooter();
         rowsBySurface.clear();
-        ensureSurfaceRows(surface);
         selectSurface(surface, false);
     }
 
@@ -95,7 +94,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         var context = geometry.contextButton();
         var done = geometry.doneButton();
         contextButton = addRenderableWidget(Button.builder(
-                Component.literal("設定をリセット"),
+                Component.translatable("screen.chisetweaks.settings.reset_all"),
                 ignored -> runContextAction())
                 .bounds(context.x(), context.y(), context.width(), context.height())
                 .build());
@@ -597,18 +596,17 @@ public final class ChiseTweaksConfigScreen extends Screen {
             }
         }
         if (contextButton != null) {
-            boolean dirty = hasDirtyDomains();
-            String label;
-            if (dirty) {
-                label = "設定を適用";
+            Component label;
+            if (hasDirtyDomains()) {
+                label = Component.translatable("screen.chisetweaks.settings.apply_changes");
             } else if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) {
-                label = text(inspectorHelpVisible
+                label = Component.translatable(inspectorHelpVisible
                         ? "screen.chisetweaks.settings.help.hide"
                         : "screen.chisetweaks.settings.help.show");
             } else {
-                label = "設定をリセット";
+                label = Component.translatable("screen.chisetweaks.settings.reset_all");
             }
-            contextButton.setMessage(Component.literal(label));
+            contextButton.setMessage(label);
             contextButton.visible = true;
             contextButton.active = true;
         }
