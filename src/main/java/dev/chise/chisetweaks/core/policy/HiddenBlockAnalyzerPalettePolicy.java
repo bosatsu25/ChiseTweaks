@@ -17,9 +17,10 @@ public final class HiddenBlockAnalyzerPalettePolicy {
 
     public static int colorForDistance(
             double distanceBlocks,
+            String blockId,
             int colorPreset,
             int opacityPercent) {
-        int near = configuredOutline(colorPreset, opacityPercent);
+        int near = configuredOutline(blockId, colorPreset, opacityPercent);
         int far = scaleRgb(near, FAR_BRIGHTNESS);
         if (!Double.isFinite(distanceBlocks)) return far;
         double distance = Math.max(0.0, distanceBlocks);
@@ -30,19 +31,22 @@ public final class HiddenBlockAnalyzerPalettePolicy {
 
     public static int fillColorForDistance(
             double distanceBlocks,
+            String blockId,
             int colorPreset,
             int opacityPercent) {
-        int outline = colorForDistance(distanceBlocks, colorPreset, opacityPercent);
+        int outline = colorForDistance(
+                distanceBlocks, blockId, colorPreset, opacityPercent);
         int alpha = (int) Math.round(((outline >>> 24) & 0xFF) * FACE_ALPHA_RATIO);
         return withAlpha(outline, alpha);
     }
 
-    private static int configuredOutline(int colorPreset, int opacityPercent) {
+    private static int configuredOutline(
+            String blockId,
+            int colorPreset,
+            int opacityPercent) {
         VisualAssistanceStylePolicy.OverlayStyle base =
-                new VisualAssistanceStylePolicy.OverlayStyle(
-                        BlockInspectionCategory.HIDDEN_SURFACE.argb(),
-                        90,
-                        VisualAssistanceStylePolicy.Marker.CROSS);
+                VisualAssistanceStylePolicy.styleFor(
+                        blockId, BlockInspectionCategory.HIDDEN_SURFACE);
         return WorksiteHighlightProfilePolicy.customize(
                 base,
                 BlockInspectionCategory.HIDDEN_SURFACE,
