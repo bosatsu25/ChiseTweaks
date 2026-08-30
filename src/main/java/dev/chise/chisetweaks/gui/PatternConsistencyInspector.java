@@ -221,7 +221,7 @@ public final class PatternConsistencyInspector
     }
 
     List<String> referenceProperties() {
-        return CrosshairInspector.stateProperties(referenceState);
+        return CrosshairSnapshotPolicy.stateProperties(referenceState);
     }
 
     int compared() {
@@ -241,9 +241,9 @@ public final class PatternConsistencyInspector
         for (int index = 0; index < mismatchCounts.length; index++) {
             if (mismatchCounts[index] == 0) continue;
             String property = comparedProperties.get(index).getName();
-            if (!group.equals(CrosshairInspector.semanticPropertyGroup(property))) continue;
+            if (!group.equals(CrosshairSnapshotPolicy.semanticPropertyGroup(property))) continue;
             if (!result.isEmpty()) result.append('\n');
-            result.append(CrosshairInspector.humanize(property))
+            result.append(CrosshairSnapshotPolicy.humanize(property))
                     .append("  ")
                     .append(mismatchCounts[index]);
         }
