@@ -4,6 +4,7 @@ import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.MasaIntegrationSettings;
+import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -88,7 +89,31 @@ final class ChiseTweaksSettingsControllerTest {
                 "litematicaPickRedirect", "tweakerooToolSwitchGuard",
                 "tweakerooPersistentGammaOverride", "tweakermoreAutoPickGuard",
                 "tweakermoreMaterialListRefresh", "syncmaticaRemoveDisabled",
-                "syncmaticaRemoveRequireShift")));
+                "syncmaticaRemoveRequireShift",
+                "compatibility.renderer.header", "worldBorderFixEnabled",
+                "worldBorderFixXray", "worldBorderFixDistance",
+                "worldBorderFixFarCoords", "worldBorderFixCoordThreshold",
+                "worldBorderFixAutoReenable")));
+    }
+
+    @Test
+    void derivedConfigTranslationKeysPreserveExistingLabels() {
+        var controller = new ChiseTweaksSettingsController();
+        var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
+        var filter = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
+
+        assertEquals(
+                Component.translatable("config.option.localworksitevisibilityhorizontalradius.name").getString(),
+                row(highlight, "highlightRange").name());
+        assertEquals(
+                Component.translatable("config.option.localworksitevisibilityhorizontalradius.comment").getString(),
+                row(highlight, "highlightRange").description());
+        assertEquals(
+                Component.translatable("config.option.refreshbuilderfocusrenderer.name").getString(),
+                row(filter, "refreshRenderer").name());
+        assertEquals(
+                Component.translatable("config.option.refreshbuilderfocusrenderer.comment").getString(),
+                row(filter, "refreshRenderer").description());
     }
 
     @Test

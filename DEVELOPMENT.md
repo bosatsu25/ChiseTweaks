@@ -187,6 +187,8 @@ GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button o
 
 Builder Focus list、Ore compatibility、Masa list/mapの編集画面は`ChiseListEditorScreen`へ集約し、paging / remove / clear / footer / row renderingを共有する。各domainのvalidation・保存先・Ore model reloadは統合せず、それぞれの既存contractを維持する。
 
+Settings row metadataは`ChiseTweaksSettingsController`を正本とし、Controller専用のCatalog/Compatibility row wrapperを別classへ戻さない。Integrationsも同一row bufferへ直接追加し、visual target rowは`VisualTargetSettings.ALL_OPTIONS`から必要時に展開する。
+
 Security/configではmalformed UTF-8、unsafe path、symlink、oversized payload、atomic write failureなどをfail-closed条件として扱います。
 
 ### Config migration contract

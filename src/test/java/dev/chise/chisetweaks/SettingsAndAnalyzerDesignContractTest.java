@@ -17,12 +17,12 @@ final class SettingsAndAnalyzerDesignContractTest {
         String settings = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
         String targets = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
 
-        assertContainsAll(settings,
+        assertContainsAll(controller,
                 "() -> config().worksiteVisibilityHorizontalRadius",
                 "value -> config().worksiteVisibilityHorizontalRadius = value",
                 "() -> config().lavaAnalyzerIntervalTicks",
                 "value -> config().lavaAnalyzerIntervalTicks = value");
-        assertContainsNone(settings,
+        assertContainsNone(controller,
                 "syncFromStorage",
                 "private static boolean syncing",
                 "AncientDebrisAnalyzerPolicy");
@@ -46,11 +46,11 @@ final class SettingsAndAnalyzerDesignContractTest {
     }
 
     @Test
-    void lavaAnalyzerRetainsGenericThroughWallInfrastructureWithoutRetiredScanner() throws IOException {
-        String lava = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
+    void sharedAnalyzersRetainGenericThroughWallInfrastructureWithoutRetiredScanner() throws IOException {
+        String analyzers = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
 
-        assertContainsAll(lava,
+        assertContainsAll(analyzers,
                 "ThroughWallMarkerRenderer.Style.LAVA_SOURCE",
                 "new NearestPositionBuffer(",
                 "getChunkNow(");
@@ -60,13 +60,12 @@ final class SettingsAndAnalyzerDesignContractTest {
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/core/policy/AncientDebrisAnalyzerPolicy.java"));
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaAnalyzerThroughWallRenderer.java"));
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaSourceSnapshot.java"));
-        assertContainsNone(lava, "getChunk(chunkX, chunkZ, true)");
+        assertContainsNone(analyzers, "getChunk(chunkX, chunkZ, true)");
     }
 
     @Test
-    void settingsPresentationUsesFiveTabsAndRetainedProductNames() throws IOException {
+    void settingsPresentationUsesSixTabsAndRetainedProductNames() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
-        String catalog = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         String definition = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
         String sceneFilter = read("src/main/java/dev/chise/chisetweaks/gui/ChiseListEditorScreen.java");
@@ -75,7 +74,7 @@ final class SettingsAndAnalyzerDesignContractTest {
         String japanese = read("src/main/resources/assets/chisetweaks/lang/ja_jp.json");
 
         assertContainsAll(controller,
-                "ChiseTweaksSettingsCatalog",
+                "ChiseTweaksSettingRowDefinition",
                 "HIGHLIGHT",
                 "FILTER",
                 "INSPECTOR",
@@ -90,24 +89,29 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "HIGHLIGHT_DETAILS",
                 "VISUAL_FILTER_DETAILS",
                 "LAVA_DETAILS");
-        assertContainsAll(catalog,
+        assertContainsAll(controller,
+                "addCompatibilityRows(",
+                "configOptionKey(",
+                "addTargets(");
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/gui/CompatibilitySettingsRows.java"));
+        assertContainsAll(controller,
                 "Component.translatable(",
-                "definition.englishName()",
-                "\"Highlight\"",
-                "\"Filter\"",
-                "\"Inspector\"",
-                "\"Analyzer\"",
-                "\"Visibility\"",
+                "FeatureSwitch config",
+                "config.definition().englishName()",
+                ".name().toLowerCase(java.util.Locale.ROOT)",
+                "FeatureSwitches.BRIGHT_CHEST",
+                "FeatureSwitches.BRIGHT_CONCRETE");
+        assertContainsNone(controller,
+                "FeatureDefinition.AIR_PLACEMENT",
+                "FeatureDefinition.ANCIENT_DEBRIS_ANALYZER",
                 "FeatureDefinition.BRIGHT_CHEST.englishName()",
                 "FeatureDefinition.BRIGHT_CONCRETE.englishName()");
-        assertContainsNone(catalog,
-                "FeatureDefinition.AIR_PLACEMENT",
-                "FeatureDefinition.ANCIENT_DEBRIS_ANALYZER");
         assertContainsAll(definition,
                 "\"Ore Highlights\"",
                 "\"Nether Highlight\"",
                 "\"Fine Line Highlight\"",
-                "\"Hidden Block Highlight\"",
+                "\"Hidden Block Analyzer\"",
                 "\"Glass Highlight\"",
                 "\"Kelp Highlight\"",
                 "\"Block Filter\"",
