@@ -41,6 +41,19 @@ final class ChiseListEditorBackendPolicyTest {
     }
 
     @Test
+    void nullTargetStillDefaultsToBlockFilter() {
+        assertEquals(SceneFilterBackend.class, ChiseListEditorBackend.create(null).getClass());
+    }
+
+    @Test
+    void masaAccessibilityTitleRemainsStableWhileDisplayTitleStaysSpecific() {
+        ChiseListEditorBackend backend =
+                ChiseListEditorBackend.create(ChiseListEditorScreen.Target.LITEMATICA_PICK_REDIRECT);
+        assertEquals("Masa Integration", backend.screenTitle().getString());
+        assertEquals("Litematica Pick Redirect", backend.title().getString());
+    }
+
+    @Test
     void sceneRuleModeCyclesThroughDisabledDenyAllow() {
         assertEquals(ChiseRuleMode.BLACKLIST, SceneFilterBackend.nextMode(ChiseRuleMode.NONE));
         assertEquals(ChiseRuleMode.WHITELIST, SceneFilterBackend.nextMode(ChiseRuleMode.BLACKLIST));
