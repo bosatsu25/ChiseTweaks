@@ -50,10 +50,9 @@ final class RepositoryScopeContractTest {
     }
 
     @Test
-    void throughWallAnalyzersUseBoundedLoadedChunkDiscoveryAndSharedRetainedRendering() throws IOException {
-        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
+    void occludedHighlightsUseBoundedLoadedChunkDiscoveryAndOwnedRetainedRendering() throws IOException {
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
-        String retained = read("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
 
         assertContainsAll(feature,
                 "int dueMask = 0",
@@ -62,7 +61,7 @@ final class RepositoryScopeContractTest {
                 "loadedChunks.atBlock(",
                 "MAX_CANDIDATES",
                 "ThroughWallPositionSnapshot",
-                "NearestPositionBuffer",
+                "NearestBuffer",
                 "ThroughWallMarkerRenderer.Style.LAVA_SOURCE",
                 "ThroughWallMarkerRenderer.Style.HIDDEN_BLOCK",
                 "LavaVisionPalettePolicy.shouldHighlight",
@@ -71,11 +70,10 @@ final class RepositoryScopeContractTest {
                 "(local.visualTargetMask & targetMask) != 0");
         assertContainsAll(renderer,
                 "withDepthStencilState(Optional.empty())",
-                "RetainedThroughWallBuffer",
-                "ThroughWallWireBoxGeometry.drawWireBox");
-        assertContainsAll(retained,
+                "private static final class RetainedBuffer",
                 "anchorX - camera.x",
-                "vertexBuffer.rotate()");
+                "vertexBuffer.rotate()",
+                "ThroughWallWireBoxGeometry.drawWireBox");
         assertContainsNone(feature,
                 "DefaultFluidRenderer",
                 ".getChunk(",
@@ -88,8 +86,8 @@ final class RepositoryScopeContractTest {
     }
 
     @Test
-    void throughWallAnalyzersGuardLifecycleConfigAndRuntimeFailures() throws IOException {
-        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
+    void occludedHighlightsGuardLifecycleConfigAndRuntimeFailures() throws IOException {
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java");
         String manager = read("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
         String runtime = read("src/main/java/dev/chise/chisetweaks/runtime/RuntimeComponent.java");
 
