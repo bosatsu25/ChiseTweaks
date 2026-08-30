@@ -68,9 +68,9 @@ flowchart LR
 
 ```mermaid
 pie title 15個のruntime機能
-    "Highlight" : 6
+    "Highlight" : 5
     "Filter" : 2
-    "Analyzer" : 2
+    "Analyzer" : 3
     "Visibility" : 5
 ```
 
@@ -81,7 +81,6 @@ pie title 15個のruntime機能
 | **Ore Highlights** | 鉱石、古代の残骸、黒曜石系などを見分けやすくする | OFF |
 | **Nether Highlight** | ネザーの建材を色分けして見やすくする | OFF |
 | **Fine Line Highlight** | 糸やトリップワイヤーフックなど細い対象を見やすくする | OFF |
-| **Hidden Block Highlight** | 粉雪、青氷、死んだサンゴ、スカルクカタリストなどを強調する | OFF |
 | **Glass Highlight** | ガラスと板ガラスの形を見分けやすくする | OFF |
 | **Kelp Highlight** | 昆布を見つけやすくする | OFF |
 
@@ -101,9 +100,12 @@ Ore Highlightsは**今見えているブロックへ強調表示を重ねる機�
 | 機能 | 何ができる？ | 初期値 |
 | --- | --- | --- |
 | **Lava Analyzer** | 読み込み済み近傍の**溶岩源**を壁越しmarkerで確認する | OFF |
+| **Hidden Block Analyzer** | 粉雪、青氷、死んだサンゴ、スカルクカタリストを読み込み済み近傍から解析し、壁越しmarkerで確認する | OFF |
 | **Villager Analyzer** | 村人と職業ブロックの関係を線や情報で確認する | OFF |
 
 Lava Analyzerはflowing lavaではなく**source lava**が対象です。未ロードchunkを強制的に読み込んで探索することはありません。
+
+Hidden Block Analyzerは、これまでのHidden Block Highlightの対象選択と色・不透明度設定を引き継ぎつつ、Lava Analyzerと同じ**bounded / loaded-chunk-only / through-wall**方式へ統合しています。対象はBlue Ice / Dead Coral / Powder Snow / Sculk Catalystから個別に選べます。
 
 Villager Analyzerは、村人の職業とJob Siteの対応を確認したい交易所などで便利です。
 
@@ -226,7 +228,7 @@ Nvidium使用時に、World Border付近や非常に遠い座標で描画が不�
 | **Highlight** | 「このブロックをもっと見やすくしたい」 |
 | **Filter** | 「必要なブロック / Entityだけ見たい」 |
 | **Inspector** | 「向きや配置が正しいか確認したい」 |
-| **Analyzer** | 「溶岩源や村人のJob Siteを調べたい」 |
+| **Analyzer** | 「溶岩源・隠れブロック・村人のJob Siteを調べたい」 |
 | **Visibility** | 「炎、Chest、Concrete、Beaconなどを見やすくしたい」 |
 | **Integrations** | 「Litematica等のMasa系MODやNvidiumと連携したい」 |
 
