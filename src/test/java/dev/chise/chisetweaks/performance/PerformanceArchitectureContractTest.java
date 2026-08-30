@@ -116,6 +116,12 @@ final class PerformanceArchitectureContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java"));
         String manager = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java"));
+        String loadedChunkWindow = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/LoadedChunkWindow.java"));
+
+        assertTrue(loadedChunkWindow.contains("getChunkNow("));
+        assertFalse(loadedChunkWindow.contains(".getChunk("));
+        assertTrue(loadedChunkWindow.contains("long required = (long) resolvedSpanX * resolvedSpanZ"));
 
         assertTrue(infrastructure.contains("BlockPos.MutableBlockPos scanCursor"));
         assertTrue(infrastructure.contains("LoadedChunkWindow loadedChunks"));
