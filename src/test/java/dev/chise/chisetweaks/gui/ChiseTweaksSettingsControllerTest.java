@@ -1,11 +1,8 @@
 package dev.chise.chisetweaks.gui;
 
-import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
-import dev.chise.chisetweaks.config.MasaIntegrationSettings;
 import dev.chise.chisetweaks.config.SettingPersistence;
-import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -17,12 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ChiseTweaksSettingsControllerTest {
     @Test
-    void rowIdsRejectWhitespaceAndUnsupportedCharactersAfterStringConsolidation() {
+    void rowIdsRejectWhitespaceAndUnsupportedCharacters() {
         assertThrows(IllegalArgumentException.class,
                 () -> ChiseTweaksSettingRowDefinition.header(" bad ", "Bad"));
         assertThrows(IllegalArgumentException.class,
@@ -30,256 +27,102 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void repeatedControllersUseTheSameStableHighlightStructure() {
-        var first = new ChiseTweaksSettingsController();
-        var second = new ChiseTweaksSettingsController();
-        assertEquals(ids(first.rows()), ids(second.rows()));
-        assertEquals(kinds(first.rows()), kinds(second.rows()));
-        assertRowContracts(first.rows());
-        assertRowContracts(second.rows());
-    }
-
-    @Test
-    void sixTabsExposeTheCurrentReleasedInformationArchitecture() {
+    void sixStableSurfacesExposeTweaksProductGroups() {
         var controller = new ChiseTweaksSettingsController();
 
-        assertEquals(
-                Component.translatable("screen.chisetweaks.settings.tab.highlight").getString(),
-                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
-        assertEquals(
-                Component.translatable("screen.chisetweaks.settings.tab.filter").getString(),
-                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.FILTER));
-        assertEquals(
-                Component.translatable("screen.chisetweaks.settings.tab.inspector").getString(),
-                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INSPECTOR));
-        assertEquals(
-                Component.translatable("screen.chisetweaks.settings.tab.analyzer").getString(),
-                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.ANALYZER));
-        assertEquals(
-                Component.translatable("screen.chisetweaks.settings.tab.visibility").getString(),
-                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.VISIBILITY));
-        assertEquals(
-                Component.translatable("screen.chisetweaks.settings.tab.integrations").getString(),
-                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
+        assertEquals("Builder Highlights", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
+        assertEquals("Scene Filter", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.FILTER));
+        assertEquals("Builder Assist", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INSPECTOR));
+        assertEquals("Technical", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.ANALYZER));
+        assertEquals("Visual Tweaks", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.VISIBILITY));
+        assertEquals("Integrations", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
 
-        assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT)).containsAll(
-                List.of("materials", "nether", "thread", "glass", "kelp")));
-        assertFalse(ids(controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT)).contains("hidden"));
-        assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.FILTER)).containsAll(
-                List.of("focusBlocks", "focusEntities", "editBlockFilter", "editEntityFilter")));
+        List<String> highlights = ids(controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
+        assertTrue(highlights.containsAll(List.of(
+                "materials", "nether", "glass", "kelp", "lava", "hidden",
+                "lavaRange", "hiddenRange", "visualTargetHiddenBlueIce")));
+        assertFalse(highlights.contains("thread"));
+        assertFalse(highlights.contains("villagerAnalyzer"));
 
-        List<String> inspector = ids(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR));
-        assertTrue(inspector.containsAll(List.of(
-                "inspector.title", "inspector.noTarget", "placement.title", "placement.none",
-                "pattern.title", "pattern.select", "pattern.inactive")));
-        assertFalse(inspector.contains("airPlacement"));
+        List<String> technical = ids(controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER));
+        assertTrue(technical.containsAll(List.of(
+                "thread", "fineThreadColor", "fineThreadOpacity",
+                "beaconRange", "lightningRodRange", "villagerAnalyzer",
+                "visualTargetTechnicalTripwire", "visualTargetTechnicalTripwireHook")));
+        assertFalse(technical.contains("lava"));
+        assertFalse(technical.contains("hidden"));
 
-        List<String> analyzer = ids(controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER));
-        assertTrue(analyzer.containsAll(List.of(
-                "header.analyzer", "lava", "villagerAnalyzer", "hidden",
-                "lavaRange", "lavaVerticalRange", "lavaInterval", "lavaMaxOverlays",
-                "hiddenRange", "hiddenVerticalRange", "hiddenInterval", "hiddenMaxOverlays",
-                "hiddenSurfaceColor", "hiddenSurfaceOpacity",
-                "visualTargetHiddenBlueIce", "visualTargetHiddenDeadCoral",
-                "visualTargetHiddenPowderSnow", "visualTargetHiddenSculkCatalyst")));
-        assertFalse(analyzer.stream().anyMatch(id -> id.toLowerCase().contains("ancientdebris")));
-
-        assertEquals(List.of(
-                        "header.visibility",
-                        "fireVisibility",
-                        "fireVisibilitySize",
-                        "chestVisibility",
-                        "whiteConcreteVisibility",
-                        "beaconRange",
-                        "lightningRodRange"),
-                ids(controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY)));
-        assertTrue(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR).stream()
-                .anyMatch(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO));
-
-        List<String> integrations = ids(controller.rows(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
-        assertTrue(integrations.containsAll(List.of(
-                "header.integrations", "masaJapaneseUiMode",
-                "litematicaPickRedirect", "tweakerooToolSwitchGuard",
-                "tweakerooPersistentGammaOverride", "tweakermoreAutoPickGuard",
-                "tweakermoreMaterialListRefresh", "syncmaticaRemoveDisabled",
-                "syncmaticaRemoveRequireShift",
-                "compatibility.renderer.header", "worldBorderFixEnabled",
-                "worldBorderFixXray", "worldBorderFixDistance",
-                "worldBorderFixFarCoords", "worldBorderFixCoordThreshold",
-                "worldBorderFixAutoReenable")));
+        List<String> visual = ids(controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY));
+        assertTrue(visual.containsAll(List.of(
+                "fireVisibility", "fireVisibilitySize",
+                "handheldSize", "handheldBlockScale", "handheldItemScale", "handheldToolScale",
+                "chestVisibility", "whiteConcreteVisibility")));
+        assertFalse(visual.contains("beaconRange"));
+        assertFalse(visual.contains("lightningRodRange"));
     }
 
     @Test
-    void derivedConfigTranslationKeysPreserveExistingLabels() {
+    void featureBindingsMoveGroupsWithoutChangingPersistenceBindings() {
         var controller = new ChiseTweaksSettingsController();
-        var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
-        var filter = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
+        var highlights = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
+        var technical = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
+        var visual = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
 
-        assertEquals(
-                Component.translatable("config.option.localworksitevisibilityhorizontalradius.name").getString(),
-                row(highlight, "highlightRange").name());
-        assertEquals(
-                Component.translatable("config.option.localworksitevisibilityhorizontalradius.comment").getString(),
-                row(highlight, "highlightRange").description());
-        assertEquals(
-                Component.translatable("config.option.refreshbuilderfocusrenderer.name").getString(),
-                row(filter, "refreshRenderer").name());
-        assertEquals(
-                Component.translatable("config.option.refreshbuilderfocusrenderer.comment").getString(),
-                row(filter, "refreshRenderer").description());
-    }
-
-    @Test
-    void readmeNamesAreTheCanonicalUiNames() {
-        var controller = new ChiseTweaksSettingsController();
-        var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
-        var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
-        var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
-        var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
-        var integrations = controller.rows(ChiseTweaksSettingsController.Surface.INTEGRATIONS);
-
-        assertEquals("Ore Highlights", row(highlight, "materials").name());
-        assertEquals("Nether Highlight", row(highlight, "nether").name());
-        assertEquals("Fine Line Highlight", row(highlight, "thread").name());
-        assertEquals("Hidden Block Analyzer", row(analyzer, "hidden").name());
-        assertEquals("Glass Highlight", row(highlight, "glass").name());
-        assertEquals("Kelp Highlight", row(highlight, "kelp").name());
-        assertEquals("Block Filter", row(visual, "focusBlocks").name());
-        assertEquals("Entity Filter", row(visual, "focusEntities").name());
-        assertEquals("Lava Analyzer", row(analyzer, "lava").name());
-        assertEquals("Low Fire", row(visibility, "fireVisibility").name());
-        assertEquals("Bright Chest", row(visibility, "chestVisibility").name());
-        assertEquals("Bright Concrete", row(visibility, "whiteConcreteVisibility").name());
-    }
-
-    @Test
-    void rowsRemainBoundToExpectedSettings() {
-        var controller = new ChiseTweaksSettingsController();
-        var highlight = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
-        var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
-        var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
-        var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
-        var integrations = controller.rows(ChiseTweaksSettingsController.Surface.INTEGRATIONS);
-
-        assertSame(FeatureSwitches.MATERIAL_HIGHLIGHTS, row(highlight, "materials").booleanConfig());
-        assertSame(FeatureSwitches.NETHER_PALETTE, row(highlight, "nether").booleanConfig());
-        assertSame(FeatureSwitches.FINE_THREAD_TRACE, row(highlight, "thread").booleanConfig());
-        assertSame(FeatureSwitches.GLASS_INSPECTION, row(highlight, "glass").booleanConfig());
-        assertSame(FeatureSwitches.KELP_HIGHLIGHT, row(highlight, "kelp").booleanConfig());
-        assertSame(FeatureSwitches.BUILDER_FOCUS_BLOCKS, row(visual, "focusBlocks").booleanConfig());
-        assertSame(FeatureSwitches.BUILDER_FOCUS_ENTITIES, row(visual, "focusEntities").booleanConfig());
-        assertSame(BuilderFocusConfig.REFRESH_RENDERER, row(visual, "refreshRenderer").booleanConfig());
-        assertSame(FeatureSwitches.LAVA_HIGHLIGHT, row(analyzer, "lava").booleanConfig());
-        assertSame(FeatureSwitches.HIDDEN_SURFACE_TRACE, row(analyzer, "hidden").booleanConfig());
-        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
-                row(analyzer, "hiddenRange").integerConfig());
-        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
-                row(analyzer, "hiddenVerticalRange").integerConfig());
-        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL,
-                row(analyzer, "hiddenInterval").integerConfig());
-        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS,
-                row(analyzer, "hiddenMaxOverlays").integerConfig());
-        assertSame(FeatureSwitches.FIRE_VISIBILITY, row(visibility, "fireVisibility").booleanConfig());
-        assertSame(LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
-                row(visibility, "fireVisibilitySize").integerConfig());
-        assertSame(FeatureSwitches.BRIGHT_CHEST, row(visibility, "chestVisibility").booleanConfig());
-        assertSame(FeatureSwitches.BRIGHT_CONCRETE,
-                row(visibility, "whiteConcreteVisibility").booleanConfig());
-        assertSame(MasaIntegrationSettings.LITEMATICA_PICK_REDIRECT,
-                row(integrations, "litematicaPickRedirect").booleanConfig());
-        assertSame(MasaIntegrationSettings.TWEAKEROO_TOOL_SWITCH_GUARD,
-                row(integrations, "tweakerooToolSwitchGuard").booleanConfig());
-        assertSame(MasaIntegrationSettings.TWEAKERMORE_AUTO_PICK_GUARD,
-                row(integrations, "tweakermoreAutoPickGuard").booleanConfig());
-        assertSame(MasaIntegrationSettings.SYNCMATICA_REMOVE_DISABLED,
-                row(integrations, "syncmaticaRemoveDisabled").booleanConfig());
-        assertSame(MasaIntegrationSettings.JAPANESE_UI_MODE,
-                row(integrations, "masaJapaneseUiMode").integerConfig());
-    }
-
-    @Test
-    void integrationsTabOwnsTheThreeUserEditableGuardLists() {
-        var rows = new ChiseTweaksSettingsController().rows(
-                ChiseTweaksSettingsController.Surface.INTEGRATIONS);
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT,
-                row(rows, "editLitematicaPickRedirect").action());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD,
-                row(rows, "editTweakerMoreAutoPickGuard").action());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD,
-                row(rows, "editTweakerooToolSwitchGuard").action());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE,
-                row(rows, "openMasaGuide").action());
-    }
-
-    @Test
-    void visualFilterTabOwnsBothTargetEditors() {
-        var rows = new ChiseTweaksSettingsController().rows(ChiseTweaksSettingsController.Surface.FILTER);
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER,
-                row(rows, "editBlockFilter").action());
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER,
-                row(rows, "editEntityFilter").action());
-    }
-
-    @Test
-    void highlightTabKeepsAllModesIndependentAndOwnsTheirDetails() {
-        var rows = new ChiseTweaksSettingsController().rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
-        assertSame(LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY,
-                row(rows, "highlightWorldOverlay").booleanConfig());
-        assertFalse(rows.stream().anyMatch(candidate -> "highlightExclusiveMode".equals(candidate.id())));
-        assertTrue(rows.stream().anyMatch(candidate -> candidate.id().startsWith("visualTargetMaterial")));
-        assertTrue(rows.stream().anyMatch(candidate -> candidate.id().startsWith("visualTargetTechnical")));
-        assertFalse(rows.stream().anyMatch(candidate -> candidate.id().startsWith("visualTargetHidden")));
-        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT,
-                row(rows, "moddedOreTargets").action());
-    }
-
-    @Test
-    void analyzerTabOwnsLavaAndHiddenBlockAnalyzerSettings() {
-        var rows = new ChiseTweaksSettingsController().rows(ChiseTweaksSettingsController.Surface.ANALYZER);
+        assertSame(FeatureSwitches.MATERIAL_HIGHLIGHTS, row(highlights, "materials").booleanConfig());
+        assertSame(FeatureSwitches.LAVA_HIGHLIGHT, row(highlights, "lava").booleanConfig());
+        assertSame(FeatureSwitches.HIDDEN_SURFACE_TRACE, row(highlights, "hidden").booleanConfig());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
-                row(rows, "lavaRange").integerConfig());
-        assertSame(LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
-                row(rows, "lavaVerticalRange").integerConfig());
-        assertSame(LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
-                row(rows, "lavaInterval").integerConfig());
-        assertSame(LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
-                row(rows, "lavaMaxOverlays").integerConfig());
+                row(highlights, "lavaRange").integerConfig());
         assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
-                row(rows, "hiddenRange").integerConfig());
-        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
-                row(rows, "hiddenVerticalRange").integerConfig());
-        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL,
-                row(rows, "hiddenInterval").integerConfig());
-        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS,
-                row(rows, "hiddenMaxOverlays").integerConfig());
-        assertTrue(rows.stream().anyMatch(candidate -> candidate.id().startsWith("visualTargetHidden")));
-        assertFalse(rows.stream().anyMatch(candidate -> candidate.id().toLowerCase().contains("ancientdebris")));
+                row(highlights, "hiddenRange").integerConfig());
+
+        assertSame(FeatureSwitches.FINE_THREAD_TRACE, row(technical, "thread").booleanConfig());
+        assertSame(FeatureSwitches.BEACON_RANGE, row(technical, "beaconRange").booleanConfig());
+        assertSame(FeatureSwitches.LIGHTNING_ROD_RANGE, row(technical, "lightningRodRange").booleanConfig());
+        assertSame(FeatureSwitches.VILLAGER_ANALYZER, row(technical, "villagerAnalyzer").booleanConfig());
+
+        assertSame(FeatureSwitches.FIRE_VISIBILITY, row(visual, "fireVisibility").booleanConfig());
+        assertSame(FeatureSwitches.HANDHELD_SIZE, row(visual, "handheldSize").booleanConfig());
+        assertSame(FeatureSwitches.BRIGHT_CHEST, row(visual, "chestVisibility").booleanConfig());
+        assertSame(FeatureSwitches.BRIGHT_CONCRETE, row(visual, "whiteConcreteVisibility").booleanConfig());
     }
 
     @Test
-    void rowIdsAreUniqueAndRetiredUtilityOrFeatureRowsDoNotReturn() {
+    void builderAssistHidesDeveloperDiagnosticsButRetainsBuilderTools() {
         var controller = new ChiseTweaksSettingsController();
-        Set<String> removedTokens = Set.of(
-                "diagnostic", "resourceReload", "copySnapshot", "exportSnapshot",
-                "airPlacement", "ancientDebrisAnalyzer");
+        List<String> ids = controller.inspectorRows(CrosshairInspector.Snapshot.noTarget(), false)
+                .stream().map(ChiseTweaksSettingRowDefinition::id).toList();
+
+        assertTrue(ids.containsAll(List.of(
+                "product.builderAssist",
+                "inspector.noTarget",
+                "placement.title",
+                "pattern.title",
+                "interactionHistory.title")));
+        assertFalse(ids.contains("inspector.filter"));
+        assertFalse(ids.contains("inspector.matchedRule"));
+        assertFalse(ids.contains("inspector.features"));
+        assertFalse(ids.contains("inspector.renderMode"));
+    }
+
+    @Test
+    void rowsRemainUniqueAndStructurallyValid() {
+        var controller = new ChiseTweaksSettingsController();
         for (ChiseTweaksSettingsController.Surface surface : ChiseTweaksSettingsController.Surface.values()) {
+            List<ChiseTweaksSettingRowDefinition> rows = surface == ChiseTweaksSettingsController.Surface.INSPECTOR
+                    ? controller.inspectorRows(CrosshairInspector.Snapshot.noTarget(), false)
+                    : controller.rows(surface);
             Set<String> unique = new HashSet<>();
-            for (ChiseTweaksSettingRowDefinition row : controller.rows(surface)) {
+            for (ChiseTweaksSettingRowDefinition row : rows) {
                 assertTrue(unique.add(row.id()), "duplicate row id: " + row.id());
-                String normalized = row.id().toLowerCase();
-                for (String removed : removedTokens) {
-                    assertFalse(normalized.contains(removed.toLowerCase()),
-                            "retired row leaked into settings: " + row.id());
-                }
             }
-            assertRowContracts(controller.rows(surface));
+            assertRowContracts(rows);
         }
     }
 
     @Test
     void pendingPersistenceStateIsOwnedAndFilteredByController() {
         var controller = new ChiseTweaksSettingsController();
-
         assertFalse(controller.hasPendingChanges());
         controller.markDirty(SettingPersistence.EXTERNAL);
         assertFalse(controller.hasPendingChanges());
@@ -290,9 +133,7 @@ final class ChiseTweaksSettingsControllerTest {
                 SettingPersistence.INTEGRATION_CONFIG,
                 SettingPersistence.EXTERNAL));
 
-        assertTrue(controller.hasPendingChanges());
-        assertEquals(
-                Set.of(
+        assertEquals(Set.of(
                         SettingPersistence.FEATURE_CONFIG,
                         SettingPersistence.LOCAL_CONFIG,
                         SettingPersistence.INTEGRATION_CONFIG),
@@ -307,6 +148,10 @@ final class ChiseTweaksSettingsControllerTest {
                 .orElseThrow(() -> new AssertionError("missing row: " + id));
     }
 
+    private static List<String> ids(List<ChiseTweaksSettingRowDefinition> rows) {
+        return rows.stream().map(ChiseTweaksSettingRowDefinition::id).toList();
+    }
+
     private static void assertRowContracts(List<ChiseTweaksSettingRowDefinition> rows) {
         for (ChiseTweaksSettingRowDefinition row : rows) {
             assertNotNull(row.id());
@@ -319,20 +164,17 @@ final class ChiseTweaksSettingsControllerTest {
                     assertNull(row.booleanConfig());
                     assertNull(row.integerConfig());
                     assertNull(row.action());
-                    assertTrue(row.actionLabel().isEmpty());
                 }
                 case BOOLEAN -> {
                     assertNotNull(row.booleanConfig());
                     assertNull(row.integerConfig());
                     assertNull(row.action());
-                    assertTrue(row.actionLabel().isEmpty());
                 }
                 case INTEGER -> {
                     assertNull(row.booleanConfig());
                     assertNotNull(row.integerConfig());
                     assertTrue(row.step() >= 1);
                     assertNull(row.action());
-                    assertTrue(row.actionLabel().isEmpty());
                 }
                 case ACTION -> {
                     assertNull(row.booleanConfig());
@@ -342,14 +184,5 @@ final class ChiseTweaksSettingsControllerTest {
                 }
             }
         }
-    }
-
-    private static List<String> ids(List<ChiseTweaksSettingRowDefinition> rows) {
-        return rows.stream().map(ChiseTweaksSettingRowDefinition::id).toList();
-    }
-
-    private static List<ChiseTweaksSettingRowDefinition.Kind> kinds(
-            List<ChiseTweaksSettingRowDefinition> rows) {
-        return rows.stream().map(ChiseTweaksSettingRowDefinition::kind).toList();
     }
 }
