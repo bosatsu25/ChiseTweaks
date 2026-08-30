@@ -140,8 +140,8 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Ancient Debris Analyzer\"");
         assertContainsAll(screen,
                 "ChiseTweaksMetadata.MOD_NAME",
-                "\"設定を適用\"",
-                "\"設定をリセット\"");
+                "screen.chisetweaks.settings.apply_changes",
+                "screen.chisetweaks.settings.reset_all");
         assertContainsNone(screen,
                 "ChiseTweaksMetadata.MOD_VERSION",
                 "Resource reload:",
@@ -150,6 +150,8 @@ final class SettingsAndAnalyzerDesignContractTest {
         assertContainsNone(oreCompat, "boolean japanese");
 
         assertContainsAll(english,
+                "\"screen.chisetweaks.settings.apply_changes\": \"Apply settings\"",
+                "\"screen.chisetweaks.settings.tab.integrations\": \"Integrations\"",
                 "\"config.name.brightchest\": \"Bright Chest\"",
                 "\"config.name.brightconcrete\": \"Bright Concrete\"",
                 "direct lighting-only Bright features");
@@ -159,6 +161,8 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "built-in Resource Pack");
 
         assertContainsAll(japanese,
+                "\"screen.chisetweaks.settings.apply_changes\": \"設定を適用\"",
+                "\"screen.chisetweaks.settings.tab.integrations\": \"連携\"",
                 "\"config.name.brightchest\": \"Bright Chest\"",
                 "\"config.name.brightconcrete\": \"Bright Concrete\"",
                 "Bright切替のためのResource Pack再読み込みは行いません");
