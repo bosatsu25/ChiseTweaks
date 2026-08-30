@@ -181,6 +181,8 @@ Coverageはblack-box / runtime acceptanceの代替ではありません。CIの�
 
 Minecraft placement予測では、production側の式をtest側へ複製しません。**実際のvanilla placement結果をoracle**にします。Placement Preview / Actual Comparisonは読み取り・比較capabilityであり、実際の入力や配置操作は変更しません。
 
+配置予測のproduction正本は`CrosshairInspector.placementProbe()`とし、Actual ComparisonとLitematica Schematic comparisonは1つの`PlacementInspector` runtimeで共有する。`UseBlockCallback`は常に`PASS`を返し、入力注入・自動配置・packet送信を追加しない。
+
 Bright Chestではsingle / double-left / double-rightの3専用textureが存在し、`ChestRenderer`が`CHEST_MAPPER`経由で各`ChestType`へ正しいspriteを選び、White Concrete spriteへ退行しないことをsource contractで検証します。最終的なtexture atlas / geometry / animationの見え方はPrism実機acceptanceで確認します。
 
 GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button overlapを境界条件として扱います。
