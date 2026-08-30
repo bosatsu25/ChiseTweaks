@@ -112,6 +112,8 @@ final class PerformanceArchitectureContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/InfrastructureRangeFeature.java"));
         String villager = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/VillagerAnalyzerFeature.java"));
+        String worksite = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java"));
 
         assertTrue(infrastructure.contains("BlockPos.MutableBlockPos scanCursor"));
         assertFalse(infrastructure.contains("BlockPos pos = new BlockPos(x, y, z)"));
@@ -119,6 +121,10 @@ final class PerformanceArchitectureContractTest {
 
         assertTrue(villager.contains("BlockPos.MutableBlockPos workstationCursor"));
         assertFalse(villager.contains("BlockPos candidate = new BlockPos(x, y, z)"));
+
+        assertTrue(worksite.contains("LevelChunk[] loadedChunkBuffer"));
+        assertTrue(worksite.contains("sourceChunk.getBlockState(position)"));
+        assertFalse(worksite.contains("client.level.getBlockState(position)"));
     }
     @Test
     void patternConsistencyBudgetsArePartOfTheRepositoryPerformanceAudit() throws IOException {
