@@ -33,13 +33,13 @@ final class SettingsAndAnalyzerDesignContractTest {
 
     @Test
     void occludedHighlightsRetainBoundedSharedInfrastructure() throws IOException {
-        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
 
         assertContainsAll(feature,
                 "ThroughWallMarkerRenderer.Style.LAVA_SOURCE",
                 "ThroughWallMarkerRenderer.Style.HIDDEN_BLOCK",
-                "new NearestPositionBuffer(",
+                "new NearestBuffer(",
                 "getChunkNow(");
         assertContainsAll(renderer, "enum Style", "LAVA_SOURCE", "HIDDEN_BLOCK");
         assertContainsNone(renderer, "ANCIENT_DEBRIS", "AncientDebrisAnalyzerPolicy");
