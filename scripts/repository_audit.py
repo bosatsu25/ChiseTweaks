@@ -98,7 +98,11 @@ REQUIRED_PATHS = (
     "gradle/wrapper/gradle-wrapper.properties",
     "src/main/resources/fabric.mod.json",
     "src/main/resources/chisetweaks.features.mixins.json",
+    "src/main/resources/chisetweaks.integrations.mixins.json",
     "src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java",
+    "src/main/java/dev/chise/chisetweaks/integration/IntegrationDefinition.java",
+    "src/main/java/dev/chise/chisetweaks/config/MasaIntegrationConfig.java",
+    "src/main/java/dev/chise/chisetweaks/mixin/IntegrationMixinConfigPlugin.java",
     "src/main/java/dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicy.java",
     "src/main/java/dev/chise/chisetweaks/gui/UiAvailabilityPolicy.java",
     "src/main/java/dev/chise/chisetweaks/config/FeatureSwitches.java",
@@ -245,7 +249,11 @@ def audit() -> list[str]:
             if metadata.get("environment") != "client": fail("fabric.mod.json environment must be client", failures)
             entrypoints = metadata.get("entrypoints", {})
             if set(entrypoints) != {"client", "modmenu"}: fail(f"unexpected entrypoint set: {sorted(entrypoints)}", failures)
-            if metadata.get("mixins") != ["chisetweaks.features.mixins.json"]: fail("unexpected mixin configuration set", failures)
+            if metadata.get("mixins") != [
+                    "chisetweaks.features.mixins.json",
+                    "chisetweaks.integrations.mixins.json",
+            ]:
+                fail("unexpected mixin configuration set", failures)
             custom = metadata.get("custom", {}).get("chisetweaks", {})
             required_false = (
                 "serverInstallationRequired", "customPlayProtocol", "remoteModDetection",
