@@ -13,15 +13,16 @@ ROOT = Path(__file__).resolve().parents[1]
 RETAINED_ENGLISH_NAMES = (
     "Block Filter",
     "Entity Filter",
-    "Fine Line Highlight",
-    "Hidden Block Analyzer",
+    "Fine Line / Tripwire",
+    "Occluded Blocks",
     "Glass Highlight",
     "Ore Highlights",
     "Nether Highlight",
     "Kelp Highlight",
     "Low Fire",
-    "Lava Analyzer",
-    "Villager Analyzer",
+    "Handheld Size",
+    "Lava Source",
+    "Villager Job Site Links",
     "Beacon Range",
     "Lightning Rod Range",
     "Bright Chest",
@@ -93,6 +94,15 @@ FORBIDDEN_PATHS = (
     "src/main/resources/assets/chisetweaks/textures/block/visual/diamond_ore_chise.png.mcmeta",
     "src/main/resources/assets/chisetweaks/textures/block/visual/deepslate_diamond_ore_chise.png.mcmeta",
     ".github/workflows/release.yml",
+    "src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java",
+    "src/main/java/dev/chise/chisetweaks/feature/rendering/VillagerJobSiteLinksFeature.java",
+    "src/main/java/dev/chise/chisetweaks/gui/BuilderAssistRows.java",
+    "src/main/java/dev/chise/chisetweaks/gui/WorkflowRows.java",
+    "src/main/java/dev/chise/chisetweaks/feature/rendering/VillagerAnalyzerFeature.java",
+    "src/main/java/dev/chise/chisetweaks/core/policy/VillagerWorkstationPolicy.java",
+    "src/main/java/dev/chise/chisetweaks/gui/InspectorSettingsRows.java",
+    "src/main/java/dev/chise/chisetweaks/mixin/inspector/MultiPlayerGameModeInteractionHistoryMixin.java",
+    "src/main/resources/chisetweaks.inspector.mixins.json",
 )
 
 REQUIRED_PATHS = (
@@ -102,6 +112,7 @@ REQUIRED_PATHS = (
     "src/main/resources/fabric.mod.json",
     "src/main/resources/chisetweaks.features.mixins.json",
     "src/main/resources/chisetweaks.integrations.mixins.json",
+    "src/main/resources/chisetweaks.workflow.mixins.json",
     "src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java",
     "src/main/java/dev/chise/chisetweaks/integration/IntegrationDefinition.java",
     "src/main/java/dev/chise/chisetweaks/config/MasaIntegrationConfig.java",
@@ -257,6 +268,7 @@ def audit() -> list[str]:
             if metadata.get("mixins") != [
                     "chisetweaks.features.mixins.json",
                     "chisetweaks.integrations.mixins.json",
+                    "chisetweaks.workflow.mixins.json",
             ]:
                 fail("unexpected mixin configuration set", failures)
             custom = metadata.get("custom", {}).get("chisetweaks", {})
@@ -292,7 +304,8 @@ def main() -> int:
             print(f"- {failure}", file=sys.stderr)
         return 1
     print("REPOSITORY AUDIT: PASS")
-    print(f"scope={len(RETAINED_ENGLISH_NAMES)} retained rendering features")
+    print(f"scope={len(RETAINED_ENGLISH_NAMES)} compatibility toggles")
+    print("product_groups=7")
     print("building_action_features=0")
     print("client_only=true")
     print("canonical_architecture=true")
