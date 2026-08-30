@@ -15,9 +15,9 @@ final class SettingsResponsibilityArchitectureContractTest {
     void controllerCoordinatesSettingsWithoutOwningMinecraftWidgetsOrPresentationBuilders() throws Exception {
         String controller = Files.readString(GUI.resolve("ChiseTweaksSettingsController.java"));
 
-        assertTrue(controller.contains("TweaksProductSettingsRows"));
-        assertTrue(controller.contains("TweaksBuilderAssistRows"));
         assertTrue(controller.contains("SettingPersistenceCoordinator"));
+        assertFalse(controller.contains("TweaksBuilderAssistRows.rows("));
+        assertFalse(controller.contains("TweaksProductSettingsRows.rows("));
 
         for (String presentation : new String[]{
                 "net.minecraft.client.gui.components.Button",
@@ -66,6 +66,8 @@ final class SettingsResponsibilityArchitectureContractTest {
 
         assertTrue(screen.contains("extends Screen"));
         assertTrue(screen.contains("ChiseTweaksSettingsController"));
+        assertTrue(screen.contains("TweaksProductSettingsRows.rows("));
+        assertTrue(screen.contains("TweaksBuilderAssistRows.rows("));
         assertFalse(screen.contains("SettingPersistenceCoordinator"));
         assertFalse(screen.contains("LocalFeatureConfig.getInstance()"));
         assertFalse(screen.contains("MasaIntegrationConfig.getInstance()"));
