@@ -24,6 +24,28 @@ final class MasaIntegrationArchitectureContractTest {
     }
 
     @Test
+    void externalVersionDriftStaysBehindOptionalMixinAndReflectionBoundaries() throws Exception {
+        String reflection = Files.readString(Path.of(
+                "src/main/java/dev/chise/chisetweaks/integration/masa/MasaReflectionSupport.java"));
+        String plugin = Files.readString(Path.of(
+                "src/main/java/dev/chise/chisetweaks/mixin/IntegrationMixinConfigPlugin.java"));
+
+        assertTrue(reflection.contains("ReflectiveOperationException | LinkageError"));
+        assertTrue(plugin.contains("MasaModAvailability.isLoaded(modId)"));
+
+        for (String path : new String[]{
+                "src/main/java/dev/chise/chisetweaks/mixin/masa/LitematicaMaterialCacheMixin.java",
+                "src/main/java/dev/chise/chisetweaks/mixin/masa/TweakerooToolSwitchMixin.java",
+                "src/main/java/dev/chise/chisetweaks/mixin/masa/TweakerMoreAutoPickMixin.java",
+                "src/main/java/dev/chise/chisetweaks/mixin/masa/TweakerMoreMaterialRefreshMixin.java",
+                "src/main/java/dev/chise/chisetweaks/mixin/masa/SyncmaticaRemoveListenerMixin.java"}) {
+            String source = Files.readString(Path.of(path));
+            assertTrue(source.contains("@Pseudo"), path);
+            assertTrue(source.contains("require = 0"), path);
+        }
+    }
+
+    @Test
     void syncmaticaGuardDoesNotTakePacketOwnership() throws Exception {
         String source = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/mixin/masa/SyncmaticaRemoveListenerMixin.java"));
