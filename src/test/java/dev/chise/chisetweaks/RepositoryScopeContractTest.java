@@ -66,7 +66,9 @@ final class RepositoryScopeContractTest {
                 "ThroughWallMarkerRenderer.Style.LAVA_SOURCE",
                 "ThroughWallMarkerRenderer.Style.HIDDEN_BLOCK",
                 "LavaVisionPalettePolicy.shouldHighlight",
-                "BlockInspectionCategory.HIDDEN_SURFACE");
+                "populateHiddenTargetMasks();",
+                "int targetMask = hiddenTargetMask(block)",
+                "(local.visualTargetMask & targetMask) != 0");
         assertContainsAll(renderer,
                 "withDepthStencilState(Optional.empty())",
                 "RetainedThroughWallBuffer",
@@ -74,7 +76,11 @@ final class RepositoryScopeContractTest {
         assertContainsAll(retained,
                 "anchorX - camera.x",
                 "vertexBuffer.rotate()");
-        assertContainsNone(feature, "DefaultFluidRenderer", ".getChunk(");
+        assertContainsNone(feature,
+                "DefaultFluidRenderer",
+                ".getChunk(",
+                "BlockInspectionPolicy.matches",
+                "BlockInspectionCategory.HIDDEN_SURFACE");
         assertContainsNone(renderer, "DefaultFluidRenderer", "getFluidState(", "getBlockState(");
     }
 
