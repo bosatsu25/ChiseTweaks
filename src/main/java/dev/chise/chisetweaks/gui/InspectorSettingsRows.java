@@ -8,12 +8,12 @@ import net.minecraft.world.phys.HitResult;
 import java.util.ArrayList;
 import java.util.List;
 
-import static dev.chise.chisetweaks.gui.ChiseTweaksSettingsRows.action;
-import static dev.chise.chisetweaks.gui.ChiseTweaksSettingsRows.boolLiteral;
-import static dev.chise.chisetweaks.gui.ChiseTweaksSettingsRows.header;
-import static dev.chise.chisetweaks.gui.ChiseTweaksSettingsRows.headerLiteral;
-import static dev.chise.chisetweaks.gui.ChiseTweaksSettingsRows.info;
-import static dev.chise.chisetweaks.gui.ChiseTweaksSettingsRows.text;
+import static dev.chise.chisetweaks.gui.TweaksProductSettingsRows.action;
+import static dev.chise.chisetweaks.gui.TweaksProductSettingsRows.boolLiteral;
+import static dev.chise.chisetweaks.gui.TweaksProductSettingsRows.header;
+import static dev.chise.chisetweaks.gui.TweaksProductSettingsRows.headerLiteral;
+import static dev.chise.chisetweaks.gui.TweaksProductSettingsRows.info;
+import static dev.chise.chisetweaks.gui.TweaksProductSettingsRows.text;
 
 /** Dynamic Inspector presentation: target, placement, schematic, pattern and history rows. */
 final class InspectorSettingsRows {
