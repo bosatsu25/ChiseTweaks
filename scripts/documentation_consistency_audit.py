@@ -56,11 +56,11 @@ def audit_language(
 
     subtitle = values.get("screen.chisetweaks.help.subtitle")
     if subtitle != expected_subtitle:
-        failures.append(f"{locale} help subtitle must describe the 12-toggle / 10-default-off scope")
+        failures.append(f"{locale} help subtitle must describe the 15-toggle / 13-default-off scope")
 
     analyzer_help = str(values.get("screen.chisetweaks.help.analyzer.description", ""))
     if not analyzer_help or "Ancient Debris" in analyzer_help or "古代の残骸" in analyzer_help:
-        failures.append(f"{locale} Analyzer help must describe retained Lava Analyzer only")
+        failures.append(f"{locale} Analyzer help must describe the retained analyzer group")
 
     expected_names = {
         "config.name.localfirevisibility": "Low Fire",
@@ -120,9 +120,9 @@ def main() -> int:
         failures,
     )
     require(
-        r"12個のON/OFF機能",
+        r"15個のON/OFF可能なruntime機能",
         readme,
-        "README must explain the twelve-toggle scope in beginner-facing language",
+        "README must explain the current fifteen-toggle scope in beginner-facing language",
         failures,
     )
     require(
@@ -158,7 +158,7 @@ def main() -> int:
         "exact CI-verified runtime JAR",
         f"`{jar_goal} bytes`",
         f"`{jar_max} bytes`",
-        "toggle可能なruntime featureは現在12個",
+        "toggle可能なruntime featureは現在15個",
         "GitHub Issues",
         "scripts/ci_scope.py",
         "scripts/ci_provenance.py",
@@ -178,13 +178,13 @@ def main() -> int:
     audit_language(
         "en_us",
         en_us,
-        "Browse the 12 ChiseTweaks toggles. Bright Chest and Bright Concrete start enabled; the other 10 start disabled.",
+        "Review 15 toggleable runtime features. Bright Chest / Bright Concrete default ON; the other 13 default OFF.",
         failures,
     )
     audit_language(
         "ja_jp",
         ja_jp,
-        "12個の切り替え機能を確認できます。Bright Chest / Bright Concreteは初期ON、ほか10機能は初期OFFです。",
+        "15個の切り替え可能なruntime機能を確認できます。Bright Chest / Bright Concreteは初期ON、ほか13機能は初期OFFです。",
         failures,
     )
 
@@ -214,7 +214,7 @@ def main() -> int:
     print("DOCUMENTATION CONSISTENCY AUDIT: PASS")
     print("user_doc=README.md")
     print("development_doc=DEVELOPMENT.md")
-    print("runtime_translation_scope=12_retained_features")
+    print("runtime_translation_scope=15_retained_features")
     print("retired_translation_residue=false")
     print("retired_duplicate_docs=false")
     print(f"minecraft={minecraft}")

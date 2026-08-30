@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-fast repository audit for the retained twelve-feature ChiseTweaks scope."""
+"""Fail-fast repository audit for the retained runtime ChiseTweaks scope."""
 from __future__ import annotations
 
 import json
@@ -14,13 +14,16 @@ RETAINED_ENGLISH_NAMES = (
     "Block Filter",
     "Entity Filter",
     "Fine Line Highlight",
-    "Hidden Block Highlight",
+    "Hidden Block Analyzer",
     "Glass Highlight",
     "Ore Highlights",
     "Nether Highlight",
     "Kelp Highlight",
     "Low Fire",
     "Lava Analyzer",
+    "Villager Analyzer",
+    "Beacon Range",
+    "Lightning Rod Range",
     "Bright Chest",
     "Bright Concrete",
 )
@@ -225,8 +228,9 @@ def audit() -> list[str]:
         for name in RETAINED_ENGLISH_NAMES:
             if f'"{name}"' not in feature_source:
                 fail(f"FeatureDefinition is missing retained name: {name}", failures)
-        if feature_source.count("FeatureArea.RENDERING") != 12:
-            fail("FeatureDefinition must retain exactly twelve rendering definitions", failures)
+        expected_feature_count = len(RETAINED_ENGLISH_NAMES)
+        if feature_source.count("FeatureArea.RENDERING") != expected_feature_count:
+            fail(f"FeatureDefinition must retain exactly {expected_feature_count} rendering definitions", failures)
         if "FeatureArea.BUILDING" in feature_source:
             fail("FeatureDefinition must not retain building-action definitions", failures)
 
@@ -235,8 +239,9 @@ def audit() -> list[str]:
         switches = read_text(switches_path)
         values = re.search(r"\bVALUES\s*=\s*List\.of\((.*?)\);", switches, re.DOTALL)
         names = re.findall(r"\b[A-Z][A-Z0-9_]+\b", values.group(1)) if values else []
-        if len(names) != 12 or len(set(names)) != 12:
-            fail("FeatureSwitches.VALUES must contain exactly twelve unique toggles", failures)
+        expected_feature_count = len(RETAINED_ENGLISH_NAMES)
+        if len(names) != expected_feature_count or len(set(names)) != expected_feature_count:
+            fail(f"FeatureSwitches.VALUES must contain exactly {expected_feature_count} unique toggles", failures)
 
     fabric_path = ROOT / "src/main/resources/fabric.mod.json"
     if fabric_path.is_file():
@@ -287,7 +292,7 @@ def main() -> int:
             print(f"- {failure}", file=sys.stderr)
         return 1
     print("REPOSITORY AUDIT: PASS")
-    print("scope=12 retained rendering features")
+    print(f"scope={len(RETAINED_ENGLISH_NAMES)} retained rendering features")
     print("building_action_features=0")
     print("client_only=true")
     print("canonical_architecture=true")

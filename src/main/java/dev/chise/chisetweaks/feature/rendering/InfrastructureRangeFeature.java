@@ -17,6 +17,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightningRodBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public final class InfrastructureRangeFeature implements TickingFeature, Session
     }
 
     private final Mode mode;
+    private final BlockPos.MutableBlockPos scanCursor = new BlockPos.MutableBlockPos();
     private volatile List<Target> targets = List.of();
     private int ticksUntilScan;
     private ClientLevel lastLevel;
@@ -88,18 +90,19 @@ public final class InfrastructureRangeFeature implements TickingFeature, Session
 
         for (int z = origin.getZ() - hr; z <= origin.getZ() + hr; z++) {
             for (int x = origin.getX() - hr; x <= origin.getX() + hr; x++) {
-                if (!client.level.getChunkSource().hasChunk(x >> 4, z >> 4)) continue;
+                LevelChunk sourceChunk = client.level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+                if (sourceChunk == null) continue;
                 for (int y = origin.getY() - vr; y <= origin.getY() + vr; y++) {
-                    BlockPos pos = new BlockPos(x, y, z);
-                    BlockState state = client.level.getBlockState(pos);
+                    scanCursor.set(x, y, z);
+                    BlockState state = sourceChunk.getBlockState(scanCursor);
                     int range = 0;
                     if (mode == Mode.BEACON && state.is(Blocks.BEACON)) {
-                        range = InfrastructureRangePolicy.beaconRadius(beaconLevel(client.level, pos));
+                        range = InfrastructureRangePolicy.beaconRadius(beaconLevel(client.level, x, y, z));
                     } else if (mode == Mode.LIGHTNING_ROD && state.is(Blocks.LIGHTNING_ROD)) {
                         range = LightningRodBlock.RANGE;
                     }
                     if (range <= 0) continue;
-                    result.add(new Target(pos, range));
+                    result.add(new Target(new BlockPos(x, y, z), range));
                     if (result.size() >= InfrastructureRangePolicy.MAX_TARGETS) {
                         return List.copyOf(result);
                     }
@@ -109,15 +112,16 @@ public final class InfrastructureRangeFeature implements TickingFeature, Session
         return List.copyOf(result);
     }
 
-    private static int beaconLevel(ClientLevel level, BlockPos beacon) {
+    private int beaconLevel(ClientLevel level, int beaconX, int beaconY, int beaconZ) {
         int complete = 0;
         for (int layer = 1; layer <= InfrastructureRangePolicy.MAX_BEACON_LEVEL; layer++) {
-            int y = beacon.getY() - layer;
+            int y = beaconY - layer;
             boolean valid = true;
-            for (int z = beacon.getZ() - layer; z <= beacon.getZ() + layer && valid; z++) {
-                for (int x = beacon.getX() - layer; x <= beacon.getX() + layer; x++) {
+            for (int z = beaconZ - layer; z <= beaconZ + layer && valid; z++) {
+                for (int x = beaconX - layer; x <= beaconX + layer; x++) {
+                    scanCursor.set(x, y, z);
                     if (!level.getChunkSource().hasChunk(x >> 4, z >> 4)
-                            || !level.getBlockState(new BlockPos(x, y, z)).is(BlockTags.BEACON_BASE_BLOCKS)) {
+                            || !level.getBlockState(scanCursor).is(BlockTags.BEACON_BASE_BLOCKS)) {
                         valid = false;
                         break;
                     }

@@ -17,6 +17,7 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -35,6 +36,7 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
     private static final int PRIMARY_COLOR = 0xFF72FF9F;
     private static final int FALLBACK_COLOR = 0xFFFFC857;
 
+    private final BlockPos.MutableBlockPos workstationCursor = new BlockPos.MutableBlockPos();
     private volatile List<Link> links = List.of();
     private int ticksUntilScan;
     private ClientLevel lastLevel;
@@ -97,8 +99,7 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
                         villager.getY() + villager.getBbHeight() * 0.65,
                         villager.getZ(),
                         memory.get().pos(),
-                        true,
-                        villager.getVillagerData().profession().getRegisteredName()));
+                        true));
                 continue;
             }
 
@@ -113,30 +114,36 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
                         villager.getY() + villager.getBbHeight() * 0.65,
                         villager.getZ(),
                         fallback,
-                        false,
-                        villager.getVillagerData().profession().getRegisteredName()));
+                        false));
             }
         }
         return List.copyOf(result);
     }
 
-    private static BlockPos findNearestLoadedWorkstation(
+    private BlockPos findNearestLoadedWorkstation(
             ClientLevel level,
             BlockPos origin,
             Block workstation) {
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
         int radius = FALLBACK_WORKSTATION_RADIUS;
-        for (int z = origin.getZ() - radius; z <= origin.getZ() + radius; z++) {
-            for (int x = origin.getX() - radius; x <= origin.getX() + radius; x++) {
-                if (!level.getChunkSource().hasChunk(x >> 4, z >> 4)) continue;
-                for (int y = origin.getY() - radius; y <= origin.getY() + radius; y++) {
-                    BlockPos candidate = new BlockPos(x, y, z);
-                    if (!level.getBlockState(candidate).is(workstation)) continue;
-                    double distance = candidate.distSqr(origin);
+        int originX = origin.getX();
+        int originY = origin.getY();
+        int originZ = origin.getZ();
+        for (int z = originZ - radius; z <= originZ + radius; z++) {
+            for (int x = originX - radius; x <= originX + radius; x++) {
+                LevelChunk sourceChunk = level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+                if (sourceChunk == null) continue;
+                int dx = x - originX;
+                int dz = z - originZ;
+                for (int y = originY - radius; y <= originY + radius; y++) {
+                    workstationCursor.set(x, y, z);
+                    if (!sourceChunk.getBlockState(workstationCursor).is(workstation)) continue;
+                    int dy = y - originY;
+                    double distance = (double) dx * dx + (double) dy * dy + (double) dz * dz;
                     if (distance < bestDistance) {
                         bestDistance = distance;
-                        best = candidate;
+                        best = new BlockPos(x, y, z);
                     }
                 }
             }
@@ -179,10 +186,6 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         }
     }
 
-    public List<Link> snapshot() {
-        return links;
-    }
-
     private boolean isEnabled() {
         return FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.VILLAGER_ANALYZER)
                 && LocalFeatureConfig.getInstance().villagerAnalyzerEnabled;
@@ -209,6 +212,5 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
             double villagerY,
             double villagerZ,
             BlockPos jobSite,
-            boolean claimed,
-            String profession) {}
+            boolean claimed) {}
 }

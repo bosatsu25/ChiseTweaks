@@ -61,7 +61,6 @@ final class PerformanceArchitectureContractTest {
     void ciOwnsQualityGatesAndReleaseOnlyPromotesTheVerifiedArtifact() throws IOException {
         String build = Files.readString(ROOT.resolve("build.gradle"));
         String ci = Files.readString(ROOT.resolve(".github/workflows/ci.yml"));
-        String release = Files.readString(ROOT.resolve(".github/workflows/release.yml"));
 
         assertTrue(build.contains("tasks.register('ciGate')"));
         assertTrue(build.contains("tasks.register('comparePerformanceEvidence', JavaExec)"));
@@ -69,36 +68,32 @@ final class PerformanceArchitectureContractTest {
 
         assertTrue(ci.contains("./gradlew --stacktrace ciGate"));
         assertTrue(ci.contains("actions/upload-artifact@"));
-        assertTrue(ci.contains("path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}"));
+        assertTrue(ci.contains("path: build/libs/${{ steps.runtime.outputs.runtime_jar }}"));
         assertTrue(ci.contains("archive: false"));
         assertFalse(ci.contains("continue-on-error"));
-        assertFalse(ci.contains("gh release"));
-        assertFalse(ci.contains("git tag"));
 
-        assertTrue(release.contains("actions/download-artifact@"));
-        assertTrue(release.contains("run-id: ${{ github.event.workflow_run.id }}"));
-        assertTrue(release.contains("Exact CI artifact promoted: `PASS`"));
-        assertFalse(release.contains("./gradlew"));
-        assertFalse(release.contains("python scripts/artifact_audit.py"));
-        assertFalse(release.contains("python scripts/visual_asset_audit.py"));
-        assertFalse(release.contains("python scripts/release_residue_audit.py"));
-        assertFalse(release.contains("gh release download"));
+        assertTrue(ci.contains("release:"));
+        assertTrue(ci.contains("name: release / Publish verified runtime JAR"));
+        assertTrue(ci.contains("actions/download-artifact@"));
+        assertTrue(ci.contains("name: ${{ needs.verify.outputs.runtime_jar }}"));
+        assertTrue(ci.contains("gh release create"));
+        assertFalse(ci.contains("gh release download"));
     }
 
     @Test
     void releaseDependencyNotesComeFromThePromotedRuntimeJar() throws IOException {
-        String release = Files.readString(ROOT.resolve(".github/workflows/release.yml"));
+        String ci = Files.readString(ROOT.resolve(".github/workflows/ci.yml"));
 
-        assertTrue(release.contains("runtime=\"${candidates[0]}\""));
-        assertTrue(release.contains("unzip -p \"$runtime\" fabric.mod.json"));
-        assertTrue(release.contains(".depends.fabricloader"));
-        assertTrue(release.contains(".depends[\"fabric-api\"]"));
-        assertTrue(release.contains(".depends.java"));
-        assertTrue(release.contains("serverInstallationRequired"));
-        assertTrue(release.contains("server_required\" != 'false'"));
-        assertTrue(release.contains("\"$RUNTIME_PATH\""));
-        assertFalse(release.contains("Fabric Loader 0.19.3"));
-        assertFalse(release.contains("- Java: \\`25\\`"));
+        assertTrue(ci.contains("runtime=\"${candidates[0]}\""));
+        assertTrue(ci.contains("unzip -p \"$runtime\" fabric.mod.json"));
+        assertTrue(ci.contains(".depends.fabricloader"));
+        assertTrue(ci.contains(".depends[\"fabric-api\"]"));
+        assertTrue(ci.contains(".depends.java"));
+        assertTrue(ci.contains("serverInstallationRequired"));
+        assertTrue(ci.contains("server_required\" != 'false'"));
+        assertTrue(ci.contains("\"$RUNTIME_PATH\""));
+        assertFalse(ci.contains("Fabric Loader 0.19.3"));
+        assertFalse(ci.contains("- Java: \\`25\\`"));
     }
 
     @Test
@@ -109,6 +104,32 @@ final class PerformanceArchitectureContractTest {
 
         assertFalse(source.contains("if (!\"minecraft\".equals(namespace))"),
                 "Non-Minecraft blocks must not be wrapped unconditionally in the steady-state visual path");
+    }
+
+    @Test
+    void hotWorldScanLoopsReuseMutableBlockPositions() throws IOException {
+        String infrastructure = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/InfrastructureRangeFeature.java"));
+        String villager = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/VillagerAnalyzerFeature.java"));
+        String worksite = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java"));
+
+        assertTrue(infrastructure.contains("BlockPos.MutableBlockPos scanCursor"));
+        assertTrue(infrastructure.contains("LevelChunk sourceChunk"));
+        assertTrue(infrastructure.contains("sourceChunk.getBlockState(scanCursor)"));
+        assertFalse(infrastructure.contains("BlockPos pos = new BlockPos(x, y, z)"));
+        assertFalse(infrastructure.contains("client.level.getBlockState(scanCursor)"));
+
+        assertTrue(villager.contains("BlockPos.MutableBlockPos workstationCursor"));
+        assertTrue(villager.contains("LevelChunk sourceChunk"));
+        assertTrue(villager.contains("sourceChunk.getBlockState(workstationCursor)"));
+        assertFalse(villager.contains("BlockPos candidate = new BlockPos(x, y, z)"));
+        assertFalse(villager.contains("level.getBlockState(workstationCursor)"));
+
+        assertTrue(worksite.contains("LevelChunk[] loadedChunkBuffer"));
+        assertTrue(worksite.contains("sourceChunk.getBlockState(position)"));
+        assertFalse(worksite.contains("client.level.getBlockState(position)"));
     }
 
     @Test
