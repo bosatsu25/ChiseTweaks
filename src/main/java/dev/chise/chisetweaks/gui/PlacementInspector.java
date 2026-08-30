@@ -34,7 +34,7 @@ public final class PlacementInspector
     static final int DIFFERENT = 3;
 
     private static final SchematicSnapshot NO_SCHEMATIC =
-            new SchematicSnapshot(null, null, null, 0, "", "");
+            new SchematicSnapshot(null, 0, "", "");
     private static volatile PlacementInspector active;
     private static volatile SchematicSnapshot schematicSnapshot = NO_SCHEMATIC;
 
@@ -175,8 +175,6 @@ public final class PlacementInspector
 
         schematicSnapshot = new SchematicSnapshot(
                 probe.targetPos(),
-                expected,
-                probe.predictedState(),
                 result,
                 blockId(expected),
                 blockId(probe.predictedState()));
@@ -222,8 +220,6 @@ public final class PlacementInspector
 
     record SchematicSnapshot(
             BlockPos targetPos,
-            BlockState expected,
-            BlockState predicted,
             int result,
             String expectedId,
             String predictedId) {
