@@ -18,7 +18,11 @@ final class MasaIntegrationRegistryTest {
         assertFalse(MasaIntegrationRegistry.isAvailable(
                 IntegrationDefinition.TWEAKERMORE_AUTO_PICK_GUARD, none));
         assertFalse(MasaIntegrationRegistry.isAvailable(
-                IntegrationDefinition.SYNCMATICA_REMOVE_GUARD, none));
+                IntegrationDefinition.SYNCMATICA_REMOVE_DISABLED, none));
+        assertFalse(MasaIntegrationRegistry.isAvailable(
+                IntegrationDefinition.SYNCMATICA_REMOVE_REQUIRE_SHIFT, none));
+        assertFalse(MasaIntegrationRegistry.isAvailable(
+                IntegrationDefinition.MASA_JAPANESE_UI, none));
         assertTrue(MasaIntegrationRegistry.isAvailable(
                 IntegrationDefinition.MASA_GUIDE, none));
     }
