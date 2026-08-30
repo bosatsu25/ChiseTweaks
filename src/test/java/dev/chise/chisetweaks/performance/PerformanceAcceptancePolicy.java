@@ -9,10 +9,13 @@ import java.util.Set;
 /** Regression-oriented acceptance rules for repeatable Prism performance captures. */
 final class PerformanceAcceptancePolicy {
     private static final Set<PerformanceMetric> REQUIRED_METRICS = Set.of(
+            PerformanceMetric.STARTUP_MS,
             PerformanceMetric.P50_FRAMETIME_MS,
             PerformanceMetric.P95_FRAMETIME_MS,
             PerformanceMetric.P99_FRAMETIME_MS,
             PerformanceMetric.HEAP_MIB,
+            PerformanceMetric.ALLOCATION_MIB_S,
+            PerformanceMetric.RENDER_THREAD_CPU_PCT,
             PerformanceMetric.AVERAGE_FPS);
 
     private static final Map<PerformanceMetric, Double> MAX_REGRESSION_PERCENT = thresholds();
@@ -65,14 +68,14 @@ final class PerformanceAcceptancePolicy {
 
     private static Map<PerformanceMetric, Double> thresholds() {
         EnumMap<PerformanceMetric, Double> values = new EnumMap<>(PerformanceMetric.class);
-        values.put(PerformanceMetric.STARTUP_MS, 15.0);
-        values.put(PerformanceMetric.P50_FRAMETIME_MS, 8.0);
-        values.put(PerformanceMetric.P95_FRAMETIME_MS, 10.0);
-        values.put(PerformanceMetric.P99_FRAMETIME_MS, 15.0);
+        values.put(PerformanceMetric.STARTUP_MS, 10.0);
+        values.put(PerformanceMetric.P50_FRAMETIME_MS, 5.0);
+        values.put(PerformanceMetric.P95_FRAMETIME_MS, 5.0);
+        values.put(PerformanceMetric.P99_FRAMETIME_MS, 10.0);
         values.put(PerformanceMetric.HEAP_MIB, 10.0);
-        values.put(PerformanceMetric.ALLOCATION_MIB_S, 15.0);
+        values.put(PerformanceMetric.ALLOCATION_MIB_S, 10.0);
         values.put(PerformanceMetric.RENDER_THREAD_CPU_PCT, 10.0);
-        values.put(PerformanceMetric.AVERAGE_FPS, 10.0);
+        values.put(PerformanceMetric.AVERAGE_FPS, 5.0);
         return Map.copyOf(values);
     }
 }
