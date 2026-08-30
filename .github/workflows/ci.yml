@@ -1,9 +1,8 @@
 name: CI
 
-# Feature Expansion Mode (temporary)
-# Automatic PR/main execution is intentionally paused while the queued feature set is merged.
-# Restore pull_request/push triggers in the post-expansion stabilization PR.
+# Refactor verification pass: temporarily run the quality gate on this pull request.
 on:
+  pull_request:
   workflow_dispatch:
 
 permissions:
