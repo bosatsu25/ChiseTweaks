@@ -5,12 +5,13 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PlacementInspectorContractTest {
-    private static final Path TRACKER = Path.of(
+    private static final Path PLACEMENT = Path.of(
             "src/main/java/dev/chise/chisetweaks/gui/PlacementInspector.java");
 
     @Test
@@ -27,7 +28,7 @@ final class PlacementInspectorContractTest {
     @Test
     void placementProbeRetainsOnlyTargetAndVanillaPrediction() {
         Set<String> components = java.util.Arrays.stream(
-                        CrosshairInspector.PlacementProbe.class.getRecordComponents())
+                        PlacementInspector.PlacementProbe.class.getRecordComponents())
                 .map(java.lang.reflect.RecordComponent::getName)
                 .collect(java.util.stream.Collectors.toSet());
         assertEquals(Set.of("targetPos", "predictedState"), components);
@@ -43,8 +44,8 @@ final class PlacementInspectorContractTest {
     }
 
     @Test
-    void observerIsSinglePositionMemoryOnlyAndNeverChangesVanillaInput() throws Exception {
-        String source = Files.readString(TRACKER);
+    void observerPassesVanillaInputAndKeepsAOnePositionBoundedLifecycle() throws Exception {
+        String source = Files.readString(PLACEMENT);
 
         assertTrue(source.contains("UseBlockCallback.EVENT.register"));
         assertTrue(source.contains("return InteractionResult.PASS"));
@@ -52,11 +53,8 @@ final class PlacementInspectorContractTest {
         assertTrue(source.contains("level.isLoaded(targetPos)"));
         assertTrue(source.contains("tick - creationTick > EXPIRY_TICKS"));
         assertTrue(source.contains("pendingLevel != level"));
-        assertTrue(source.contains("refreshSchematic(client)"));
-        assertTrue(source.contains("CrosshairInspector.placementProbe("));
         assertTrue(source.contains("SchematicPlacementComparisonPolicy.compare("));
-        assertFalse(source.contains("List<"));
-        assertFalse(source.contains("Map<"));
+
         for (String forbidden : new String[]{
                 "setBlock(", "setBlockAndUpdate(", ".place(", "sendPacket", "clickMouse",
                 "pressMouse", "keyPress", ".clip(", "raycast(", "LOGGER", "config/"}) {
@@ -65,15 +63,16 @@ final class PlacementInspectorContractTest {
     }
 
     @Test
-    void vanillaPlacementContextIsOwnedByOneSharedProbe() throws Exception {
-        String inspector = Files.readString(Path.of(
+    void vanillaPlacementContextHasOneProductionOwner() throws Exception {
+        String crosshair = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/gui/CrosshairInspector.java"));
-        String placement = Files.readString(TRACKER);
+        String placement = Files.readString(PLACEMENT);
 
-        assertTrue(inspector.contains("static PlacementProbe placementProbe("));
-        assertEquals(1, occurrences(inspector, "new BlockPlaceContext("));
-        assertFalse(placement.contains("new BlockPlaceContext("));
-        assertTrue(placement.contains("CrosshairInspector.placementProbe("));
+        assertTrue(placement.contains("static PlacementProbe placementProbe("));
+        assertEquals(1, occurrences(placement, "new BlockPlaceContext("));
+        assertFalse(crosshair.contains("BlockPlaceContext"));
+        assertFalse(crosshair.contains("supportsPlacementPreview("));
+        assertFalse(crosshair.contains("placementStateProperties("));
     }
 
     @Test
@@ -88,10 +87,10 @@ final class PlacementInspectorContractTest {
         assertFalse(manager.contains("registerComponent(new PlacementComparisonTracker())"));
         assertTrue(session.contains("FeatureManager.getInstance().resetSessionState(client)"));
     }
+
     private static int occurrences(String text, String token) {
         int count = 0;
         for (int index = 0; (index = text.indexOf(token, index)) >= 0; index += token.length()) count++;
         return count;
     }
-
 }
