@@ -36,6 +36,11 @@ final class MasaListBackend implements ChiseListEditorBackend {
     }
 
     @Override
+    public Component screenTitle() {
+        return Component.literal("Masa Integration");
+    }
+
+    @Override
     public String subtitle() {
         return isGuard() ? "外部MODの操作をChise policyで許可/拒否します。" : "";
     }
