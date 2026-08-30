@@ -96,7 +96,7 @@
   "screen.chisetweaks.help.requirement.none": "No additional mod is required.",
   "screen.chisetweaks.help.requirement_prefix": "Requirements and notes: ",
   "screen.chisetweaks.help.subtitle": "Browse the 12 ChiseTweaks toggles. Bright Chest and Bright Concrete start enabled; the other 10 start disabled.",
-  "screen.chisetweaks.help.title": "ChiseTweaks Feature Guide",
+  "screen.chisetweaks.help.title": "Quick Help",
   "screen.chisetweaks.help.usage_prefix": "How to use: ",
   "screen.chisetweaks.settings.action.settings": "Settings",
   "screen.chisetweaks.settings.apply": "Apply",
@@ -266,7 +266,6 @@
   "screen.chisetweaks.pattern.status": "Local comparison",
   "screen.chisetweaks.pattern.status.value": "Compared %s / Match %s / Mismatch %s",
   "screen.chisetweaks.pattern.clear.action": "Clear reference",
-  "screen.chisetweaks.help.title": "Quick Help",
   "screen.chisetweaks.help.highlight.name": "Highlight",
   "screen.chisetweaks.help.highlight.description": "Make ores, fine lines, hidden blocks, glass and kelp easier to find. Highlight features may be enabled together.",
   "screen.chisetweaks.help.filter.name": "Filter",
@@ -278,5 +277,8 @@
   "screen.chisetweaks.help.settings.name": "Settings",
   "screen.chisetweaks.help.settings.description": "The footer changes to Apply when edits are pending. With no edits, Reset affects only the current settings tab.",
   "screen.chisetweaks.help.troubleshooting.name": "Troubleshooting",
-  "screen.chisetweaks.help.troubleshooting.description": "If a problem occurs, inspect the Prism Launcher console or logs/latest.log. Diagnostics are not duplicated in this screen."
+  "screen.chisetweaks.help.troubleshooting.description": "If a problem occurs, inspect the Prism Launcher console or logs/latest.log. Diagnostics are not duplicated in this screen.",
+  "config.name.villageranalyzer": "Villager Analyzer",
+  "config.name.beaconrange": "Beacon Range",
+  "config.name.lightningrodrange": "Lightning Rod Range"
 }
