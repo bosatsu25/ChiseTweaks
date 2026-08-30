@@ -1,5 +1,7 @@
 package dev.chise.chisetweaks.gui;
 
+import dev.chise.chisetweaks.config.FeatureSwitch;
+import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.gui.ChiseTweaksSettingsController.Surface;
 
 import java.util.ArrayList;
@@ -61,10 +63,25 @@ final class TweaksProductSettingsRows {
             return true;
         });
 
-        append(rows, ChiseTweaksSettingsRows.rows(Surface.ANALYZER), row -> {
+        for (ChiseTweaksSettingRowDefinition row : ChiseTweaksSettingsRows.rows(Surface.ANALYZER)) {
             String id = row.id();
-            return !"header.analyzer".equals(id) && !"villagerAnalyzer".equals(id);
-        });
+            if ("header.analyzer".equals(id) || "villagerAnalyzer".equals(id)) continue;
+            if ("lava".equals(id)) {
+                rows.add(featureRow(
+                        "lava",
+                        FeatureSwitches.LAVA_HIGHLIGHT,
+                        "Show nearby loaded lava source blocks as bounded occluded highlights.",
+                        "読み込み済み近傍の溶岩源を、範囲制限された壁越しハイライトとして表示します。"));
+            } else if ("hidden".equals(id)) {
+                rows.add(featureRow(
+                        "hidden",
+                        FeatureSwitches.HIDDEN_SURFACE_TRACE,
+                        "Show selected hidden building materials as bounded occluded highlights.",
+                        "選択した隠れ建材を、範囲制限された壁越しハイライトとして表示します。"));
+            } else {
+                rows.add(row);
+            }
+        }
         return List.copyOf(rows);
     }
 
@@ -84,8 +101,11 @@ final class TweaksProductSettingsRows {
 
         append(rows, ChiseTweaksSettingsRows.rows(Surface.VISIBILITY), row ->
                 "beaconRange".equals(row.id()) || "lightningRodRange".equals(row.id()));
-        append(rows, ChiseTweaksSettingsRows.rows(Surface.ANALYZER), row ->
-                "villagerAnalyzer".equals(row.id()));
+        rows.add(featureRow(
+                "villagerAnalyzer",
+                FeatureSwitches.VILLAGER_ANALYZER,
+                "Draw links only for villager job sites already known by Minecraft; no workstation guessing scan is used.",
+                "Minecraftが既に把握している村人のJob Siteだけを線で表示します。職業ブロックの推測探索は行いません。"));
         return List.copyOf(rows);
     }
 
@@ -99,6 +119,18 @@ final class TweaksProductSettingsRows {
                     && !"lightningRodRange".equals(id);
         });
         return List.copyOf(rows);
+    }
+
+    private static ChiseTweaksSettingRowDefinition featureRow(
+            String id,
+            FeatureSwitch feature,
+            String englishDescription,
+            String japaneseDescription) {
+        return ChiseTweaksSettingRowDefinition.bool(
+                id,
+                feature.definition().englishName(),
+                localized(englishDescription, japaneseDescription),
+                feature);
     }
 
     private static List<ChiseTweaksSettingRowDefinition> relabel(
