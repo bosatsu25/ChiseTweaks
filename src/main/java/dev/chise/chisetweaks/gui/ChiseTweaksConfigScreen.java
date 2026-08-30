@@ -23,16 +23,17 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private final EnumMap<ChiseTweaksSettingsController.Surface, ArrayList<ChiseTweaksSettingRowView>> rowsBySurface =
             new EnumMap<>(ChiseTweaksSettingsController.Surface.class);
     private final ArrayList<Button> tabButtons = new ArrayList<>();
-    private final CrosshairInspector inspector = new CrosshairInspector();
+    private final CrosshairInspector crosshair = new CrosshairInspector();
     private Screen parent;
-    private ChiseTweaksSettingsController.Surface surface = ChiseTweaksSettingsController.Surface.HIGHLIGHT;
+    private ChiseTweaksSettingsController.Surface surface = ChiseTweaksSettingsController.Surface.VISUAL;
     private ChiseTweaksSettingsLayout.Geometry geometry;
     private Button contextButton;
     private String persistenceFeedback = "";
     private int scrollOffset;
     private int maxScroll;
-    private boolean inspectorHelpVisible;
+    private boolean builderAssistHelpVisible;
     private long patternRevision = Long.MIN_VALUE;
+    private long historyRevision = Long.MIN_VALUE;
     private long lastSettingRevision = Long.MIN_VALUE;
 
     public ChiseTweaksConfigScreen() {
@@ -48,7 +49,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     protected void init() {
         super.init();
         controller.initialize();
-        inspector.refresh(minecraft);
+        crosshair.refresh(minecraft);
         geometry = ChiseTweaksSettingsLayout.calculate(width, height);
         createTabs();
         createFooter();
@@ -59,14 +60,17 @@ public final class ChiseTweaksConfigScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) {
-            boolean changed = inspector.refresh(minecraft);
+        if (surface == ChiseTweaksSettingsController.Surface.BUILDER_ASSIST) {
+            boolean changed = crosshair.refresh(minecraft);
             long currentPatternRevision = PatternConsistencyInspector.currentRevision();
             if (currentPatternRevision != patternRevision) {
                 patternRevision = currentPatternRevision;
                 changed = true;
             }
-            if (changed) rebuildInspectorRows();
+            if (changed) rebuildBuilderAssistRows();
+        } else if (surface == ChiseTweaksSettingsController.Surface.WORKFLOW) {
+            long currentHistoryRevision = InteractionHistory.revision();
+            if (currentHistoryRevision != historyRevision) rebuildWorkflowRows();
         }
         long currentSettingRevision = SettingChangeDispatcher.revision();
         if (currentSettingRevision != lastSettingRevision) refreshRowButtons();
@@ -105,8 +109,12 @@ public final class ChiseTweaksConfigScreen extends Screen {
 
     private void ensureSurfaceRows(ChiseTweaksSettingsController.Surface candidate) {
         if (candidate == null || rowsBySurface.containsKey(candidate)) return;
-        if (candidate == ChiseTweaksSettingsController.Surface.INSPECTOR) {
-            rebuildInspectorRows();
+        if (candidate == ChiseTweaksSettingsController.Surface.BUILDER_ASSIST) {
+            rebuildBuilderAssistRows();
+            return;
+        }
+        if (candidate == ChiseTweaksSettingsController.Surface.WORKFLOW) {
+            rebuildWorkflowRows();
             return;
         }
 
@@ -255,7 +263,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
 
     private void refreshPatternRows() {
         patternRevision = PatternConsistencyInspector.currentRevision();
-        rebuildInspectorRows();
+        rebuildBuilderAssistRows();
     }
 
     private void selectSurface(ChiseTweaksSettingsController.Surface target, boolean resetScroll) {
@@ -268,10 +276,10 @@ public final class ChiseTweaksConfigScreen extends Screen {
         }
         surface = target;
         if (resetScroll) scrollOffset = 0;
-        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) {
-            inspector.invalidate();
-            inspector.refresh(minecraft);
-            rebuildInspectorRows();
+        if (surface == ChiseTweaksSettingsController.Surface.BUILDER_ASSIST) {
+            crosshair.invalidate();
+            crosshair.refresh(minecraft);
+            rebuildBuilderAssistRows();
         } else {
             ensureSurfaceRows(surface);
         }
@@ -288,30 +296,43 @@ public final class ChiseTweaksConfigScreen extends Screen {
             applyChanges();
             return;
         }
-        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) {
-            inspectorHelpVisible = !inspectorHelpVisible;
-            rebuildInspectorRows();
+        if (surface == ChiseTweaksSettingsController.Surface.BUILDER_ASSIST) {
+            builderAssistHelpVisible = !builderAssistHelpVisible;
+            rebuildBuilderAssistRows();
             refreshRowButtons();
             return;
         }
         resetCurrentSurface();
     }
 
-    private void rebuildInspectorRows() {
-        ArrayList<ChiseTweaksSettingRowView> previous = rowsBySurface.get(
-                ChiseTweaksSettingsController.Surface.INSPECTOR);
+    private void rebuildBuilderAssistRows() {
+        rebuildDynamicRows(
+                ChiseTweaksSettingsController.Surface.BUILDER_ASSIST,
+                controller.builderAssistRows(crosshair.snapshot(), builderAssistHelpVisible));
+    }
+
+    private void rebuildWorkflowRows() {
+        historyRevision = InteractionHistory.revision();
+        rebuildDynamicRows(
+                ChiseTweaksSettingsController.Surface.WORKFLOW,
+                controller.workflowRows());
+    }
+
+    private void rebuildDynamicRows(
+            ChiseTweaksSettingsController.Surface owner,
+            List<ChiseTweaksSettingRowDefinition> definitions) {
+        ArrayList<ChiseTweaksSettingRowView> previous = rowsBySurface.get(owner);
         if (previous == null) previous = new ArrayList<>();
         boolean[] reused = new boolean[previous.size()];
         ArrayList<ChiseTweaksSettingRowView> next = new ArrayList<>();
 
-        for (ChiseTweaksSettingRowDefinition definition
-                : controller.inspectorRows(inspector.snapshot(), inspectorHelpVisible)) {
-            ChiseTweaksSettingRowView row = reusableInspectorRow(previous, reused, definition);
+        for (ChiseTweaksSettingRowDefinition definition : definitions) {
+            ChiseTweaksSettingRowView row = reusableDynamicRow(previous, reused, definition);
             if (row == null) {
-                row = createRow(ChiseTweaksSettingsController.Surface.INSPECTOR, definition);
+                row = createRow(owner, definition);
             } else {
                 row.rebind(definition);
-                prepareRowPresentation(ChiseTweaksSettingsController.Surface.INSPECTOR, row);
+                prepareRowPresentation(owner, row);
             }
             row.renderVisible = false;
             row.setWidgetsVisible(false);
@@ -326,11 +347,11 @@ public final class ChiseTweaksConfigScreen extends Screen {
             row.removeWidgets(this::removeWidget);
         }
 
-        rowsBySurface.put(ChiseTweaksSettingsController.Surface.INSPECTOR, next);
-        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) updateRowPositions();
+        rowsBySurface.put(owner, next);
+        if (surface == owner) updateRowPositions();
     }
 
-    private static ChiseTweaksSettingRowView reusableInspectorRow(
+    private static ChiseTweaksSettingRowView reusableDynamicRow(
             ArrayList<ChiseTweaksSettingRowView> previous,
             boolean[] reused,
             ChiseTweaksSettingRowDefinition definition) {
@@ -591,8 +612,8 @@ public final class ChiseTweaksConfigScreen extends Screen {
             Component label;
             if (hasDirtyDomains()) {
                 label = Component.translatable("screen.chisetweaks.settings.apply_changes");
-            } else if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) {
-                label = Component.translatable(inspectorHelpVisible
+            } else if (surface == ChiseTweaksSettingsController.Surface.BUILDER_ASSIST) {
+                label = Component.translatable(builderAssistHelpVisible
                         ? "screen.chisetweaks.settings.help.hide"
                         : "screen.chisetweaks.settings.help.show");
             } else {
