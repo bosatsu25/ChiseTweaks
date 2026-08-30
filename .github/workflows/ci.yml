@@ -538,6 +538,7 @@ jobs:
           - Fabric API: \`${FABRIC_API_CONSTRAINT}\`
           - Java: \`${JAVA_CONSTRAINT}\`
           - SHA-256: \`${RUNTIME_SHA256}\`
+          - Verified source CI run: \`${SOURCE_VERIFICATION_RUN}\`
           EOF
 
       - name: Create GitHub Release
