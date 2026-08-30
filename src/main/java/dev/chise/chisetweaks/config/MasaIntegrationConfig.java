@@ -17,7 +17,7 @@ import java.util.Optional;
 public final class MasaIntegrationConfig {
     static final String CONFIG_FILE_NAME = "chisetweaks-integrations.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final int MAX_LIST_ENTRIES = 128;
+    public static final int MAX_LIST_ENTRIES = 128;
     private static final int MAX_ENTRY_CHARS = 160;
 
     private static final MasaIntegrationConfig INSTANCE = new MasaIntegrationConfig();

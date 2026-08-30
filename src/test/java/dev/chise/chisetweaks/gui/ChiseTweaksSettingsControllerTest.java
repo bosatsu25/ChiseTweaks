@@ -134,6 +134,18 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
+    void integrationsTabOwnsTheThreeUserEditableGuardLists() {
+        var rows = new ChiseTweaksSettingsController().rows(
+                ChiseTweaksSettingsController.Surface.INTEGRATIONS);
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT,
+                row(rows, "editLitematicaPickRedirect").action());
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD,
+                row(rows, "editTweakerMoreAutoPickGuard").action());
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD,
+                row(rows, "editTweakerooToolSwitchGuard").action());
+    }
+
+    @Test
     void visualFilterTabOwnsBothTargetEditors() {
         var rows = new ChiseTweaksSettingsController().rows(ChiseTweaksSettingsController.Surface.FILTER);
         assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER,
