@@ -21,6 +21,7 @@ public final class InteractionHistory implements RuntimeComponent, SessionAwareR
 
     private final ArrayDeque<Entry> entries = new ArrayDeque<>(MAX_ENTRIES);
     private long sequence;
+    private long revision;
 
     @Override
     public String getId() {
@@ -30,6 +31,11 @@ public final class InteractionHistory implements RuntimeComponent, SessionAwareR
     @Override
     public void init() {
         active = this;
+    }
+
+    public static long revision() {
+        InteractionHistory current = active;
+        return current == null ? 0L : current.revision;
     }
 
     public static List<Entry> snapshot() {
@@ -91,6 +97,7 @@ public final class InteractionHistory implements RuntimeComponent, SessionAwareR
         synchronized (current.entries) {
             current.entries.addFirst(entry);
             while (current.entries.size() > MAX_ENTRIES) current.entries.removeLast();
+            current.revision++;
         }
     }
 
@@ -109,7 +116,9 @@ public final class InteractionHistory implements RuntimeComponent, SessionAwareR
         InteractionHistory current = active;
         if (current == null) return;
         synchronized (current.entries) {
+            if (current.entries.isEmpty()) return;
             current.entries.clear();
+            current.revision++;
         }
     }
 
