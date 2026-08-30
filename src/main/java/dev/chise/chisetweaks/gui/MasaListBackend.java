@@ -200,7 +200,7 @@ final class MasaListBackend implements ChiseListEditorBackend {
         setEntries(updated);
         if (!save()) {
             setEntries(previous);
-            return Mutation.none("保存に失敗しました");
+            return Mutation.none(text("screen.chisetweaks.masa_editor.feedback.save_failed"));
         }
         return Mutation.success(text("screen.chisetweaks.masa_editor.feedback.added"), true, false, true);
     }
@@ -213,7 +213,7 @@ final class MasaListBackend implements ChiseListEditorBackend {
         setEntries(updated);
         if (!save()) {
             setEntries(previous);
-            return Mutation.none("保存に失敗しました");
+            return Mutation.none(text("screen.chisetweaks.masa_editor.feedback.save_failed"));
         }
         return Mutation.success(text("screen.chisetweaks.masa_editor.feedback.removed"), false, false, false);
     }
@@ -224,7 +224,7 @@ final class MasaListBackend implements ChiseListEditorBackend {
         setEntries(List.of());
         if (!save()) {
             setEntries(previous);
-            return Mutation.none("保存に失敗しました");
+            return Mutation.none(text("screen.chisetweaks.masa_editor.feedback.save_failed"));
         }
         return Mutation.success(text("screen.chisetweaks.masa_editor.feedback.cleared"), false, true, false);
     }
