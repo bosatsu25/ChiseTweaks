@@ -97,17 +97,16 @@ final class SettingsAndAnalyzerDesignContractTest {
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/gui/CompatibilitySettingsRows.java"));
         assertContainsAll(controller,
                 "Component.translatable(",
-                "definition.englishName()",
-                "\"Highlight\"",
-                "\"Filter\"",
-                "\"Inspector\"",
-                "\"Analyzer\"",
-                "\"Visibility\"",
-                "FeatureDefinition.BRIGHT_CHEST.englishName()",
-                "FeatureDefinition.BRIGHT_CONCRETE.englishName()");
+                "FeatureSwitch config",
+                "config.definition().englishName()",
+                ".name().toLowerCase(java.util.Locale.ROOT)",
+                "FeatureSwitches.BRIGHT_CHEST",
+                "FeatureSwitches.BRIGHT_CONCRETE");
         assertContainsNone(controller,
                 "FeatureDefinition.AIR_PLACEMENT",
-                "FeatureDefinition.ANCIENT_DEBRIS_ANALYZER");
+                "FeatureDefinition.ANCIENT_DEBRIS_ANALYZER",
+                "FeatureDefinition.BRIGHT_CHEST.englishName()",
+                "FeatureDefinition.BRIGHT_CONCRETE.englishName()");
         assertContainsAll(definition,
                 "\"Ore Highlights\"",
                 "\"Nether Highlight\"",
