@@ -164,7 +164,7 @@ def main() -> int:
         "scripts/ci_provenance.py",
         "tooling-only",
         "tree SHA",
-        "no-runtime-artifact",
+        "release / Publish verified runtime JAR",
         "CHISE_CI_RUNS_ON",
         "workflow_dispatch",
     ):
