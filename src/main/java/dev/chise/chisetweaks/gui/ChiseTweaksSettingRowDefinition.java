@@ -7,7 +7,7 @@ import java.util.Objects;
 
 final class ChiseTweaksSettingRowDefinition {
     private final Kind kind;
-    private final SettingRowId settingId;
+    private final String id;
     private final String name;
     private final String description;
     private final ChiseBooleanSetting booleanConfig;
@@ -18,7 +18,7 @@ final class ChiseTweaksSettingRowDefinition {
 
     private ChiseTweaksSettingRowDefinition(
             Kind kind,
-            SettingRowId settingId,
+            String id,
             String name,
             String description,
             ChiseBooleanSetting booleanConfig,
@@ -27,7 +27,7 @@ final class ChiseTweaksSettingRowDefinition {
             Action action,
             String actionLabel) {
         this.kind = Objects.requireNonNull(kind, "kind");
-        this.settingId = Objects.requireNonNull(settingId, "settingId");
+        this.id = requireId(id);
         this.name = name == null ? "" : name;
         this.description = description == null ? "" : description;
         this.booleanConfig = booleanConfig;
@@ -38,7 +38,6 @@ final class ChiseTweaksSettingRowDefinition {
     }
 
     Kind kind() { return kind; }
-    SettingRowId settingId() { return settingId; }
     String name() { return name; }
     String description() { return description; }
     ChiseBooleanSetting booleanConfig() { return booleanConfig; }
@@ -48,17 +47,17 @@ final class ChiseTweaksSettingRowDefinition {
     String actionLabel() { return actionLabel; }
 
     String id() {
-        return settingId.value();
+        return id;
     }
 
     static ChiseTweaksSettingRowDefinition header(String id, String name) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.HEADER, SettingRowId.of(id), name, "", null, null, 0, null, "");
+                Kind.HEADER, id, name, "", null, null, 0, null, "");
     }
 
     static ChiseTweaksSettingRowDefinition info(String id, String name, String description) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.INFO, SettingRowId.of(id), name, description, null, null, 0, null, "");
+                Kind.INFO, id, name, description, null, null, 0, null, "");
     }
 
     static ChiseTweaksSettingRowDefinition bool(
@@ -67,7 +66,7 @@ final class ChiseTweaksSettingRowDefinition {
             String description,
             ChiseBooleanSetting config) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.BOOLEAN, SettingRowId.of(id), name, description == null ? "" : description,
+                Kind.BOOLEAN, id, name, description == null ? "" : description,
                 config, null, 0, null, "");
     }
 
@@ -78,7 +77,7 @@ final class ChiseTweaksSettingRowDefinition {
             ChiseIntegerSetting config,
             int step) {
         return new ChiseTweaksSettingRowDefinition(
-                Kind.INTEGER, SettingRowId.of(id), name, description == null ? "" : description,
+                Kind.INTEGER, id, name, description == null ? "" : description,
                 null, config, Math.max(1, step), null, "");
     }
 
@@ -90,7 +89,7 @@ final class ChiseTweaksSettingRowDefinition {
             String actionLabel) {
         return new ChiseTweaksSettingRowDefinition(
                 Kind.ACTION,
-                SettingRowId.of(id),
+                id,
                 name,
                 description == null ? "" : description,
                 null,
@@ -98,6 +97,22 @@ final class ChiseTweaksSettingRowDefinition {
                 0,
                 action,
                 actionLabel == null ? "" : actionLabel);
+    }
+
+    private static String requireId(String value) {
+        String normalized = Objects.requireNonNull(value, "id").trim();
+        if (normalized.isEmpty()) throw new IllegalArgumentException("setting row id must not be blank");
+        if (!normalized.equals(value)) {
+            throw new IllegalArgumentException("setting row id must not contain surrounding whitespace");
+        }
+        for (int index = 0; index < value.length(); index++) {
+            char current = value.charAt(index);
+            if (!Character.isLetterOrDigit(current)
+                    && current != '.' && current != '_' && current != '-') {
+                throw new IllegalArgumentException("setting row id contains an unsupported character");
+            }
+        }
+        return value;
     }
 
     enum Kind {

@@ -10,18 +10,9 @@ import java.util.function.Consumer;
 /** 全toggle可能Featureを同じ設定契約へ載せる。保存先や実装方式の違いはbinding内部へ閉じ込める。 */
 public final class FeatureSwitch extends ChiseBooleanSetting {
     private final FeatureDefinition definition;
-    private final BooleanSupplier reader;
-    private final Consumer<Boolean> writer;
-    private boolean value;
 
     FeatureSwitch(FeatureDefinition definition) {
-        this(
-                definition,
-                configName(definition),
-                false,
-                null,
-                null,
-                SettingPersistence.FEATURE_CONFIG);
+        this(definition, configName(definition), false, null, null, SettingPersistence.FEATURE_CONFIG);
     }
 
     FeatureSwitch(
@@ -31,16 +22,14 @@ public final class FeatureSwitch extends ChiseBooleanSetting {
             BooleanSupplier reader,
             Consumer<Boolean> writer,
             SettingPersistence persistence) {
-        super(configName, defaultEnabled, persistence);
+        super(
+                configName,
+                defaultEnabled,
+                reader,
+                writer,
+                () -> FeatureAvailabilityPolicy.isAvailable(definition),
+                persistence);
         this.definition = Objects.requireNonNull(definition, "definition");
-        this.value = defaultEnabled;
-        if (reader == null && writer == null) {
-            this.reader = () -> value;
-            this.writer = next -> value = next;
-        } else {
-            this.reader = Objects.requireNonNull(reader, "reader");
-            this.writer = Objects.requireNonNull(writer, "writer");
-        }
     }
 
     public FeatureDefinition definition() {
@@ -49,16 +38,6 @@ public final class FeatureSwitch extends ChiseBooleanSetting {
 
     void resetForConfigLoad() {
         resetSilently();
-    }
-
-    @Override
-    protected boolean readValue() {
-        return FeatureAvailabilityPolicy.isAvailable(definition) && reader.getAsBoolean();
-    }
-
-    @Override
-    protected void writeValue(boolean requested) {
-        writer.accept(FeatureAvailabilityPolicy.isAvailable(definition) && requested);
     }
 
     @Override

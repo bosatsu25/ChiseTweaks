@@ -52,11 +52,9 @@ public final class FeatureManager {
         if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.HIDDEN_SURFACE_TRACE)) {
             registerComponent(new HiddenBlockAnalyzerFeature());
         }
-        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BEACON_RANGE)) {
-            registerComponent(new InfrastructureRangeFeature(InfrastructureRangeFeature.Mode.BEACON));
-        }
-        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LIGHTNING_ROD_RANGE)) {
-            registerComponent(new InfrastructureRangeFeature(InfrastructureRangeFeature.Mode.LIGHTNING_ROD));
+        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BEACON_RANGE)
+                || FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LIGHTNING_ROD_RANGE)) {
+            registerComponent(new InfrastructureRangeFeature());
         }
         if (hasAvailableWorksiteVisibilityFeature()) {
             registerComponent(new WorksiteVisibilityEngine());

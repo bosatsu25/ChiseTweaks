@@ -16,8 +16,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class ChiseTweaksSettingsControllerTest {
+    @Test
+    void rowIdsRejectWhitespaceAndUnsupportedCharactersAfterStringConsolidation() {
+        assertThrows(IllegalArgumentException.class,
+                () -> ChiseTweaksSettingRowDefinition.header(" bad ", "Bad"));
+        assertThrows(IllegalArgumentException.class,
+                () -> ChiseTweaksSettingRowDefinition.header("bad/id", "Bad"));
+    }
+
     @Test
     void repeatedControllersUseTheSameStableHighlightStructure() {
         var first = new ChiseTweaksSettingsController();

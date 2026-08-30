@@ -2,9 +2,10 @@
   "schema": 2,
   "baseline": {
     "version": "0.15.0+mc26.1.2",
-    "commit": "79a46455bf1825d3cc3905f5dd72523acf70c761",
-    "runtimeJarBytes": 387108,
-    "goalBytes": 358400
+    "commit": "e75170692f4a5bf677e096038abb09be180c6518",
+    "runtimeJarBytes": null,
+    "goalBytes": 358400,
+    "measurementStatus": "unmeasured-current-15-feature-runtime"
   },
   "featureIds": [
     "builder_focus_blocks",
@@ -17,6 +18,9 @@
     "kelp_highlight",
     "fire_visibility",
     "lava_highlight",
+    "villager_analyzer",
+    "beacon_range",
+    "lightning_rod_range",
     "bright_chest",
     "bright_concrete"
   ],
@@ -34,11 +38,17 @@
     "localFeatureSwitches": {
       "localFireVisibility": false,
       "localLavaHighlight": false,
+      "villagerAnalyzer": false,
+      "beaconRange": false,
+      "lightningRodRange": false,
       "brightChest": true,
       "brightConcrete": true
     },
     "localSettings": {
+      "localFireVisibilitySizePreset": 1,
       "localOreHighlightAnimation": false,
+      "localInteractionHistory": false,
+      "localSchematicPlacementInspector": false,
       "localWorksiteVisibilityHorizontalRadius": 5,
       "localWorksiteVisibilityVerticalRadius": 3,
       "localWorksiteVisibilityIntervalTicks": 10,
@@ -53,7 +63,10 @@
       "localLavaAnalyzerVerticalRadius": 3,
       "localLavaAnalyzerIntervalTicks": 10,
       "localLavaAnalyzerMaxOverlays": 12,
-      "localFireVisibilitySizePreset": 1
+      "localHiddenAnalyzerHorizontalRadius": 5,
+      "localHiddenAnalyzerVerticalRadius": 3,
+      "localHiddenAnalyzerIntervalTicks": 10,
+      "localHiddenAnalyzerMaxOverlays": 12
     },
     "visualTargets": {
       "visualTargetMaterialCoalOre": true,

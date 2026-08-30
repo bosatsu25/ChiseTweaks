@@ -114,14 +114,14 @@ def audit() -> list[str]:
     visual_target_keys = re.findall(
         r"entry\(Target\.[A-Z0-9_]+\s*,\s*\"([^\"]+)\"", visual_targets_text, re.DOTALL)
     visual_targets = {name: True for name in visual_target_keys}
-    if not re.search(r"new\s+SimpleBooleanSetting\(\s*configName\s*,\s*true\s*,", visual_targets_text):
+    if not re.search(r"new\s+ChiseBooleanSetting\(\s*configName\s*,\s*true\s*,", visual_targets_text):
         failures.append("visual target default is no longer true")
     diff("visual target defaults", baseline["settings"]["visualTargets"], visual_targets, failures)
 
     builder_text = read("src/main/java/dev/chise/chisetweaks/config/BuilderFocusConfig.java")
     builder: dict[str, Any] = {}
     for name, default in re.findall(
-        r"new\s+SimpleBooleanSetting\(\s*\"([^\"]+)\"\s*,\s*(true|false)", builder_text, re.DOTALL):
+        r"new\s+ChiseBooleanSetting\(\s*\"([^\"]+)\"\s*,\s*(true|false)", builder_text, re.DOTALL):
         builder[name] = default == "true"
     for name, mode in re.findall(
         r"new\s+ChiseRuleModeSetting\(\s*\"([^\"]+)\"\s*,\s*ChiseRuleMode\.([A-Z_]+)", builder_text, re.DOTALL):
@@ -193,7 +193,8 @@ def main() -> int:
     baseline = load_json("quality/functional-parity-baseline.json")["baseline"]
     print("FUNCTIONAL PARITY AUDIT: PASS")
     print(f"baseline_version={baseline['version']}")
-    print(f"baseline_runtime_jar_bytes={baseline['runtimeJarBytes']}")
+    runtime_bytes = baseline.get("runtimeJarBytes")
+    print(f"baseline_runtime_jar_bytes={runtime_bytes if runtime_bytes is not None else 'unmeasured'}")
     print(f"goal_runtime_jar_bytes={baseline['goalBytes']}")
     print("functional_contract_change=false")
     return 0
