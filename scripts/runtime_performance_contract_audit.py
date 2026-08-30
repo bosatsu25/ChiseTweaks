@@ -18,8 +18,7 @@ BRIGHT_RENDERING_PATHS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java"),
 }
 ANALYZERS = {
-    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"),
-    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/HiddenBlockAnalyzerFeature.java"),
+    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java"),
 }
 PATTERN_INSPECTOR = Path(
     "src/main/java/dev/chise/chisetweaks/gui/PatternConsistencyInspector.java"
