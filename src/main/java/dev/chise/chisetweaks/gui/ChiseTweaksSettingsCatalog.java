@@ -203,6 +203,11 @@ final class ChiseTweaksSettingsCatalog {
                 MasaIntegrationSettings.JAPANESE_UI_MODE,
                 "Masa Japanese UI",
                 "AutoはMinecraftが日本語のときだけ日本語UX補助を有効にします。", 1);
+        action(rows, "openMasaGuide",
+                "Masa Guide",
+                "Masa系MODが何を担当し、どの設定画面を見るべきかを日本語で案内します。",
+                ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE,
+                "ガイドを開く");
 
         headerLiteral(rows, "masa.installed", "Installed Mods");
         info(rows, "masa.malilib", "MaLiLib", installedLabel(installed.malilib()));
