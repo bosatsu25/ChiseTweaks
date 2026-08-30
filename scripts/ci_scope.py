@@ -26,6 +26,9 @@ TOOLING_ONLY_PREFIXES = (
     "scripts/",
     "quality/",
 )
+FULL_EXACT = frozenset({
+    "quality/risk-register.json",
+})
 
 
 def normalize_path(raw: str) -> str | None:
@@ -49,7 +52,7 @@ def is_docs_only_path(raw: str) -> bool:
 
 def is_tooling_only_path(raw: str) -> bool:
     path = normalize_path(raw)
-    if path is None:
+    if path is None or path in FULL_EXACT:
         return False
     if is_docs_only_path(path):
         return True

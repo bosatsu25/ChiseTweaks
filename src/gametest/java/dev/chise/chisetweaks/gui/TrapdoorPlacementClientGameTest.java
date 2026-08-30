@@ -43,19 +43,19 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                 ServerLevel level = server.overworld();
                 BlockPos origin = player.blockPosition().offset(8, 2, 8);
 
-                require(CrosshairInspector.supportsPlacementPreview(Blocks.OAK_TRAPDOOR),
+                require(PlacementInspector.supportsPlacementPreview(Blocks.OAK_TRAPDOOR),
                         "trapdoor family must be supported");
-                require(CrosshairInspector.supportsPlacementPreview(Blocks.OAK_SLAB),
+                require(PlacementInspector.supportsPlacementPreview(Blocks.OAK_SLAB),
                         "slab family must be supported");
-                require(CrosshairInspector.supportsPlacementPreview(Blocks.OAK_LOG),
+                require(PlacementInspector.supportsPlacementPreview(Blocks.OAK_LOG),
                         "log family must be supported");
-                require(CrosshairInspector.supportsPlacementPreview(Blocks.OAK_WOOD),
+                require(PlacementInspector.supportsPlacementPreview(Blocks.OAK_WOOD),
                         "wood family must be supported");
-                require(CrosshairInspector.supportsPlacementPreview(Blocks.CRIMSON_STEM),
+                require(PlacementInspector.supportsPlacementPreview(Blocks.CRIMSON_STEM),
                         "stem family must be supported");
-                require(CrosshairInspector.supportsPlacementPreview(Blocks.CRIMSON_HYPHAE),
+                require(PlacementInspector.supportsPlacementPreview(Blocks.CRIMSON_HYPHAE),
                         "hyphae family must be supported");
-                require(CrosshairInspector.supportsPlacementPreview(Blocks.OCHRE_FROGLIGHT),
+                require(PlacementInspector.supportsPlacementPreview(Blocks.OCHRE_FROGLIGHT),
                         "froglight family must be supported");
                 for (Block complex : new Block[]{
                         Blocks.OAK_STAIRS,
@@ -65,17 +65,17 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                         Blocks.BEEHIVE,
                         Blocks.BEE_NEST,
                         Blocks.CAMPFIRE}) {
-                    require(CrosshairInspector.supportsPlacementPreview(complex),
+                    require(PlacementInspector.supportsPlacementPreview(complex),
                             "complex family must be supported: " + complex);
                 }
-                require(!CrosshairInspector.supportsPlacementPreview(Blocks.STONE),
+                require(!PlacementInspector.supportsPlacementPreview(Blocks.STONE),
                         "ordinary block must remain unsupported");
-                require(!CrosshairInspector.supportsPlacementPreview(Blocks.QUARTZ_PILLAR),
+                require(!PlacementInspector.supportsPlacementPreview(Blocks.QUARTZ_PILLAR),
                         "unlisted axis block must remain unsupported");
 
                 BlockHitResult unsupportedHit = new BlockHitResult(
                         Vec3.atCenterOf(origin), Direction.UP, origin, false);
-                require(CrosshairInspector.predictPlacementState(
+                require(PlacementInspector.predictPlacementState(
                                 level,
                                 player,
                                 InteractionHand.MAIN_HAND,
@@ -83,7 +83,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                                 unsupportedHit,
                                 true) == null,
                         "non-BlockItem must not produce a preview");
-                require(CrosshairInspector.predictPlacementState(
+                require(PlacementInspector.predictPlacementState(
                                 level,
                                 player,
                                 InteractionHand.MAIN_HAND,
@@ -91,7 +91,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                                 unsupportedHit,
                                 true) == null,
                         "unsupported BlockItem must not produce a preview");
-                require(CrosshairInspector.predictPlacementState(
+                require(PlacementInspector.predictPlacementState(
                                 level,
                                 player,
                                 InteractionHand.MAIN_HAND,
@@ -99,7 +99,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
                                 unsupportedHit,
                                 false) == null,
                         "disabled axis preview must not produce a descriptor");
-                require(CrosshairInspector.predictPlacementState(
+                require(PlacementInspector.predictPlacementState(
                                 level,
                                 player,
                                 InteractionHand.MAIN_HAND,
@@ -319,7 +319,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
         require(predicted.getValue(TrapDoorBlock.WATERLOGGED)
                         .equals(actual.getValue(TrapDoorBlock.WATERLOGGED)),
                 "waterlogged mismatch");
-        List<String> properties = CrosshairInspector.placementStateProperties(predicted);
+        List<String> properties = PlacementInspector.placementStateProperties(predicted);
         require(properties.size() == 5
                         && properties.stream().anyMatch(value -> value.startsWith("facing="))
                         && properties.stream().anyMatch(value -> value.startsWith("half="))
@@ -348,7 +348,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
         Direction.Axis actual = result.actual().getValue(BlockStateProperties.AXIS);
         require(predicted == actual, "axis mismatch for " + block);
         require(actual == expectedAxis, "unexpected vanilla axis for " + face);
-        require(CrosshairInspector.placementStateProperties(result.predicted())
+        require(PlacementInspector.placementStateProperties(result.predicted())
                         .equals(List.of("axis=" + expectedAxis.getSerializedName())),
                 "axis preview must expose only axis");
     }
@@ -378,7 +378,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
         require(predictedWaterlogged == actualWaterlogged, "slab waterlogging mismatch");
         require(actualType == expectedType, "unexpected vanilla slab type");
         require(actualWaterlogged == expectedWaterlogged, "unexpected vanilla slab waterlogging");
-        require(CrosshairInspector.placementStateProperties(result.predicted()).equals(List.of(
+        require(PlacementInspector.placementStateProperties(result.predicted()).equals(List.of(
                         "type=" + expectedType.getSerializedName(),
                         "waterlogged=" + expectedWaterlogged)),
                 "slab preview must expose only type and waterlogged");
@@ -431,10 +431,10 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
         require(result.comparisonResult() == PlacementInspector.MATCH
                         || result.comparisonResult() == PlacementInspector.ADJUSTED,
                 "complex comparison must match or explain a vanilla adjustment for " + block);
-        require(propertyNames(CrosshairInspector.placementStateProperties(result.predicted()))
+        require(propertyNames(PlacementInspector.placementStateProperties(result.predicted()))
                         .equals(predictedProperties),
                 "unexpected predicted property allowlist for " + block);
-        require(propertyNames(CrosshairInspector.actualPlacementStateProperties(result.actual()))
+        require(propertyNames(PlacementInspector.actualPlacementStateProperties(result.actual()))
                         .equals(actualProperties),
                 "unexpected actual property allowlist for " + block);
         return result;
@@ -525,7 +525,7 @@ public final class TrapdoorPlacementClientGameTest implements FabricClientGameTe
             BlockPlaceContext previewContext = new BlockPlaceContext(
                     level, player, InteractionHand.MAIN_HAND, previewStack, hit);
             setup.prepare(level, previewContext.getClickedPos());
-            BlockState predicted = CrosshairInspector.predictPlacementState(
+            BlockState predicted = PlacementInspector.predictPlacementState(
                     level,
                     player,
                     InteractionHand.MAIN_HAND,

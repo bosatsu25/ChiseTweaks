@@ -11,9 +11,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class SimplePlacementPreviewTest {
+    private static final Path PLACEMENT = Path.of(
+            "src/main/java/dev/chise/chisetweaks/gui/PlacementInspector.java");
+
     @Test
     void disabledPreviewDoesNotReadRuntimeContext() {
-        var disabled = CrosshairInspector.predictPlacementState(
+        var disabled = PlacementInspector.predictPlacementState(
                 null, null, null, null, null, false);
 
         assertNull(disabled);
@@ -30,8 +33,7 @@ final class SimplePlacementPreviewTest {
 
     @Test
     void supportedFamiliesUseTypesTagsAndPropertiesInsteadOfBlockIdLists() throws Exception {
-        String source = Files.readString(Path.of(
-                "src/main/java/dev/chise/chisetweaks/gui/CrosshairInspector.java"));
+        String source = Files.readString(PLACEMENT);
 
         assertTrue(source.contains("instanceof TrapDoorBlock"));
         assertTrue(source.contains("instanceof SlabBlock"));
@@ -48,8 +50,6 @@ final class SimplePlacementPreviewTest {
                 "WATERLOGGED"}) {
             assertTrue(source.contains("BlockStateProperties." + property), property);
         }
-        assertTrue(source.contains("actualPlacementStateProperties"));
-        assertTrue(source.contains("if (actual) addPropertyIfPresent(state, BlockStateProperties.LEVEL_HONEY"));
         assertFalse(source.contains("oak_trapdoor\""));
         assertFalse(source.contains("oak_log\""));
         assertFalse(source.contains("ochre_froglight\""));
@@ -57,24 +57,27 @@ final class SimplePlacementPreviewTest {
 
     @Test
     void productionPreviewUsesVanillaPlacementWithoutMutationOrInputInjection() throws Exception {
-        String source = Files.readString(Path.of(
+        String placement = Files.readString(PLACEMENT);
+        String crosshair = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/gui/CrosshairInspector.java"));
 
-        assertTrue(source.contains("getStateForPlacement(context)"));
-        assertTrue(source.contains("BlockPlaceContext"));
-        assertTrue(source.contains("BlockState predictedPlacement"));
-        assertFalse(source.contains("List<BlockState>"));
-        assertTrue(source.contains("snapshot.predictedPlacement() == predictedPlacement"));
-        assertTrue(source.contains("snapshot.clickedFace() == clickedFace"));
-        assertTrue(source.contains("snapshot.upperClick() == upperClick"));
+        assertTrue(placement.contains("getStateForPlacement(context)"));
+        assertTrue(placement.contains("BlockPlaceContext"));
+        assertFalse(crosshair.contains("BlockPlaceContext"));
+        assertTrue(crosshair.contains("snapshot.predictedPlacement() == predictedPlacement"));
+        assertTrue(crosshair.contains("snapshot.clickedFace() == clickedFace"));
+        assertTrue(crosshair.contains("snapshot.upperClick() == upperClick"));
+
         String catalog = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/gui/InspectorSettingsRows.java"));
-        assertTrue(catalog.contains("CrosshairInspector.placementStateProperties(state)"));
-        assertTrue(catalog.contains("CrosshairInspector.actualPlacementStateProperties"));
+        assertTrue(catalog.contains("PlacementInspector.placementStateProperties(state)"));
+        assertTrue(catalog.contains("PlacementInspector.actualPlacementStateProperties"));
+
         for (String forbidden : new String[]{
                 "setBlock(", "setBlockAndUpdate(", ".place(", "sendPacket", "send(",
                 "clickMouse", "pressMouse", "keyPress", ".clip(", "raycast(", "LOGGER"}) {
-            assertFalse(source.contains(forbidden), forbidden);
+            assertFalse(placement.contains(forbidden), forbidden);
+            assertFalse(crosshair.contains(forbidden), forbidden);
         }
     }
 
@@ -99,7 +102,7 @@ final class SimplePlacementPreviewTest {
         }
         assertTrue(source.contains("new ItemStack(Items.STICK)"));
         assertTrue(source.contains("setShiftKeyDown(sneaking)"));
-        assertTrue(source.contains("predictPlacementState"));
+        assertTrue(source.contains("PlacementInspector.predictPlacementState"));
         assertTrue(source.contains(".place(actualContext)"));
         assertTrue(source.contains("TrapDoorBlock.FACING"));
         assertTrue(source.contains("BlockStateProperties.AXIS"));

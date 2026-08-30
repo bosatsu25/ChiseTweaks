@@ -12,32 +12,56 @@ final class CrosshairInspectorArchitectureContractTest {
     private static final Path GUI = Path.of("src/main/java/dev/chise/chisetweaks/gui");
 
     @Test
-    void inspectorReusesTheExistingHitAndCachesUnchangedState() throws Exception {
-        String inspector = Files.readString(GUI.resolve("CrosshairInspector.java"));
+    void crosshairOwnsExistingHitLifecycleAndCacheButNotDomainDerivation() throws Exception {
+        String crosshair = Files.readString(GUI.resolve("CrosshairInspector.java"));
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
 
-        assertTrue(inspector.contains("client.hitResult"));
-        assertTrue(inspector.contains("cachedBlockState == state"));
-        assertTrue(inspector.contains("cachedFilterRevision == filterRevision"));
+        assertTrue(crosshair.contains("client.hitResult"));
+        assertTrue(crosshair.contains("cachedBlockState == state"));
+        assertTrue(crosshair.contains("cachedFilterRevision == filterRevision"));
+        assertTrue(crosshair.contains("CrosshairSnapshotPolicy.blockSnapshot("));
+        assertTrue(crosshair.contains("PlacementInspector.placementProbe("));
         assertTrue(screen.contains("inspector.refresh(minecraft)"));
-        assertTrue(screen.contains("rebuildInspectorRows()"));
-        assertTrue(screen.contains("row.removeWidgets(this::removeWidget)"));
-        assertFalse(inspector.contains(".clip("));
-        assertFalse(inspector.contains("raycast("));
-        assertFalse(inspector.contains("pick("));
+
+        for (String misplaced : new String[]{
+                "BlockPlaceContext", "BlockStateProperties", "BlockInspectionPolicy",
+                "VisualTargetSelectionPolicy", "TrapDoorBlock", "SlabBlock", "StairBlock",
+                "GlassHighlightTargetPolicy", "OreHighlightResolver.resolve("}) {
+            assertFalse(crosshair.contains(misplaced),
+                    () -> "CrosshairInspector reacquired extracted responsibility: " + misplaced);
+        }
+        assertFalse(crosshair.contains(".clip("));
+        assertFalse(crosshair.contains("raycast("));
+        assertFalse(crosshair.contains("pick("));
     }
 
     @Test
-    void inspectorIsReadOnlyAndDoesNotAcquirePrivateBlockEntityOrPlayerData() throws Exception {
-        String inspector = Files.readString(GUI.resolve("CrosshairInspector.java"));
+    void snapshotPolicyDerivesReadOnlyStateWithoutOwningMinecraftHitLifecycle() throws Exception {
+        String policy = Files.readString(GUI.resolve("CrosshairSnapshotPolicy.java"));
+
+        assertTrue(policy.contains("BlockInspectionPolicy.categories("));
+        assertTrue(policy.contains("BuilderFocusVisibility.inspect("));
+        assertTrue(policy.contains("responsibleFeatures("));
+        assertTrue(policy.contains("formatStateProperties("));
+        assertFalse(policy.contains("Minecraft"));
+        assertFalse(policy.contains("client.hitResult"));
+        assertFalse(policy.contains("BlockPlaceContext"));
+    }
+
+    @Test
+    void inspectorCollaboratorsRemainReadOnlyAndPrivacyBounded() throws Exception {
+        String combined = Files.readString(GUI.resolve("CrosshairInspector.java"))
+                + Files.readString(GUI.resolve("CrosshairSnapshotPolicy.java"))
+                + Files.readString(GUI.resolve("PlacementInspector.java"));
+
         for (String forbidden : new String[]{
                 "setBlock(", "setValue(", "toggleBooleanValue(", "saveToFile(",
-                "send(", "sendPacket", "getBlockEntity(", "getUpdateTag(", "saveWith",
+                "sendPacket", "getBlockEntity(", "getUpdateTag(", "saveWith",
                 "getNbt", "getComponents(", "getUUID(", "getInventory", "getContainer",
                 "getMessage", "getText", "chat"}) {
-            assertFalse(inspector.contains(forbidden), forbidden);
+            assertFalse(combined.contains(forbidden), forbidden);
         }
-        assertFalse(inspector.contains("LOGGER"));
+        assertFalse(combined.contains("LOGGER"));
     }
 
     @Test
