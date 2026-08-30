@@ -190,11 +190,13 @@ public final class BuilderFocusVisibility {
             }
         }
 
+        EntityConfigFingerprint previousFingerprint = currentEntityFingerprint();
         setEntityRulesSilently(nextMode, nextBlacklist, nextWhitelist);
         FeatureConfig.sanitizeStringLists();
+        boolean changed = !currentEntityFingerprint().equals(previousFingerprint);
         buildEntityLists();
         if (FeatureConfig.saveToFile()) {
-            SettingChangeDispatcher.markChanged();
+            if (changed) SettingChangeDispatcher.markChanged();
             return true;
         }
 
