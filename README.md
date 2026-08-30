@@ -54,7 +54,7 @@ pie title 12個のtoggle機能
 
 ## 設定画面
 
-設定画面は5 Surfaceです。
+設定画面は6 Surfaceです。
 
 | Tab | 用途 |
 | --- | --- |
@@ -63,6 +63,7 @@ pie title 12個のtoggle機能
 | **Inspector** | BlockState、配置予測、配置結果、パターン差分を確認 |
 | **Analyzer** | Lavaの限定的な壁越し解析 |
 | **Visibility** | Low Fire / Bright Chest / Bright Concrete |
+| **Integrations** | Masa系MODのoptional連携・日本語UX補助 |
 
 設定は `chisetweaks.json` と `chisetweaks-visual.json` の担当domainへ保存されます。UI・Inspector・監査は同じFeature registryを参照します。
 
@@ -233,3 +234,8 @@ README / DEVELOPMENT / `docs/**`だけのPRと、`.github/**` / `scripts/**` / `
 runtime変更はPRでFULL検証し、mainのGit treeがそのPRで実際に検証したtreeと完全一致するときだけ、検証済みJARを再利用します。一致しない場合やprovenance / artifactが不足する場合はFULL検証へ戻ります。
 
 Draft PRはrunnerを起動しません。Prism Launcher / Windows / 実GPUの見た目は別のacceptance smokeとして確認します。
+
+
+## Masa Ecosystem Integration
+
+ChiseTweaks自身はAutomationを実装しません。Litematica / Tweakeroo / TweakerMore / Syncmatica / MaLiLibが導入されている場合だけ、既存機能へのGuard・同期・日本語UX補助をoptional integrationとして提供します。対象MODが無い環境ではno-opで、hard dependencyにはしません。
