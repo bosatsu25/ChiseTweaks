@@ -122,7 +122,6 @@ REQUIRED_PATHS = (
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticSnapshot.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java",
-    "src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java",
     ".github/workflows/ci.yml",
     "scripts/ci_scope.py",
     "scripts/ci_provenance.py",
