@@ -45,8 +45,12 @@ final class SettingsSectionActionRegressionTest {
         assertFalse(controller.contains("VISUAL_FILTER"));
         assertFalse(controller.contains("HELP"));
         assertTrue(layout.contains("TAB_COUNT = 5"));
-        assertTrue(screen.contains("設定を適用"));
-        assertTrue(screen.contains("設定をリセット"));
+        assertTrue(screen.contains("screen.chisetweaks.settings.apply_changes"));
+        assertTrue(screen.contains("screen.chisetweaks.settings.reset_all"));
+        assertTrue(screen.contains("SettingChangeDispatcher.revision()"));
+        assertTrue(screen.contains("ensureSurfaceRows("));
+        assertTrue(screen.contains("reusableInspectorRow("));
+        assertFalse(screen.contains("createAllRows()"));
         assertTrue(screen.contains("ChiseTweaksMetadata.MOD_NAME"));
         assertTrue(screen.contains("CrosshairInspector"));
         assertFalse(screen.contains("ChiseTweaksMetadata.MOD_VERSION"));
