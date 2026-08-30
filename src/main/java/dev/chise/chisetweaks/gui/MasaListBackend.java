@@ -26,21 +26,21 @@ final class MasaListBackend implements ChiseListEditorBackend {
 
     @Override
     public Component title() {
-        return Component.literal(switch (kind) {
-            case PICK_REDIRECT -> "Litematica Pick Redirect";
-            case AUTO_PICK_GUARD -> "TweakerMore Auto Pick Guard";
-            case TOOL_SWITCH_GUARD -> "Tweakeroo Tool Switch Guard";
+        return Component.translatable(switch (kind) {
+            case PICK_REDIRECT -> "screen.chisetweaks.masa_editor.title.pick_redirect";
+            case AUTO_PICK_GUARD -> "screen.chisetweaks.masa_editor.title.auto_pick_guard";
+            case TOOL_SWITCH_GUARD -> "screen.chisetweaks.masa_editor.title.tool_switch_guard";
         });
     }
 
     @Override
     public Component screenTitle() {
-        return Component.literal("Masa Integration");
+        return Component.translatable("screen.chisetweaks.masa_editor.screen_title");
     }
 
     @Override
     public String subtitle() {
-        return isGuard() ? "外部MODの操作をChise policyで許可/拒否します。" : "";
+        return isGuard() ? text("screen.chisetweaks.masa_editor.subtitle.guard") : "";
     }
 
     @Override
@@ -50,12 +50,14 @@ final class MasaListBackend implements ChiseListEditorBackend {
 
     @Override
     public Component modeMessage() {
-        String modeName = switch (mode()) {
-            case MasaIdListPolicy.WHITELIST -> "ALLOW / Whitelist";
-            case MasaIdListPolicy.BLACKLIST -> "DENY / Blacklist";
-            default -> "Disabled";
+        String modeKey = switch (mode()) {
+            case MasaIdListPolicy.WHITELIST -> "screen.chisetweaks.masa_editor.mode.allow";
+            case MasaIdListPolicy.BLACKLIST -> "screen.chisetweaks.masa_editor.mode.deny";
+            default -> "screen.chisetweaks.masa_editor.mode.disabled";
         };
-        return Component.literal("Guard mode: " + modeName);
+        return Component.translatable(
+                "screen.chisetweaks.masa_editor.mode.label",
+                Component.translatable(modeKey));
     }
 
     @Override
@@ -67,7 +69,7 @@ final class MasaListBackend implements ChiseListEditorBackend {
         setMode(next);
         if (!save()) {
             setMode(previous);
-            return Mutation.none("保存に失敗しました");
+            return Mutation.none(text("screen.chisetweaks.masa_editor.feedback.save_failed"));
         }
         return Mutation.success("", false, true, false);
     }
@@ -92,9 +94,9 @@ final class MasaListBackend implements ChiseListEditorBackend {
 
     @Override
     public Component firstInputLabel() {
-        return hasSecondInput()
-                ? Component.literal("Schematic block")
-                : Component.literal("Target ID");
+        return Component.translatable(hasSecondInput()
+                ? "screen.chisetweaks.masa_editor.input.schematic_block"
+                : "screen.chisetweaks.masa_editor.input.target_id");
     }
 
     @Override
@@ -108,7 +110,7 @@ final class MasaListBackend implements ChiseListEditorBackend {
 
     @Override
     public Component secondInputLabel() {
-        return Component.literal("Replacement block");
+        return Component.translatable("screen.chisetweaks.masa_editor.input.replacement_block");
     }
 
     @Override
@@ -118,32 +120,32 @@ final class MasaListBackend implements ChiseListEditorBackend {
 
     @Override
     public Component addLabel(boolean compact) {
-        return Component.literal("追加");
+        return Component.translatable("screen.chisetweaks.masa_editor.add");
     }
 
     @Override
     public Component removeLabel() {
-        return Component.literal("削除");
+        return Component.translatable("screen.chisetweaks.masa_editor.remove");
     }
 
     @Override
     public Component previousLabel(boolean compact) {
-        return Component.literal("前");
+        return Component.translatable("screen.chisetweaks.masa_editor.previous");
     }
 
     @Override
     public Component nextLabel(boolean compact) {
-        return Component.literal("次");
+        return Component.translatable("screen.chisetweaks.masa_editor.next");
     }
 
     @Override
     public Component clearLabel(boolean compact) {
-        return Component.literal("リストを消去");
+        return Component.translatable("screen.chisetweaks.masa_editor.clear");
     }
 
     @Override
     public Component backLabel() {
-        return Component.literal("戻る");
+        return Component.translatable("screen.chisetweaks.common.back");
     }
 
     @Override
@@ -173,22 +175,24 @@ final class MasaListBackend implements ChiseListEditorBackend {
     public Mutation add(String first, String second, OreHighlightStyle style) {
         String normalizedFirst = normalize(first);
         if (!validRegisteredId(normalizedFirst, kind == Kind.AUTO_PICK_GUARD)) {
-            return Mutation.none("登録済みIDを入力してください");
+            return Mutation.none(text("screen.chisetweaks.masa_editor.feedback.unregistered"));
         }
 
         String entry = normalizedFirst;
         if (hasSecondInput()) {
             String normalizedSecond = normalize(second);
             if (!validRegisteredId(normalizedSecond, false)) {
-                return Mutation.none("代替先Block IDが正しくありません");
+                return Mutation.none(text("screen.chisetweaks.masa_editor.feedback.invalid_replacement"));
             }
             entry = normalizedFirst + "," + normalizedSecond;
         }
 
         List<String> previous = List.copyOf(entries());
-        if (previous.contains(entry)) return Mutation.none("既に登録されています");
+        if (previous.contains(entry)) {
+            return Mutation.none(text("screen.chisetweaks.masa_editor.feedback.duplicate"));
+        }
         if (previous.size() >= MasaIntegrationConfig.MAX_LIST_ENTRIES) {
-            return Mutation.none("登録上限に達しています");
+            return Mutation.none(text("screen.chisetweaks.masa_editor.feedback.limit"));
         }
 
         ArrayList<String> updated = new ArrayList<>(previous);
@@ -198,7 +202,7 @@ final class MasaListBackend implements ChiseListEditorBackend {
             setEntries(previous);
             return Mutation.none("保存に失敗しました");
         }
-        return Mutation.success("追加しました", true, false, true);
+        return Mutation.success(text("screen.chisetweaks.masa_editor.feedback.added"), true, false, true);
     }
 
     @Override
@@ -211,7 +215,7 @@ final class MasaListBackend implements ChiseListEditorBackend {
             setEntries(previous);
             return Mutation.none("保存に失敗しました");
         }
-        return Mutation.success("削除しました", false, false, false);
+        return Mutation.success(text("screen.chisetweaks.masa_editor.feedback.removed"), false, false, false);
     }
 
     @Override
@@ -222,7 +226,7 @@ final class MasaListBackend implements ChiseListEditorBackend {
             setEntries(previous);
             return Mutation.none("保存に失敗しました");
         }
-        return Mutation.success("リストを消去しました", false, true, false);
+        return Mutation.success(text("screen.chisetweaks.masa_editor.feedback.cleared"), false, true, false);
     }
 
     private boolean isGuard() {
