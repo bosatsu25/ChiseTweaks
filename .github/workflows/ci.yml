@@ -27,28 +27,38 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
-      - name: Set up Java 25
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: temurin
-          java-version: '25'
+      - name: Classify change scope
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$EVENT_NAME" != 'pull_request' ]]; then
+            echo 'scope=full' >> "$GITHUB_OUTPUT"
+            echo 'heavy=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git diff --name-only --diff-filter=ACMRTUXB "$BASE_SHA" "$HEAD_SHA" > /tmp/chise-changed-files.txt
+          scope="$(python3 scripts/ci_scope.py --file-list /tmp/chise-changed-files.txt)"
+          echo "scope=$scope" >> "$GITHUB_OUTPUT"
+          if [[ "$scope" == 'docs-only' ]]; then
+            echo 'heavy=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'heavy=true' >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Python 3.14
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.14'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
-        with:
-          cache-read-only: ${{ github.event_name == 'pull_request' }}
-
-      - name: Make Gradle wrapper executable
-        run: chmod +x gradlew
-
       - name: Test repository tooling
         run: |
+          python scripts/test_ci_scope.py
           python scripts/test_versioning_tools.py
           python scripts/test_prism_acceptance_audit.py
           python scripts/test_resource_pack_retirement_audit.py
@@ -76,18 +86,53 @@ jobs:
           python scripts/compatibility_contract_audit.py
           python scripts/functional_parity_audit.py
 
+      - name: Set up Java 25
+        if: ${{ steps.scope.outputs.heavy == 'true' }}
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        if: ${{ steps.scope.outputs.heavy == 'true' }}
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Make Gradle wrapper executable
+        if: ${{ steps.scope.outputs.heavy == 'true' }}
+        run: chmod +x gradlew
+
       - name: Build and verify
+        if: ${{ steps.scope.outputs.heavy == 'true' }}
         run: ./gradlew --stacktrace ciGate
 
       - name: Verify placement oracle
+        if: ${{ steps.scope.outputs.heavy == 'true' }}
         run: xvfb-run -a ./gradlew --stacktrace runClientGameTest
 
       - name: Audit distribution
+        if: ${{ steps.scope.outputs.heavy == 'true' }}
         id: artifacts
         run: |
           python scripts/artifact_audit.py
           python scripts/visual_asset_audit.py
           python scripts/release_residue_audit.py
+
+      - name: Summarize CI scope
+        if: ${{ always() }}
+        env:
+          CI_SCOPE: ${{ steps.scope.outputs.scope }}
+          HEAVY_GATE: ${{ steps.scope.outputs.heavy }}
+        run: |
+          {
+            echo '### CI v2 scope'
+            echo "- Scope: `$CI_SCOPE`"
+            echo "- Heavy Java / Gradle / PIT / GameTest / distribution gate: `$HEAVY_GATE`"
+            if [[ "$HEAVY_GATE" == 'false' ]]; then
+              echo '- Documentation-only PR: repository, version, documentation and compatibility audits still ran.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Append artifact summary
         if: ${{ always() }}
@@ -97,7 +142,7 @@ jobs:
           fi
 
       - name: Upload verified runtime JAR
-        if: ${{ success() }}
+        if: ${{ success() && steps.scope.outputs.heavy == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}
