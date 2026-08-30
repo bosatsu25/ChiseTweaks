@@ -21,6 +21,12 @@ public final class FeatureSwitches {
             false,
             config -> config.fireVisibilityEnabled,
             (config, value) -> config.fireVisibilityEnabled = value);
+    public static final FeatureSwitch HANDHELD_SIZE = local(
+            FeatureDefinition.HANDHELD_SIZE,
+            "handheldSize",
+            false,
+            config -> config.handheldSizeEnabled,
+            (config, value) -> config.handheldSizeEnabled = value);
     public static final FeatureSwitch LAVA_HIGHLIGHT = local(
             FeatureDefinition.LAVA_HIGHLIGHT,
             "localLavaHighlight",
@@ -72,6 +78,7 @@ public final class FeatureSwitches {
     /** chisetweaks-visual.jsonに保存される描画Feature。 */
     public static final List<FeatureSwitch> LOCAL_CONFIG_VALUES = List.of(
             FIRE_VISIBILITY,
+            HANDHELD_SIZE,
             LAVA_HIGHLIGHT,
             VILLAGER_ANALYZER,
             BEACON_RANGE,
@@ -89,6 +96,7 @@ public final class FeatureSwitches {
             MATERIAL_HIGHLIGHTS,
             NETHER_PALETTE,
             KELP_HIGHLIGHT,
+            HANDHELD_SIZE,
             LAVA_HIGHLIGHT,
             VILLAGER_ANALYZER,
             BEACON_RANGE,
