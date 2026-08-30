@@ -105,21 +105,37 @@ SemVer判定は`scripts/version_policy.py`と`scripts/versioning_core.py`を正�
 
 `.github/workflows/ci.yml`が品質pipelineの正本です。Required check名は `verify / Java 25 quality gate` を維持します。
 
-CI v2は**品質ゲートを削らず、PRの変更scopeとActions消費を制御**します。
+CI v3は**品質ゲートを削らず、同一treeの重複FULL検証を避ける**構成です。
 
-- `pull_request`: `scripts/ci_scope.py` が変更ファイルを fail-closed で分類する
+### Pull Request
+
+- `scripts/ci_scope.py` が変更ファイルをfail-closedで `docs-only` / `tooling-only` / `full` に分類する
 - `README.md` / `DEVELOPMENT.md` / `docs/**` だけは `docs-only`
 - docsに加えて `.github/**` / `scripts/**` / `quality/**` だけなら `tooling-only`
 - source / test / runtime resource / Gradle build logic / config / mixed change / 空集合は `full`
 - `docs-only` / `tooling-only` でもPython tooling test、Version progression、Repository / Source Usage / Documentation / Compatibility / Functional Parity auditsは実行する
-- Java / Gradle / JUnit / JaCoCo / PIT / Client GameTest / distribution artifact生成は `full` だけ実行する
+- `full` はJava / Gradle / JUnit / JaCoCo / PIT / Client GameTest / Artifact / Visual Asset / Release Residue auditsをすべて実行する
+- 成功したPR CIは、実際にcheckoutして検証したGit tree SHA、scope、runtime JAR名 / SHA-256を `chise-ci-provenance` artifactへ保存する
+- runtime artifactはFULL distribution audit完了後だけprovenanceへ記録する
+
+### main push
+
+- squash / merge後のmain commitから関連PRを特定し、成功済みPR CIのprovenanceを取得する
+- **mainのGit tree SHAとPRで実際に検証したtree SHAが完全一致する場合だけ**PR結果を再利用できる
+- tree-identicalな `full` PRでは、PRで検証済みruntime JARをbyte-for-byte再利用し、SHA-256・runtime metadata・JAR size・retired residueをmain側で再監査する。PIT / Client GameTestは重複実行しない
+- tree-identicalな `docs-only` / `tooling-only` PRではmainでもheavy runtime gateを実行しない
+- tree不一致、provenance欠落、artifact欠落、direct push、判定不能は**必ずFULLへfail closed**する
+- `workflow_dispatch` もFULL
+- main CIがruntime JARを持たない場合、Official Releaseは `no-runtime-artifact` として公開をスキップする
+- Release対象runtimeはmain CI runが保持したartifactだけ。PRから再利用する場合もmainでtree / SHA-256を再検証して同一byte列を再uploadする
+
+### Actions budget guard
+
 - Draft PRではjobを起動せず、`ready_for_review`で検証を開始する
-- `push: main` と `workflow_dispatch` は常に `full`
+- concurrencyは同一refの古いrunをcancelする
 - CI timeoutは15分、Release timeoutは5分、CI artifact retentionは3日
 - `CHISE_CI_RUNS_ON` Repository Variableが未設定なら `ubuntu-24.04`。必要時はJSON形式のLinux self-hosted runner labelsへ切替可能
-- Official Releaseは従来どおり、成功したmain FULL CIのexact artifactだけを昇格する
-
-GitHub-hosted runnerのminute / spending limit / payment method自体はGitHub account側の設定でありrepository codeから変更しません。CIはその外部制約を前提に、不要run削減・runaway上限・短期artifact保持・runner切替口を提供します。
+- GitHub-hosted runnerのminute / spending limit / payment method自体はGitHub account側設定でありrepository codeから変更しない
 
 FULL verification layers:
 
@@ -131,7 +147,7 @@ FULL verification layers:
 - Artifact / Visual Asset / Release Residue audits
 - Prism runtime acceptance: 実GPU、描画、入力、実機組み合わせ
 
-Coverageはblack-box / runtime acceptanceの代替ではありません。CI scope最適化を理由にruntime変更の品質基準を下げません。
+Coverageはblack-box / runtime acceptanceの代替ではありません。CIの分数削減を理由に、未検証treeを検証済みとして扱いません。
 
 ## 7. Test design
 
