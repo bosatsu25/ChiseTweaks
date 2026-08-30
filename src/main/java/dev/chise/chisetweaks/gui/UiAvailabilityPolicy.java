@@ -1,37 +1,19 @@
 package dev.chise.chisetweaks.gui;
 
-import java.util.Set;
-
-/** 現行リリースのUI操作可否をfeature runtimeの利用可否から分離して判定する。 */
+/** Keeps UI action availability aligned with the seven Tweaks product groups. */
 final class UiAvailabilityPolicy {
-    private static final String MATERIAL_PREFIX = "visualTargetMaterial";
-    private static final String TECHNICAL_PREFIX = "visualTargetTechnical";
-    private static final String HIDDEN_PREFIX = "visualTargetHidden";
-    private static final Set<String> HIGHLIGHT_FEATURES = Set.of(
-            "materials", "nether", "thread", "kelp", "glass");
-    private static final Set<String> HIGHLIGHT_DETAIL_INTERACTIVE = Set.of(
-            "oreMotion", "moddedOreTargets", "highlightRange", "highlightVerticalRange",
-            "highlightInterval", "highlightMaxOverlays", "highlightWorldOverlay",
-            "highlightDimensionPresets", "fineThreadColor", "fineThreadOpacity");
-
     private UiAvailabilityPolicy() {}
 
     static boolean isRowInteractive(
             ChiseTweaksSettingsController.Surface surface,
             ChiseTweaksSettingRowDefinition row) {
         if (row == null) return false;
-        ChiseTweaksSettingsController.Surface resolved = surface == null
-                ? ChiseTweaksSettingsController.Surface.HIGHLIGHT
-                : surface;
         if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.HEADER) return true;
         if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO) return false;
         if (row.kind() == ChiseTweaksSettingRowDefinition.Kind.ACTION) {
-            return isActionInteractive(resolved, row.action());
+            return isActionInteractive(surface, row.action());
         }
-        if (resolved == ChiseTweaksSettingsController.Surface.HIGHLIGHT) {
-            return isReleasedHighlightRow(row.id());
-        }
-        return resolved != ChiseTweaksSettingsController.Surface.INSPECTOR;
+        return true;
     }
 
     static boolean isActionInteractive(
@@ -39,32 +21,23 @@ final class UiAvailabilityPolicy {
             ChiseTweaksSettingRowDefinition.Action action) {
         if (action == null) return false;
         ChiseTweaksSettingsController.Surface resolved = surface == null
-                ? ChiseTweaksSettingsController.Surface.HIGHLIGHT
+                ? ChiseTweaksSettingsController.Surface.VISUAL
                 : surface;
-        if (resolved == ChiseTweaksSettingsController.Surface.HIGHLIGHT) {
-            return action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
-        }
-        if (resolved == ChiseTweaksSettingsController.Surface.INSPECTOR) {
-            return action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE
-                    || action == ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE;
-        }
-        if (resolved == ChiseTweaksSettingsController.Surface.FILTER) {
-            return action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
+        return switch (resolved) {
+            case BUILDER_HIGHLIGHTS ->
+                    action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT;
+            case SCENE_FILTER ->
+                    action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
                     || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER;
-        }
-        return resolved == ChiseTweaksSettingsController.Surface.INTEGRATIONS
-                && (action == ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT
-                || action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD
-                || action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD
-                || action == ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE);
-    }
-
-    private static boolean isReleasedHighlightRow(String id) {
-        if (id == null) return false;
-        return HIGHLIGHT_FEATURES.contains(id)
-                || HIGHLIGHT_DETAIL_INTERACTIVE.contains(id)
-                || id.startsWith(MATERIAL_PREFIX)
-                || id.startsWith(TECHNICAL_PREFIX)
-                || id.startsWith(HIDDEN_PREFIX);
+            case BUILDER_ASSIST ->
+                    action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE
+                    || action == ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE;
+            case INTEGRATIONS ->
+                    action == ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT
+                    || action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD
+                    || action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD
+                    || action == ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE;
+            case VISUAL, TECHNICAL_VISUALIZATION, WORKFLOW -> false;
+        };
     }
 }
