@@ -5,7 +5,9 @@ import dev.chise.chisetweaks.core.policy.OrientationOverlayPolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 
 import java.util.List;
 
@@ -21,11 +23,13 @@ record WorksiteRenderTarget(
         int pulseSeed,
         boolean powered,
         boolean tripwireHook,
-        Identifier expectedBlockId) {
+        Block expectedBlock) {
 
     static WorksiteRenderTarget prepare(WorksiteVisibleTarget source) {
         List<String> details = source.presentation().details();
         String blockId = source.presentation().blockId();
+        Identifier id = blockId == null ? null : Identifier.tryParse(blockId);
+        Block expectedBlock = id == null ? null : BuiltInRegistries.BLOCK.getValue(id);
         return new WorksiteRenderTarget(
                 source.position(),
                 source.presentation(),
@@ -35,6 +39,6 @@ record WorksiteRenderTarget(
                 Math.floorMod(source.position().hashCode(), 8),
                 details != null && details.contains("powered=true"),
                 blockId != null && blockId.endsWith("tripwire_hook"),
-                blockId == null ? null : Identifier.tryParse(blockId));
+                expectedBlock);
     }
 }
