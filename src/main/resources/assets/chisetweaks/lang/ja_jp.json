@@ -389,5 +389,14 @@
   "screen.chisetweaks.settings.handheld_item.description": "Block/Tool以外の一人称Itemの相対倍率。初期値60%。",
   "screen.chisetweaks.settings.handheld_tool.name": "Weapons & Toolsサイズ",
   "screen.chisetweaks.settings.handheld_tool.description": "Item componentやVanillaの武器/Tool型で判定した一人称Itemの相対倍率。初期値75%。",
-  "screen.chisetweaks.placement.reason": "配置根拠"
+  "screen.chisetweaks.placement.reason": "配置根拠",
+  "screen.chisetweaks.product.builder_highlights": "建築ハイライト",
+  "screen.chisetweaks.product.scene_filter": "表示フィルター",
+  "screen.chisetweaks.product.builder_assist": "建築アシスト",
+  "screen.chisetweaks.product.technical": "技術可視化",
+  "screen.chisetweaks.product.visual_tweaks": "表示調整",
+  "screen.chisetweaks.product.integrations": "連携",
+  "screen.chisetweaks.product.lava.description": "読み込み済み近傍の溶岩源を、範囲制限された壁越しハイライトとして表示します。",
+  "screen.chisetweaks.product.hidden.description": "選択した隠れ建材を、範囲制限された壁越しハイライトとして表示します。",
+  "screen.chisetweaks.product.villager_links.description": "Minecraftが既に把握している村人のJob Siteだけを線で表示します。職業ブロックの推測探索は行いません。"
 }
