@@ -4,6 +4,7 @@ import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseRuleMode;
 import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
+import dev.chise.chisetweaks.config.SettingChangeDispatcher;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -192,7 +193,10 @@ public final class BuilderFocusVisibility {
         setEntityRulesSilently(nextMode, nextBlacklist, nextWhitelist);
         FeatureConfig.sanitizeStringLists();
         buildEntityLists();
-        if (FeatureConfig.saveToFile()) return true;
+        if (FeatureConfig.saveToFile()) {
+            SettingChangeDispatcher.markChanged();
+            return true;
+        }
 
         setEntityRulesSilently(previousMode, previousBlacklist, previousWhitelist);
         buildEntityLists();
