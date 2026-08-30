@@ -14,14 +14,14 @@ import net.minecraft.world.level.block.Blocks;
 import java.util.List;
 
 /**
- * 12個のtoggleを同時ONにした実クライアント描画smoke。
+ * 16個のtoggleを同時ONにした実クライアント描画smoke。
  * 共通化後も各Featureが相互排他にならず、runtime componentがquarantineされないことを確認する。
  */
 public final class AllFeaturesRegressionClientGameTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
         List<FeatureSwitch> switches = FeatureSwitches.VALUES;
-        require(switches.size() == 12, "expected 12 canonical feature switches");
+        require(switches.size() == 16, "expected 16 canonical feature switches");
         boolean[] original = new boolean[switches.size()];
 
         context.runOnClient(client -> {

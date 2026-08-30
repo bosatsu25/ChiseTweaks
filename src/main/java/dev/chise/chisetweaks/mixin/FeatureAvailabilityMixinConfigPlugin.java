@@ -22,7 +22,9 @@ public final class FeatureAvailabilityMixinConfigPlugin implements IMixinConfigP
             "dev.chise.chisetweaks.mixin.rendering.BuilderFocusEntityMixin",
             List.of(FeatureDefinition.BUILDER_FOCUS_ENTITIES),
             "dev.chise.chisetweaks.mixin.rendering.FireVisibilityMixin",
-            List.of(FeatureDefinition.FIRE_VISIBILITY));
+            List.of(FeatureDefinition.FIRE_VISIBILITY),
+            "dev.chise.chisetweaks.mixin.rendering.HandheldSizeMixin",
+            List.of(FeatureDefinition.HANDHELD_SIZE));
 
     @Override public void onLoad(String mixinPackage) {}
     @Override public String getRefMapperConfig() { return null; }

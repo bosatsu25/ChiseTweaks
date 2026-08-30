@@ -11,7 +11,8 @@
     "rendering.BlockEntityVisualStateMixin",
     "rendering.ChestVisibilityMixin",
     "rendering.BuilderFocusEntityMixin",
-    "rendering.FireVisibilityMixin"
+    "rendering.FireVisibilityMixin",
+    "rendering.HandheldSizeMixin"
   ],
   "plugin": "dev.chise.chisetweaks.mixin.FeatureAvailabilityMixinConfigPlugin"
 }

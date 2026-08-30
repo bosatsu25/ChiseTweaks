@@ -41,21 +41,25 @@ final class UnifiedFeatureSwitchRuntimeBindingTest {
     void localFeatureSwitchesStillBindToTheirRuntimeFields() {
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         boolean fire = local.fireVisibilityEnabled;
+        boolean handheld = local.handheldSizeEnabled;
         boolean lava = local.lavaHighlightEnabled;
         boolean chest = local.brightChestEnabled;
         boolean concrete = local.brightConcreteEnabled;
         try {
             FeatureSwitches.FIRE_VISIBILITY.setBooleanValueSilently(true);
+            FeatureSwitches.HANDHELD_SIZE.setBooleanValueSilently(true);
             FeatureSwitches.LAVA_HIGHLIGHT.setBooleanValueSilently(true);
             FeatureSwitches.BRIGHT_CHEST.setBooleanValueSilently(false);
             FeatureSwitches.BRIGHT_CONCRETE.setBooleanValueSilently(false);
 
             assertTrue(local.fireVisibilityEnabled);
+            assertTrue(local.handheldSizeEnabled);
             assertTrue(local.lavaHighlightEnabled);
             assertFalse(local.brightChestEnabled);
             assertFalse(local.brightConcreteEnabled);
         } finally {
             local.fireVisibilityEnabled = fire;
+            local.handheldSizeEnabled = handheld;
             local.lavaHighlightEnabled = lava;
             local.brightChestEnabled = chest;
             local.brightConcreteEnabled = concrete;

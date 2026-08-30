@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Regression contract for the 15 user-facing runtime features.
+ * Regression contract for the 16 user-facing runtime features.
  *
  * This test proves registration/config/runtime wiring. Visual correctness still belongs to
  * Client GameTest / Prism acceptance because source contracts cannot prove pixels on screen.
@@ -28,9 +28,9 @@ final class RuntimeFeatureUsabilityRegressionTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void allFifteenFeaturesHaveOneIndependentToggleAndStableDefaults() {
-        assertEquals(15, FeatureDefinition.VALUES.size());
-        assertEquals(15, FeatureSwitches.VALUES.size());
+    void allSixteenFeaturesHaveOneIndependentToggleAndStableDefaults() {
+        assertEquals(16, FeatureDefinition.VALUES.size());
+        assertEquals(16, FeatureSwitches.VALUES.size());
 
         Set<FeatureDefinition> definitions = new HashSet<>();
         Set<String> settingNames = new HashSet<>();
@@ -63,6 +63,7 @@ final class RuntimeFeatureUsabilityRegressionTest {
                 "NETHER_PALETTE",
                 "KELP_HIGHLIGHT",
                 "FIRE_VISIBILITY",
+                "HANDHELD_SIZE",
                 "LAVA_HIGHLIGHT",
                 "VILLAGER_ANALYZER",
                 "BEACON_RANGE",
@@ -103,6 +104,9 @@ final class RuntimeFeatureUsabilityRegressionTest {
         routes.put(FeatureDefinition.FIRE_VISIBILITY, route(
                 "src/main/java/dev/chise/chisetweaks/mixin/rendering/FireVisibilityMixin.java",
                 "FeatureSwitches.FIRE_VISIBILITY.getBooleanValue()"));
+        routes.put(FeatureDefinition.HANDHELD_SIZE, route(
+                "src/main/java/dev/chise/chisetweaks/mixin/rendering/HandheldSizeMixin.java",
+                "FeatureSwitches.HANDHELD_SIZE.getBooleanValue()"));
         routes.put(FeatureDefinition.LAVA_HIGHLIGHT, route(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java",
                 "FeatureSwitches.LAVA_HIGHLIGHT.getBooleanValue()"));
@@ -189,6 +193,7 @@ final class RuntimeFeatureUsabilityRegressionTest {
                 "BUILDER_FOCUS_BLOCKS",
                 "BUILDER_FOCUS_ENTITIES",
                 "FIRE_VISIBILITY",
+                "HANDHELD_SIZE",
                 "BRIGHT_CHEST"}) {
             assertTrue(plugin.contains("FeatureDefinition." + feature), feature);
         }
@@ -196,6 +201,7 @@ final class RuntimeFeatureUsabilityRegressionTest {
                 "BuilderFocusBlockMixin",
                 "BuilderFocusEntityMixin",
                 "FireVisibilityMixin",
+                "HandheldSizeMixin",
                 "ChestVisibilityMixin"}) {
             assertTrue(plugin.contains(mixin), mixin);
         }

@@ -56,7 +56,7 @@ def audit_language(
 
     subtitle = values.get("screen.chisetweaks.help.subtitle")
     if subtitle != expected_subtitle:
-        failures.append(f"{locale} help subtitle must describe the 15-toggle / 13-default-off scope")
+        failures.append(f"{locale} help subtitle must describe the 16-toggle / 14-default-off scope")
 
     analyzer_help = str(values.get("screen.chisetweaks.help.analyzer.description", ""))
     if not analyzer_help or "Ancient Debris" in analyzer_help or "古代の残骸" in analyzer_help:
@@ -66,6 +66,7 @@ def audit_language(
         "config.name.localfirevisibility": "Low Fire",
         "config.name.locallavahighlight": "Lava Analyzer",
         "config.name.materialhighlights": "Ore Highlights",
+        "config.name.handheldsize": "Handheld Size",
     }
     for key, expected in expected_names.items():
         if values.get(key) != expected:
@@ -120,9 +121,9 @@ def main() -> int:
         failures,
     )
     require(
-        r"15個のON/OFF可能なruntime機能",
+        r"16個のON/OFF可能なruntime機能",
         readme,
-        "README must explain the current fifteen-toggle scope in beginner-facing language",
+        "README must explain the current sixteen-toggle scope in beginner-facing language",
         failures,
     )
     require(
@@ -143,6 +144,12 @@ def main() -> int:
         "DEVELOPMENT.md must document Bright non-pack rendering ownership",
         failures,
     )
+    require(
+        r"Handheld Size.*Resource Pack",
+        development,
+        "DEVELOPMENT.md must document Handheld Size as code-based resource-pack-preserving rendering",
+        failures,
+    )
 
     for retired_heading in (
         "### Air Placement",
@@ -158,7 +165,7 @@ def main() -> int:
         "exact CI-verified runtime JAR",
         f"`{jar_goal} bytes`",
         f"`{jar_max} bytes`",
-        "toggle可能なruntime featureは現在15個",
+        "toggle可能なruntime featureは現在16個",
         "GitHub Issues",
         "scripts/ci_scope.py",
         "scripts/ci_provenance.py",
@@ -178,13 +185,13 @@ def main() -> int:
     audit_language(
         "en_us",
         en_us,
-        "Review 15 toggleable runtime features. Bright Chest / Bright Concrete default ON; the other 13 default OFF.",
+        "Review 16 toggleable runtime features. Bright Chest / Bright Concrete default ON; the other 14 default OFF.",
         failures,
     )
     audit_language(
         "ja_jp",
         ja_jp,
-        "15個の切り替え可能なruntime機能を確認できます。Bright Chest / Bright Concreteは初期ON、ほか13機能は初期OFFです。",
+        "16個の切り替え可能なruntime機能を確認できます。Bright Chest / Bright Concreteは初期ON、ほか14機能は初期OFFです。",
         failures,
     )
 
@@ -214,7 +221,7 @@ def main() -> int:
     print("DOCUMENTATION CONSISTENCY AUDIT: PASS")
     print("user_doc=README.md")
     print("development_doc=DEVELOPMENT.md")
-    print("runtime_translation_scope=15_retained_features")
+    print("runtime_translation_scope=16_retained_features")
     print("retired_translation_residue=false")
     print("retired_duplicate_docs=false")
     print(f"minecraft={minecraft}")

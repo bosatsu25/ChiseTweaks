@@ -64,15 +64,15 @@ flowchart LR
 
 ## ChiseTweaksでできること
 
-現在、**15個のON/OFF可能なruntime機能**があります。  
-初期状態では **Bright Chest / Bright ConcreteだけON**、それ以外の13機能はOFFです。
+現在、**16個のON/OFF可能なruntime機能**があります。  
+初期状態では **Bright Chest / Bright ConcreteだけON**、それ以外の14機能はOFFです。
 
 ```mermaid
-pie title 15個のruntime機能
+pie title 16個のruntime機能
     "Highlight" : 5
     "Filter" : 2
     "Analyzer" : 3
-    "Visibility" : 5
+    "Visibility" : 6
 ```
 
 ### Highlight — 見えにくいものを強調する
@@ -117,6 +117,7 @@ Villager Analyzerは、村人の職業とJob Siteの対応を確認したい交�
 | 機能 | 何ができる？ | 初期値 |
 | --- | --- | --- |
 | **Low Fire** | 一人称の炎をLarge / Medium / Smallで低く・小さくする | OFF |
+| **Handheld Size** | 現在のResource Packを維持したまま、一人称の手持ちItemをBlock / Item / Weapons & Tools別に小さくする | OFF |
 | **Beacon Range** | Beaconの有効範囲をワールド上に表示する | OFF |
 | **Lightning Rod Range** | 避雷針の有効範囲を表示する | OFF |
 | **Bright Chest** | 通常Chest / Double Chestを暗所でも見やすくする | **ON** |
@@ -124,11 +125,13 @@ Villager Analyzerは、村人の職業とJob Siteの対応を確認したい交�
 
 Low Fireはワールド上のFire / Soul Fireを変更せず、**一人称画面に重なる炎だけ**を調整します。
 
+Handheld Sizeは、外部Resource Packのmodel JSONやtextureを同梱・置換せず、Minecraftが一人称でItemをsubmitする直前のPoseだけをコードで縮小します。初期倍率は **Block 70% / Item 60% / Weapons & Tools 75%**。Shieldは防御姿勢を崩しにくいよう95%固定です。GUI・三人称・world item表示には適用しません。
+
 ---
 
 ## Inspector — 「置いた」「見えた」だけで終わらせず確認する
 
-Inspectorは15個のruntime機能とは別の、**読み取り・比較用の機能群**です。
+Inspectorは16個のruntime機能とは別の、**読み取り・比較用の機能群**です。
 
 | Inspector機能 | 用途 |
 | --- | --- |
@@ -253,9 +256,10 @@ Nvidium使用時に、World Border付近や非常に遠い座標で描画が不�
 1. **まず初期設定のまま起動**します。Bright Chest / Bright ConcreteだけONです。
 2. ガラス建築なら **Glass Highlight** をON。
 3. 炎で画面が見づらければ **Low Fire → Medium** を試します。
-4. Beaconや避雷針を置くときだけ **Beacon Range / Lightning Rod Range** をON。
-5. 交易所を作るときは **Villager Analyzer** をON。
-6. Litematica利用者は **Integrations → Masa Japanese UI = Auto** と **Masa Guide** を確認します。
+4. 手持ちItemが視界を塞ぐ場合は **Handheld Size** をON。必要ならBlock / Item / Weapons & Toolsの倍率を調整します。
+5. Beaconや避雷針を置くときだけ **Beacon Range / Lightning Rod Range** をON。
+6. 交易所を作るときは **Villager Analyzer** をON。
+7. Litematica利用者は **Integrations → Masa Japanese UI = Auto** と **Masa Guide** を確認します。
 
 全部を最初からONにする必要はありません。**必要なときだけONにする**使い方で問題ありません。
 
@@ -353,7 +357,7 @@ S-grade regression budget:
 - hard ceiling: **446,814 bytes**
 - SourceFile / LineNumberを容量削減のために削除しない
 - shrinker / obfuscationだけで数値を達成しない
-- 容量削減でも15機能・Inspector・optional integrationの回帰を許容しない
+- 容量削減でも16機能・Inspector・optional integrationの回帰を許容しない
 
 ---
 
@@ -424,4 +428,4 @@ Ore Highlights自体は、見えている対象を強調するHighlightで、壁
 
 Releaseではruntime JARを再buildせず、CIで検証したartifactのtree SHA / SHA-256 / provenanceを確認して同一byte列を公開する設計です。
 
-ChiseTweaksのuser-facingな15機能はソース上の `FeatureDefinition` / `FeatureSwitches` を正本とし、optional integrationはruntime機能数と分離して管理します。
+ChiseTweaksのuser-facingな16機能はソース上の `FeatureDefinition` / `FeatureSwitches` を正本とし、optional integrationはruntime機能数と分離して管理します。

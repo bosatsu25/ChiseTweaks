@@ -95,7 +95,7 @@
   "screen.chisetweaks.help.requirement.loaded": "must be loaded.",
   "screen.chisetweaks.help.requirement.none": "No additional mod is required.",
   "screen.chisetweaks.help.requirement_prefix": "Requirements and notes: ",
-  "screen.chisetweaks.help.subtitle": "Review 15 toggleable runtime features. Bright Chest / Bright Concrete default ON; the other 13 default OFF.",
+  "screen.chisetweaks.help.subtitle": "Review 16 toggleable runtime features. Bright Chest / Bright Concrete default ON; the other 14 default OFF.",
   "screen.chisetweaks.help.title": "Quick Help",
   "screen.chisetweaks.help.usage_prefix": "How to use: ",
   "screen.chisetweaks.settings.action.settings": "Settings",
@@ -393,5 +393,17 @@
   "screen.chisetweaks.inspector.interaction_history.title": "Interaction History",
   "screen.chisetweaks.inspector.interaction_history.empty": "No history",
   "screen.chisetweaks.inspector.interaction_history.empty.description": "When Interaction History is enabled, recent read-only interactions appear here.",
-  "screen.chisetweaks.settings.copy.feature_settings": "%s Settings"
+  "screen.chisetweaks.settings.copy.feature_settings": "%s Settings",
+  "config.comment.handheldsize": "Default OFF. Scales only the submitted first-person item model; it does not replace item models, textures, resource packs, animations or input.",
+  "config.name.handheldsize": "Handheld Size",
+  "help.chisetweaks.handheld_size.requirement": "Client-only and default OFF. No model JSON, texture replacement, resource reload, world mutation or input injection is used.",
+  "help.chisetweaks.handheld_size.summary": "Reduces first-person item obstruction with semantic Block / Item / Weapons & Tools scale profiles while keeping the active resource pack.",
+  "help.chisetweaks.handheld_size.usage": "Under Visibility, enable Handheld Size and adjust Block, Item and Weapons & Tools percentages. Shield stays near vanilla at 95%.",
+  "screen.chisetweaks.settings.copy.handheld_size.description": "Shrink only first-person held item models without replacing the active resource pack. Main hand and offhand use the same semantic profile.",
+  "screen.chisetweaks.settings.handheld_block.name": "Block Item Size",
+  "screen.chisetweaks.settings.handheld_block.description": "Relative scale for first-person BlockItem rendering. Default 70%.",
+  "screen.chisetweaks.settings.handheld_item.name": "General Item Size",
+  "screen.chisetweaks.settings.handheld_item.description": "Relative scale for first-person non-block, non-tool items. Default 60%.",
+  "screen.chisetweaks.settings.handheld_tool.name": "Weapons & Tools Size",
+  "screen.chisetweaks.settings.handheld_tool.description": "Relative scale for tools and weapons detected by item components or vanilla weapon/tool classes. Default 75%."
 }

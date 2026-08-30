@@ -180,6 +180,17 @@ final class ChiseTweaksSettingsRows {
         integer(rows, "fireVisibilitySize", LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
                 "screen.chisetweaks.settings.fire_size.name",
                 "screen.chisetweaks.settings.fire_size.description", 1);
+        featureLiteral(rows, "handheldSize", FeatureSwitches.HANDHELD_SIZE,
+                text("screen.chisetweaks.settings.copy.handheld_size.description"));
+        integer(rows, "handheldBlockScale", LocalFeatureSettings.HANDHELD_BLOCK_SCALE,
+                "screen.chisetweaks.settings.handheld_block.name",
+                "screen.chisetweaks.settings.handheld_block.description", 5);
+        integer(rows, "handheldItemScale", LocalFeatureSettings.HANDHELD_ITEM_SCALE,
+                "screen.chisetweaks.settings.handheld_item.name",
+                "screen.chisetweaks.settings.handheld_item.description", 5);
+        integer(rows, "handheldToolScale", LocalFeatureSettings.HANDHELD_TOOL_SCALE,
+                "screen.chisetweaks.settings.handheld_tool.name",
+                "screen.chisetweaks.settings.handheld_tool.description", 5);
         featureLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
                 text("screen.chisetweaks.settings.copy.bright_chest.description"));
         featureLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,

@@ -24,7 +24,7 @@ final class ProductScopeExecutableContractTest {
 
     @Test
     void runtimeFeatureRegistryRemainsRenderingInspectionOnly() {
-        assertEquals(15, FeatureDefinition.VALUES.size());
+        assertEquals(16, FeatureDefinition.VALUES.size());
 
         Set<String> ids = new HashSet<>();
         for (FeatureDefinition definition : FeatureDefinition.VALUES) {

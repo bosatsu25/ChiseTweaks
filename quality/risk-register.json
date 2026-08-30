@@ -2,19 +2,38 @@
   "schema_version": 1,
   "assessment_model": {
     "method": "lightweight-ordinal",
-    "likelihood": ["low", "medium", "high"],
-    "impact": ["low", "medium", "high"],
-    "priority": ["low", "medium", "high", "critical"]
+    "likelihood": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "impact": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "priority": [
+      "low",
+      "medium",
+      "high",
+      "critical"
+    ]
   },
   "risks": [
     {
       "id": "R-001",
       "title": "Analyzer scanning or rendering causes a user-visible performance regression",
-      "quality_characteristics": ["performance_efficiency"],
+      "quality_characteristics": [
+        "performance_efficiency"
+      ],
       "likelihood": "medium",
       "impact": "high",
       "priority": "high",
-      "test_techniques": ["boundary_value", "operational_profile", "dynamic_analysis"],
+      "test_techniques": [
+        "boundary_value",
+        "operational_profile",
+        "dynamic_analysis"
+      ],
       "oracle": "Same-environment Prism baseline/candidate measurements with identical scenario, Minecraft, Java, Fabric Loader and environment_id.",
       "evidence": [
         "src/test/java/dev/chise/chisetweaks/performance/PerformanceAcceptancePolicyTest.java",
@@ -33,11 +52,19 @@
     {
       "id": "R-002",
       "title": "Corrupt, hostile or migrated configuration prevents startup or contaminates another config domain",
-      "quality_characteristics": ["reliability", "security"],
+      "quality_characteristics": [
+        "reliability",
+        "security"
+      ],
       "likelihood": "medium",
       "impact": "high",
       "priority": "high",
-      "test_techniques": ["domain_test", "boundary_value", "decision_table", "state_transition"],
+      "test_techniques": [
+        "domain_test",
+        "boundary_value",
+        "decision_table",
+        "state_transition"
+      ],
       "oracle": "Invalid input is rejected or sanitized to the documented safe default while unaffected configuration domains remain usable.",
       "evidence": [
         "src/test/java/dev/chise/chisetweaks/core/security/StrictJsonAdversarialTest.java",
@@ -54,11 +81,17 @@
     {
       "id": "R-003",
       "title": "Placement Preview reports a BlockState that differs from vanilla placement semantics",
-      "quality_characteristics": ["functional_suitability"],
+      "quality_characteristics": [
+        "functional_suitability"
+      ],
       "likelihood": "medium",
       "impact": "high",
       "priority": "high",
-      "test_techniques": ["state_transition", "scenario_based", "combination_test"],
+      "test_techniques": [
+        "state_transition",
+        "scenario_based",
+        "combination_test"
+      ],
       "oracle": "The actual BlockState produced by vanilla Minecraft placement is the oracle; production prediction formulas are not duplicated in the test.",
       "evidence": [
         "src/gametest/java/dev/chise/chisetweaks/gui/TrapdoorPlacementClientGameTest.java",
@@ -75,11 +108,18 @@
     {
       "id": "R-004",
       "title": "A runtime component or optional integration failure propagates into unrelated ChiseTweaks features",
-      "quality_characteristics": ["reliability", "compatibility"],
+      "quality_characteristics": [
+        "reliability",
+        "compatibility"
+      ],
       "likelihood": "medium",
       "impact": "high",
       "priority": "high",
-      "test_techniques": ["fault_injection", "state_transition", "combination_test"],
+      "test_techniques": [
+        "fault_injection",
+        "state_transition",
+        "combination_test"
+      ],
       "oracle": "Only the failing component is quarantined; healthy components continue and session cleanup remains possible.",
       "evidence": [
         "src/test/java/dev/chise/chisetweaks/runtime/RuntimeFaultInjectionTest.java",
@@ -98,11 +138,17 @@
     {
       "id": "R-005",
       "title": "A release publishes a JAR that is not the exact artifact verified by CI",
-      "quality_characteristics": ["security", "reliability"],
+      "quality_characteristics": [
+        "security",
+        "reliability"
+      ],
       "likelihood": "low",
       "impact": "high",
       "priority": "high",
-      "test_techniques": ["decision_table", "static_analysis"],
+      "test_techniques": [
+        "decision_table",
+        "static_analysis"
+      ],
       "oracle": "Git tree SHA, runtime SHA-256, embedded metadata and release asset identity must agree with CI provenance.",
       "evidence": [
         "src/test/java/dev/chise/chisetweaks/ReleaseDistributionContractTest.java",
@@ -119,11 +165,17 @@
     {
       "id": "R-006",
       "title": "Automation, custom protocol ownership or background execution enters the client-only inspection product scope",
-      "quality_characteristics": ["functional_suitability", "security"],
+      "quality_characteristics": [
+        "functional_suitability",
+        "security"
+      ],
       "likelihood": "low",
       "impact": "high",
       "priority": "critical",
-      "test_techniques": ["static_analysis", "checklist_based"],
+      "test_techniques": [
+        "static_analysis",
+        "checklist_based"
+      ],
       "oracle": "The executable product contract remains client-only, rendering/inspection focused, with no custom play protocol or input automation.",
       "evidence": [
         "src/test/java/dev/chise/chisetweaks/ProductScopeExecutableContractTest.java",
@@ -134,7 +186,7 @@
         "Pull request scope review checklist."
       ],
       "exit_criteria": [
-        "The runtime feature registry remains exactly 15 rendering/inspection features.",
+        "The runtime feature registry remains exactly 16 rendering/inspection features.",
         "No prohibited packet, input-injection or background-thread primitives are introduced.",
         "Server installation remains unnecessary."
       ]
@@ -142,11 +194,19 @@
     {
       "id": "R-007",
       "title": "Settings refactoring loses pending changes, misroutes persistence or makes a user-facing feature unreachable",
-      "quality_characteristics": ["functional_suitability", "usability", "maintainability"],
+      "quality_characteristics": [
+        "functional_suitability",
+        "usability",
+        "maintainability"
+      ],
       "likelihood": "medium",
       "impact": "medium",
       "priority": "medium",
-      "test_techniques": ["state_transition", "scenario_based", "checklist_based"],
+      "test_techniques": [
+        "state_transition",
+        "scenario_based",
+        "checklist_based"
+      ],
       "oracle": "Settings behavior is defined by user-visible row bindings and persistence-domain results, not by private helper names.",
       "evidence": [
         "src/test/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsControllerTest.java",
@@ -158,8 +218,39 @@
       ],
       "exit_criteria": [
         "Failed persistence domains remain pending while successful domains clear.",
-        "All 15 runtime features remain reachable from the Settings UI.",
+        "All 16 runtime features remain reachable from the Settings UI.",
         "Screen code does not reacquire config-domain ownership."
+      ]
+    },
+    {
+      "id": "R-008",
+      "title": "Handheld Size obscures gameplay, distorts non-first-person rendering or conflicts with the active resource pack",
+      "quality_characteristics": [
+        "functional_suitability",
+        "compatibility",
+        "usability"
+      ],
+      "likelihood": "medium",
+      "impact": "medium",
+      "priority": "medium",
+      "test_techniques": [
+        "boundary_value",
+        "combination_test",
+        "static_analysis"
+      ],
+      "oracle": "When disabled or outside FIRST_PERSON_LEFT/RIGHT, rendering remains vanilla. When enabled, only the submitted first-person item pose is scaled while Minecraft retains model, texture, animation and input ownership.",
+      "evidence": [
+        "src/test/java/dev/chise/chisetweaks/core/vision/HandheldSizePolicyTest.java",
+        "src/test/java/dev/chise/chisetweaks/HandheldSizeRenderingContractTest.java",
+        "src/test/java/dev/chise/chisetweaks/RuntimeFeatureUsabilityRegressionTest.java"
+      ],
+      "manual_evidence": [
+        "Prism acceptance with block items, generic items, tools/weapons, shield, main hand/offhand and a representative external resource pack."
+      ],
+      "exit_criteria": [
+        "Disabled, GUI and non-first-person contexts retain scale factor 1.0.",
+        "Block, item and tool percentages remain bounded to 40-100%; shield remains near vanilla at 95%.",
+        "The feature ships no copied Small Handhelds model JSON or textures and does not replace the active resource pack."
       ]
     }
   ]

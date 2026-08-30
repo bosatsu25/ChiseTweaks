@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.config;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.vision.FireVisibilityPolicy;
+import dev.chise.chisetweaks.core.vision.HandheldSizePolicy;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -23,6 +24,31 @@ public final class LocalFeatureSettings {
             () -> config().fireVisibilitySizePreset,
             value -> config().fireVisibilitySizePreset = value,
             FireVisibilityPolicy::sizeLabel);
+
+    public static final ChiseIntegerSetting HANDHELD_BLOCK_SCALE = integer(
+            "localHandheldBlockScalePercent",
+            HandheldSizePolicy.DEFAULT_BLOCK_SCALE_PERCENT,
+            HandheldSizePolicy.MIN_SCALE_PERCENT,
+            HandheldSizePolicy.MAX_SCALE_PERCENT,
+            () -> config().handheldBlockScalePercent,
+            value -> config().handheldBlockScalePercent = value,
+            value -> value + "%");
+    public static final ChiseIntegerSetting HANDHELD_ITEM_SCALE = integer(
+            "localHandheldItemScalePercent",
+            HandheldSizePolicy.DEFAULT_ITEM_SCALE_PERCENT,
+            HandheldSizePolicy.MIN_SCALE_PERCENT,
+            HandheldSizePolicy.MAX_SCALE_PERCENT,
+            () -> config().handheldItemScalePercent,
+            value -> config().handheldItemScalePercent = value,
+            value -> value + "%");
+    public static final ChiseIntegerSetting HANDHELD_TOOL_SCALE = integer(
+            "localHandheldToolScalePercent",
+            HandheldSizePolicy.DEFAULT_TOOL_SCALE_PERCENT,
+            HandheldSizePolicy.MIN_SCALE_PERCENT,
+            HandheldSizePolicy.MAX_SCALE_PERCENT,
+            () -> config().handheldToolScalePercent,
+            value -> config().handheldToolScalePercent = value,
+            value -> value + "%");
 
     public static final ChiseBooleanSetting ORE_HIGHLIGHT_ANIMATION = bool(
             "localOreHighlightAnimation", false,

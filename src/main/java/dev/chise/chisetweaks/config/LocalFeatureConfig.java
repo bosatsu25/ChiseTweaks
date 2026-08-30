@@ -12,6 +12,7 @@ import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
 import dev.chise.chisetweaks.core.vision.FireVisibilityPolicy;
+import dev.chise.chisetweaks.core.vision.HandheldSizePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -31,6 +32,10 @@ public final class LocalFeatureConfig {
     public boolean lightningRodRangeEnabled = false;
     public boolean fireVisibilityEnabled = false;
     public int fireVisibilitySizePreset = FireVisibilityPolicy.DEFAULT_SIZE_PRESET;
+    public boolean handheldSizeEnabled = false;
+    public int handheldBlockScalePercent = HandheldSizePolicy.DEFAULT_BLOCK_SCALE_PERCENT;
+    public int handheldItemScalePercent = HandheldSizePolicy.DEFAULT_ITEM_SCALE_PERCENT;
+    public int handheldToolScalePercent = HandheldSizePolicy.DEFAULT_TOOL_SCALE_PERCENT;
     public boolean brightChestEnabled = true;
     public boolean brightConcreteEnabled = true;
     public boolean oreHighlightAnimationEnabled = false;
@@ -181,6 +186,12 @@ public final class LocalFeatureConfig {
             fireVisibilityEnabled = false;
         }
         fireVisibilitySizePreset = FireVisibilityPolicy.clampSizePreset(fireVisibilitySizePreset);
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.HANDHELD_SIZE)) {
+            handheldSizeEnabled = false;
+        }
+        handheldBlockScalePercent = HandheldSizePolicy.clampScalePercent(handheldBlockScalePercent);
+        handheldItemScalePercent = HandheldSizePolicy.clampScalePercent(handheldItemScalePercent);
+        handheldToolScalePercent = HandheldSizePolicy.clampScalePercent(handheldToolScalePercent);
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BRIGHT_CHEST)) {
             brightChestEnabled = false;
         }
@@ -230,6 +241,10 @@ public final class LocalFeatureConfig {
         lightningRodRangeEnabled = loaded.lightningRodRangeEnabled;
         fireVisibilityEnabled = loaded.fireVisibilityEnabled;
         fireVisibilitySizePreset = loaded.fireVisibilitySizePreset;
+        handheldSizeEnabled = loaded.handheldSizeEnabled;
+        handheldBlockScalePercent = loaded.handheldBlockScalePercent;
+        handheldItemScalePercent = loaded.handheldItemScalePercent;
+        handheldToolScalePercent = loaded.handheldToolScalePercent;
         brightChestEnabled = loaded.brightChestEnabled;
         brightConcreteEnabled = loaded.brightConcreteEnabled;
         oreHighlightAnimationEnabled = loaded.oreHighlightAnimationEnabled;
