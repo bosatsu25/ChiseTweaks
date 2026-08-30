@@ -189,7 +189,7 @@ final class InspectorSettingsRows {
         BlockState state = placement.predictedPlacement();
         info(rows, "placement.predicted",
                 text("screen.chisetweaks.placement.predicted"),
-                semanticProperties(CrosshairInspector.placementStateProperties(state)));
+                semanticProperties(PlacementInspector.placementStateProperties(state)));
         if (!comparison) {
             info(rows, "placement.reason",
                     text("screen.chisetweaks.inspector.matched_rule"),
@@ -201,11 +201,11 @@ final class InspectorSettingsRows {
         } else {
             info(rows, "placement.actual",
                     text("screen.chisetweaks.placement.actual"),
-                    semanticProperties(CrosshairInspector.actualPlacementStateProperties(
+                    semanticProperties(PlacementInspector.actualPlacementStateProperties(
                             placement.actualPlacement())));
             info(rows, "placement.result",
                     text("screen.chisetweaks.placement.result"),
-                    text(CrosshairInspector.comparisonResultKey(placement.placementResult())));
+                    text(comparisonResultKey(placement.placementResult())));
             if (placement.placementResult() == PlacementInspector.ADJUSTED) {
                 info(rows, "placement.changed",
                         text("screen.chisetweaks.placement.changed"),
@@ -249,18 +249,18 @@ final class InspectorSettingsRows {
         for (String property : properties) {
             int separator = property.indexOf('=');
             String name = property.substring(0, separator);
-            if (requiredGroup != null && !requiredGroup.equals(CrosshairInspector.semanticPropertyGroup(name))) continue;
+            if (requiredGroup != null && !requiredGroup.equals(CrosshairSnapshotPolicy.semanticPropertyGroup(name))) continue;
             if (!result.isEmpty()) result.append('\n');
-            result.append(CrosshairInspector.humanize(name))
+            result.append(CrosshairSnapshotPolicy.humanize(name))
                     .append("  ")
-                    .append(CrosshairInspector.humanize(property.substring(separator + 1)));
+                    .append(CrosshairSnapshotPolicy.humanize(property.substring(separator + 1)));
         }
         return result.toString();
     }
 
     private static String changedPlacementProperties(BlockState predicted, BlockState actual) {
-        List<String> before = CrosshairInspector.placementStateProperties(predicted);
-        List<String> after = CrosshairInspector.actualPlacementStateProperties(actual);
+        List<String> before = PlacementInspector.placementStateProperties(predicted);
+        List<String> after = PlacementInspector.actualPlacementStateProperties(actual);
         StringBuilder changed = new StringBuilder();
         for (String property : before) {
             int separator = property.indexOf('=');
@@ -268,11 +268,11 @@ final class InspectorSettingsRows {
             String actualProperty = findProperty(after, name);
             if (actualProperty == null || property.equals(actualProperty)) continue;
             if (!changed.isEmpty()) changed.append('\n');
-            changed.append(CrosshairInspector.humanize(name))
+            changed.append(CrosshairSnapshotPolicy.humanize(name))
                     .append(": ")
-                    .append(CrosshairInspector.humanize(property.substring(separator + 1)))
+                    .append(CrosshairSnapshotPolicy.humanize(property.substring(separator + 1)))
                     .append(" → ")
-                    .append(CrosshairInspector.humanize(actualProperty.substring(actualProperty.indexOf('=') + 1)));
+                    .append(CrosshairSnapshotPolicy.humanize(actualProperty.substring(actualProperty.indexOf('=') + 1)));
         }
         return changed.toString();
     }
@@ -297,9 +297,26 @@ final class InspectorSettingsRows {
         StringBuilder result = new StringBuilder();
         for (FeatureDefinition feature : features) {
             if (!result.isEmpty()) result.append('\n');
-            result.append(modes ? text(CrosshairInspector.renderModeKey(feature, hidden)) : feature.englishName());
+            result.append(modes ? text(renderModeKey(feature, hidden)) : feature.englishName());
         }
         return result.toString();
+    }
+
+    static String comparisonResultKey(int result) {
+        return switch (result) {
+            case PlacementInspector.MATCH -> "screen.chisetweaks.placement.result.match";
+            case PlacementInspector.ADJUSTED -> "screen.chisetweaks.placement.result.adjusted";
+            case PlacementInspector.DIFFERENT -> "screen.chisetweaks.placement.result.different";
+            default -> "screen.chisetweaks.placement.result.unavailable";
+        };
+    }
+
+    static String renderModeKey(FeatureDefinition feature, boolean hidden) {
+        if (hidden) return "screen.chisetweaks.inspector.render_mode.suppressed";
+        return feature == FeatureDefinition.LAVA_HIGHLIGHT
+                || feature == FeatureDefinition.HIDDEN_SURFACE_TRACE
+                ? "screen.chisetweaks.inspector.render_mode.through_wall"
+                : "screen.chisetweaks.inspector.render_mode.visible";
     }
 
     private static void addCommonHelpRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
