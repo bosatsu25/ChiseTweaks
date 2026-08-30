@@ -7,7 +7,7 @@ from ci_provenance import promotion_decision, write_provenance
 
 
 BASE = {
-    "schema": 1,
+    "schema": 2,
     "repository": "owner/repo",
     "source_run_id": 42,
     "event": "pull_request",
@@ -15,6 +15,12 @@ BASE = {
     "tested_commit_sha": "a" * 40,
     "tested_tree_sha": "b" * 40,
     "version": "0.15.0+mc26.1.2",
+    "verification": {
+        "repository_contracts": True,
+        "quality_gate": True,
+        "client_gametest": True,
+        "distribution_audit": True,
+    },
     "runtime_verified": True,
     "runtime_jar": "chise-tweaks-0.15.0+mc26.1.2.jar",
     "runtime_sha256": "c" * 64,
@@ -41,19 +47,42 @@ def main() -> int:
     assert decide(dict(BASE), has_runtime=False)["reason"] == "runtime-artifact-missing"
     assert decide(dict(BASE), run_id=99)["reason"] == "run-id"
 
-    docs = dict(BASE)
+    malformed_commit = dict(BASE)
+    malformed_commit["tested_commit_sha"] = "NOT-A-COMMIT"
+    assert decide(malformed_commit)["reason"] == "commit-sha-format"
+
+    for gate in ("quality_gate", "client_gametest", "distribution_audit"):
+        incomplete = json.loads(json.dumps(BASE))
+        incomplete["verification"][gate] = False
+        assert decide(incomplete)["reason"] == "verification-incomplete"
+
+    no_contracts = json.loads(json.dumps(BASE))
+    no_contracts["verification"]["repository_contracts"] = False
+    assert decide(no_contracts)["reason"] == "repository-contracts-unverified"
+
+    docs = json.loads(json.dumps(BASE))
     docs.update(scope="docs-only", runtime_verified=False, runtime_jar="", runtime_sha256="")
+    docs["verification"] = {
+        "repository_contracts": True,
+        "quality_gate": False,
+        "client_gametest": False,
+        "distribution_audit": False,
+    }
     assert decide(docs) == {
         "scope": "docs-only", "heavy": False, "promote": False,
         "reason": "tree-identical-non-runtime"}
 
-    tooling = dict(docs)
+    tooling = json.loads(json.dumps(docs))
     tooling["scope"] = "tooling-only"
     assert decide(tooling)["heavy"] is False
 
-    forged_docs = dict(docs)
+    forged_docs = json.loads(json.dumps(docs))
     forged_docs["runtime_jar"] = "chise-tweaks-forged.jar"
     assert decide(forged_docs)["reason"] == "non-runtime-claimed-artifact"
+
+    forged_heavy = json.loads(json.dumps(docs))
+    forged_heavy["verification"]["quality_gate"] = True
+    assert decide(forged_heavy)["reason"] == "non-full-claimed-heavy-verification"
 
     malformed = dict(BASE)
     malformed["repository"] = "other/repo"
@@ -77,10 +106,16 @@ def main() -> int:
             runtime_jar="chise-tweaks-0.15.0+mc26.1.2.jar",
             runtime_sha256="c" * 64,
             runtime_verified=True,
+            repository_contracts_verified=True,
+            quality_gate_verified=True,
+            client_gametest_verified=True,
+            distribution_verified=True,
         )
         written = json.loads(output.read_text(encoding="utf-8"))
+        assert written["schema"] == 2
         assert written["tested_tree_sha"] == "b" * 40
         assert written["runtime_verified"] is True
+        assert all(written["verification"].values())
 
     try:
         with TemporaryDirectory() as directory:
@@ -91,13 +126,17 @@ def main() -> int:
                 event="pull_request",
                 scope="full",
                 tested_commit_sha="a" * 40,
-                tested_tree_sha="not-a-tree",
+                tested_tree_sha="b" * 40,
                 version="0.15.0+mc26.1.2",
                 runtime_jar="chise-tweaks-0.15.0+mc26.1.2.jar",
                 runtime_sha256="c" * 64,
                 runtime_verified=True,
+                repository_contracts_verified=True,
+                quality_gate_verified=True,
+                client_gametest_verified=False,
+                distribution_verified=True,
             )
-        raise AssertionError("invalid tree SHA must be rejected")
+        raise AssertionError("incomplete full verification must be rejected")
     except ValueError:
         pass
 
