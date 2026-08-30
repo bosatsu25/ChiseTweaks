@@ -89,6 +89,7 @@ FORBIDDEN_PATHS = (
     "src/main/resources/assets/chisetweaks/models/block/visual/deepslate_diamond_ore.json",
     "src/main/resources/assets/chisetweaks/textures/block/visual/diamond_ore_chise.png.mcmeta",
     "src/main/resources/assets/chisetweaks/textures/block/visual/deepslate_diamond_ore_chise.png.mcmeta",
+    ".github/workflows/release.yml",
 )
 
 REQUIRED_PATHS = (
@@ -110,10 +111,12 @@ REQUIRED_PATHS = (
     "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/NearestPositionBuffer.java",
     ".github/workflows/ci.yml",
-    ".github/workflows/release.yml",
     "scripts/ci_scope.py",
+    "scripts/ci_provenance.py",
     "scripts/test_ci_scope.py",
+    "scripts/test_ci_provenance.py",
     "scripts/test_ci_workflow_contract.py",
+    "scripts/promoted_artifact_audit.py",
     "scripts/artifact_audit.py",
     "scripts/release_residue_audit.py",
     "scripts/documentation_consistency_audit.py",

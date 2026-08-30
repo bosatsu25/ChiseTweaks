@@ -161,9 +161,11 @@ def main() -> int:
         "toggle可能なruntime featureは現在12個",
         "GitHub Issues",
         "scripts/ci_scope.py",
+        "scripts/ci_provenance.py",
         "tooling-only",
+        "tree SHA",
+        "release / Publish verified runtime JAR",
         "CHISE_CI_RUNS_ON",
-        "push: main",
         "workflow_dispatch",
     ):
         if marker not in development:

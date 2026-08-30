@@ -15,6 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -24,6 +25,9 @@ concurrency:
 jobs:
   verify:
     name: verify / Java 25 quality gate
+    outputs:
+      release_ready: ${{ steps.release_candidate.outputs.ready }}
+      runtime_jar: ${{ steps.runtime.outputs.runtime_jar }}
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: ${{ fromJSON(vars.CHISE_CI_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 15
@@ -35,27 +39,111 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Classify change scope
+      - name: Resolve prior PR verification
+        id: prior
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          echo 'candidate=false' >> "$GITHUB_OUTPUT"
+          echo 'has_runtime_artifact=false' >> "$GITHUB_OUTPUT"
+
+          pr_json="$(gh api -H 'Accept: application/vnd.github+json' "repos/${GH_REPO}/commits/${HEAD_SHA}/pulls")"
+          pr_number="$(jq -r '[.[] | select(.merged_at != null and .base.ref == "main")] | sort_by(.merged_at) | last | .number // empty' <<<"$pr_json")"
+          if [[ -z "$pr_number" ]]; then
+            echo 'No merged PR provenance candidate; main will run FULL.'
+            exit 0
+          fi
+
+          pr_head_sha="$(gh api "repos/${GH_REPO}/pulls/${pr_number}" --jq '.head.sha')"
+          runs="$(gh api "repos/${GH_REPO}/actions/runs?head_sha=${pr_head_sha}&event=pull_request&status=success&per_page=20")"
+          prior_run_id="$(jq -r '[.workflow_runs[] | select(.name == "CI")] | sort_by(.run_number) | last | .id // empty' <<<"$runs")"
+          if [[ -z "$prior_run_id" ]]; then
+            echo "No successful PR CI run for #${pr_number}; main will run FULL."
+            exit 0
+          fi
+
+          artifacts="$(gh api "repos/${GH_REPO}/actions/runs/${prior_run_id}/artifacts?per_page=100")"
+          provenance_count="$(jq '[.artifacts[] | select(.expired == false and .name == "chise-ci-provenance")] | length' <<<"$artifacts")"
+          if [[ "$provenance_count" != '1' ]]; then
+            echo "PR CI run ${prior_run_id} has no unique provenance artifact; main will run FULL."
+            exit 0
+          fi
+
+          runtime_count="$(jq '[.artifacts[] | select(.expired == false and (.name | test("^chise-tweaks-.*\\.jar$")))] | length' <<<"$artifacts")"
+          runtime_name=''
+          has_runtime='false'
+          if [[ "$runtime_count" == '1' ]]; then
+            runtime_name="$(jq -r '.artifacts[] | select(.expired == false and (.name | test("^chise-tweaks-.*\\.jar$"))) | .name' <<<"$artifacts")"
+            has_runtime='true'
+          fi
+
+          {
+            echo 'candidate=true'
+            echo "pr_number=${pr_number}"
+            echo "prior_run_id=${prior_run_id}"
+            echo "has_runtime_artifact=${has_runtime}"
+            echo "runtime_artifact_name=${runtime_name}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download prior PR provenance
+        if: ${{ steps.prior.outputs.candidate == 'true' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: chise-ci-provenance
+          path: build/prior
+          run-id: ${{ steps.prior.outputs.prior_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Classify execution mode
         id: scope
         env:
           EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.sha }}
+          GH_REPO: ${{ github.repository }}
+          PRIOR_CANDIDATE: ${{ steps.prior.outputs.candidate }}
+          PRIOR_RUN_ID: ${{ steps.prior.outputs.prior_run_id }}
+          HAS_RUNTIME_ARTIFACT: ${{ steps.prior.outputs.has_runtime_artifact }}
         run: |
-          if [[ "$EVENT_NAME" != 'pull_request' ]]; then
-            echo 'scope=full' >> "$GITHUB_OUTPUT"
-            echo 'heavy=true' >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == 'pull_request' ]]; then
+            git diff --name-only --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" > /tmp/chise-changed-files.txt
+            scope="$(python3 scripts/ci_scope.py --file-list /tmp/chise-changed-files.txt)"
+            heavy='false'
+            if [[ "$scope" == 'full' ]]; then
+              heavy='true'
+            fi
+            {
+              echo "scope=${scope}"
+              echo "heavy=${heavy}"
+              echo 'promote=false'
+              echo 'reason=pull-request'
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          git diff --name-only --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" > /tmp/chise-changed-files.txt
-          scope="$(python3 scripts/ci_scope.py --file-list /tmp/chise-changed-files.txt)"
-          echo "scope=$scope" >> "$GITHUB_OUTPUT"
-          if [[ "$scope" == 'full' ]]; then
-            echo 'heavy=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'heavy=false' >> "$GITHUB_OUTPUT"
+          if [[ "$EVENT_NAME" == 'push' && "$PRIOR_CANDIDATE" == 'true' && -f build/prior/ci-provenance.json ]]; then
+            current_tree="$(git rev-parse 'HEAD^{tree}')"
+            decision="$(python3 scripts/ci_provenance.py decide               --input build/prior/ci-provenance.json               --repository "$GH_REPO"               --expected-run-id "$PRIOR_RUN_ID"               --current-tree-sha "$current_tree"               --has-runtime-artifact "$HAS_RUNTIME_ARTIFACT")"
+            {
+              echo "scope=$(jq -r '.scope' <<<"$decision")"
+              echo "heavy=$(jq -r '.heavy' <<<"$decision")"
+              echo "promote=$(jq -r '.promote' <<<"$decision")"
+              echo "reason=$(jq -r '.reason' <<<"$decision")"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          {
+            echo 'scope=full'
+            echo 'heavy=true'
+            echo 'promote=false'
+            echo 'reason=direct-or-unverified-main'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Python 3.14
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -64,7 +152,9 @@ jobs:
 
       - name: Test repository tooling
         run: |
+          python -m compileall -q scripts
           python scripts/test_ci_scope.py
+          python scripts/test_ci_provenance.py
           python scripts/test_ci_workflow_contract.py
           python scripts/test_versioning_tools.py
           python scripts/test_prism_acceptance_audit.py
@@ -76,8 +166,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          previous_tag="$(gh api "repos/${GH_REPO}/releases?per_page=100" \
-            --jq '[.[] | select(.draft == false and .prerelease == false and (.tag_name | test("^v[0-9]+\\.")))] | sort_by(.published_at) | last | .tag_name // ""')"
+          previous_tag="$(gh api "repos/${GH_REPO}/releases?per_page=100"             --jq '[.[] | select(.draft == false and .prerelease == false and (.tag_name | test("^v[0-9]+\\.")))] | sort_by(.published_at) | last | .tag_name // ""')"
           if [[ -z "$previous_tag" ]]; then
             echo 'No previous official SemVer release; progression check skipped.'
           else
@@ -92,6 +181,19 @@ jobs:
           python scripts/documentation_consistency_audit.py
           python scripts/compatibility_contract_audit.py
           python scripts/functional_parity_audit.py
+
+      - name: Download tree-identical verified runtime
+        if: ${{ steps.scope.outputs.promote == 'true' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ steps.prior.outputs.runtime_artifact_name }}
+          path: build/libs
+          run-id: ${{ steps.prior.outputs.prior_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Audit promoted runtime
+        if: ${{ steps.scope.outputs.promote == 'true' }}
+        run: python scripts/promoted_artifact_audit.py
 
       - name: Set up Java 25
         if: ${{ steps.scope.outputs.heavy == 'true' }}
@@ -126,18 +228,101 @@ jobs:
           python scripts/visual_asset_audit.py
           python scripts/release_residue_audit.py
 
-      - name: Summarize CI scope
+      - name: Resolve verified runtime metadata
+        id: runtime
+        if: ${{ success() && (steps.scope.outputs.heavy == 'true' || steps.scope.outputs.promote == 'true') }}
+        run: |
+          mapfile -t candidates < <(find build/libs -maxdepth 1 -type f -name 'chise-tweaks-*.jar' ! -name '*-sources.jar' -print)
+          if [[ "${#candidates[@]}" -ne 1 ]]; then
+            echo "Expected exactly one verified runtime JAR, found ${#candidates[@]}." >&2
+            exit 1
+          fi
+          runtime="${candidates[0]}"
+          runtime_jar="$(basename "$runtime")"
+          runtime_sha256="$(sha256sum "$runtime" | cut -d' ' -f1)"
+          {
+            echo "runtime_jar=${runtime_jar}"
+            echo "runtime_sha256=${runtime_sha256}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Write reusable PR provenance
+        if: ${{ success() && github.event_name == 'pull_request' }}
+        env:
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SCOPE: ${{ steps.scope.outputs.scope }}
+          RUNTIME_JAR: ${{ steps.runtime.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.runtime.outputs.runtime_sha256 }}
+        run: |
+          tested_commit="$(git rev-parse HEAD)"
+          tested_tree="$(git rev-parse 'HEAD^{tree}')"
+          version="$(sed -n 's/^mod_version=//p' gradle.properties)"
+          args=(
+            write
+            --output build/ci/ci-provenance.json
+            --repository "$GH_REPO"
+            --run-id "$RUN_ID"
+            --event pull_request
+            --scope "$SCOPE"
+            --tested-commit-sha "$tested_commit"
+            --tested-tree-sha "$tested_tree"
+            --version "$version"
+          )
+          if [[ "$SCOPE" == 'full' ]]; then
+            args+=(--runtime-verified --runtime-jar "$RUNTIME_JAR" --runtime-sha256 "$RUNTIME_SHA256")
+          fi
+          python scripts/ci_provenance.py "${args[@]}"
+
+      - name: Upload PR provenance
+        if: ${{ success() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: chise-ci-provenance
+          path: build/ci/ci-provenance.json
+          archive: false
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Upload verified runtime JAR
+        if: ${{ success() && steps.runtime.outputs.runtime_jar != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.runtime.outputs.runtime_jar }}
+          path: build/libs/${{ steps.runtime.outputs.runtime_jar }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Resolve release candidate
+        id: release_candidate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref }}
+          RUNTIME_JAR: ${{ steps.runtime.outputs.runtime_jar }}
+        run: |
+          ready='false'
+          if [[ "$EVENT_NAME" == 'push' && "$REF_NAME" == 'refs/heads/main' && -n "$RUNTIME_JAR" ]]; then
+            ready='true'
+          fi
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+
+      - name: Summarize CI v3
         if: ${{ always() }}
         env:
           CI_SCOPE: ${{ steps.scope.outputs.scope }}
           HEAVY_GATE: ${{ steps.scope.outputs.heavy }}
+          PROMOTED: ${{ steps.scope.outputs.promote }}
+          REASON: ${{ steps.scope.outputs.reason }}
+          PRIOR_RUN: ${{ steps.prior.outputs.prior_run_id }}
         run: |
           {
-            echo '### CI v2 scope'
+            echo '### CI v3 execution'
             echo "- Scope: `$CI_SCOPE`"
-            echo "- Heavy Java / Gradle / PIT / GameTest / distribution gate: `$HEAVY_GATE`"
-            if [[ "$HEAVY_GATE" == 'false' ]]; then
-              echo '- Non-runtime PR: repository tooling and contract audits ran; Java/Gradle/PIT/GameTest/distribution work was skipped.'
+            echo "- Heavy Java / Gradle / PIT / GameTest gate: `$HEAVY_GATE`"
+            echo "- Tree-identical PR artifact promoted: `$PROMOTED`"
+            echo "- Decision: `$REASON`"
+            if [[ "$PROMOTED" == 'true' ]]; then
+              echo "- Source PR CI run: `$PRIOR_RUN`"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -148,11 +333,251 @@ jobs:
             cat build/ci/artifact-summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Upload verified runtime JAR
-        if: ${{ success() && steps.scope.outputs.heavy == 'true' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+  release:
+    name: release / Publish verified runtime JAR
+    needs:
+      - verify
+    permissions:
+      actions: read
+      contents: write
+    if: >-
+      ${{ needs.verify.result == 'success' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.verify.outputs.release_ready == 'true' }}
+    runs-on: ${{ fromJSON(vars.CHISE_CI_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Reject stale CI results
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          latest_main_sha="$(gh api "repos/${GH_REPO}/commits/main" --jq '.sha')"
+          if [[ "$latest_main_sha" != "$TARGET_SHA" ]]; then
+            echo "Skipping stale CI result '$TARGET_SHA'; current main is '$latest_main_sha'."
+            echo 'should_release=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo 'should_release=true' >> "$GITHUB_OUTPUT"
+          echo 'skip_reason=' >> "$GITHUB_OUTPUT"
+          echo "Promoting CI artifact from verified commit: $TARGET_SHA"
+
+      - name: Download exact CI artifact
+        if: ${{ steps.target.outputs.should_release == 'true' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}
-          archive: false
-          if-no-files-found: error
-          retention-days: 3
+          name: ${{ needs.verify.outputs.runtime_jar }}
+          path: release
+
+      - name: Validate promoted runtime JAR
+        if: ${{ steps.target.outputs.should_release == 'true' }}
+        id: artifact
+        run: |
+          mapfile -t candidates < <(find release -maxdepth 1 -type f -name 'chise-tweaks-*.jar' -print)
+          if [[ "${#candidates[@]}" -ne 1 ]]; then
+            echo "Expected exactly one verified runtime JAR, found ${#candidates[@]}." >&2
+            exit 1
+          fi
+
+          runtime="${candidates[0]}"
+          runtime_jar="$(basename "$runtime")"
+          runtime_sha256="$(sha256sum "$runtime" | cut -d' ' -f1)"
+          fabric_metadata="$(unzip -p "$runtime" fabric.mod.json)"
+
+          version="$(jq -r '.version // empty' <<<"$fabric_metadata")"
+          minecraft_version="$(jq -r '.depends.minecraft // empty' <<<"$fabric_metadata")"
+          loader_constraint="$(jq -r '.depends.fabricloader // empty' <<<"$fabric_metadata")"
+          fabric_api_constraint="$(jq -r '.depends["fabric-api"] // empty' <<<"$fabric_metadata")"
+          java_constraint="$(jq -r '.depends.java // empty' <<<"$fabric_metadata")"
+          environment="$(jq -r '.environment // empty' <<<"$fabric_metadata")"
+          server_required="$(jq -r 'if (.custom.chisetweaks | has("serverInstallationRequired")) then .custom.chisetweaks.serverInstallationRequired else empty end' <<<"$fabric_metadata")"
+
+          if [[ -z "$version" || -z "$minecraft_version" || -z "$loader_constraint" || -z "$fabric_api_constraint" || -z "$java_constraint" ]]; then
+            echo 'Runtime JAR is missing required release metadata.' >&2
+            exit 1
+          fi
+          if [[ "$environment" != 'client' || "$server_required" != 'false' ]]; then
+            echo 'Runtime JAR no longer satisfies the client-only release contract.' >&2
+            exit 1
+          fi
+          if [[ "$runtime_jar" != "chise-tweaks-${version}.jar" ]]; then
+            echo "Runtime filename '$runtime_jar' does not match embedded version '$version'." >&2
+            exit 1
+          fi
+
+          {
+            echo "runtime_jar=$runtime_jar"
+            echo "runtime_path=$runtime"
+            echo "runtime_sha256=$runtime_sha256"
+            echo "version=$version"
+            echo "tag=v${version}"
+            echo "minecraft_version=$minecraft_version"
+            echo "loader_constraint=$loader_constraint"
+            echo "fabric_api_constraint=$fabric_api_constraint"
+            echo "java_constraint=$java_constraint"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Prevent duplicate or dangling releases
+        if: ${{ steps.target.outputs.should_release == 'true' }}
+        id: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.artifact.outputs.tag }}
+        run: |
+          if gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release '$TAG' already exists; nothing new will be published."
+            echo 'should_publish=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag '$TAG' exists without a matching GitHub Release; refusing to reuse it." >&2
+            exit 1
+          fi
+
+          echo 'should_publish=true' >> "$GITHUB_OUTPUT"
+
+      - name: Enforce one-step SemVer increment
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.publish.outputs.should_publish == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ steps.artifact.outputs.version }}
+        run: |
+          if [[ ! "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)\+mc.+$ ]]; then
+            echo "Release version '$VERSION' does not match MAJOR.MINOR.PATCH+mc<version>." >&2
+            exit 1
+          fi
+          current_major="${BASH_REMATCH[1]}"
+          current_minor="${BASH_REMATCH[2]}"
+          current_patch="${BASH_REMATCH[3]}"
+
+          previous_tag="$(gh release list --repo "$GH_REPO" --limit 100 --json tagName,isDraft,isPrerelease,publishedAt \
+            --jq '[.[] | select(.isDraft == false and .isPrerelease == false and (.tagName | test("^v[0-9]+\\.")))] | sort_by(.publishedAt) | last | .tagName // ""')"
+
+          if [[ -z "$previous_tag" ]]; then
+            echo "No previous official SemVer release exists; accepting initial release '$VERSION'."
+            exit 0
+          fi
+
+          previous_version="${previous_tag#v}"
+          if [[ ! "$previous_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)\+mc.+$ ]]; then
+            echo "Previous official release '$previous_tag' does not match the versioning contract." >&2
+            exit 1
+          fi
+          previous_major="${BASH_REMATCH[1]}"
+          previous_minor="${BASH_REMATCH[2]}"
+          previous_patch="${BASH_REMATCH[3]}"
+
+          release_type=''
+          if (( current_major == previous_major && current_minor == previous_minor && current_patch == previous_patch + 1 )); then
+            release_type='patch'
+          elif (( current_major == previous_major && current_minor == previous_minor + 1 && current_patch == 0 )); then
+            release_type='minor'
+          elif (( current_major == previous_major + 1 && current_minor == 0 && current_patch == 0 )); then
+            release_type='major'
+          else
+            echo "Version '$VERSION' is not an exact patch/minor/major increment from '$previous_version'." >&2
+            exit 1
+          fi
+
+          echo "SemVer release increment: ${previous_version} -> ${VERSION} (${release_type})"
+
+      - name: Prepare concise release notes
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.publish.outputs.should_publish == 'true' }}
+        env:
+          VERSION: ${{ steps.artifact.outputs.version }}
+          MC_VERSION: ${{ steps.artifact.outputs.minecraft_version }}
+          LOADER_CONSTRAINT: ${{ steps.artifact.outputs.loader_constraint }}
+          FABRIC_API_CONSTRAINT: ${{ steps.artifact.outputs.fabric_api_constraint }}
+          JAVA_CONSTRAINT: ${{ steps.artifact.outputs.java_constraint }}
+          RUNTIME_JAR: ${{ steps.artifact.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.artifact.outputs.runtime_sha256 }}
+        run: |
+          cat > release-notes.md <<EOF
+          ## Install / 導入
+
+          Prism Launcher の Mods には **\`${RUNTIME_JAR}\`** だけを追加してください。
+
+          - Version: \`${VERSION}\`
+          - Minecraft: \`${MC_VERSION}\`
+          - Fabric Loader: \`${LOADER_CONSTRAINT}\`
+          - Fabric API: \`${FABRIC_API_CONSTRAINT}\`
+          - Java: \`${JAVA_CONSTRAINT}\`
+          - SHA-256: \`${RUNTIME_SHA256}\`
+          EOF
+
+      - name: Create GitHub Release
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.publish.outputs.should_publish == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.sha }}
+          TAG: ${{ steps.artifact.outputs.tag }}
+          VERSION: ${{ steps.artifact.outputs.version }}
+          RUNTIME_PATH: ${{ steps.artifact.outputs.runtime_path }}
+        run: |
+          gh release create "$TAG" \
+            "$RUNTIME_PATH" \
+            --repo "$GH_REPO" \
+            --target "$TARGET_SHA" \
+            --title "ChiseTweaks ${VERSION}" \
+            --notes-file release-notes.md
+
+      - name: Verify published Release metadata
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.publish.outputs.should_publish == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.sha }}
+          TAG: ${{ steps.artifact.outputs.tag }}
+          RUNTIME_JAR: ${{ steps.artifact.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.artifact.outputs.runtime_sha256 }}
+        run: |
+          gh api "repos/${GH_REPO}/releases/tags/${TAG}" > /tmp/official-release.json
+
+          asset_count="$(jq '[.assets[]?] | length' /tmp/official-release.json)"
+          if [[ "$asset_count" != '1' ]]; then
+            echo "Official Release must expose exactly one uploaded mod asset, found ${asset_count}." >&2
+            exit 1
+          fi
+
+          remote_digest="$(jq -r --arg name "$RUNTIME_JAR" '.assets[]? | select(.name == $name) | .digest // empty' /tmp/official-release.json)"
+          if [[ "$remote_digest" != "sha256:${RUNTIME_SHA256}" ]]; then
+            echo "Published runtime JAR digest mismatch: '$remote_digest'." >&2
+            exit 1
+          fi
+
+          published_tag_sha="$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" --jq '.object.sha')"
+          if [[ "$published_tag_sha" != "$TARGET_SHA" ]]; then
+            echo "Release tag points to '$published_tag_sha' instead of CI-verified '$TARGET_SHA'." >&2
+            exit 1
+          fi
+
+          printf '### Official Release\n- Tag: `%s`\n- Commit: `%s`\n- Runtime JAR: `%s`\n- SHA-256: `%s`\n- Exact CI artifact promoted: `PASS`\n' \
+            "$TAG" "$TARGET_SHA" "$RUNTIME_JAR" "$RUNTIME_SHA256" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarize skipped release
+        if: ${{ steps.target.outputs.should_release == 'false' }}
+        env:
+          TARGET_SHA: ${{ github.sha }}
+          SKIP_REASON: ${{ steps.target.outputs.skip_reason }}
+        run: |
+          reason="$SKIP_REASON"
+          if [[ -z "$reason" ]]; then
+            reason='stale-main'
+          fi
+          printf '### Official Release\n- Skipped commit: `%s`\n- Reason: `%s`\n' "$TARGET_SHA" "$reason" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarize existing release
+        if: ${{ steps.target.outputs.should_release == 'true' && steps.publish.outputs.should_publish == 'false' }}
+        env:
+          TAG: ${{ steps.artifact.outputs.tag }}
+        run: |
+          printf '### Official Release\n- `%s` already exists. No duplicate Release was created.\n' "$TAG" >> "$GITHUB_STEP_SUMMARY"

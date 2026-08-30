@@ -3,7 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
-RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
+RETIRED_RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 
 
 def require(text: str, marker: str, label: str) -> None:
@@ -13,33 +13,55 @@ def require(text: str, marker: str, label: str) -> None:
 
 def main() -> int:
     ci = CI_WORKFLOW.read_text(encoding="utf-8")
-    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
 
     require(ci, "name: verify / Java 25 quality gate", "required status-check name")
+    require(ci, "actions: read", "prior-run artifact permission")
+    require(ci, "- name: Resolve prior PR verification", "main provenance resolver")
+    require(ci, "commits/${HEAD_SHA}/pulls", "merged PR lookup")
+    require(ci, "event=pull_request&status=success", "successful PR CI lookup")
+    require(ci, "name: chise-ci-provenance", "provenance artifact")
     require(ci, "python3 scripts/ci_scope.py --file-list", "scope classifier")
+    require(ci, "python3 scripts/ci_provenance.py decide", "tree provenance decision")
     require(ci, "--diff-filter=ACDMRTUXB", "deletion-aware diff")
-    require(ci, "if [[ \"$EVENT_NAME\" != 'pull_request' ]]", "main/workflow_dispatch full gate")
-    require(ci, "if [[ \"$scope\" == 'full' ]]", "only full scope enters heavy gate")
-    require(ci, "python scripts/test_ci_scope.py", "scope self-test")
-    require(ci, "python scripts/test_ci_workflow_contract.py", "workflow self-test")
-    require(ci, "success() && steps.scope.outputs.heavy == 'true'", "artifact upload heavy gate")
+    require(ci, "reason=direct-or-unverified-main", "fail-closed main fallback")
+    require(ci, "- name: Download tree-identical verified runtime", "runtime promotion download")
+    require(ci, "python scripts/promoted_artifact_audit.py", "promoted artifact audit")
+    require(ci, "python -m compileall -q scripts", "Python tooling compile check")
+    require(ci, "python scripts/test_ci_provenance.py", "provenance self-test")
+    require(ci, "- name: Write reusable PR provenance", "provenance writer")
+    require(ci, "tested_tree", "tested tree capture")
+    require(ci, "steps.runtime.outputs.runtime_jar != ''", "runtime upload gate")
 
     require(ci, "- ready_for_review", "draft-to-ready trigger")
     require(ci, "github.event.pull_request.draft == false", "draft PR skip")
     require(ci, "timeout-minutes: 15", "CI runaway budget cap")
     require(ci, "retention-days: 3", "short-lived CI artifact")
     require(ci, "vars.CHISE_CI_RUNS_ON", "runner override")
-    require(release, "vars.CHISE_CI_RUNS_ON", "release runner override")
-    require(release, "timeout-minutes: 5", "release runaway budget cap")
+
+    require(ci, "name: release / Publish verified runtime JAR", "integrated release job")
+    require(ci, "needs.verify.outputs.release_ready == 'true'", "runtime-only release gate")
+    require(ci, "contents: write", "release write permission")
+    require(ci, "timeout-minutes: 5", "release runaway budget cap")
+    require(ci, "name: ${{ needs.verify.outputs.runtime_jar }}", "same-run exact artifact download")
+    require(ci, "Exact CI artifact promoted", "release artifact integrity summary")
+
+    if RETIRED_RELEASE_WORKFLOW.exists():
+        raise AssertionError("standalone release workflow must remain retired")
 
     heavy_condition = "if: ${{ steps.scope.outputs.heavy == 'true' }}"
     if ci.count(heavy_condition) < 6:
         raise AssertionError("heavy runtime steps are no longer consistently scope-gated")
 
     audit_index = ci.index("- name: Audit repository contracts")
+    promotion_index = ci.index("- name: Download tree-identical verified runtime")
     java_index = ci.index("- name: Set up Java 25")
-    if audit_index >= java_index:
-        raise AssertionError("static contract audits must fail fast before Java/Gradle setup")
+    if not (audit_index < promotion_index < java_index):
+        raise AssertionError("static audits must fail fast before promotion or Java/Gradle execution")
+
+    release_index = ci.index("  release:")
+    release_candidate_index = ci.index("- name: Resolve release candidate")
+    if release_candidate_index >= release_index:
+        raise AssertionError("verify job must decide runtime release readiness before release job")
 
     print("CI WORKFLOW CONTRACT TESTS: PASS")
     return 0
