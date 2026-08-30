@@ -160,7 +160,7 @@ final class PerformanceArchitectureContractTest {
 
         assertTrue(audit.contains("PATTERN_INSPECTOR"));
         assertTrue(audit.contains("MAX_BLOCKS_PER_TICK = 256"));
-        assertTrue(audit.contains("MAX_RETAINED_MISMATCHES = 64"));
+        assertTrue(audit.contains("pattern_consistency_position_retention=false"));
         assertTrue(audit.contains("pattern_consistency_scan=bounded_loaded_chunks_only"));
     }
 }

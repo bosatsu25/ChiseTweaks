@@ -198,13 +198,14 @@ def audit() -> list[str]:
         "HORIZONTAL_RADIUS = 8",
         "VERTICAL_RADIUS = 4",
         "MAX_BLOCKS_PER_TICK = 256",
-        "MAX_RETAINED_MISMATCHES = 64",
         "RESCAN_INTERVAL_TICKS = 20",
         "processed++ < MAX_BLOCKS_PER_TICK",
         "getChunkSource().hasChunk",
     ):
         if marker not in pattern_text:
             failures.append(f"Pattern Consistency budget changed or disappeared: {marker}")
+    if "retainedMismatchPositions" in pattern_text:
+        failures.append(f"{PATTERN_INSPECTOR}: unused mismatch position retention returned")
     if PLAIN_GET_CHUNK.search(pattern_text):
         failures.append(f"{PATTERN_INSPECTOR}: potentially force-loading getChunk call detected")
 
@@ -230,6 +231,7 @@ def main() -> int:
     print("analyzer_force_chunk_load=false")
     print(f"retained_analyzers={len(ANALYZERS)}")
     print("pattern_consistency_scan=bounded_loaded_chunks_only")
+    print("pattern_consistency_position_retention=false")
     print("detector_self_test=true")
     return 0
 

@@ -342,7 +342,7 @@ final class ChiseTweaksSettingsController {
     private static void addSchematicPlacementRows(
             ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "schematicPlacement.title", "Schematic Placement");
-        SchematicPlacementInspector.Snapshot schematic = SchematicPlacementInspector.snapshot();
+        PlacementInspector.SchematicSnapshot schematic = PlacementInspector.schematicSnapshot();
         if (!schematic.available()) {
             info(rows, "schematicPlacement.none",
                     "No active schematic comparison",
@@ -421,7 +421,7 @@ final class ChiseTweaksSettingsController {
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             CrosshairInspector.Snapshot placement) {
         header(rows, "placement.title", "screen.chisetweaks.placement.title");
-        boolean comparison = placement.placementResult() != PlacementComparisonTracker.NONE;
+        boolean comparison = placement.placementResult() != PlacementInspector.NONE;
         if (!comparison && placement.clickedFace() == null) {
             info(rows, "placement.none",
                     text("screen.chisetweaks.inspector.none"),
@@ -453,8 +453,8 @@ final class ChiseTweaksSettingsController {
                             placement.actualPlacement())));
             info(rows, "placement.result",
                     text("screen.chisetweaks.placement.result"),
-                    text(comparisonResultKey(placement.placementResult())));
-            if (placement.placementResult() == PlacementComparisonTracker.ADJUSTED) {
+                    text(CrosshairInspector.comparisonResultKey(placement.placementResult())));
+            if (placement.placementResult() == PlacementInspector.ADJUSTED) {
                 info(rows, "placement.changed",
                         text("screen.chisetweaks.placement.changed"),
                         changedPlacementProperties(state, placement.actualPlacement()));
@@ -488,26 +488,6 @@ final class ChiseTweaksSettingsController {
         }
     }
 
-    static String semanticPropertyGroup(String property) {
-        return switch (property == null ? "" : property) {
-            case "facing", "axis" -> "orientation";
-            case "half", "type", "shape", "face" -> "shape";
-            case "north", "south", "east", "west", "up", "down", "in_wall" -> "connection";
-            case "open", "powered", "lit", "honey_level" -> "interaction";
-            case "waterlogged" -> "fluid";
-            default -> "other";
-        };
-    }
-
-    static String comparisonResultKey(int result) {
-        return switch (result) {
-            case PlacementComparisonTracker.MATCH -> "screen.chisetweaks.placement.result.match";
-            case PlacementComparisonTracker.ADJUSTED -> "screen.chisetweaks.placement.result.adjusted";
-            case PlacementComparisonTracker.DIFFERENT -> "screen.chisetweaks.placement.result.different";
-            default -> "screen.chisetweaks.placement.result.unavailable";
-        };
-    }
-
     private static String semanticProperties(List<String> properties) {
         return semanticProperties(properties, null);
     }
@@ -517,11 +497,11 @@ final class ChiseTweaksSettingsController {
         for (String property : properties) {
             int separator = property.indexOf('=');
             String name = property.substring(0, separator);
-            if (requiredGroup != null && !requiredGroup.equals(semanticPropertyGroup(name))) continue;
+            if (requiredGroup != null && !requiredGroup.equals(CrosshairInspector.semanticPropertyGroup(name))) continue;
             if (!result.isEmpty()) result.append('\n');
-            result.append(humanize(name))
+            result.append(CrosshairInspector.humanize(name))
                     .append("  ")
-                    .append(humanize(property.substring(separator + 1)));
+                    .append(CrosshairInspector.humanize(property.substring(separator + 1)));
         }
         return result.toString();
     }
@@ -536,11 +516,11 @@ final class ChiseTweaksSettingsController {
             String actualProperty = findProperty(after, name);
             if (actualProperty == null || property.equals(actualProperty)) continue;
             if (!changed.isEmpty()) changed.append('\n');
-            changed.append(humanize(name))
+            changed.append(CrosshairInspector.humanize(name))
                     .append(": ")
-                    .append(humanize(property.substring(separator + 1)))
+                    .append(CrosshairInspector.humanize(property.substring(separator + 1)))
                     .append(" → ")
-                    .append(humanize(actualProperty.substring(actualProperty.indexOf('=') + 1)));
+                    .append(CrosshairInspector.humanize(actualProperty.substring(actualProperty.indexOf('=') + 1)));
         }
         return changed.toString();
     }
@@ -551,11 +531,6 @@ final class ChiseTweaksSettingsController {
             if (property.startsWith(prefix)) return property;
         }
         return null;
-    }
-
-    static String humanize(String token) {
-        String value = token.replace('_', ' ');
-        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
     }
 
     private static String filterReason(BuilderFocusVisibility.FilterDecision decision) {
@@ -570,17 +545,9 @@ final class ChiseTweaksSettingsController {
         StringBuilder result = new StringBuilder();
         for (FeatureDefinition feature : features) {
             if (!result.isEmpty()) result.append('\n');
-            result.append(modes ? text(renderModeKey(feature, hidden)) : feature.englishName());
+            result.append(modes ? text(CrosshairInspector.renderModeKey(feature, hidden)) : feature.englishName());
         }
         return result.toString();
-    }
-
-    static String renderModeKey(FeatureDefinition feature, boolean hidden) {
-        if (hidden) return "screen.chisetweaks.inspector.render_mode.suppressed";
-        return feature == FeatureDefinition.LAVA_HIGHLIGHT
-                || feature == FeatureDefinition.HIDDEN_SURFACE_TRACE
-                ? "screen.chisetweaks.inspector.render_mode.through_wall"
-                : "screen.chisetweaks.inspector.render_mode.visible";
     }
 
     private static void addCommonHelpRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {

@@ -66,7 +66,7 @@ public final class InteractionHistory implements RuntimeComponent, SessionAwareR
     }
 
     public static void recordPlacement(BlockPos pos, BlockState predicted, BlockState actual) {
-        String schematic = SchematicPlacementInspector.resultLabelAt(pos);
+        String schematic = PlacementInspector.schematicResultLabelAt(pos);
         String detail = "Placed";
         if (predicted != null && actual != null) {
             detail += predicted.equals(actual) ? " / MATCH" : " / ADJUSTED";

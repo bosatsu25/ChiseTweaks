@@ -44,7 +44,7 @@ final class CrosshairInspectorTest {
                 List.of(FeatureDefinition.NETHER_PALETTE),
                 null,
                 null,
-                PlacementComparisonTracker.NONE,
+                PlacementInspector.NONE,
                 null,
                 false);
         var entity = new CrosshairInspector.Snapshot(
@@ -55,7 +55,7 @@ final class CrosshairInspectorTest {
                 List.of(),
                 null,
                 null,
-                PlacementComparisonTracker.NONE,
+                PlacementInspector.NONE,
                 null,
                 false);
 
@@ -72,7 +72,7 @@ final class CrosshairInspectorTest {
                 List.of(),
                 null,
                 null,
-                PlacementComparisonTracker.NONE,
+                PlacementInspector.NONE,
                 null,
                 false));
     }
@@ -96,25 +96,25 @@ final class CrosshairInspectorTest {
 
     @Test
     void semanticPropertyGroupsPreserveKnownMeaningsAndUnknownFallback() {
-        assertEquals("orientation", ChiseTweaksSettingsCatalog.semanticPropertyGroup("facing"));
-        assertEquals("orientation", ChiseTweaksSettingsCatalog.semanticPropertyGroup("axis"));
-        assertEquals("shape", ChiseTweaksSettingsCatalog.semanticPropertyGroup("shape"));
-        assertEquals("connection", ChiseTweaksSettingsCatalog.semanticPropertyGroup("north"));
-        assertEquals("interaction", ChiseTweaksSettingsCatalog.semanticPropertyGroup("powered"));
-        assertEquals("fluid", ChiseTweaksSettingsCatalog.semanticPropertyGroup("waterlogged"));
-        assertEquals("other", ChiseTweaksSettingsCatalog.semanticPropertyGroup("modded_property"));
+        assertEquals("orientation", CrosshairInspector.semanticPropertyGroup("facing"));
+        assertEquals("orientation", CrosshairInspector.semanticPropertyGroup("axis"));
+        assertEquals("shape", CrosshairInspector.semanticPropertyGroup("shape"));
+        assertEquals("connection", CrosshairInspector.semanticPropertyGroup("north"));
+        assertEquals("interaction", CrosshairInspector.semanticPropertyGroup("powered"));
+        assertEquals("fluid", CrosshairInspector.semanticPropertyGroup("waterlogged"));
+        assertEquals("other", CrosshairInspector.semanticPropertyGroup("modded_property"));
     }
 
     @Test
     void comparisonResultKeysCoverEveryBoundedState() {
         assertEquals("screen.chisetweaks.placement.result.match",
-                ChiseTweaksSettingsCatalog.comparisonResultKey(PlacementComparisonTracker.MATCH));
+                CrosshairInspector.comparisonResultKey(PlacementInspector.MATCH));
         assertEquals("screen.chisetweaks.placement.result.adjusted",
-                ChiseTweaksSettingsCatalog.comparisonResultKey(PlacementComparisonTracker.ADJUSTED));
+                CrosshairInspector.comparisonResultKey(PlacementInspector.ADJUSTED));
         assertEquals("screen.chisetweaks.placement.result.different",
-                ChiseTweaksSettingsCatalog.comparisonResultKey(PlacementComparisonTracker.DIFFERENT));
+                CrosshairInspector.comparisonResultKey(PlacementInspector.DIFFERENT));
         assertEquals("screen.chisetweaks.placement.result.unavailable",
-                ChiseTweaksSettingsCatalog.comparisonResultKey(PlacementComparisonTracker.UNAVAILABLE));
+                CrosshairInspector.comparisonResultKey(PlacementInspector.UNAVAILABLE));
     }
 
     @Test
@@ -151,10 +151,10 @@ final class CrosshairInspectorTest {
                 FeatureDefinition.LAVA_HIGHLIGHT), observed);
         assertEquals(List.of(FeatureDefinition.MATERIAL_HIGHLIGHTS), ancient);
         assertEquals("screen.chisetweaks.inspector.render_mode.visible",
-                ChiseTweaksSettingsCatalog.renderModeKey(
+                CrosshairInspector.renderModeKey(
                         FeatureDefinition.MATERIAL_HIGHLIGHTS, false));
         assertEquals("screen.chisetweaks.inspector.render_mode.through_wall",
-                ChiseTweaksSettingsCatalog.renderModeKey(
+                CrosshairInspector.renderModeKey(
                         FeatureDefinition.LAVA_HIGHLIGHT, false));
     }
 
@@ -174,7 +174,7 @@ final class CrosshairInspectorTest {
 
         assertFalse(impacts.isEmpty());
         assertEquals("screen.chisetweaks.inspector.render_mode.suppressed",
-                ChiseTweaksSettingsCatalog.renderModeKey(impacts.get(0), true));
+                CrosshairInspector.renderModeKey(impacts.get(0), true));
     }
 
     @Test

@@ -58,7 +58,7 @@ final class CrosshairInspector {
     private static final int MAX_TOKEN_LENGTH = 64;
     private static final Snapshot NO_TARGET = new Snapshot(
             HitResult.Type.MISS, "", List.of(), null, List.of(), null, null,
-            PlacementComparisonTracker.NONE, null, false);
+            PlacementInspector.NONE, null, false);
 
     private HitResult.Type cachedKind;
     private BlockState cachedBlockState;
@@ -126,29 +126,25 @@ final class CrosshairInspector {
         long featureMask = enabledFeatureMask();
         long filterRevision = BuilderFocusVisibility.revision();
         long oreRevision = OreHighlightResolver.revision();
-        PlacementComparisonTracker comparison = PlacementComparisonTracker.activeAt(
+        PlacementInspector comparison = PlacementInspector.activeAt(
                 client.level, hit.getBlockPos());
         ItemStack stack = client.player == null ? null : client.player.getMainHandItem();
-        boolean placementAvailable = stack != null
-                && stack.getItem() instanceof BlockItem item
-                && supportsPlacementPreview(item.getBlock());
-        Direction clickedFace = placementAvailable ? hit.getDirection() : null;
-        boolean upperClick = placementAvailable
+        PlacementProbe probe = placementProbe(
+                client.level,
+                client.player,
+                InteractionHand.MAIN_HAND,
+                stack,
+                hit,
+                true);
+        BlockState livePrediction = probe == null ? null : probe.predictedState();
+        Direction clickedFace = probe == null ? null : hit.getDirection();
+        boolean upperClick = probe != null
                 && hit.getLocation().y - hit.getBlockPos().getY() > 0.5D;
-        BlockState livePrediction = placementAvailable
-                ? predictPlacementState(
-                        client.level,
-                        client.player,
-                        InteractionHand.MAIN_HAND,
-                        stack,
-                        hit,
-                        true)
-                : null;
         BlockState predictedPlacement = comparison == null ? livePrediction : comparison.predictedState;
         BlockState actualPlacement = comparison == null ? null : comparison.actualState;
         int placementResult = comparison == null
-                ? PlacementComparisonTracker.NONE
-                : PlacementComparisonTracker.compare(predictedPlacement, actualPlacement);
+                ? PlacementInspector.NONE
+                : PlacementInspector.compare(predictedPlacement, actualPlacement);
         if (cachedKind == HitResult.Type.BLOCK
                 && cachedBlockState == state
                 && cachedFeatureMask == featureMask
@@ -215,7 +211,7 @@ final class CrosshairInspector {
                         List.of(),
                         null,
                         null,
-                        PlacementComparisonTracker.NONE,
+                        PlacementInspector.NONE,
                         null,
                         false);
         return true;
@@ -270,19 +266,40 @@ final class CrosshairInspector {
             ItemStack stack,
             BlockHitResult hit,
             boolean enabled) {
-        if (!enabled || !(stack.getItem() instanceof BlockItem item)
+        PlacementProbe probe = placementProbe(level, player, hand, stack, hit, enabled);
+        return probe == null ? null : probe.predictedState();
+    }
+
+    static PlacementProbe placementProbe(
+            Level level,
+            Player player,
+            InteractionHand hand,
+            ItemStack stack,
+            BlockHitResult hit,
+            boolean enabled) {
+        if (!enabled
+                || level == null
+                || player == null
+                || hand == null
+                || stack == null
+                || hit == null
+                || !(stack.getItem() instanceof BlockItem item)
                 || !supportsPlacementPreview(item.getBlock())) return null;
         BlockPlaceContext context = new BlockPlaceContext(level, player, hand, stack, hit);
-        if (!context.canPlace()) return null;
-        BlockState state = item.getBlock().getStateForPlacement(context);
-        if (state == null
-                || !level.isUnobstructed(
-                        state,
-                        context.getClickedPos(),
-                        CollisionContext.placementContext(player))) return null;
-        return stack.getOrDefault(
-                DataComponents.BLOCK_STATE,
-                BlockItemStateProperties.EMPTY).apply(state);
+        BlockState predicted = null;
+        if (context.canPlace()) {
+            BlockState state = item.getBlock().getStateForPlacement(context);
+            if (state != null
+                    && level.isUnobstructed(
+                            state,
+                            context.getClickedPos(),
+                            CollisionContext.placementContext(player))) {
+                predicted = stack.getOrDefault(
+                        DataComponents.BLOCK_STATE,
+                        BlockItemStateProperties.EMPTY).apply(state);
+            }
+        }
+        return new PlacementProbe(context.getClickedPos().immutable(), predicted);
     }
 
     static boolean supportsPlacementPreview(Block block) {
@@ -467,6 +484,39 @@ final class CrosshairInspector {
         return List.copyOf(result);
     }
 
+    static String semanticPropertyGroup(String property) {
+        return switch (property == null ? "" : property) {
+            case "facing", "axis" -> "orientation";
+            case "half", "type", "shape", "face" -> "shape";
+            case "north", "south", "east", "west", "up", "down", "in_wall" -> "connection";
+            case "open", "powered", "lit", "honey_level" -> "interaction";
+            case "waterlogged" -> "fluid";
+            default -> "other";
+        };
+    }
+
+    static String comparisonResultKey(int result) {
+        return switch (result) {
+            case PlacementInspector.MATCH -> "screen.chisetweaks.placement.result.match";
+            case PlacementInspector.ADJUSTED -> "screen.chisetweaks.placement.result.adjusted";
+            case PlacementInspector.DIFFERENT -> "screen.chisetweaks.placement.result.different";
+            default -> "screen.chisetweaks.placement.result.unavailable";
+        };
+    }
+
+    static String humanize(String token) {
+        String value = token.replace('_', ' ');
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+    }
+
+    static String renderModeKey(FeatureDefinition feature, boolean hidden) {
+        if (hidden) return "screen.chisetweaks.inspector.render_mode.suppressed";
+        return feature == FeatureDefinition.LAVA_HIGHLIGHT
+                || feature == FeatureDefinition.HIDDEN_SURFACE_TRACE
+                ? "screen.chisetweaks.inspector.render_mode.through_wall"
+                : "screen.chisetweaks.inspector.render_mode.visible";
+    }
+
     private static String safeIdentifier(String raw) {
         if (raw == null) return "";
         String value = raw.trim();
@@ -479,6 +529,10 @@ final class CrosshairInspector {
         String value = raw.trim().toLowerCase(Locale.ROOT);
         return value.length() <= MAX_TOKEN_LENGTH && Identifier.isValidPath(value) ? value : "";
     }
+
+    record PlacementProbe(
+            net.minecraft.core.BlockPos targetPos,
+            BlockState predictedState) {}
 
     record Snapshot(
             HitResult.Type targetKind,
@@ -505,10 +559,10 @@ final class CrosshairInspector {
             if (targetKind != HitResult.Type.BLOCK && !stateProperties.isEmpty()) {
                 throw new IllegalArgumentException();
             }
-            if (placementResult != PlacementComparisonTracker.NONE && predictedPlacement == null) {
+            if (placementResult != PlacementInspector.NONE && predictedPlacement == null) {
                 throw new IllegalArgumentException();
             }
-            if (actualPlacement != null && placementResult == PlacementComparisonTracker.NONE) {
+            if (actualPlacement != null && placementResult == PlacementInspector.NONE) {
                 throw new IllegalArgumentException();
             }
         }
