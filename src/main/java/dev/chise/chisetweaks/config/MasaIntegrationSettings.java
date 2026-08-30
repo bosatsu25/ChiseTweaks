@@ -42,7 +42,7 @@ public final class MasaIntegrationSettings {
             String name,
             java.util.function.BooleanSupplier reader,
             java.util.function.Consumer<Boolean> writer) {
-        return new SimpleBooleanSetting(
+        return new ChiseBooleanSetting(
                 name, false, reader, writer, SettingPersistence.INTEGRATION_CONFIG);
     }
 

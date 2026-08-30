@@ -3,7 +3,7 @@ package dev.chise.chisetweaks.config;
 import java.util.List;
 
 public final class BuilderFocusConfig {
-    public static final SimpleBooleanSetting REFRESH_RENDERER = new SimpleBooleanSetting(
+    public static final ChiseBooleanSetting REFRESH_RENDERER = new ChiseBooleanSetting(
             "refreshBuilderFocusRenderer",
             true);
 

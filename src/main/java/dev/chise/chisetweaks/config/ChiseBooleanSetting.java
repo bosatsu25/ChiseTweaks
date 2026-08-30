@@ -2,9 +2,12 @@ package dev.chise.chisetweaks.config;
 
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
-public abstract class ChiseBooleanSetting {
+public class ChiseBooleanSetting {
+    private static final BooleanSupplier AVAILABLE = () -> true;
+
     private final String name;
     private final boolean defaultValue;
     private final String englishName;
@@ -12,24 +15,73 @@ public abstract class ChiseBooleanSetting {
     private final String englishComment;
     private final String japaneseComment;
     private final SettingPersistence persistence;
+    private final BooleanSupplier reader;
+    private final Consumer<Boolean> writer;
+    private final BooleanSupplier availability;
     private final CopyOnWriteArrayList<Consumer<ChiseBooleanSetting>> additionalListeners =
             new CopyOnWriteArrayList<>();
     private Consumer<ChiseBooleanSetting> callback = ignored -> {};
+    private boolean value;
 
-    protected ChiseBooleanSetting(
-            String name,
-            boolean defaultValue,
-            SettingPersistence persistence) {
-        this(name, defaultValue, name, name, "", "", persistence);
+    public ChiseBooleanSetting(String name, boolean defaultValue) {
+        this(name, defaultValue, name, name, "", "", null, null, AVAILABLE,
+                SettingPersistence.FEATURE_CONFIG);
     }
 
-    protected ChiseBooleanSetting(
+    public ChiseBooleanSetting(
+            String name,
+            boolean defaultValue,
+            String englishName,
+            String japaneseName,
+            String englishComment,
+            String japaneseComment) {
+        this(name, defaultValue, englishName, japaneseName, englishComment, japaneseComment,
+                null, null, AVAILABLE, SettingPersistence.FEATURE_CONFIG);
+    }
+
+    ChiseBooleanSetting(
+            String name,
+            boolean defaultValue,
+            BooleanSupplier reader,
+            Consumer<Boolean> writer,
+            SettingPersistence persistence) {
+        this(name, defaultValue, name, name, "", "", reader, writer, AVAILABLE, persistence);
+    }
+
+    ChiseBooleanSetting(
             String name,
             boolean defaultValue,
             String englishName,
             String japaneseName,
             String englishComment,
             String japaneseComment,
+            BooleanSupplier reader,
+            Consumer<Boolean> writer,
+            SettingPersistence persistence) {
+        this(name, defaultValue, englishName, japaneseName, englishComment, japaneseComment,
+                reader, writer, AVAILABLE, persistence);
+    }
+
+    protected ChiseBooleanSetting(
+            String name,
+            boolean defaultValue,
+            BooleanSupplier reader,
+            Consumer<Boolean> writer,
+            BooleanSupplier availability,
+            SettingPersistence persistence) {
+        this(name, defaultValue, name, name, "", "", reader, writer, availability, persistence);
+    }
+
+    private ChiseBooleanSetting(
+            String name,
+            boolean defaultValue,
+            String englishName,
+            String japaneseName,
+            String englishComment,
+            String japaneseComment,
+            BooleanSupplier reader,
+            Consumer<Boolean> writer,
+            BooleanSupplier availability,
             SettingPersistence persistence) {
         this.name = requireText(name, "name");
         this.defaultValue = defaultValue;
@@ -38,22 +90,24 @@ public abstract class ChiseBooleanSetting {
         this.englishComment = Objects.requireNonNullElse(englishComment, "");
         this.japaneseComment = Objects.requireNonNullElse(japaneseComment, this.englishComment);
         this.persistence = Objects.requireNonNull(persistence, "persistence");
+        this.availability = Objects.requireNonNull(availability, "availability");
+        this.value = defaultValue;
+        if (reader == null && writer == null) {
+            this.reader = () -> value;
+            this.writer = next -> value = next;
+        } else {
+            this.reader = Objects.requireNonNull(reader, "reader");
+            this.writer = Objects.requireNonNull(writer, "writer");
+        }
     }
 
-    protected abstract boolean readValue();
-    protected abstract void writeValue(boolean value);
-
-    public final String getName() {
-        return name;
-    }
+    public final String getName() { return name; }
 
     public final boolean getBooleanValue() {
-        return readValue();
+        return availability.getAsBoolean() && reader.getAsBoolean();
     }
 
-    public final boolean getDefaultBooleanValue() {
-        return defaultValue;
-    }
+    public final boolean getDefaultBooleanValue() { return defaultValue; }
 
     public final String getDisplayName(boolean japanese) {
         return japanese ? japaneseName : englishName;
@@ -63,26 +117,25 @@ public abstract class ChiseBooleanSetting {
         return japanese ? japaneseComment : englishComment;
     }
 
-    public final SettingPersistence persistence() {
-        return persistence;
-    }
+    public final SettingPersistence persistence() { return persistence; }
 
     /** 実効値が変化した場合だけtrueを返す。変更後callbackの失敗は値変更を取り消さない。 */
-    public final boolean setBooleanValue(boolean value) {
-        boolean previous = readValue();
-        if (previous == value) return false;
-        writeValue(value);
-        if (readValue() == previous) return false;
+    public final boolean setBooleanValue(boolean requested) {
+        boolean previous = getBooleanValue();
+        if (previous == requested) return false;
+        writer.accept(availability.getAsBoolean() && requested);
+        if (getBooleanValue() == previous) return false;
         notifyChangeListeners();
         return true;
     }
 
-    public final void setBooleanValueSilently(boolean value) {
-        if (readValue() != value) writeValue(value);
+    public final void setBooleanValueSilently(boolean requested) {
+        boolean next = availability.getAsBoolean() && requested;
+        if (reader.getAsBoolean() != next) writer.accept(next);
     }
 
     public final boolean toggleBooleanValue() {
-        return setBooleanValue(!readValue());
+        return setBooleanValue(!getBooleanValue());
     }
 
     public final boolean resetToDefault() {

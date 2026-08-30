@@ -24,17 +24,17 @@ public final class LocalFeatureSettings {
             value -> config().fireVisibilitySizePreset = value,
             FireVisibilityPolicy::sizeLabel);
 
-    public static final SimpleBooleanSetting ORE_HIGHLIGHT_ANIMATION = bool(
+    public static final ChiseBooleanSetting ORE_HIGHLIGHT_ANIMATION = bool(
             "localOreHighlightAnimation", false,
             () -> config().oreHighlightAnimationEnabled,
             value -> config().oreHighlightAnimationEnabled = value);
 
-    public static final SimpleBooleanSetting INTERACTION_HISTORY = bool(
+    public static final ChiseBooleanSetting INTERACTION_HISTORY = bool(
             "localInteractionHistory", false,
             () -> config().interactionHistoryEnabled,
             value -> config().interactionHistoryEnabled = value);
 
-    public static final SimpleBooleanSetting SCHEMATIC_PLACEMENT_INSPECTOR = bool(
+    public static final ChiseBooleanSetting SCHEMATIC_PLACEMENT_INSPECTOR = bool(
             "localSchematicPlacementInspector", false,
             () -> config().schematicPlacementInspectorEnabled,
             value -> config().schematicPlacementInspectorEnabled = value);
@@ -62,11 +62,11 @@ public final class LocalFeatureSettings {
             WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS,
             () -> config().worksiteVisibilityMaxOverlayResults,
             value -> config().worksiteVisibilityMaxOverlayResults = value);
-    public static final SimpleBooleanSetting WORKSITE_VISIBILITY_WORLD_OVERLAY = bool(
+    public static final ChiseBooleanSetting WORKSITE_VISIBILITY_WORLD_OVERLAY = bool(
             "localWorksiteVisibilityWorldOverlay", true,
             () -> config().worksiteVisibilityWorldOverlay,
             value -> config().worksiteVisibilityWorldOverlay = value);
-    public static final SimpleBooleanSetting WORKSITE_VISIBILITY_DIMENSION_PRESETS = bool(
+    public static final ChiseBooleanSetting WORKSITE_VISIBILITY_DIMENSION_PRESETS = bool(
             "localWorksiteVisibilityDimensionPresets", false,
             () -> config().worksiteVisibilityDimensionPresetsEnabled,
             value -> config().worksiteVisibilityDimensionPresetsEnabled = value);
@@ -170,12 +170,12 @@ public final class LocalFeatureSettings {
         return LocalFeatureConfig.getInstance();
     }
 
-    private static SimpleBooleanSetting bool(
+    private static ChiseBooleanSetting bool(
             String name,
             boolean defaultValue,
             BooleanSupplier reader,
             Consumer<Boolean> writer) {
-        return new SimpleBooleanSetting(
+        return new ChiseBooleanSetting(
                 name,
                 defaultValue,
                 reader,

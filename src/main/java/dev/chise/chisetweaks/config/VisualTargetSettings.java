@@ -52,7 +52,7 @@ public final class VisualTargetSettings {
     }
 
     private static ChiseBooleanSetting entry(Target target, String configName) {
-        SimpleBooleanSetting option = new SimpleBooleanSetting(
+        ChiseBooleanSetting option = new ChiseBooleanSetting(
                 configName,
                 true,
                 () -> VisualTargetSelectionPolicy.isEnabled(
