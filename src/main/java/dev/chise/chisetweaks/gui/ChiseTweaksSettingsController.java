@@ -5,6 +5,7 @@ import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.ChiseIntegerSetting;
 import dev.chise.chisetweaks.config.CompatibilityIntegrationConfig;
 import dev.chise.chisetweaks.config.CompatibilityIntegrationSettings;
+import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
@@ -67,27 +68,18 @@ final class ChiseTweaksSettingsController {
     }
 
     String surfaceTitle(Surface surface) {
-        if (surface == Surface.FILTER) return "Filter";
-        if (surface == Surface.INSPECTOR) return "Inspector";
-        if (surface == Surface.ANALYZER) return "Analyzer";
-        if (surface == Surface.VISIBILITY) return "Visibility";
-        return surface == Surface.INTEGRATIONS
-                ? "Integrations"
-                : "Highlight";
+        String value = (surface == null ? Surface.HIGHLIGHT : surface)
+                .name().toLowerCase(java.util.Locale.ROOT);
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
     }
 
     private static void addHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.highlight", "Highlight");
-        feature(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
-                FeatureDefinition.MATERIAL_HIGHLIGHTS);
-        feature(rows, "nether", FeatureSwitches.NETHER_PALETTE,
-                FeatureDefinition.NETHER_PALETTE);
-        feature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE,
-                FeatureDefinition.FINE_THREAD_TRACE);
-        feature(rows, "glass", FeatureSwitches.GLASS_INSPECTION,
-                FeatureDefinition.GLASS_INSPECTION);
-        feature(rows, "kelp", FeatureSwitches.KELP_HIGHLIGHT,
-                FeatureDefinition.KELP_HIGHLIGHT);
+        feature(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS);
+        feature(rows, "nether", FeatureSwitches.NETHER_PALETTE);
+        feature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE);
+        feature(rows, "glass", FeatureSwitches.GLASS_INSPECTION);
+        feature(rows, "kelp", FeatureSwitches.KELP_HIGHLIGHT);
 
         header(rows, "detail.highlight.general", "screen.chisetweaks.settings.section.shared");
         bool(rows, "oreMotion", LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION,
@@ -126,20 +118,18 @@ final class ChiseTweaksSettingsController {
 
     private static void addFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.filter", "Filter");
-        feature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
-                FeatureDefinition.BUILDER_FOCUS_BLOCKS);
-        feature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
-                FeatureDefinition.BUILDER_FOCUS_ENTITIES);
+        feature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS);
+        feature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES);
 
         headerLiteral(rows, "detail.visualFilter.behavior", "Filter Settings");
         configBool(rows, "refreshRenderer", BuilderFocusConfig.REFRESH_RENDERER);
         action(rows, "editBlockFilter",
-                FeatureDefinition.BUILDER_FOCUS_BLOCKS.englishName(),
+                FeatureSwitches.BUILDER_FOCUS_BLOCKS.definition().englishName(),
                 text("config.comment.builderfocusblocks"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER,
                 text("screen.chisetweaks.settings.action.settings"));
         action(rows, "editEntityFilter",
-                FeatureDefinition.BUILDER_FOCUS_ENTITIES.englishName(),
+                FeatureSwitches.BUILDER_FOCUS_ENTITIES.definition().englishName(),
                 text("config.comment.builderfocusentities"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER,
                 text("screen.chisetweaks.settings.action.settings"));
@@ -147,25 +137,22 @@ final class ChiseTweaksSettingsController {
 
     private static void addAnalyzerRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.analyzer", "Analyzer");
-        boolLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
-                FeatureDefinition.LAVA_HIGHLIGHT.englishName(),
+        featureLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
                 text("config.comment.locallavahighlight"));
-        boolLiteral(rows, "villagerAnalyzer", FeatureSwitches.VILLAGER_ANALYZER,
-                FeatureDefinition.VILLAGER_ANALYZER.englishName(),
+        featureLiteral(rows, "villagerAnalyzer", FeatureSwitches.VILLAGER_ANALYZER,
                 "Nearby villagers are linked to their claimed job site. If client JOB_SITE memory is unavailable, a bounded loaded-world workstation fallback is used.");
-        boolLiteral(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
-                FeatureDefinition.HIDDEN_SURFACE_TRACE.englishName(),
+        featureLiteral(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
                 text("config.comment.hiddensurfacetrace"));
 
         analyzerBudgetRows(
-                rows, "lava", FeatureDefinition.LAVA_HIGHLIGHT,
+                rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
                 LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
                 LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
                 LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS);
 
         analyzerBudgetRows(
-                rows, "hidden", FeatureDefinition.HIDDEN_SURFACE_TRACE,
+                rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
                 LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
                 LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
                 LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL,
@@ -186,12 +173,12 @@ final class ChiseTweaksSettingsController {
     private static void analyzerBudgetRows(
             ArrayList<ChiseTweaksSettingRowDefinition> rows,
             String prefix,
-            FeatureDefinition definition,
+            FeatureSwitch feature,
             ChiseIntegerSetting horizontal,
             ChiseIntegerSetting vertical,
             ChiseIntegerSetting interval,
             ChiseIntegerSetting maxOverlays) {
-        headerLiteral(rows, "detail.analyzer." + prefix, definition.englishName() + " Settings");
+        headerLiteral(rows, "detail.analyzer." + prefix, feature.definition().englishName() + " Settings");
         String key = "screen.chisetweaks.settings." + prefix;
         integer(rows, prefix + "Range", horizontal, key + "_range.name", key + "_range.description", 1);
         integer(rows, prefix + "VerticalRange", vertical, key + "_vertical.name", key + "_vertical.description", 1);
@@ -201,21 +188,18 @@ final class ChiseTweaksSettingsController {
 
     private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.visibility", "Visibility");
-        boolLiteral(rows, "fireVisibility", FeatureSwitches.FIRE_VISIBILITY,
-                FeatureDefinition.FIRE_VISIBILITY.englishName(),
+        featureLiteral(rows, "fireVisibility", FeatureSwitches.FIRE_VISIBILITY,
                 "Lower only the first-person fire overlay.");
         integer(rows, "fireVisibilitySize", LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
                 "screen.chisetweaks.settings.fire_size.name",
                 "screen.chisetweaks.settings.fire_size.description", 1);
-        boolLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
-                FeatureDefinition.BRIGHT_CHEST.englishName(), "Improve Chest and Double Chest visibility.");
-        boolLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
-                FeatureDefinition.BRIGHT_CONCRETE.englishName(), "Improve White Concrete visibility.");
-        boolLiteral(rows, "beaconRange", FeatureSwitches.BEACON_RANGE,
-                FeatureDefinition.BEACON_RANGE.englishName(),
+        featureLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
+                "Improve Chest and Double Chest visibility.");
+        featureLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
+                "Improve White Concrete visibility.");
+        featureLiteral(rows, "beaconRange", FeatureSwitches.BEACON_RANGE,
                 "Show the horizontal effect radius of nearby active Beacons.");
-        boolLiteral(rows, "lightningRodRange", FeatureSwitches.LIGHTNING_ROD_RANGE,
-                FeatureDefinition.LIGHTNING_ROD_RANGE.englishName(),
+        featureLiteral(rows, "lightningRodRange", FeatureSwitches.LIGHTNING_ROD_RANGE,
                 "Show the Vanilla 128-block horizontal Lightning Rod attraction range.");
     }
 
@@ -622,11 +606,22 @@ final class ChiseTweaksSettingsController {
         rows.add(ChiseTweaksSettingRowDefinition.info(id, name, description));
     }
 
-    private static void feature(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
-            ChiseBooleanSetting config, FeatureDefinition definition) {
+    private static void feature(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String id,
+            FeatureSwitch config) {
+        FeatureDefinition definition = config.definition();
         String descriptionKey = definition.nameKey().replace("config.name.", "config.comment.");
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 id, definition.englishName(), text(descriptionKey), config));
+    }
+
+    private static void featureLiteral(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String id,
+            FeatureSwitch config,
+            String description) {
+        boolLiteral(rows, id, config, config.definition().englishName(), description);
     }
 
     private static void configBool(
