@@ -17,7 +17,7 @@ final class TestResponsibilityContractTest {
     void eachRiskClassHasAnExecutableVerificationOwner() {
         Map<String, List<String>> responsibility = new LinkedHashMap<>();
         responsibility.put("pure-policy", List.of(
-                "src/test/java/dev/chise/chisetweaks/core/performance/WorksiteVisibilityBudgetPolicyTest.java",
+                "src/test/java/dev/chise/chisetweaks/RetainedPolicyQualityGateTest.java",
                 "src/test/java/dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicyTest.java"));
         responsibility.put("config-security", List.of(
                 "src/test/java/dev/chise/chisetweaks/core/security/SecureConfigStorageTest.java",
