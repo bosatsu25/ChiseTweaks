@@ -38,13 +38,13 @@
     },
     "localFeatureSwitches": {
       "localFireVisibility": false,
+      "handheldSize": false,
       "localLavaHighlight": false,
       "villagerAnalyzer": false,
       "beaconRange": false,
       "lightningRodRange": false,
       "brightChest": true,
-      "brightConcrete": true,
-      "handheldSize": false
+      "brightConcrete": true
     },
     "localSettings": {
       "localFireVisibilitySizePreset": 1,
