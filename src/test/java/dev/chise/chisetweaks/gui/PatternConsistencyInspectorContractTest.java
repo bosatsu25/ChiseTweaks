@@ -18,7 +18,6 @@ final class PatternConsistencyInspectorContractTest {
         assertEquals(8, PatternConsistencyInspector.HORIZONTAL_RADIUS);
         assertEquals(4, PatternConsistencyInspector.VERTICAL_RADIUS);
         assertEquals(256, PatternConsistencyInspector.MAX_BLOCKS_PER_TICK);
-        assertEquals(64, PatternConsistencyInspector.MAX_RETAINED_MISMATCHES);
         assertEquals(20, PatternConsistencyInspector.RESCAN_INTERVAL_TICKS);
         assertEquals(2_601, PatternConsistencyInspector.TOTAL_BLOCKS);
     }
@@ -31,7 +30,8 @@ final class PatternConsistencyInspectorContractTest {
         assertTrue(source.contains("candidate.getBlock() != referenceState.getBlock()"));
         assertTrue(source.contains("level.getChunkSource().hasChunk"));
         assertTrue(source.contains("processed++ < MAX_BLOCKS_PER_TICK"));
-        assertTrue(source.contains("retainedMismatchCount < retainedMismatchPositions.length"));
+        assertFalse(source.contains("retainedMismatchPositions"));
+        assertFalse(source.contains("retainedMismatchCount"));
         assertFalse(source.contains("getChunk("));
         assertFalse(source.contains("majority"));
         assertFalse(source.contains("frequency"));
