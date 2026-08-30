@@ -40,7 +40,8 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals("Integrations", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
 
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT)).containsAll(
-                List.of("materials", "nether", "thread", "hidden", "glass", "kelp")));
+                List.of("materials", "nether", "thread", "glass", "kelp")));
+        assertFalse(ids(controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT)).contains("hidden"));
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.FILTER)).containsAll(
                 List.of("focusBlocks", "focusEntities", "editBlockFilter", "editEntityFilter")));
 
@@ -52,7 +53,12 @@ final class ChiseTweaksSettingsControllerTest {
 
         List<String> analyzer = ids(controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER));
         assertTrue(analyzer.containsAll(List.of(
-                "header.analyzer", "lava", "lavaRange", "lavaVerticalRange", "lavaInterval", "lavaMaxOverlays")));
+                "header.analyzer", "lava", "villagerAnalyzer", "hidden",
+                "lavaRange", "lavaVerticalRange", "lavaInterval", "lavaMaxOverlays",
+                "hiddenRange", "hiddenVerticalRange", "hiddenInterval", "hiddenMaxOverlays",
+                "hiddenSurfaceColor", "hiddenSurfaceOpacity",
+                "visualTargetHiddenBlueIce", "visualTargetHiddenDeadCoral",
+                "visualTargetHiddenPowderSnow", "visualTargetHiddenSculkCatalyst")));
         assertFalse(analyzer.stream().anyMatch(id -> id.toLowerCase().contains("ancientdebris")));
 
         assertEquals(List.of(
@@ -60,7 +66,9 @@ final class ChiseTweaksSettingsControllerTest {
                         "fireVisibility",
                         "fireVisibilitySize",
                         "chestVisibility",
-                        "whiteConcreteVisibility"),
+                        "whiteConcreteVisibility",
+                        "beaconRange",
+                        "lightningRodRange"),
                 ids(controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY)));
         assertTrue(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR).stream()
                 .anyMatch(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO));
@@ -86,7 +94,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals("Ore Highlights", row(highlight, "materials").name());
         assertEquals("Nether Highlight", row(highlight, "nether").name());
         assertEquals("Fine Line Highlight", row(highlight, "thread").name());
-        assertEquals("Hidden Block Highlight", row(highlight, "hidden").name());
+        assertEquals("Hidden Block Analyzer", row(analyzer, "hidden").name());
         assertEquals("Glass Highlight", row(highlight, "glass").name());
         assertEquals("Kelp Highlight", row(highlight, "kelp").name());
         assertEquals("Block Filter", row(visual, "focusBlocks").name());
@@ -104,17 +112,26 @@ final class ChiseTweaksSettingsControllerTest {
         var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
         var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
+        var integrations = controller.rows(ChiseTweaksSettingsController.Surface.INTEGRATIONS);
 
         assertSame(FeatureSwitches.MATERIAL_HIGHLIGHTS, row(highlight, "materials").booleanConfig());
         assertSame(FeatureSwitches.NETHER_PALETTE, row(highlight, "nether").booleanConfig());
         assertSame(FeatureSwitches.FINE_THREAD_TRACE, row(highlight, "thread").booleanConfig());
-        assertSame(FeatureSwitches.HIDDEN_SURFACE_TRACE, row(highlight, "hidden").booleanConfig());
         assertSame(FeatureSwitches.GLASS_INSPECTION, row(highlight, "glass").booleanConfig());
         assertSame(FeatureSwitches.KELP_HIGHLIGHT, row(highlight, "kelp").booleanConfig());
         assertSame(FeatureSwitches.BUILDER_FOCUS_BLOCKS, row(visual, "focusBlocks").booleanConfig());
         assertSame(FeatureSwitches.BUILDER_FOCUS_ENTITIES, row(visual, "focusEntities").booleanConfig());
         assertSame(BuilderFocusConfig.REFRESH_RENDERER, row(visual, "refreshRenderer").booleanConfig());
         assertSame(FeatureSwitches.LAVA_HIGHLIGHT, row(analyzer, "lava").booleanConfig());
+        assertSame(FeatureSwitches.HIDDEN_SURFACE_TRACE, row(analyzer, "hidden").booleanConfig());
+        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
+                row(analyzer, "hiddenRange").integerConfig());
+        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
+                row(analyzer, "hiddenVerticalRange").integerConfig());
+        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL,
+                row(analyzer, "hiddenInterval").integerConfig());
+        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS,
+                row(analyzer, "hiddenMaxOverlays").integerConfig());
         assertSame(FeatureSwitches.FIRE_VISIBILITY, row(visibility, "fireVisibility").booleanConfig());
         assertSame(LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
                 row(visibility, "fireVisibilitySize").integerConfig());
@@ -164,13 +181,13 @@ final class ChiseTweaksSettingsControllerTest {
         assertFalse(rows.stream().anyMatch(candidate -> "highlightExclusiveMode".equals(candidate.id())));
         assertTrue(rows.stream().anyMatch(candidate -> candidate.id().startsWith("visualTargetMaterial")));
         assertTrue(rows.stream().anyMatch(candidate -> candidate.id().startsWith("visualTargetTechnical")));
-        assertTrue(rows.stream().anyMatch(candidate -> candidate.id().startsWith("visualTargetHidden")));
+        assertFalse(rows.stream().anyMatch(candidate -> candidate.id().startsWith("visualTargetHidden")));
         assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT,
                 row(rows, "moddedOreTargets").action());
     }
 
     @Test
-    void analyzerTabOwnsOnlyTheRetainedLavaAnalyzerSettings() {
+    void analyzerTabOwnsLavaAndHiddenBlockAnalyzerSettings() {
         var rows = new ChiseTweaksSettingsController().rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 row(rows, "lavaRange").integerConfig());
@@ -180,6 +197,15 @@ final class ChiseTweaksSettingsControllerTest {
                 row(rows, "lavaInterval").integerConfig());
         assertSame(LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
                 row(rows, "lavaMaxOverlays").integerConfig());
+        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
+                row(rows, "hiddenRange").integerConfig());
+        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
+                row(rows, "hiddenVerticalRange").integerConfig());
+        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL,
+                row(rows, "hiddenInterval").integerConfig());
+        assertSame(LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS,
+                row(rows, "hiddenMaxOverlays").integerConfig());
+        assertTrue(rows.stream().anyMatch(candidate -> candidate.id().startsWith("visualTargetHidden")));
         assertFalse(rows.stream().anyMatch(candidate -> candidate.id().toLowerCase().contains("ancientdebris")));
     }
 

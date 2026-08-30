@@ -53,6 +53,11 @@ public final class LocalFeatureConfig {
     public int lavaAnalyzerIntervalTicks = 10;
     public int lavaAnalyzerMaxOverlayResults = 12;
 
+    public int hiddenAnalyzerHorizontalRadius = 5;
+    public int hiddenAnalyzerVerticalRadius = 3;
+    public int hiddenAnalyzerIntervalTicks = 10;
+    public int hiddenAnalyzerMaxOverlayResults = 12;
+
     public int visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
     public int visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
 
@@ -110,6 +115,18 @@ public final class LocalFeatureConfig {
             }
             if (!source.has("lavaAnalyzerMaxOverlayResults")) {
                 loaded.lavaAnalyzerMaxOverlayResults = loaded.worksiteVisibilityMaxOverlayResults;
+            }
+            if (!source.has("hiddenAnalyzerHorizontalRadius")) {
+                loaded.hiddenAnalyzerHorizontalRadius = loaded.worksiteVisibilityHorizontalRadius;
+            }
+            if (!source.has("hiddenAnalyzerVerticalRadius")) {
+                loaded.hiddenAnalyzerVerticalRadius = loaded.worksiteVisibilityVerticalRadius;
+            }
+            if (!source.has("hiddenAnalyzerIntervalTicks")) {
+                loaded.hiddenAnalyzerIntervalTicks = loaded.worksiteVisibilityIntervalTicks;
+            }
+            if (!source.has("hiddenAnalyzerMaxOverlayResults")) {
+                loaded.hiddenAnalyzerMaxOverlayResults = loaded.worksiteVisibilityMaxOverlayResults;
             }
 
             int sourceSchemaVersion = source.has("visualTargetSchemaVersion")
@@ -194,6 +211,14 @@ public final class LocalFeatureConfig {
                 WorksiteVisibilityBudgetPolicy.clampIntervalTicks(lavaAnalyzerIntervalTicks);
         lavaAnalyzerMaxOverlayResults =
                 WorksiteVisibilityBudgetPolicy.clampOverlayResults(lavaAnalyzerMaxOverlayResults);
+        hiddenAnalyzerHorizontalRadius =
+                WorksiteVisibilityBudgetPolicy.clampHorizontalRadius(hiddenAnalyzerHorizontalRadius);
+        hiddenAnalyzerVerticalRadius =
+                WorksiteVisibilityBudgetPolicy.clampVerticalRadius(hiddenAnalyzerVerticalRadius);
+        hiddenAnalyzerIntervalTicks =
+                WorksiteVisibilityBudgetPolicy.clampIntervalTicks(hiddenAnalyzerIntervalTicks);
+        hiddenAnalyzerMaxOverlayResults =
+                WorksiteVisibilityBudgetPolicy.clampOverlayResults(hiddenAnalyzerMaxOverlayResults);
         visualTargetMask = VisualTargetSelectionPolicy.sanitizeMask(visualTargetMask);
         visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
     }
@@ -224,6 +249,10 @@ public final class LocalFeatureConfig {
         lavaAnalyzerVerticalRadius = loaded.lavaAnalyzerVerticalRadius;
         lavaAnalyzerIntervalTicks = loaded.lavaAnalyzerIntervalTicks;
         lavaAnalyzerMaxOverlayResults = loaded.lavaAnalyzerMaxOverlayResults;
+        hiddenAnalyzerHorizontalRadius = loaded.hiddenAnalyzerHorizontalRadius;
+        hiddenAnalyzerVerticalRadius = loaded.hiddenAnalyzerVerticalRadius;
+        hiddenAnalyzerIntervalTicks = loaded.hiddenAnalyzerIntervalTicks;
+        hiddenAnalyzerMaxOverlayResults = loaded.hiddenAnalyzerMaxOverlayResults;
         visualTargetMask = loaded.visualTargetMask;
         visualTargetSchemaVersion = loaded.visualTargetSchemaVersion;
     }

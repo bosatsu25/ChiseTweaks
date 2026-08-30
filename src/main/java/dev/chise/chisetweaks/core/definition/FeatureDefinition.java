@@ -34,7 +34,7 @@ public enum FeatureDefinition {
             "hidden_surface_trace",
             FeatureArea.RENDERING,
             "config.name.hiddensurfacetrace",
-            "Hidden Block Highlight",
+            "Hidden Block Analyzer",
             "",
             FeatureHelpLevel.DIAGNOSTIC,
             BlockInspectionCategory.HIDDEN_SURFACE),

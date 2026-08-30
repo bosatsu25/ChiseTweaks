@@ -132,13 +132,12 @@ public final class WorksiteVisibilityEngine
         result = 31 * result + (config.worksiteVisibilityDimensionPresetsEnabled ? 1 : 0);
         result = 31 * result + config.fineThreadTraceColorPreset;
         result = 31 * result + config.fineThreadTraceOpacityPercent;
-        result = 31 * result + config.hiddenSurfaceTraceColorPreset;
-        result = 31 * result + config.hiddenSurfaceTraceOpacityPercent;
         return result;
     }
 
     private static boolean usesWorldOverlay(FeatureSwitch toggle) {
-        return toggle.definition().isWorksiteVisibilityMode();
+        return toggle.definition() != FeatureDefinition.HIDDEN_SURFACE_TRACE
+                && toggle.definition().isWorksiteVisibilityMode();
     }
 
     private void deactivateAndReset() {

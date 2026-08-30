@@ -4,6 +4,7 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
+import dev.chise.chisetweaks.feature.rendering.HiddenBlockAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.InfrastructureRangeFeature;
 import dev.chise.chisetweaks.feature.rendering.LavaHighlightFeature;
 import dev.chise.chisetweaks.feature.rendering.VillagerAnalyzerFeature;
@@ -47,6 +48,9 @@ public final class FeatureManager {
         }
         if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.VILLAGER_ANALYZER)) {
             registerComponent(new VillagerAnalyzerFeature());
+        }
+        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.HIDDEN_SURFACE_TRACE)) {
+            registerComponent(new HiddenBlockAnalyzerFeature());
         }
         if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BEACON_RANGE)) {
             registerComponent(new InfrastructureRangeFeature(InfrastructureRangeFeature.Mode.BEACON));
@@ -101,7 +105,8 @@ public final class FeatureManager {
 
     private static boolean hasAvailableWorksiteVisibilityFeature() {
         for (FeatureDefinition definition : FeatureDefinition.VALUES) {
-            if (definition.isWorksiteVisibilityMode()
+            if (definition != FeatureDefinition.HIDDEN_SURFACE_TRACE
+                    && definition.isWorksiteVisibilityMode()
                     && FeatureAvailabilityPolicy.isAvailable(definition)) {
                 return true;
             }
