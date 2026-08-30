@@ -12,6 +12,7 @@
 - toggle可能なruntime featureは現在12個
 - 12機能はすべてrendering / inspection-orientedで、building-action featureは持たない
 - Bright Chest / Bright Concreteはbuilt-in Resource Pack selection / reloadへ依存しない
+- Low FireはMinecraftが`ScreenEffectRenderer.renderFire`へ渡す現在のspriteを再利用し、Large / Medium / Smallの3段階geometryだけを一人称overlayへ適用する。通常炎・魂の炎ごとのChise専用PNG/model、world-fire置換、Resource Pack reloadを持たない
 - Bright ChestはChiseTweaks内蔵のChest専用`normal.png` / `normal_left.png` / `normal_right.png`をvanilla CHEST atlas経路で選択し、Chest model・金具・蓋・double-chest分割・開閉animationを維持する
 - Bright ChestはWhite Concrete spriteをChestへ流用しない。White Concreteの描画責務はBright Concreteだけが持つ
 - Bright Concreteはvanilla White Concrete model / textureを維持し、quad lightingだけをfull-bright化する
@@ -177,6 +178,7 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - Block FilterがBlockEntity / Bright Chestを正しく抑制
 - Bright Chestがsingle / double chestともチェスト形状・金具・蓋・開閉animationを維持した白いChestとして描画され、White Concrete面へ退行しない
 - Bright Chest / Bright Concrete（White Concrete）が独立して切り替わる
+- Low FireのLarge / Medium / Smallが一人称overlayだけへ反映され、通常炎／魂の炎の現在spriteとworld fireを壊さない
 - all-features-on（12機能）をOverworld / Netherでsmoke
 - Lava Analyzerに強制chunk loadや長時間停止がない
 - disconnect / dimension changeでstale session stateが残らない

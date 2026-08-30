@@ -73,6 +73,7 @@ final class ChiseTweaksSettingsController {
             }
             case VISIBILITY -> {
                 FeatureSwitches.FIRE_VISIBILITY.resetToDefault();
+                LocalFeatureSettings.FIRE_VISIBILITY_SIZE.resetToDefault();
                 FeatureSwitches.BRIGHT_CHEST.resetToDefault();
                 FeatureSwitches.BRIGHT_CONCRETE.resetToDefault();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);

@@ -19,7 +19,9 @@ final class FireVisibilityCleanRoomContractTest {
     private static final Set<String> FORBIDDEN_REFERENCE_ASSETS = Set.of(
             "fire_0.png",
             "fire_1.png",
-            "fire_2.png");
+            "fire_2.png",
+            "soul_fire_0.png",
+            "soul_fire_1.png");
 
     @Test
     void productionRemainsIndependentOfReferencePackIdentityAndAssets() throws IOException {

@@ -46,7 +46,7 @@ pie title 12個のtoggle機能
 | Filter | **Block Filter** | Block IDのAllow/Hideルールでローカル描画を絞る | OFF |
 | Filter | **Entity Filter** | Entity IDのAllow/Hideルールでローカル描画を絞る | OFF |
 | Analyzer | **Lava Analyzer** | 読み込み済み近傍の溶岩源を壁越し表示 | OFF |
-| Visibility | **Low Fire** | 一人称の炎overlayを下げる | OFF |
+| Visibility | **Low Fire** | 一人称の炎overlayをLarge / Medium / Smallで縮小 | OFF |
 | Visibility | **Bright Chest** | 通常Chest / Double Chestを白く明るく表示 | ON |
 | Visibility | **Bright Concrete** | White Concreteを暗所でも判別しやすくする | ON |
 
@@ -171,7 +171,16 @@ Minecraftがすでにクライアントへ持っているcrosshair hitとBlockSt
 
 ### Low Fire
 
-一人称視点のfire overlayだけを下げます。ワールド上の炎やresource-pack textureは変更しません。
+一人称視点のfire overlayだけを **Large / Medium / Small** の3段階で低く・小さくします。
+
+- Minecraftが現在の描画へ渡すfire spriteをそのまま再利用
+- 通常炎と魂の炎を同じrendererで扱い、種類ごとのChise専用PNGは持たない
+- 使用中のResource Packがfire spriteを変更している場合も、その現在spriteを尊重
+- ワールド上のFire / Soul Fire modelは変更しない
+- サイズ変更でResource Pack reloadを行わない
+- block scan / chunk scan / server packetを追加しない
+
+つまり、外部Low-Fire系Resource Packの画像資産を内蔵するのではなく、「一人称の炎だけを低くする」という要求だけをChise独自実装へ落としています。
 
 ### Bright系はResource Pack切替を持ちません
 

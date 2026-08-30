@@ -179,6 +179,9 @@ final class ChiseTweaksSettingsCatalog {
         boolLiteral(rows, "fireVisibility", FeatureSwitches.FIRE_VISIBILITY,
                 FeatureDefinition.FIRE_VISIBILITY.englishName(),
                 "Lower only the first-person fire overlay.");
+        integer(rows, "fireVisibilitySize", LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
+                "screen.chisetweaks.settings.fire_size.name",
+                "screen.chisetweaks.settings.fire_size.description", 1);
         boolLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
                 FeatureDefinition.BRIGHT_CHEST.englishName(), "Improve Chest and Double Chest visibility.");
         boolLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,

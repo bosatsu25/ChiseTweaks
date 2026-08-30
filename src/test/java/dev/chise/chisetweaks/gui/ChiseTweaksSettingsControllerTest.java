@@ -53,7 +53,12 @@ final class ChiseTweaksSettingsControllerTest {
                 "header.analyzer", "lava", "lavaRange", "lavaVerticalRange", "lavaInterval", "lavaMaxOverlays")));
         assertFalse(analyzer.stream().anyMatch(id -> id.toLowerCase().contains("ancientdebris")));
 
-        assertEquals(List.of("header.visibility", "fireVisibility", "chestVisibility", "whiteConcreteVisibility"),
+        assertEquals(List.of(
+                        "header.visibility",
+                        "fireVisibility",
+                        "fireVisibilitySize",
+                        "chestVisibility",
+                        "whiteConcreteVisibility"),
                 ids(controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY)));
         assertTrue(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR).stream()
                 .anyMatch(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO));
@@ -100,6 +105,8 @@ final class ChiseTweaksSettingsControllerTest {
         assertSame(BuilderFocusConfig.REFRESH_RENDERER, row(visual, "refreshRenderer").booleanConfig());
         assertSame(FeatureSwitches.LAVA_HIGHLIGHT, row(analyzer, "lava").booleanConfig());
         assertSame(FeatureSwitches.FIRE_VISIBILITY, row(visibility, "fireVisibility").booleanConfig());
+        assertSame(LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
+                row(visibility, "fireVisibilitySize").integerConfig());
         assertSame(FeatureSwitches.BRIGHT_CHEST, row(visibility, "chestVisibility").booleanConfig());
         assertSame(FeatureSwitches.BRIGHT_CONCRETE,
                 row(visibility, "whiteConcreteVisibility").booleanConfig());

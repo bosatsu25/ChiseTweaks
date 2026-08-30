@@ -94,7 +94,9 @@ def audit() -> list[str]:
         failures.append("FeatureSwitches.VALUES must contain each of the 12 FeatureDefinition entries exactly once")
 
     profile_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/WorksiteHighlightProfilePolicy.java")
+    fire_visibility_policy = read("src/main/java/dev/chise/chisetweaks/core/vision/FireVisibilityPolicy.java")
     constants = int_constants(profile_policy)
+    constants.update(int_constants(fire_visibility_policy))
     local_settings_text = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java")
     local_setting_pairs = re.findall(
         r"\b(?:bool|integer)\(\s*\"([^\"]+)\"\s*,\s*([^,\r\n]+)",
