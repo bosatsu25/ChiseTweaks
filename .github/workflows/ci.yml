@@ -1,7 +1,8 @@
 name: CI
 
-# Refactor verification pass: temporarily run the quality gate on this pull request.
+# Refactor verification pass: temporarily run the quality gate for this branch/PR.
 on:
+  push:
   pull_request:
   workflow_dispatch:
 
