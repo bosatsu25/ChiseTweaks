@@ -189,21 +189,23 @@ final class ChiseTweaksSettingsRows {
 
     private static void addIntegrationRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         MasaModAvailability.Snapshot installed = MasaModAvailability.snapshot();
-        headerLiteral(rows, "header.integrations", "Masa Ecosystem");
+        headerLiteral(rows, "header.integrations",
+                text("screen.chisetweaks.settings.tab.integrations"));
         info(rows, "masa.summary",
-                "Masa Integration",
-                "Masa系MODの既存機能を補助・制御するoptional integrationです。ChiseTweaks自身は自動操作を実行しません。");
+                text("screen.chisetweaks.settings.copy.masa_summary.name"),
+                text("screen.chisetweaks.settings.copy.masa_summary.description"));
         integerLiteral(rows, "masaJapaneseUiMode",
                 MasaIntegrationSettings.JAPANESE_UI_MODE,
-                "Masa Japanese UI",
-                "AutoはMinecraftが日本語のときだけ日本語UX補助を有効にします。", 1);
+                text("screen.chisetweaks.settings.copy.masa_japanese_ui.name"),
+                text("screen.chisetweaks.settings.copy.masa_japanese_ui.description"), 1);
         action(rows, "openMasaGuide",
-                "Masa Guide",
-                "Masa系MODが何を担当し、どの設定画面を見るべきかを日本語で案内します。",
+                text("screen.chisetweaks.settings.copy.masa_guide.name"),
+                text("screen.chisetweaks.settings.copy.masa_guide.description"),
                 ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE,
-                "ガイドを開く");
+                text("screen.chisetweaks.settings.copy.masa_guide.action"));
 
-        headerLiteral(rows, "masa.installed", "Installed Mods");
+        headerLiteral(rows, "masa.installed",
+                text("screen.chisetweaks.settings.copy.installed_mods"));
         info(rows, "masa.malilib", "MaLiLib", installedLabel(installed.malilib()));
         info(rows, "masa.litematica", "Litematica", installedLabel(installed.litematica()));
         info(rows, "masa.tweakeroo", "Tweakeroo", installedLabel(installed.tweakeroo()));
@@ -213,57 +215,59 @@ final class ChiseTweaksSettingsRows {
         headerLiteral(rows, "masa.litematica.settings", "Litematica");
         boolLiteral(rows, "litematicaPickRedirect",
                 MasaIntegrationSettings.LITEMATICA_PICK_REDIRECT,
-                "Pick Redirect",
-                "Litematicaが要求するblock itemが無い場合に、設定済みの代替blockを候補にします。");
+                text("screen.chisetweaks.settings.copy.pick_redirect.name"),
+                text("screen.chisetweaks.settings.copy.pick_redirect.description"));
         action(rows, "editLitematicaPickRedirect",
-                "Pick Redirect Map",
-                "Schematic Block → Replacement Blockの対応を編集します。",
+                text("screen.chisetweaks.settings.copy.pick_redirect_map.name"),
+                text("screen.chisetweaks.settings.copy.pick_redirect_map.description"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT,
-                "リスト設定");
+                text("screen.chisetweaks.settings.copy.list_settings"));
 
         headerLiteral(rows, "masa.tweakeroo.settings", "Tweakeroo");
         boolLiteral(rows, "tweakerooToolSwitchGuard",
                 MasaIntegrationSettings.TWEAKEROO_TOOL_SWITCH_GUARD,
-                "Selective Tool Switch Guard",
-                "TweakerooのTool SwitchをChiseのallow/deny policyで制御します。");
+                text("screen.chisetweaks.settings.copy.tool_switch_guard.name"),
+                text("screen.chisetweaks.settings.copy.tool_switch_guard.description"));
         action(rows, "editTweakerooToolSwitchGuard",
-                "Tool Switch Guard List",
-                "Tool Switchを許可/拒否するBlock IDを編集します。",
+                text("screen.chisetweaks.settings.copy.tool_switch_list.name"),
+                text("screen.chisetweaks.settings.copy.tool_switch_list.description"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD,
-                "リスト設定");
+                text("screen.chisetweaks.settings.copy.list_settings"));
         boolLiteral(rows, "tweakerooPersistentGammaOverride",
                 MasaIntegrationSettings.TWEAKEROO_PERSISTENT_GAMMA,
-                "Persistent Gamma Override",
-                "Tweakerooが所有するGamma Override状態の復元だけを補助します。");
+                text("screen.chisetweaks.settings.copy.gamma_override.name"),
+                text("screen.chisetweaks.settings.copy.gamma_override.description"));
 
         headerLiteral(rows, "masa.tweakermore.settings", "TweakerMore");
         boolLiteral(rows, "tweakermoreAutoPickGuard",
                 MasaIntegrationSettings.TWEAKERMORE_AUTO_PICK_GUARD,
-                "Selective Auto Pick Guard",
-                "TweakerMoreのAuto Pickをitem allow/deny policyで制御します。");
+                text("screen.chisetweaks.settings.copy.auto_pick_guard.name"),
+                text("screen.chisetweaks.settings.copy.auto_pick_guard.description"));
         action(rows, "editTweakerMoreAutoPickGuard",
-                "Auto Pick Guard List",
-                "Auto Pickを許可/拒否するItem IDを編集します。",
+                text("screen.chisetweaks.settings.copy.auto_pick_list.name"),
+                text("screen.chisetweaks.settings.copy.auto_pick_list.description"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD,
-                "リスト設定");
+                text("screen.chisetweaks.settings.copy.list_settings"));
         boolLiteral(rows, "tweakermoreMaterialListRefresh",
                 MasaIntegrationSettings.TWEAKERMORE_MATERIAL_REFRESH,
-                "Material List Refresh",
-                "TweakerMoreのMaterial collect完了後に既存Material List表示を同期します。");
+                text("screen.chisetweaks.settings.copy.material_refresh.name"),
+                text("screen.chisetweaks.settings.copy.material_refresh.description"));
 
         headerLiteral(rows, "masa.syncmatica.settings", "Syncmatica");
         boolLiteral(rows, "syncmaticaRemoveDisabled",
                 MasaIntegrationSettings.SYNCMATICA_REMOVE_DISABLED,
-                "Disable Remove",
-                "共有Schematicの削除操作をguardします。");
+                text("screen.chisetweaks.settings.copy.disable_remove.name"),
+                text("screen.chisetweaks.settings.copy.disable_remove.description"));
         boolLiteral(rows, "syncmaticaRemoveRequireShift",
                 MasaIntegrationSettings.SYNCMATICA_REQUIRE_SHIFT,
-                "Require Shift To Remove",
-                "共有Schematic削除時にShift押下を要求します。");
+                text("screen.chisetweaks.settings.copy.require_shift.name"),
+                text("screen.chisetweaks.settings.copy.require_shift.description"));
     }
 
     private static String installedLabel(boolean installed) {
-        return installed ? "Installed / 導入済み" : "Not installed / 未導入";
+        return text(installed
+                ? "screen.chisetweaks.settings.copy.installed"
+                : "screen.chisetweaks.settings.copy.not_installed");
     }
 
 
