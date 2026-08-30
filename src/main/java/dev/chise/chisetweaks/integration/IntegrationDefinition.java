@@ -15,8 +15,10 @@ public enum IntegrationDefinition {
             "tweakermore_auto_pick_guard", "tweakermore", "TweakerMore Auto Pick Guard"),
     TWEAKERMORE_MATERIAL_REFRESH(
             "tweakermore_material_refresh", "tweakermore", "TweakerMore Material List Refresh"),
-    SYNCMATICA_REMOVE_GUARD(
-            "syncmatica_remove_guard", "syncmatica", "Syncmatica Remove Guard"),
+    SYNCMATICA_REMOVE_DISABLED(
+            "syncmatica_remove_disabled", "syncmatica", "Syncmatica Disable Remove"),
+    SYNCMATICA_REMOVE_REQUIRE_SHIFT(
+            "syncmatica_remove_require_shift", "syncmatica", "Syncmatica Require Shift To Remove"),
     MASA_JAPANESE_UI(
             "masa_japanese_ui", "malilib", "Masa Japanese UI"),
     MASA_GUIDE(
