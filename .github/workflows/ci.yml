@@ -1,9 +1,17 @@
 name: CI
 
-# Feature Expansion Mode (temporary)
-# Automatic PR/main execution is intentionally paused while the queued feature set is merged.
-# Restore pull_request/push triggers in the post-expansion stabilization PR.
+# Stabilization Mode
+# Pull requests are verified automatically again. Main push/release remains intentionally
+# manual until hosted Java 25 runner allocation is proven stable.
 on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
