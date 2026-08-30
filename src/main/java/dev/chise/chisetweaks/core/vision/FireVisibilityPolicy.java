@@ -4,9 +4,9 @@ public final class FireVisibilityPolicy {
     public static final int SIZE_LARGE = 0;
     public static final int SIZE_MEDIUM = 1;
     public static final int SIZE_SMALL = 2;
-    public static final int DEFAULT_SIZE_PRESET = SIZE_MEDIUM;
-    public static final int MIN_SIZE_PRESET = SIZE_LARGE;
-    public static final int MAX_SIZE_PRESET = SIZE_SMALL;
+    public static final int DEFAULT_SIZE_PRESET = 1;
+    public static final int MIN_SIZE_PRESET = 0;
+    public static final int MAX_SIZE_PRESET = 2;
 
     private FireVisibilityPolicy() {}
 
