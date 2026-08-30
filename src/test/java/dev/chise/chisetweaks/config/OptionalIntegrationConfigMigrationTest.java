@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.config;
 
-import dev.chise.chisetweaks.integration.masa.MasaJapaneseUiMode;
+import dev.chise.chisetweaks.core.policy.MasaJapaneseUiMode;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
