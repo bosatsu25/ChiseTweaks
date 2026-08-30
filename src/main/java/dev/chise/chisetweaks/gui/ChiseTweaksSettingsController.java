@@ -68,7 +68,12 @@ final class ChiseTweaksSettingsController {
                 resetBuilderFocusDetails();
                 yield EnumSet.of(SettingPersistence.FEATURE_CONFIG);
             }
-            case INSPECTOR -> EnumSet.noneOf(SettingPersistence.class);
+            case INSPECTOR -> {
+                LocalFeatureSettings.INTERACTION_HISTORY.resetToDefault();
+                LocalFeatureSettings.SCHEMATIC_PLACEMENT_INSPECTOR.resetToDefault();
+                InteractionHistory.clearHistory();
+                yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
+            }
             case ANALYZER -> {
                 FeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
                 FeatureSwitches.VILLAGER_ANALYZER.resetToDefault();
