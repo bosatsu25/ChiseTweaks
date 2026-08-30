@@ -126,7 +126,7 @@ CI v3は**品質ゲートを削らず、同一treeの重複FULL検証を避け�
 - tree-identicalな `docs-only` / `tooling-only` PRではmainでもheavy runtime gateを実行しない
 - tree不一致、provenance欠落、artifact欠落、direct push、判定不能は**必ずFULLへfail closed**する
 - `workflow_dispatch` もFULL
-- main CIがruntime JARを持たない場合、Official Releaseは `no-runtime-artifact` として公開をスキップする
+- main CIがruntime JARを持たない場合、Release job自体を起動しない
 - Release対象runtimeはmain CI runが保持したartifactだけ。PRから再利用する場合もmainでtree / SHA-256を再検証して同一byte列を再uploadする
 
 ### Actions budget guard
@@ -183,7 +183,7 @@ Capacity Recoveryはsafe reductionを優先し、maintainability / testability�
 
 ## 9. Official Release
 
-`.github/workflows/release.yml`は、成功した`main` pushのCI runが保持した**exact CI-verified runtime JAR**を取得して公開します。
+`.github/workflows/ci.yml`内の`release / Publish verified runtime JAR` jobは、成功した`main` verify jobがruntime artifactを生成・昇格した場合だけ起動し、**exact CI-verified runtime JAR**を公開します。runtime artifactがないdocs/tooling-only main更新ではRelease runnerを起動しません。
 
 Release publicationはruntime JARを再build・再pack・version rewriteしません。Only one-step PATCH, MINOR, or MAJOR incrementを許可し、検証済みartifactと公開artifactを同一byte列に保ちます。
 
