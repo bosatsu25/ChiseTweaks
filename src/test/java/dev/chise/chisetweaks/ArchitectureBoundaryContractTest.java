@@ -19,7 +19,7 @@ final class ArchitectureBoundaryContractTest {
 
     private static final Map<String, List<String>> FORBIDDEN_DEPENDENCIES = Map.of(
             "core", List.of("config", "feature", "gui", "integration", "mixin", "runtime", "compat"),
-            "config", List.of("feature", "gui", "mixin", "runtime", "compat"),
+            "config", List.of("feature", "gui", "integration", "mixin", "runtime", "compat"),
             "feature", List.of("gui", "integration", "mixin"),
             "integration", List.of("gui", "feature", "mixin"));
 
