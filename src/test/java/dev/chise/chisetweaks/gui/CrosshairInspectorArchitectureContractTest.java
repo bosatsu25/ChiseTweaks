@@ -21,6 +21,7 @@ final class CrosshairInspectorArchitectureContractTest {
         assertTrue(inspector.contains("cachedFilterRevision == filterRevision"));
         assertTrue(screen.contains("inspector.refresh(minecraft)"));
         assertTrue(screen.contains("rebuildInspectorRows()"));
+        assertTrue(screen.contains("row.removeWidgets(this::removeWidget)"));
         assertFalse(inspector.contains(".clip("));
         assertFalse(inspector.contains("raycast("));
         assertFalse(inspector.contains("pick("));
