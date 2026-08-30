@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.feature.rendering.worksite;
 import dev.chise.chisetweaks.config.FeatureSwitch;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
+import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteScanThrottlePolicy;
 import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
