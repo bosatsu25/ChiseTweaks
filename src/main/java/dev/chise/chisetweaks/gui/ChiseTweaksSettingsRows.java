@@ -162,7 +162,10 @@ final class ChiseTweaksSettingsRows {
             ChiseIntegerSetting vertical,
             ChiseIntegerSetting interval,
             ChiseIntegerSetting maxOverlays) {
-        headerLiteral(rows, "detail.analyzer." + prefix, feature.definition().englishName() + " Settings");
+        headerLiteral(rows, "detail.analyzer." + prefix,
+                Component.translatable(
+                        "screen.chisetweaks.settings.copy.feature_settings",
+                        feature.definition().englishName()).getString());
         String key = "screen.chisetweaks.settings." + prefix;
         integer(rows, prefix + "Range", horizontal, key + "_range.name", key + "_range.description", 1);
         integer(rows, prefix + "VerticalRange", vertical, key + "_vertical.name", key + "_vertical.description", 1);
