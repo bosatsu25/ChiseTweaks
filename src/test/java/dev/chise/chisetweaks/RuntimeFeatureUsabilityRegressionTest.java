@@ -50,6 +50,30 @@ final class RuntimeFeatureUsabilityRegressionTest {
     }
 
     @Test
+    void everyFeatureRemainsReachableFromTheSettingsUi() throws IOException {
+        String controller = source(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
+        for (String toggle : new String[]{
+                "BUILDER_FOCUS_BLOCKS",
+                "BUILDER_FOCUS_ENTITIES",
+                "FINE_THREAD_TRACE",
+                "HIDDEN_SURFACE_TRACE",
+                "GLASS_INSPECTION",
+                "MATERIAL_HIGHLIGHTS",
+                "NETHER_PALETTE",
+                "KELP_HIGHLIGHT",
+                "FIRE_VISIBILITY",
+                "LAVA_HIGHLIGHT",
+                "VILLAGER_ANALYZER",
+                "BEACON_RANGE",
+                "LIGHTNING_ROD_RANGE",
+                "BRIGHT_CHEST",
+                "BRIGHT_CONCRETE"}) {
+            assertTrue(controller.contains("FeatureSwitches." + toggle), toggle);
+        }
+    }
+
+    @Test
     void everyFeatureHasAConcreteRuntimeOrRenderingRoute() throws IOException {
         Map<FeatureDefinition, Route> routes = new EnumMap<>(FeatureDefinition.class);
         routes.put(FeatureDefinition.BUILDER_FOCUS_BLOCKS, route(
