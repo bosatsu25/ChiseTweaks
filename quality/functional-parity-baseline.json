@@ -2,10 +2,10 @@
   "schema": 2,
   "baseline": {
     "version": "0.15.0+mc26.1.2",
-    "commit": "e75170692f4a5bf677e096038abb09be180c6518",
+    "commit": "f6269e0b76df8a2ea4aecb460823d950b1c01adf",
     "runtimeJarBytes": null,
     "goalBytes": 358400,
-    "measurementStatus": "unmeasured-current-15-feature-runtime"
+    "measurementStatus": "unmeasured-current-16-feature-runtime"
   },
   "featureIds": [
     "builder_focus_blocks",
@@ -17,6 +17,7 @@
     "nether_palette",
     "kelp_highlight",
     "fire_visibility",
+    "handheld_size",
     "lava_highlight",
     "villager_analyzer",
     "beacon_range",
@@ -42,10 +43,14 @@
       "beaconRange": false,
       "lightningRodRange": false,
       "brightChest": true,
-      "brightConcrete": true
+      "brightConcrete": true,
+      "handheldSize": false
     },
     "localSettings": {
       "localFireVisibilitySizePreset": 1,
+      "localHandheldBlockScalePercent": 70,
+      "localHandheldItemScalePercent": 60,
+      "localHandheldToolScalePercent": 75,
       "localOreHighlightAnimation": false,
       "localInteractionHistory": false,
       "localSchematicPlacementInspector": false,
@@ -105,7 +110,8 @@
     "rendering.BlockEntityVisualStateMixin",
     "rendering.ChestVisibilityMixin",
     "rendering.BuilderFocusEntityMixin",
-    "rendering.FireVisibilityMixin"
+    "rendering.FireVisibilityMixin",
+    "rendering.HandheldSizeMixin"
   ],
   "fabric": {
     "environment": "client",
