@@ -28,6 +28,7 @@ jobs:
     outputs:
       release_ready: ${{ steps.release_candidate.outputs.ready }}
       runtime_jar: ${{ steps.runtime.outputs.runtime_jar }}
+      source_verification_run: ${{ steps.verification_source.outputs.source_run_id }}
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: ${{ fromJSON(vars.CHISE_CI_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 15
@@ -245,6 +246,23 @@ jobs:
             echo "runtime_sha256=${runtime_sha256}"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Resolve verification source
+        id: verification_source
+        if: ${{ success() && steps.runtime.outputs.runtime_jar != '' }}
+        env:
+          PROMOTED: ${{ steps.scope.outputs.promote }}
+          PRIOR_RUN_ID: ${{ steps.prior.outputs.prior_run_id }}
+        run: |
+          source_run_id="$GITHUB_RUN_ID"
+          if [[ "$PROMOTED" == 'true' ]]; then
+            if [[ -z "$PRIOR_RUN_ID" ]]; then
+              echo 'Promoted runtime is missing its source verification run.' >&2
+              exit 1
+            fi
+            source_run_id="$PRIOR_RUN_ID"
+          fi
+          echo "source_run_id=$source_run_id" >> "$GITHUB_OUTPUT"
+
       - name: Write reusable PR provenance
         if: ${{ success() && github.event_name == 'pull_request' }}
         env:
@@ -267,9 +285,17 @@ jobs:
             --tested-commit-sha "$tested_commit"
             --tested-tree-sha "$tested_tree"
             --version "$version"
+            --repository-contracts-verified
           )
           if [[ "$SCOPE" == 'full' ]]; then
-            args+=(--runtime-verified --runtime-jar "$RUNTIME_JAR" --runtime-sha256 "$RUNTIME_SHA256")
+            args+=(
+              --quality-gate-verified
+              --client-gametest-verified
+              --distribution-verified
+              --runtime-verified
+              --runtime-jar "$RUNTIME_JAR"
+              --runtime-sha256 "$RUNTIME_SHA256"
+            )
           fi
           python scripts/ci_provenance.py "${args[@]}"
 
@@ -499,6 +525,7 @@ jobs:
           JAVA_CONSTRAINT: ${{ steps.artifact.outputs.java_constraint }}
           RUNTIME_JAR: ${{ steps.artifact.outputs.runtime_jar }}
           RUNTIME_SHA256: ${{ steps.artifact.outputs.runtime_sha256 }}
+          SOURCE_VERIFICATION_RUN: ${{ needs.verify.outputs.source_verification_run }}
         run: |
           cat > release-notes.md <<EOF
           ## Install / 導入
@@ -539,6 +566,7 @@ jobs:
           TAG: ${{ steps.artifact.outputs.tag }}
           RUNTIME_JAR: ${{ steps.artifact.outputs.runtime_jar }}
           RUNTIME_SHA256: ${{ steps.artifact.outputs.runtime_sha256 }}
+          SOURCE_VERIFICATION_RUN: ${{ needs.verify.outputs.source_verification_run }}
         run: |
           gh api "repos/${GH_REPO}/releases/tags/${TAG}" > /tmp/official-release.json
 
@@ -560,8 +588,8 @@ jobs:
             exit 1
           fi
 
-          printf '### Official Release\n- Tag: `%s`\n- Commit: `%s`\n- Runtime JAR: `%s`\n- SHA-256: `%s`\n- Exact CI artifact promoted: `PASS`\n' \
-            "$TAG" "$TARGET_SHA" "$RUNTIME_JAR" "$RUNTIME_SHA256" >> "$GITHUB_STEP_SUMMARY"
+          printf '### Official Release\n- Tag: `%s`\n- Commit: `%s`\n- Runtime JAR: `%s`\n- SHA-256: `%s`\n- Source verification run: `%s`\n- Exact CI artifact promoted: `PASS`\n' \
+            "$TAG" "$TARGET_SHA" "$RUNTIME_JAR" "$RUNTIME_SHA256" "$SOURCE_VERIFICATION_RUN" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize skipped release
         if: ${{ steps.target.outputs.should_release == 'false' }}
