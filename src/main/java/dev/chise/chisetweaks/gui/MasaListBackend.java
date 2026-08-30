@@ -26,16 +26,16 @@ final class MasaListBackend implements ChiseListEditorBackend {
 
     @Override
     public Component title() {
-        return Component.translatable(switch (kind) {
-            case PICK_REDIRECT -> "screen.chisetweaks.masa_editor.title.pick_redirect";
-            case AUTO_PICK_GUARD -> "screen.chisetweaks.masa_editor.title.auto_pick_guard";
-            case TOOL_SWITCH_GUARD -> "screen.chisetweaks.masa_editor.title.tool_switch_guard";
+        return Component.literal(switch (kind) {
+            case PICK_REDIRECT -> "Litematica Pick Redirect";
+            case AUTO_PICK_GUARD -> "TweakerMore Auto Pick Guard";
+            case TOOL_SWITCH_GUARD -> "Tweakeroo Tool Switch Guard";
         });
     }
 
     @Override
     public Component screenTitle() {
-        return Component.translatable("screen.chisetweaks.masa_editor.screen_title");
+        return Component.literal("Masa Integration");
     }
 
     @Override
