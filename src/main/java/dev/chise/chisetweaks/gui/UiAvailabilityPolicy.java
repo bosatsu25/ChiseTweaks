@@ -40,9 +40,14 @@ final class UiAvailabilityPolicy {
             return action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE
                     || action == ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE;
         }
-        return resolved == ChiseTweaksSettingsController.Surface.FILTER
-                && (action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
-                || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER);
+        if (resolved == ChiseTweaksSettingsController.Surface.FILTER) {
+            return action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER
+                    || action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER;
+        }
+        return resolved == ChiseTweaksSettingsController.Surface.INTEGRATIONS
+                && (action == ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT
+                || action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD
+                || action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD);
     }
 
     private static boolean isReleasedHighlightRow(SettingRowId id) {
