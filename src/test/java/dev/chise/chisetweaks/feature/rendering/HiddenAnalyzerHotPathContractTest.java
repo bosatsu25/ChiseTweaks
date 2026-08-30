@@ -12,7 +12,7 @@ final class HiddenAnalyzerHotPathContractTest {
     @Test
     void scanLoopUsesPrecomputedBlockIdentityMasksOnly() throws Exception {
         String source = Files.readString(Path.of(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java"));
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java"));
 
         int start = source.indexOf("private int scanLoadedTargets(");
         int end = source.indexOf("private boolean hasKnownSourceBoundary(", start);
