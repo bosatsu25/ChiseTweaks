@@ -3,6 +3,7 @@ package dev.chise.chisetweaks.gui;
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
+import dev.chise.chisetweaks.config.MasaIntegrationSettings;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -28,7 +29,7 @@ final class ChiseTweaksSettingsControllerTest {
     }
 
     @Test
-    void fiveTabsExposeTheCurrentReleasedInformationArchitecture() {
+    void sixTabsExposeTheCurrentReleasedInformationArchitecture() {
         var controller = new ChiseTweaksSettingsController();
 
         assertEquals("Highlight", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
@@ -36,6 +37,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertEquals("Inspector", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INSPECTOR));
         assertEquals("Analyzer", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.ANALYZER));
         assertEquals("Visibility", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.VISIBILITY));
+        assertEquals("Integrations", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
 
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT)).containsAll(
                 List.of("materials", "nether", "thread", "hidden", "glass", "kelp")));
@@ -62,6 +64,14 @@ final class ChiseTweaksSettingsControllerTest {
                 ids(controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY)));
         assertTrue(controller.rows(ChiseTweaksSettingsController.Surface.INSPECTOR).stream()
                 .anyMatch(row -> row.kind() == ChiseTweaksSettingRowDefinition.Kind.INFO));
+
+        List<String> integrations = ids(controller.rows(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
+        assertTrue(integrations.containsAll(List.of(
+                "header.integrations", "masaJapaneseUiMode",
+                "litematicaPickRedirect", "tweakerooToolSwitchGuard",
+                "tweakerooPersistentGammaOverride", "tweakermoreAutoPickGuard",
+                "tweakermoreMaterialListRefresh", "syncmaticaRemoveDisabled",
+                "syncmaticaRemoveRequireShift")));
     }
 
     @Test
@@ -71,6 +81,7 @@ final class ChiseTweaksSettingsControllerTest {
         var visual = controller.rows(ChiseTweaksSettingsController.Surface.FILTER);
         var analyzer = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
         var visibility = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
+        var integrations = controller.rows(ChiseTweaksSettingsController.Surface.INTEGRATIONS);
 
         assertEquals("Ore Highlights", row(highlight, "materials").name());
         assertEquals("Nether Highlight", row(highlight, "nether").name());
@@ -110,6 +121,16 @@ final class ChiseTweaksSettingsControllerTest {
         assertSame(FeatureSwitches.BRIGHT_CHEST, row(visibility, "chestVisibility").booleanConfig());
         assertSame(FeatureSwitches.BRIGHT_CONCRETE,
                 row(visibility, "whiteConcreteVisibility").booleanConfig());
+        assertSame(MasaIntegrationSettings.LITEMATICA_PICK_REDIRECT,
+                row(integrations, "litematicaPickRedirect").booleanConfig());
+        assertSame(MasaIntegrationSettings.TWEAKEROO_TOOL_SWITCH_GUARD,
+                row(integrations, "tweakerooToolSwitchGuard").booleanConfig());
+        assertSame(MasaIntegrationSettings.TWEAKERMORE_AUTO_PICK_GUARD,
+                row(integrations, "tweakermoreAutoPickGuard").booleanConfig());
+        assertSame(MasaIntegrationSettings.SYNCMATICA_REMOVE_DISABLED,
+                row(integrations, "syncmaticaRemoveDisabled").booleanConfig());
+        assertSame(MasaIntegrationSettings.JAPANESE_UI_MODE,
+                row(integrations, "masaJapaneseUiMode").integerConfig());
     }
 
     @Test
