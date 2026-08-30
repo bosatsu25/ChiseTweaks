@@ -30,6 +30,7 @@ public final class BuilderFocusVisibility {
     public static final String REASON_SELF_PROTECTED = "self_protected";
     public static final String REASON_UNREGISTERED = "unregistered";
     private static volatile BlockConfigFingerprint blockFingerprint = BlockConfigFingerprint.empty();
+    private static volatile EntityConfigFingerprint entityFingerprint = EntityConfigFingerprint.empty();
     private static volatile BlockRules blockRules = BlockRules.none();
     private static volatile EntityRules entityRules = EntityRules.none();
     private static volatile long revision;
@@ -37,12 +38,13 @@ public final class BuilderFocusVisibility {
     private BuilderFocusVisibility() {}
 
     public static void applyConfig() {
-        BlockConfigFingerprint next = currentBlockFingerprint();
-        BlockRules nextRules = compileBlockRules(next);
-        blockRules = nextRules;
-        blockFingerprint = next;
+        BlockConfigFingerprint nextBlock = currentBlockFingerprint();
+        EntityConfigFingerprint nextEntity = currentEntityFingerprint();
+        blockRules = compileBlockRules(nextBlock);
+        entityRules = compileEntityRules(nextEntity);
+        blockFingerprint = nextBlock;
+        entityFingerprint = nextEntity;
         revision++;
-        buildEntityLists();
     }
 
     public static void buildLists() {
@@ -61,12 +63,10 @@ public final class BuilderFocusVisibility {
     }
 
     public static void buildEntityLists() {
-        ChiseRuleMode mode = BuilderFocusConfig.ENTITY_RULE_MODE.getValue();
-        EntityRules nextRules = new EntityRules(
-                mode,
-                resolveEntityTypes(BuilderFocusConfig.ENTITY_BLACKLIST.getStrings()),
-                resolveEntityTypes(BuilderFocusConfig.ENTITY_WHITELIST.getStrings()));
-        entityRules = nextRules;
+        EntityConfigFingerprint next = currentEntityFingerprint();
+        if (next.equals(entityFingerprint)) return;
+        entityRules = compileEntityRules(next);
+        entityFingerprint = next;
         revision++;
     }
 
@@ -155,42 +155,57 @@ public final class BuilderFocusVisibility {
         List<String> previousBlacklist = BuilderFocusConfig.ENTITY_BLACKLIST.getStrings();
         List<String> previousWhitelist = BuilderFocusConfig.ENTITY_WHITELIST.getStrings();
 
+        ChiseRuleMode nextMode;
+        List<String> nextBlacklist;
+        List<String> nextWhitelist;
         switch (preset) {
             case "build_review" -> {
-                BuilderFocusConfig.ENTITY_RULE_MODE.setValue(ChiseRuleMode.BLACKLIST);
-                BuilderFocusConfig.ENTITY_BLACKLIST.setStrings(List.of(
-                        "minecraft:item", "minecraft:experience_orb", "minecraft:area_effect_cloud"));
-                BuilderFocusConfig.ENTITY_WHITELIST.setStrings(List.of());
+                nextMode = ChiseRuleMode.BLACKLIST;
+                nextBlacklist = List.of(
+                        "minecraft:item", "minecraft:experience_orb", "minecraft:area_effect_cloud");
+                nextWhitelist = List.of();
             }
             case "technical_trace" -> {
-                BuilderFocusConfig.ENTITY_RULE_MODE.setValue(ChiseRuleMode.WHITELIST);
-                BuilderFocusConfig.ENTITY_WHITELIST.setStrings(List.of(
+                nextMode = ChiseRuleMode.WHITELIST;
+                nextBlacklist = List.of();
+                nextWhitelist = List.of(
                         "minecraft:armor_stand", "minecraft:item_frame", "minecraft:glow_item_frame",
-                        "minecraft:minecart", "minecraft:hopper_minecart", "minecraft:chest_minecart"));
-                BuilderFocusConfig.ENTITY_BLACKLIST.setStrings(List.of());
+                        "minecraft:minecart", "minecraft:hopper_minecart", "minecraft:chest_minecart");
             }
             case "photo" -> {
-                BuilderFocusConfig.ENTITY_RULE_MODE.setValue(ChiseRuleMode.BLACKLIST);
-                BuilderFocusConfig.ENTITY_BLACKLIST.setStrings(List.of(
+                nextMode = ChiseRuleMode.BLACKLIST;
+                nextBlacklist = List.of(
                         "minecraft:item", "minecraft:experience_orb", "minecraft:area_effect_cloud",
-                        "minecraft:marker"));
-                BuilderFocusConfig.ENTITY_WHITELIST.setStrings(List.of());
+                        "minecraft:marker");
+                nextWhitelist = List.of();
             }
             case "clear" -> {
-                BuilderFocusConfig.ENTITY_RULE_MODE.setValue(ChiseRuleMode.NONE);
-                BuilderFocusConfig.ENTITY_BLACKLIST.setStrings(List.of());
-                BuilderFocusConfig.ENTITY_WHITELIST.setStrings(List.of());
+                nextMode = ChiseRuleMode.NONE;
+                nextBlacklist = List.of();
+                nextWhitelist = List.of();
             }
-            default -> { return false; }
+            default -> {
+                return false;
+            }
         }
+
+        setEntityRulesSilently(nextMode, nextBlacklist, nextWhitelist);
+        FeatureConfig.sanitizeStringLists();
         buildEntityLists();
         if (FeatureConfig.saveToFile()) return true;
 
-        BuilderFocusConfig.ENTITY_RULE_MODE.setValue(previousMode);
-        BuilderFocusConfig.ENTITY_BLACKLIST.setStrings(previousBlacklist);
-        BuilderFocusConfig.ENTITY_WHITELIST.setStrings(previousWhitelist);
+        setEntityRulesSilently(previousMode, previousBlacklist, previousWhitelist);
         buildEntityLists();
         return false;
+    }
+
+    private static void setEntityRulesSilently(
+            ChiseRuleMode mode,
+            List<String> blacklist,
+            List<String> whitelist) {
+        BuilderFocusConfig.ENTITY_RULE_MODE.setValueSilently(mode);
+        BuilderFocusConfig.ENTITY_BLACKLIST.setStringsSilently(blacklist);
+        BuilderFocusConfig.ENTITY_WHITELIST.setStringsSilently(whitelist);
     }
 
     private static BlockConfigFingerprint currentBlockFingerprint() {
@@ -209,18 +224,20 @@ public final class BuilderFocusVisibility {
                 resolveBlocks(fingerprint.whitelist()));
     }
 
-    private static Set<Block> resolveBlocks(Set<String> entries) {
-        Set<String> normalized = normalizeIds(entries);
-        if (normalized.isEmpty()) return Set.of();
+    private static Set<Block> resolveBlocks(Iterable<String> entries) {
+        if (entries == null) return Set.of();
         LinkedHashSet<Block> resolved = new LinkedHashSet<>();
-        for (Block block : BuiltInRegistries.BLOCK) {
-            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
-            if (id != null && normalized.contains(id.toString())) resolved.add(block);
+        for (String raw : entries) {
+            Identifier id = Identifier.tryParse(raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT));
+            if (id == null) continue;
+            Block block = BuiltInRegistries.BLOCK.getValue(id);
+            if (block != null) resolved.add(block);
         }
         return Set.copyOf(resolved);
     }
 
-    private static Set<EntityType<?>> resolveEntityTypes(List<String> entries) {
+    private static Set<EntityType<?>> resolveEntityTypes(Iterable<String> entries) {
+        if (entries == null) return Set.of();
         LinkedHashSet<EntityType<?>> resolved = new LinkedHashSet<>();
         for (String raw : entries) {
             Identifier id = Identifier.tryParse(raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT));
@@ -231,14 +248,19 @@ public final class BuilderFocusVisibility {
         return Set.copyOf(resolved);
     }
 
-    private static Set<String> normalizeIds(Iterable<String> entries) {
-        LinkedHashSet<String> normalized = new LinkedHashSet<>();
-        if (entries == null) return Set.of();
-        for (String raw : entries) {
-            Identifier id = Identifier.tryParse(raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT));
-            if (id != null) normalized.add(id.toString());
-        }
-        return Set.copyOf(normalized);
+    private static EntityConfigFingerprint currentEntityFingerprint() {
+        return new EntityConfigFingerprint(
+                FeatureSwitches.BUILDER_FOCUS_ENTITIES.getBooleanValue(),
+                BuilderFocusConfig.ENTITY_RULE_MODE.getValue(),
+                Set.copyOf(BuilderFocusConfig.ENTITY_BLACKLIST.getStrings()),
+                Set.copyOf(BuilderFocusConfig.ENTITY_WHITELIST.getStrings()));
+    }
+
+    private static EntityRules compileEntityRules(EntityConfigFingerprint fingerprint) {
+        return new EntityRules(
+                fingerprint.mode(),
+                resolveEntityTypes(fingerprint.blacklist()),
+                resolveEntityTypes(fingerprint.whitelist()));
     }
 
     private record BlockConfigFingerprint(
@@ -254,6 +276,22 @@ public final class BuilderFocusVisibility {
 
         static BlockConfigFingerprint empty() {
             return new BlockConfigFingerprint(false, ChiseRuleMode.NONE, Set.of(), Set.of());
+        }
+    }
+
+    private record EntityConfigFingerprint(
+            boolean enabled,
+            ChiseRuleMode mode,
+            Set<String> blacklist,
+            Set<String> whitelist) {
+        private EntityConfigFingerprint {
+            Objects.requireNonNull(mode, "mode");
+            blacklist = Set.copyOf(blacklist);
+            whitelist = Set.copyOf(whitelist);
+        }
+
+        static EntityConfigFingerprint empty() {
+            return new EntityConfigFingerprint(false, ChiseRuleMode.NONE, Set.of(), Set.of());
         }
     }
 
