@@ -31,10 +31,9 @@ public final class InfrastructureRangeFeature
     private static final int LIGHTNING_ROD_MASK = 1 << 1;
     private static final int BEACON_COLOR = 0xFF55F3FF;
     private static final int LIGHTNING_ROD_COLOR = 0xFFFFD45A;
-    private static final int MAX_PRELOADED_CHUNKS = 16;
 
     private final BlockPos.MutableBlockPos scanCursor = new BlockPos.MutableBlockPos();
-    private final LevelChunk[] loadedChunkBuffer = new LevelChunk[MAX_PRELOADED_CHUNKS];
+    private final LoadedChunkWindow loadedChunks = new LoadedChunkWindow(16);
     private volatile List<Target> targets = List.of();
     private int ticksUntilScan;
     private int lastEnabledMask;
@@ -86,30 +85,19 @@ public final class InfrastructureRangeFeature
         int beaconMargin = (enabledMask & BEACON_MASK) != 0
                 ? InfrastructureRangePolicy.MAX_BEACON_LEVEL
                 : 0;
-        int minChunkX = (minX - beaconMargin) >> 4;
-        int maxChunkX = (maxX + beaconMargin) >> 4;
-        int minChunkZ = (minZ - beaconMargin) >> 4;
-        int maxChunkZ = (maxZ + beaconMargin) >> 4;
-        int chunkSpanX = maxChunkX - minChunkX + 1;
-        int chunkSpanZ = maxChunkZ - minChunkZ + 1;
-        int chunkCount = chunkSpanX * chunkSpanZ;
-        if (chunkCount > loadedChunkBuffer.length) return List.of();
-
-        int chunkIndex = 0;
-        for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-                loadedChunkBuffer[chunkIndex++] =
-                        client.level.getChunkSource().getChunkNow(chunkX, chunkZ);
-            }
-        }
+        if (!loadedChunks.load(
+                client.level,
+                minX - beaconMargin,
+                maxX + beaconMargin,
+                minZ - beaconMargin,
+                maxZ + beaconMargin)) return List.of();
 
         ArrayList<Target> result = new ArrayList<>(maxTargets * Integer.bitCount(enabledMask));
         int beaconCount = 0;
         int lightningRodCount = 0;
         for (int z = minZ; z <= maxZ; z++) {
             for (int x = minX; x <= maxX; x++) {
-                LevelChunk sourceChunk = loadedChunkAt(
-                        x, z, minChunkX, minChunkZ, chunkSpanX, chunkSpanZ);
+                LevelChunk sourceChunk = loadedChunks.atBlock(x, z);
                 if (sourceChunk == null) continue;
                 for (int y = origin.getY() - vr; y <= origin.getY() + vr; y++) {
                     scanCursor.set(x, y, z);
@@ -117,8 +105,7 @@ public final class InfrastructureRangeFeature
                     if ((enabledMask & BEACON_MASK) != 0
                             && beaconCount < maxTargets
                             && state.is(Blocks.BEACON)) {
-                        int range = InfrastructureRangePolicy.beaconRadius(
-                                beaconLevel(x, y, z, minChunkX, minChunkZ, chunkSpanX, chunkSpanZ));
+                        int range = InfrastructureRangePolicy.beaconRadius(beaconLevel(x, y, z));
                         if (range > 0) {
                             result.add(new Target(new BlockPos(x, y, z), range, BEACON_COLOR));
                             beaconCount++;
@@ -143,22 +130,14 @@ public final class InfrastructureRangeFeature
         return List.copyOf(result);
     }
 
-    private int beaconLevel(
-            int beaconX,
-            int beaconY,
-            int beaconZ,
-            int minChunkX,
-            int minChunkZ,
-            int chunkSpanX,
-            int chunkSpanZ) {
+    private int beaconLevel(int beaconX, int beaconY, int beaconZ) {
         int complete = 0;
         for (int layer = 1; layer <= InfrastructureRangePolicy.MAX_BEACON_LEVEL; layer++) {
             int y = beaconY - layer;
             boolean valid = true;
             for (int z = beaconZ - layer; z <= beaconZ + layer && valid; z++) {
                 for (int x = beaconX - layer; x <= beaconX + layer; x++) {
-                    LevelChunk sourceChunk = loadedChunkAt(
-                            x, z, minChunkX, minChunkZ, chunkSpanX, chunkSpanZ);
+                    LevelChunk sourceChunk = loadedChunks.atBlock(x, z);
                     if (sourceChunk == null) {
                         valid = false;
                         break;
@@ -174,21 +153,6 @@ public final class InfrastructureRangeFeature
             complete = layer;
         }
         return complete;
-    }
-
-    private LevelChunk loadedChunkAt(
-            int blockX,
-            int blockZ,
-            int minChunkX,
-            int minChunkZ,
-            int chunkSpanX,
-            int chunkSpanZ) {
-        int offsetX = (blockX >> 4) - minChunkX;
-        int offsetZ = (blockZ >> 4) - minChunkZ;
-        if (offsetX < 0 || offsetX >= chunkSpanX || offsetZ < 0 || offsetZ >= chunkSpanZ) {
-            return null;
-        }
-        return loadedChunkBuffer[offsetZ * chunkSpanX + offsetX];
     }
 
     private void render(LevelRenderContext context) {
@@ -262,9 +226,7 @@ public final class InfrastructureRangeFeature
         ticksUntilScan = 0;
         lastEnabledMask = 0;
         lastLevel = null;
-        for (int index = 0; index < loadedChunkBuffer.length; index++) {
-            loadedChunkBuffer[index] = null;
-        }
+        loadedChunks.clear();
     }
 
     @Override
