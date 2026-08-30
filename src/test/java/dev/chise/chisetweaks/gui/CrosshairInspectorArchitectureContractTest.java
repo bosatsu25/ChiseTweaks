@@ -12,71 +12,49 @@ final class CrosshairInspectorArchitectureContractTest {
     private static final Path GUI = Path.of("src/main/java/dev/chise/chisetweaks/gui");
 
     @Test
-    void crosshairOwnsExistingHitLifecycleAndCacheButNotDomainDerivation() throws Exception {
+    void crosshairOwnsHitLifecycleWithoutFeatureImpactDiagnostics() throws Exception {
         String crosshair = Files.readString(GUI.resolve("CrosshairInspector.java"));
+        String policy = Files.readString(GUI.resolve("CrosshairSnapshotPolicy.java"));
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
 
         assertTrue(crosshair.contains("client.hitResult"));
         assertTrue(crosshair.contains("cachedBlockState == state"));
-        assertTrue(crosshair.contains("cachedFilterRevision == filterRevision"));
         assertTrue(crosshair.contains("CrosshairSnapshotPolicy.blockSnapshot("));
         assertTrue(crosshair.contains("PlacementInspector.placementProbe("));
-        assertTrue(screen.contains("inspector.refresh(minecraft)"));
+        assertTrue(screen.contains("crosshair.refresh(minecraft)"));
 
-        for (String misplaced : new String[]{
-                "BlockPlaceContext", "BlockStateProperties", "BlockInspectionPolicy",
-                "VisualTargetSelectionPolicy", "TrapDoorBlock", "SlabBlock", "StairBlock",
-                "GlassHighlightTargetPolicy", "OreHighlightResolver.resolve("}) {
-            assertFalse(crosshair.contains(misplaced),
-                    () -> "CrosshairInspector reacquired extracted responsibility: " + misplaced);
+        for (String removed : new String[]{
+                "currentEnabledFeatureMask", "cachedFeatureMask", "cachedFilterRevision",
+                "cachedOreRevision", "responsibleFeatures", "filterDecision"}) {
+            assertFalse(crosshair.contains(removed), removed);
+            assertFalse(policy.contains(removed), removed);
         }
-        assertFalse(crosshair.contains(".clip("));
-        assertFalse(crosshair.contains("raycast("));
-        assertFalse(crosshair.contains("pick("));
     }
 
     @Test
-    void snapshotPolicyDerivesReadOnlyStateWithoutOwningMinecraftHitLifecycle() throws Exception {
+    void snapshotPolicyFormatsReadOnlyBlockInfoOnly() throws Exception {
         String policy = Files.readString(GUI.resolve("CrosshairSnapshotPolicy.java"));
-
-        assertTrue(policy.contains("BlockInspectionPolicy.categories("));
-        assertTrue(policy.contains("BuilderFocusVisibility.inspect("));
-        assertTrue(policy.contains("responsibleFeatures("));
         assertTrue(policy.contains("formatStateProperties("));
+        assertTrue(policy.contains("BuiltInRegistries.BLOCK"));
+        assertFalse(policy.contains("FeatureDefinition"));
+        assertFalse(policy.contains("OreHighlightResolver"));
+        assertFalse(policy.contains("BuilderFocusVisibility"));
         assertFalse(policy.contains("Minecraft"));
-        assertFalse(policy.contains("client.hitResult"));
         assertFalse(policy.contains("BlockPlaceContext"));
     }
 
     @Test
-    void inspectorCollaboratorsRemainReadOnlyAndPrivacyBounded() throws Exception {
-        String combined = Files.readString(GUI.resolve("CrosshairInspector.java"))
-                + Files.readString(GUI.resolve("CrosshairSnapshotPolicy.java"))
-                + Files.readString(GUI.resolve("PlacementInspector.java"));
-
-        for (String forbidden : new String[]{
-                "setBlock(", "setValue(", "toggleBooleanValue(", "saveToFile(",
-                "sendPacket", "getBlockEntity(", "getUpdateTag(", "saveWith",
-                "getNbt", "getComponents(", "getUUID(", "getInventory", "getContainer",
-                "getMessage", "getText", "chat"}) {
-            assertFalse(combined.contains(forbidden), forbidden);
-        }
-        assertFalse(combined.contains("LOGGER"));
-    }
-
-    @Test
-    void helpSurfaceMigratesToInspectorWithoutRestoringLegacyUtilityChrome() throws Exception {
+    void builderAssistReplacesTheMonolithicInspectorSurface() throws Exception {
         String controller = Files.readString(GUI.resolve("ChiseTweaksSettingsController.java"));
-        String inspectorRows = Files.readString(GUI.resolve("InspectorSettingsRows.java"));
+        String assist = Files.readString(GUI.resolve("BuilderAssistRows.java"));
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
 
-        assertTrue(controller.contains("INSPECTOR"));
-        assertFalse(controller.contains("HELP"));
-        assertFalse(controller.contains("VISUAL_FILTER"));
-        assertTrue(inspectorRows.contains("addCommonHelpRows"));
-        assertTrue(screen.contains("inspectorHelpVisible"));
-        assertFalse(screen.contains("ChiseTweaksMetadata.MOD_VERSION"));
-        assertFalse(screen.contains("Diagnostics"));
-        assertFalse(screen.contains("Resource reload"));
+        assertTrue(controller.contains("BUILDER_ASSIST"));
+        assertFalse(controller.contains("INSPECTOR"));
+        assertFalse(controller.contains("ANALYZER"));
+        assertTrue(assist.contains("addPlacementRows"));
+        assertTrue(assist.contains("addPatternConsistencyRows"));
+        assertTrue(screen.contains("builderAssistHelpVisible"));
+        assertFalse(Files.exists(GUI.resolve("InspectorSettingsRows.java")));
     }
 }
