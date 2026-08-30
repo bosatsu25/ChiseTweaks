@@ -226,7 +226,7 @@ ChiseTweaksはクライアント側の**建築確認・視認補助**に範囲�
 
 ## QA / CI
 
-PRでは次をまとめて確認します。
+runtime / source / config / test / workflowへ影響するPRでは次をまとめて確認します。
 
 - repository / source / documentation / compatibility contract audit
 - JUnit
@@ -236,5 +236,7 @@ PRでは次をまとめて確認します。
 - artifact / distribution audit
 - runtime JAR size ceiling
 - 12機能all-on regression
+
+README / DEVELOPMENT / `docs/**` だけのPRは、契約監査を残したままJava / Gradle / PIT / GameTest / artifact生成を省略します。mainへのpushは常にFULL CIです。これにより品質基準を下げず、GitHub Actionsの不要な実行時間を減らします。
 
 CIで代替できないPrism Launcher / Windows / 実GPUの見た目は、別のacceptance smokeとして確認します。

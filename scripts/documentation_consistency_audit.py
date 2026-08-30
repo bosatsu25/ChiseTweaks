@@ -160,6 +160,9 @@ def main() -> int:
         f"`{jar_max} bytes`",
         "toggle可能なruntime featureは現在12個",
         "GitHub Issues",
+        "scripts/ci_scope.py",
+        "push: main",
+        "workflow_dispatch",
     ):
         if marker not in development:
             failures.append(f"DEVELOPMENT.md is missing current contract marker: {marker}")
