@@ -70,6 +70,34 @@ public final class LocalFeatureConfig {
 
     public static LocalFeatureConfig getInstance() { return INSTANCE; }
 
+    boolean featureEnabled(FeatureDefinition definition) {
+        return switch (definition) {
+            case FIRE_VISIBILITY -> fireVisibilityEnabled;
+            case HANDHELD_SIZE -> handheldSizeEnabled;
+            case LAVA_HIGHLIGHT -> lavaHighlightEnabled;
+            case VILLAGER_ANALYZER -> villagerAnalyzerEnabled;
+            case BEACON_RANGE -> beaconRangeEnabled;
+            case LIGHTNING_ROD_RANGE -> lightningRodRangeEnabled;
+            case BRIGHT_CHEST -> brightChestEnabled;
+            case BRIGHT_CONCRETE -> brightConcreteEnabled;
+            default -> throw new IllegalArgumentException("not a local feature: " + definition);
+        };
+    }
+
+    void setFeatureEnabled(FeatureDefinition definition, boolean enabled) {
+        switch (definition) {
+            case FIRE_VISIBILITY -> fireVisibilityEnabled = enabled;
+            case HANDHELD_SIZE -> handheldSizeEnabled = enabled;
+            case LAVA_HIGHLIGHT -> lavaHighlightEnabled = enabled;
+            case VILLAGER_ANALYZER -> villagerAnalyzerEnabled = enabled;
+            case BEACON_RANGE -> beaconRangeEnabled = enabled;
+            case LIGHTNING_ROD_RANGE -> lightningRodRangeEnabled = enabled;
+            case BRIGHT_CHEST -> brightChestEnabled = enabled;
+            case BRIGHT_CONCRETE -> brightConcreteEnabled = enabled;
+            default -> throw new IllegalArgumentException("not a local feature: " + definition);
+        }
+    }
+
     public synchronized void load() {
         resetToDefaults();
         try {
