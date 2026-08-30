@@ -84,8 +84,11 @@ final class ChiseTweaksSettingsController {
             case ANALYZER -> {
                 FeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
                 FeatureSwitches.VILLAGER_ANALYZER.resetToDefault();
+                FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
                 resetAnalyzerDetails();
-                yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
+                yield EnumSet.of(
+                        SettingPersistence.FEATURE_CONFIG,
+                        SettingPersistence.LOCAL_CONFIG);
             }
             case VISIBILITY -> {
                 FeatureSwitches.FIRE_VISIBILITY.resetToDefault();
@@ -112,7 +115,6 @@ final class ChiseTweaksSettingsController {
         FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
         FeatureSwitches.NETHER_PALETTE.resetToDefault();
         FeatureSwitches.FINE_THREAD_TRACE.resetToDefault();
-        FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
         FeatureSwitches.GLASS_INSPECTION.resetToDefault();
         FeatureSwitches.KELP_HIGHLIGHT.resetToDefault();
     }
@@ -127,11 +129,8 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS.resetToDefault();
         LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET.resetToDefault();
         LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY.resetToDefault();
-        LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET.resetToDefault();
-        LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY.resetToDefault();
         resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
         resetTargetGroup(VisualTargetGroupPolicy.Group.TECHNICAL);
-        resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
     }
 
     private void resetAnalyzerDetails() {
@@ -139,6 +138,13 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS.resetToDefault();
         LocalFeatureSettings.LAVA_ANALYZER_INTERVAL.resetToDefault();
         LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS.resetToDefault();
+        LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS.resetToDefault();
+        LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS.resetToDefault();
+        LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL.resetToDefault();
+        LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS.resetToDefault();
+        LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET.resetToDefault();
+        LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY.resetToDefault();
+        resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
     }
 
     private void resetBuilderFocusDetails() {
