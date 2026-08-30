@@ -4,7 +4,9 @@ import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
+import dev.chise.chisetweaks.feature.rendering.InfrastructureRangeFeature;
 import dev.chise.chisetweaks.feature.rendering.LavaHighlightFeature;
+import dev.chise.chisetweaks.feature.rendering.VillagerAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine;
 import dev.chise.chisetweaks.gui.PatternConsistencyInspector;
 import dev.chise.chisetweaks.gui.PlacementComparisonTracker;
@@ -39,6 +41,15 @@ public final class FeatureManager {
 
         if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
             registerComponent(new LavaHighlightFeature());
+        }
+        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.VILLAGER_ANALYZER)) {
+            registerComponent(new VillagerAnalyzerFeature());
+        }
+        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BEACON_RANGE)) {
+            registerComponent(new InfrastructureRangeFeature(InfrastructureRangeFeature.Mode.BEACON));
+        }
+        if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LIGHTNING_ROD_RANGE)) {
+            registerComponent(new InfrastructureRangeFeature(InfrastructureRangeFeature.Mode.LIGHTNING_ROD));
         }
         if (hasAvailableWorksiteVisibilityFeature()) {
             registerComponent(new WorksiteVisibilityEngine());
