@@ -17,6 +17,9 @@ final class ChiseListEditorScreenArchitectureContractTest {
         Path gui = ROOT.resolve("src/main/java/dev/chise/chisetweaks/gui");
         String screen = Files.readString(gui.resolve("ChiseListEditorScreen.java"));
         String backend = Files.readString(gui.resolve("ChiseListEditorBackend.java"));
+        String scene = Files.readString(gui.resolve("SceneFilterBackend.java"));
+        String masa = Files.readString(gui.resolve("MasaListBackend.java"));
+        String ore = Files.readString(gui.resolve("OreCompatibilityBackend.java"));
         String configScreen = Files.readString(gui.resolve("ChiseTweaksConfigScreen.java"));
 
         assertFalse(Files.exists(gui.resolve("ChiseMasaIntegrationEditorScreen.java")));
@@ -51,13 +54,13 @@ final class ChiseListEditorScreenArchitectureContractTest {
         assertFalse(screen.contains("isMasaGuard()"));
         assertFalse(screen.contains("isPickRedirect()"));
 
-        assertTrue(backend.contains("final class SceneFilterBackend"));
-        assertTrue(backend.contains("final class MasaListBackend"));
-        assertTrue(backend.contains("final class OreCompatibilityBackend"));
-        assertTrue(backend.contains("SettingPersistenceCoordinator.production()"));
-        assertTrue(backend.contains("MasaIntegrationConfig.getInstance()"));
-        assertTrue(backend.contains("OreHighlightCompatibilityConfig.put"));
-        assertTrue(backend.contains("OreHighlightModelReload.request()"));
+        assertTrue(Files.exists(gui.resolve("SceneFilterBackend.java")));
+        assertTrue(Files.exists(gui.resolve("MasaListBackend.java")));
+        assertTrue(Files.exists(gui.resolve("OreCompatibilityBackend.java")));
+        assertTrue(scene.contains("SettingPersistenceCoordinator.production()"));
+        assertTrue(masa.contains("MasaIntegrationConfig.getInstance()"));
+        assertTrue(ore.contains("OreHighlightCompatibilityConfig.put"));
+        assertTrue(ore.contains("OreHighlightModelReload.request()"));
         assertTrue(backend.contains("BuiltInRegistries.BLOCK"));
     }
 }
