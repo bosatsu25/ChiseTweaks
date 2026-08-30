@@ -152,6 +152,7 @@ jobs:
 
       - name: Test repository tooling
         run: |
+          python -m compileall -q scripts
           python scripts/test_ci_scope.py
           python scripts/test_ci_provenance.py
           python scripts/test_ci_workflow_contract.py
