@@ -54,7 +54,7 @@ final class SettingsAndAnalyzerDesignContractTest {
         assertContainsAll(villager,
                 "MemoryModuleType.JOB_SITE",
                 "collectKnownLinks",
-                "Villager Job Site Links");
+                "FeatureDefinition.VILLAGER_ANALYZER.englishName()");
         assertContainsNone(villager,
                 "FALLBACK_WORKSTATION_RADIUS",
                 "findNearestLoadedWorkstation",
