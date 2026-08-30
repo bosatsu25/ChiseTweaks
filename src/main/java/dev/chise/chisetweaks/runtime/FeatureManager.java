@@ -8,8 +8,10 @@ import dev.chise.chisetweaks.feature.rendering.InfrastructureRangeFeature;
 import dev.chise.chisetweaks.feature.rendering.LavaHighlightFeature;
 import dev.chise.chisetweaks.feature.rendering.VillagerAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine;
+import dev.chise.chisetweaks.gui.InteractionHistory;
 import dev.chise.chisetweaks.gui.PatternConsistencyInspector;
 import dev.chise.chisetweaks.gui.PlacementComparisonTracker;
+import dev.chise.chisetweaks.gui.SchematicPlacementInspector;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 
@@ -56,6 +58,8 @@ public final class FeatureManager {
         }
         registerComponent(new PlacementComparisonTracker());
         registerComponent(new PatternConsistencyInspector());
+        registerComponent(new InteractionHistory());
+        registerComponent(new SchematicPlacementInspector());
 
         for (ComponentSlot slot : componentSlots.values()) initializeComponent(slot);
 
