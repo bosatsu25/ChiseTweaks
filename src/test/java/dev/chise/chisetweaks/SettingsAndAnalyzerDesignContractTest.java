@@ -17,12 +17,12 @@ final class SettingsAndAnalyzerDesignContractTest {
         String settings = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
         String targets = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
 
-        assertContainsAll(settings,
+        assertContainsAll(controller,
                 "() -> config().worksiteVisibilityHorizontalRadius",
                 "value -> config().worksiteVisibilityHorizontalRadius = value",
                 "() -> config().lavaAnalyzerIntervalTicks",
                 "value -> config().lavaAnalyzerIntervalTicks = value");
-        assertContainsNone(settings,
+        assertContainsNone(controller,
                 "syncFromStorage",
                 "private static boolean syncing",
                 "AncientDebrisAnalyzerPolicy");
@@ -66,7 +66,6 @@ final class SettingsAndAnalyzerDesignContractTest {
     @Test
     void settingsPresentationUsesSixTabsAndRetainedProductNames() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
-        String settings = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         String definition = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
         String sceneFilter = read("src/main/java/dev/chise/chisetweaks/gui/ChiseListEditorScreen.java");
@@ -90,7 +89,13 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "HIGHLIGHT_DETAILS",
                 "VISUAL_FILTER_DETAILS",
                 "LAVA_DETAILS");
-        assertContainsAll(settings,
+        assertContainsAll(controller,
+                "addCompatibilityRows(",
+                "configOptionKey(",
+                "addTargets(");
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/gui/CompatibilitySettingsRows.java"));
+        assertContainsAll(controller,
                 "Component.translatable(",
                 "definition.englishName()",
                 "\"Highlight\"",
@@ -100,7 +105,7 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Visibility\"",
                 "FeatureDefinition.BRIGHT_CHEST.englishName()",
                 "FeatureDefinition.BRIGHT_CONCRETE.englishName()");
-        assertContainsNone(settings,
+        assertContainsNone(controller,
                 "FeatureDefinition.AIR_PLACEMENT",
                 "FeatureDefinition.ANCIENT_DEBRIS_ANALYZER");
         assertContainsAll(definition,
