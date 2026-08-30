@@ -99,8 +99,10 @@ def audit() -> list[str]:
 
     profile_policy = read("src/main/java/dev/chise/chisetweaks/core/policy/WorksiteHighlightProfilePolicy.java")
     fire_visibility_policy = read("src/main/java/dev/chise/chisetweaks/core/vision/FireVisibilityPolicy.java")
+    handheld_size_policy = read("src/main/java/dev/chise/chisetweaks/core/vision/HandheldSizePolicy.java")
     constants = int_constants(profile_policy)
     constants.update(int_constants(fire_visibility_policy))
+    constants.update(int_constants(handheld_size_policy))
     local_settings_text = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java")
     local_setting_pairs = re.findall(
         r"\b(?:bool|integer)\(\s*\"([^\"]+)\"\s*,\s*([^,\r\n]+)",
