@@ -27,7 +27,7 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "private static boolean syncing",
                 "AncientDebrisAnalyzerPolicy");
         assertContainsAll(targets,
-                "LocalFeatureConfig.getInstance().visualTargetMask",
+                "config().visualTargetMask",
                 "VisualTargetSelectionPolicy.withEnabled(",
                 "public static final List<ChiseBooleanSetting> VISUAL_TARGETS");
     }
@@ -79,11 +79,11 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "resetOccludedHighlightDetails",
                 "SettingPersistenceCoordinator.production()");
         assertContainsAll(productRows,
-                "Builder Highlights",
-                "Scene Filter",
-                "Builder Assist",
-                "Technical",
-                "Visual Tweaks",
+                "screen.chisetweaks.product.builder_highlights",
+                "screen.chisetweaks.product.scene_filter",
+                "screen.chisetweaks.product.builder_assist",
+                "screen.chisetweaks.product.technical",
+                "screen.chisetweaks.product.visual_tweaks",
                 "FeatureSwitches.LAVA_HIGHLIGHT",
                 "FeatureSwitches.HIDDEN_SURFACE_TRACE",
                 "FeatureSwitches.VILLAGER_ANALYZER");
@@ -105,6 +105,8 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Lava Analyzer\"",
                 "\"Hidden Block Analyzer\"",
                 "\"Villager Analyzer\"");
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsRows.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java"));
     }
 
     @Test
