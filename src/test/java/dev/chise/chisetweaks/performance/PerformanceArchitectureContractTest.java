@@ -130,6 +130,19 @@ final class PerformanceArchitectureContractTest {
         assertTrue(manager.contains("registerComponent(new InfrastructureRangeFeature())"));
         assertFalse(manager.contains("InfrastructureRangeFeature.Mode"));
 
+        String analyzers = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java"));
+        assertTrue(analyzers.contains("implements TickingRuntimeComponent, SessionAwareRuntimeComponent"));
+        assertTrue(analyzers.contains("FeatureSwitches.LAVA_HIGHLIGHT.getBooleanValue()"));
+        assertTrue(analyzers.contains("FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue()"));
+        assertTrue(analyzers.contains("int dueMask = 0"));
+        assertTrue(analyzers.contains("int horizontalRadius = Math.max(lavaHorizontal, hiddenHorizontal)"));
+        assertTrue(analyzers.contains("getChunkNow("));
+        assertFalse(analyzers.contains("client.level.getBlockState(cursor)"));
+        assertTrue(manager.contains("registerComponent(new ThroughWallAnalyzerFeature())"));
+        assertFalse(manager.contains("new LavaHighlightFeature()"));
+        assertFalse(manager.contains("new HiddenBlockAnalyzerFeature()"));
+
         assertTrue(villager.contains("BlockPos.MutableBlockPos workstationCursor"));
         assertTrue(villager.contains("LevelChunk sourceChunk"));
         assertTrue(villager.contains("sourceChunk.getBlockState(workstationCursor)"));
