@@ -15,20 +15,22 @@ final class SettingsLocalizationArchitectureContractTest {
             "\\\"[^\\\"\\n]*[\\p{IsHiragana}\\p{IsKatakana}\\p{IsHan}][^\\\"\\n]*\\\"");
 
     @Test
-    void settingsInspectorAndMasaOperationalCopyLivesInLanguageResources() throws Exception {
+    void settingsBuilderAssistAndMasaOperationalCopyLivesInLanguageResources() throws Exception {
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
         String rows = Files.readString(GUI.resolve("ChiseTweaksSettingsRows.java"));
-        String inspector = Files.readString(GUI.resolve("InspectorSettingsRows.java"));
+        String assist = Files.readString(GUI.resolve("BuilderAssistRows.java"));
+        String workflow = Files.readString(GUI.resolve("WorkflowRows.java"));
         String masa = Files.readString(GUI.resolve("MasaListBackend.java"));
 
         assertTrue(screen.contains("screen.chisetweaks.settings.apply_changes"));
-        assertTrue(rows.contains("screen.chisetweaks.settings.copy.villager_analyzer.description"));
-        assertTrue(inspector.contains("screen.chisetweaks.inspector.schematic.none.description"));
+        assertTrue(rows.contains("screen.chisetweaks.settings.copy.villager_links.description"));
+        assertTrue(assist.contains("screen.chisetweaks.inspector.schematic.none.description"));
         assertTrue(masa.contains("screen.chisetweaks.masa_editor.feedback.save_failed"));
 
         assertFalse(JAPANESE_STRING_LITERAL.matcher(screen).find());
         assertFalse(JAPANESE_STRING_LITERAL.matcher(rows).find());
-        assertFalse(JAPANESE_STRING_LITERAL.matcher(inspector).find());
+        assertFalse(JAPANESE_STRING_LITERAL.matcher(assist).find());
+        assertFalse(JAPANESE_STRING_LITERAL.matcher(workflow).find());
         assertFalse(JAPANESE_STRING_LITERAL.matcher(masa).find());
     }
 }
