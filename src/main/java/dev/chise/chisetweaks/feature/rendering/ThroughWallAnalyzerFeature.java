@@ -226,15 +226,10 @@ public final class ThroughWallAnalyzerFeature
                     }
 
                     if (hiddenCandidate) {
-                        if (!BuilderFocusVisibility.shouldHide(state.getBlock())) {
-                            Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
-                            String blockId = id == null ? "" : id.toString();
-                            if (BlockInspectionPolicy.matches(
-                                    blockId, BlockInspectionCategory.HIDDEN_SURFACE)
-                                    && VisualTargetSelectionPolicy.matchesEnabled(
-                                            local.visualTargetMask,
-                                            blockId,
-                                            BlockInspectionCategory.HIDDEN_SURFACE)) {
+                        net.minecraft.world.level.block.Block block = state.getBlock();
+                        if (!BuilderFocusVisibility.shouldHide(block)) {
+                            int targetMask = hiddenTargetMask(block);
+                            if (targetMask != 0 && (local.visualTargetMask & targetMask) != 0) {
                                 if (Double.isNaN(distanceSquared)) {
                                     distanceSquared = distanceSquared(x, y, z, eye);
                                 }
@@ -297,6 +292,17 @@ public final class ThroughWallAnalyzerFeature
     private static boolean isSourceLava(FluidState fluidState) {
         if (fluidState == null || !fluidState.isSource()) return false;
         return fluidState.getType() == Fluids.LAVA || fluidState.getType() == Fluids.FLOWING_LAVA;
+    }
+
+    private int hiddenTargetMask(net.minecraft.world.level.block.Block block) {
+        Integer cached = hiddenTargetMasks.get(block);
+        if (cached != null) return cached;
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+        VisualTargetSelectionPolicy.Target target =
+                VisualTargetSelectionPolicy.hiddenTargetForBlockId(id == null ? "" : id.toString());
+        int targetMask = target == null ? 0 : target.bitMask();
+        hiddenTargetMasks.put(block, targetMask);
+        return targetMask;
     }
 
     private int updateDueState(int index, int mask, int baseInterval, int fingerprint) {
