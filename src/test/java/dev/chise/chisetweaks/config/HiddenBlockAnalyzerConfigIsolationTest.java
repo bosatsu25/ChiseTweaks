@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class HiddenBlockAnalyzerConfigIsolationTest {
     @Test
-    void legacySharedScanValuesSeedDedicatedHiddenAnalyzerSettings() {
+    void legacySharedScanValuesSeedOccludedHighlightBudget() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         assertTrue(config.replaceFromJsonDocument("""
                 {
@@ -20,29 +20,29 @@ final class HiddenBlockAnalyzerConfigIsolationTest {
                 }
                 """));
 
-        assertEquals(7, config.hiddenAnalyzerHorizontalRadius);
-        assertEquals(4, config.hiddenAnalyzerVerticalRadius);
-        assertEquals(35, config.hiddenAnalyzerIntervalTicks);
-        assertEquals(19, config.hiddenAnalyzerMaxOverlayResults);
+        assertEquals(7, config.occludedHighlightHorizontalRadius);
+        assertEquals(4, config.occludedHighlightVerticalRadius);
+        assertEquals(35, config.occludedHighlightIntervalTicks);
+        assertEquals(19, config.occludedHighlightMaxOverlayResults);
     }
 
     @Test
-    void dedicatedHiddenAnalyzerSettingsUseTheSharedBoundedSafetyPolicy() {
+    void occludedHighlightBudgetUsesSharedBoundedSafetyPolicy() {
         LocalFeatureConfig config = new LocalFeatureConfig();
         assertTrue(config.replaceFromJsonDocument("""
                 {
-                  "hiddenAnalyzerHorizontalRadius": 999,
-                  "hiddenAnalyzerVerticalRadius": -50,
-                  "hiddenAnalyzerIntervalTicks": 9999,
-                  "hiddenAnalyzerMaxOverlayResults": 999,
+                  "occludedHighlightHorizontalRadius": 999,
+                  "occludedHighlightVerticalRadius": -50,
+                  "occludedHighlightIntervalTicks": 9999,
+                  "occludedHighlightMaxOverlayResults": 999,
                   "visualTargetMask": 0,
                   "visualTargetSchemaVersion": 3
                 }
                 """));
 
-        assertEquals(8, config.hiddenAnalyzerHorizontalRadius);
-        assertEquals(1, config.hiddenAnalyzerVerticalRadius);
-        assertEquals(100, config.hiddenAnalyzerIntervalTicks);
-        assertEquals(24, config.hiddenAnalyzerMaxOverlayResults);
+        assertEquals(8, config.occludedHighlightHorizontalRadius);
+        assertEquals(1, config.occludedHighlightVerticalRadius);
+        assertEquals(100, config.occludedHighlightIntervalTicks);
+        assertEquals(24, config.occludedHighlightMaxOverlayResults);
     }
 }
