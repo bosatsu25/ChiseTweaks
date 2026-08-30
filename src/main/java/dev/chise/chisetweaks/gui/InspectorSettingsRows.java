@@ -169,7 +169,7 @@ final class InspectorSettingsRows {
                 semanticProperties(PlacementInspector.placementStateProperties(state)));
         if (!comparison) {
             info(rows, "placement.reason",
-                    text("screen.chisetweaks.inspector.matched_rule"),
+                    text("screen.chisetweaks.placement.reason"),
                     placementReason(placement));
         } else if (placement.actualPlacement() == null) {
             info(rows, "placement.actual",
