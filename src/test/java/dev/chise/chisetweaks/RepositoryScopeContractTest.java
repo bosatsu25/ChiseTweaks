@@ -81,7 +81,10 @@ final class RepositoryScopeContractTest {
                 ".getChunk(",
                 "BlockInspectionPolicy.matches",
                 "BlockInspectionCategory.HIDDEN_SURFACE");
-        assertContainsNone(renderer, "DefaultFluidRenderer", "getFluidState(", "getBlockState(");
+        assertContainsAll(renderer,
+                "private String hiddenBlockIdAt(",
+                "getChunkSource().getChunkNow(");
+        assertContainsNone(renderer, "DefaultFluidRenderer", "getFluidState(");
     }
 
     @Test
