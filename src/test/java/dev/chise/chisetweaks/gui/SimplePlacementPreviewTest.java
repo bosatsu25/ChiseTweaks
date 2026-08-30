@@ -68,7 +68,7 @@ final class SimplePlacementPreviewTest {
         assertTrue(source.contains("snapshot.clickedFace() == clickedFace"));
         assertTrue(source.contains("snapshot.upperClick() == upperClick"));
         String catalog = Files.readString(Path.of(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java"));
+                "src/main/java/dev/chise/chisetweaks/gui/InspectorSettingsRows.java"));
         assertTrue(catalog.contains("CrosshairInspector.placementStateProperties(state)"));
         assertTrue(catalog.contains("CrosshairInspector.actualPlacementStateProperties"));
         for (String forbidden : new String[]{
