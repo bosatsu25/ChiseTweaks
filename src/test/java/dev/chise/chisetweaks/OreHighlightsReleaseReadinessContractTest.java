@@ -114,7 +114,7 @@ final class OreHighlightsReleaseReadinessContractTest {
         String builderFocus = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/BuilderFocusVisibility.java");
         String editor = source(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseListEditorScreen.java");
+                "src/main/java/dev/chise/chisetweaks/gui/OreCompatibilityBackend.java");
 
         assertFalse(plugin.contains("reloadResourcePacks"));
         assertFalse(invalidation.contains("reloadResourcePacks"));

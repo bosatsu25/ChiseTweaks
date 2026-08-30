@@ -13,9 +13,13 @@ final class ChiseListEditorScreenArchitectureContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void listEditorsShareOneRuntimeScreenWithoutCollapsingPersistenceDomains() throws IOException {
+    void sharedScreenOwnsWidgetsWhileDomainAdaptersOwnBusinessRules() throws IOException {
         Path gui = ROOT.resolve("src/main/java/dev/chise/chisetweaks/gui");
-        String editor = Files.readString(gui.resolve("ChiseListEditorScreen.java"));
+        String screen = Files.readString(gui.resolve("ChiseListEditorScreen.java"));
+        String backend = Files.readString(gui.resolve("ChiseListEditorBackend.java"));
+        String scene = Files.readString(gui.resolve("SceneFilterBackend.java"));
+        String masa = Files.readString(gui.resolve("MasaListBackend.java"));
+        String ore = Files.readString(gui.resolve("OreCompatibilityBackend.java"));
         String configScreen = Files.readString(gui.resolve("ChiseTweaksConfigScreen.java"));
 
         assertFalse(Files.exists(gui.resolve("ChiseMasaIntegrationEditorScreen.java")));
@@ -29,18 +33,34 @@ final class ChiseListEditorScreenArchitectureContractTest {
                 "LITEMATICA_PICK_REDIRECT",
                 "TWEAKERMORE_AUTO_PICK_GUARD",
                 "TWEAKEROO_TOOL_SWITCH_GUARD"}) {
-            assertTrue(editor.contains(target));
+            assertTrue(screen.contains(target));
+            assertTrue(backend.contains("case " + target));
             assertTrue(configScreen.contains("ChiseListEditorScreen.Target." + target));
         }
 
-        assertTrue(editor.contains("SettingPersistenceCoordinator.production()"));
-        assertTrue(editor.contains("MasaIntegrationConfig.getInstance()"));
-        assertTrue(editor.contains("OreHighlightCompatibilityConfig.put"));
-        assertTrue(editor.contains("OreHighlightModelReload.request()"));
-        assertTrue(editor.contains("ChiseOreCompatibilityLayout.calculate"));
-        assertTrue(editor.contains("private void movePage(int delta)"));
-        assertTrue(editor.contains("private void clampPage()"));
-        assertTrue(editor.contains("private void createRemoveButtons()"));
-        assertTrue(editor.contains("private void createFooter()"));
+        assertTrue(screen.contains("private void movePage(int delta)"));
+        assertTrue(screen.contains("private void clampPage()"));
+        assertTrue(screen.contains("private void createRemoveButtons()"));
+        assertTrue(screen.contains("private void createFooter()"));
+        assertTrue(screen.contains("private void applyMutation("));
+        assertTrue(screen.contains("ChiseOreCompatibilityLayout.calculate"));
+
+        assertFalse(screen.contains("BuilderFocusConfig"));
+        assertFalse(screen.contains("MasaIntegrationConfig"));
+        assertFalse(screen.contains("OreHighlightCompatibilityConfig"));
+        assertFalse(screen.contains("SettingPersistenceCoordinator"));
+        assertFalse(screen.contains("BuiltInRegistries"));
+        assertFalse(screen.contains("isSceneFilter()"));
+        assertFalse(screen.contains("isMasaGuard()"));
+        assertFalse(screen.contains("isPickRedirect()"));
+
+        assertTrue(Files.exists(gui.resolve("SceneFilterBackend.java")));
+        assertTrue(Files.exists(gui.resolve("MasaListBackend.java")));
+        assertTrue(Files.exists(gui.resolve("OreCompatibilityBackend.java")));
+        assertTrue(scene.contains("SettingPersistenceCoordinator.production()"));
+        assertTrue(masa.contains("MasaIntegrationConfig.getInstance()"));
+        assertTrue(ore.contains("OreHighlightCompatibilityConfig.put"));
+        assertTrue(ore.contains("OreHighlightModelReload.request()"));
+        assertTrue(backend.contains("BuiltInRegistries.BLOCK"));
     }
 }

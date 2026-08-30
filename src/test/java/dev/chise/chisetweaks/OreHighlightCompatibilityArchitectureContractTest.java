@@ -81,8 +81,10 @@ final class OreHighlightCompatibilityArchitectureContractTest {
 
     @Test
     void editorAndPublicApiMoveRareTargetChangesToColdModelReloadPath() throws IOException {
-        String screen = source(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseListEditorScreen.java");
+        String backend = source(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseListEditorBackend.java");
+        String oreEditor = source(
+                "src/main/java/dev/chise/chisetweaks/gui/OreCompatibilityBackend.java");
         String configScreen = source(
                 "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         String api = source(
@@ -90,10 +92,10 @@ final class OreHighlightCompatibilityArchitectureContractTest {
         String reload = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/OreHighlightModelReload.java");
 
-        assertTrue(screen.contains("OreHighlightCompatibilityConfig.put"));
-        assertTrue(screen.contains("OreHighlightCompatibilityConfig.clear()"));
-        assertTrue(screen.contains("OreHighlightModelReload.request()"));
-        assertTrue(screen.contains("BuiltInRegistries.BLOCK"));
+        assertTrue(oreEditor.contains("OreHighlightCompatibilityConfig.put"));
+        assertTrue(oreEditor.contains("OreHighlightCompatibilityConfig.clear()"));
+        assertTrue(oreEditor.contains("OreHighlightModelReload.request()"));
+        assertTrue(backend.contains("BuiltInRegistries.BLOCK"));
         assertTrue(configScreen.contains("action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT"));
         assertTrue(configScreen.contains("new ChiseListEditorScreen"));
         assertTrue(api.contains("registerBlock"));
