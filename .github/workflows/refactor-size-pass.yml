@@ -15,7 +15,7 @@ concurrency:
 jobs:
   measure:
     name: Java 25 build and JAR size map
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CHISE_CI_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     steps:
       - name: Checkout
