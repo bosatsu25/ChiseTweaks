@@ -39,7 +39,10 @@ public final class VisualTargetSettings {
         config.visualTargetMask = VisualTargetSelectionPolicy.withAllOreHighlightTargets(
                 config.visualTargetMask,
                 enabled);
-        if (config.visualTargetMask != previous) materialTargetsChangedCallback.run();
+        if (config.visualTargetMask != previous) {
+            SettingChangeDispatcher.markChanged();
+            materialTargetsChangedCallback.run();
+        }
     }
 
     public static void setMaterialTargetsChangedCallback(Runnable callback) {
