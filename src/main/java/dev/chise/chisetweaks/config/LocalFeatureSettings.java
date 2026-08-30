@@ -127,6 +127,30 @@ public final class LocalFeatureSettings {
             () -> config().lavaAnalyzerMaxOverlayResults,
             value -> config().lavaAnalyzerMaxOverlayResults = value);
 
+    public static final ChiseIntegerSetting HIDDEN_ANALYZER_HORIZONTAL_RADIUS = integer(
+            "localHiddenAnalyzerHorizontalRadius", 5,
+            WorksiteVisibilityBudgetPolicy.MIN_HORIZONTAL_RADIUS,
+            WorksiteVisibilityBudgetPolicy.MAX_HORIZONTAL_RADIUS,
+            () -> config().hiddenAnalyzerHorizontalRadius,
+            value -> config().hiddenAnalyzerHorizontalRadius = value);
+    public static final ChiseIntegerSetting HIDDEN_ANALYZER_VERTICAL_RADIUS = integer(
+            "localHiddenAnalyzerVerticalRadius", 3,
+            WorksiteVisibilityBudgetPolicy.MIN_VERTICAL_RADIUS,
+            WorksiteVisibilityBudgetPolicy.MAX_VERTICAL_RADIUS,
+            () -> config().hiddenAnalyzerVerticalRadius,
+            value -> config().hiddenAnalyzerVerticalRadius = value);
+    public static final ChiseIntegerSetting HIDDEN_ANALYZER_INTERVAL = integer(
+            "localHiddenAnalyzerIntervalTicks", 10,
+            WorksiteVisibilityBudgetPolicy.MIN_INTERVAL_TICKS,
+            WorksiteVisibilityBudgetPolicy.MAX_INTERVAL_TICKS,
+            () -> config().hiddenAnalyzerIntervalTicks,
+            value -> config().hiddenAnalyzerIntervalTicks = value);
+    public static final ChiseIntegerSetting HIDDEN_ANALYZER_MAX_OVERLAYS = integer(
+            "localHiddenAnalyzerMaxOverlays", 12, 1,
+            WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS,
+            () -> config().hiddenAnalyzerMaxOverlayResults,
+            value -> config().hiddenAnalyzerMaxOverlayResults = value);
+
     static {
         ORE_HIGHLIGHT_ANIMATION.setValueChangeCallback(
                 ignored -> oreHighlightChangedCallback.run());
