@@ -9,14 +9,37 @@ import dev.chise.chisetweaks.runtime.TickingRuntimeComponent;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.BlockItemStateProperties;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BeehiveBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.GlazedTerracottaBlock;
+import net.minecraft.world.level.block.GrindstoneBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Vanilla placement prediction, short-lived actual-placement comparison and optional
@@ -106,7 +129,7 @@ public final class PlacementInspector
             BlockHitResult hit,
             long tick) {
         if (level == null || player == null || hand != InteractionHand.MAIN_HAND || hit == null) return false;
-        CrosshairInspector.PlacementProbe probe = CrosshairInspector.placementProbe(
+        PlacementProbe probe = placementProbe(
                 level,
                 player,
                 hand,
@@ -151,7 +174,7 @@ public final class PlacementInspector
             return;
         }
 
-        CrosshairInspector.PlacementProbe probe = CrosshairInspector.placementProbe(
+        PlacementProbe probe = placementProbe(
                 client.level,
                 client.player,
                 InteractionHand.MAIN_HAND,
@@ -178,6 +201,124 @@ public final class PlacementInspector
                 result,
                 blockId(expected),
                 blockId(probe.predictedState()));
+    }
+
+    static BlockState predictPlacementState(
+            Level level,
+            Player player,
+            InteractionHand hand,
+            ItemStack stack,
+            BlockHitResult hit,
+            boolean enabled) {
+        PlacementProbe probe = placementProbe(level, player, hand, stack, hit, enabled);
+        return probe == null ? null : probe.predictedState();
+    }
+
+    static PlacementProbe placementProbe(
+            Level level,
+            Player player,
+            InteractionHand hand,
+            ItemStack stack,
+            BlockHitResult hit,
+            boolean enabled) {
+        if (!enabled
+                || level == null
+                || player == null
+                || hand == null
+                || stack == null
+                || hit == null
+                || !(stack.getItem() instanceof BlockItem item)
+                || !supportsPlacementPreview(item.getBlock())) return null;
+        BlockPlaceContext context = new BlockPlaceContext(level, player, hand, stack, hit);
+        BlockState predicted = null;
+        if (context.canPlace()) {
+            BlockState state = item.getBlock().getStateForPlacement(context);
+            if (state != null
+                    && level.isUnobstructed(
+                            state,
+                            context.getClickedPos(),
+                            CollisionContext.placementContext(player))) {
+                predicted = stack.getOrDefault(
+                        DataComponents.BLOCK_STATE,
+                        BlockItemStateProperties.EMPTY).apply(state);
+            }
+        }
+        return new PlacementProbe(context.getClickedPos().immutable(), predicted);
+    }
+
+    static boolean supportsPlacementPreview(Block block) {
+        if (block instanceof TrapDoorBlock
+                || block instanceof SlabBlock
+                || block instanceof StairBlock
+                || block instanceof GlazedTerracottaBlock
+                || block instanceof FenceGateBlock
+                || block instanceof GrindstoneBlock
+                || block instanceof BeehiveBlock
+                || block instanceof CampfireBlock) return true;
+        BlockState state = block.defaultBlockState();
+        if (!state.hasProperty(BlockStateProperties.AXIS)) return false;
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+        return state.is(BlockTags.LOGS)
+                || id != null
+                && "minecraft".equals(id.getNamespace())
+                && id.getPath().endsWith("_froglight");
+    }
+
+    static List<String> placementStateProperties(BlockState state) {
+        return placementStateProperties(state, false);
+    }
+
+    static List<String> actualPlacementStateProperties(BlockState state) {
+        return placementStateProperties(state, true);
+    }
+
+    private static List<String> placementStateProperties(BlockState state, boolean actual) {
+        LinkedHashMap<String, String> properties = new LinkedHashMap<>();
+        if (state.getBlock() instanceof TrapDoorBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            addPropertyIfPresent(state, BlockStateProperties.HALF, properties);
+            addPropertyIfPresent(state, BlockStateProperties.OPEN, properties);
+            addPropertyIfPresent(state, BlockStateProperties.POWERED, properties);
+            addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
+        } else if (state.getBlock() instanceof SlabBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.SLAB_TYPE, properties);
+            addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
+        } else if (state.getBlock() instanceof StairBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            addPropertyIfPresent(state, BlockStateProperties.HALF, properties);
+            addPropertyIfPresent(state, BlockStateProperties.STAIRS_SHAPE, properties);
+            addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
+        } else if (state.getBlock() instanceof GlazedTerracottaBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+        } else if (state.getBlock() instanceof FenceGateBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            addPropertyIfPresent(state, BlockStateProperties.OPEN, properties);
+            addPropertyIfPresent(state, BlockStateProperties.POWERED, properties);
+            addPropertyIfPresent(state, BlockStateProperties.IN_WALL, properties);
+        } else if (state.getBlock() instanceof GrindstoneBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.ATTACH_FACE, properties);
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+        } else if (state.getBlock() instanceof BeehiveBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            if (actual) addPropertyIfPresent(state, BlockStateProperties.LEVEL_HONEY, properties);
+        } else if (state.getBlock() instanceof CampfireBlock) {
+            addPropertyIfPresent(state, BlockStateProperties.HORIZONTAL_FACING, properties);
+            addPropertyIfPresent(state, BlockStateProperties.LIT, properties);
+            addPropertyIfPresent(state, BlockStateProperties.SIGNAL_FIRE, properties);
+            addPropertyIfPresent(state, BlockStateProperties.WATERLOGGED, properties);
+        } else {
+            addPropertyIfPresent(state, BlockStateProperties.AXIS, properties);
+        }
+        return CrosshairSnapshotPolicy.formatStateProperties(properties);
+    }
+
+    private static <T extends Comparable<T>> void addPropertyIfPresent(
+            BlockState state,
+            Property<T> property,
+            Map<String, String> properties) {
+        if (state.hasProperty(property)) {
+            properties.put(property.getName(), property.getName(state.getValue(property)));
+        }
     }
 
     static int compare(BlockState predicted, BlockState actual) {
@@ -217,6 +358,10 @@ public final class PlacementInspector
     private static String blockId(BlockState state) {
         return state == null ? "" : String.valueOf(BuiltInRegistries.BLOCK.getKey(state.getBlock()));
     }
+
+    record PlacementProbe(
+            BlockPos targetPos,
+            BlockState predictedState) {}
 
     record SchematicSnapshot(
             BlockPos targetPos,
