@@ -4,6 +4,7 @@ import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.MasaIntegrationSettings;
+import dev.chise.chisetweaks.config.SettingPersistence;
 import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
@@ -273,6 +274,29 @@ final class ChiseTweaksSettingsControllerTest {
             }
             assertRowContracts(controller.rows(surface));
         }
+    }
+
+    @Test
+    void pendingPersistenceStateIsOwnedAndFilteredByController() {
+        var controller = new ChiseTweaksSettingsController();
+
+        assertFalse(controller.hasPendingChanges());
+        controller.markDirty(SettingPersistence.EXTERNAL);
+        assertFalse(controller.hasPendingChanges());
+
+        controller.markDirty(SettingPersistence.FEATURE_CONFIG);
+        controller.markDirty(Set.of(
+                SettingPersistence.LOCAL_CONFIG,
+                SettingPersistence.INTEGRATION_CONFIG,
+                SettingPersistence.EXTERNAL));
+
+        assertTrue(controller.hasPendingChanges());
+        assertEquals(
+                Set.of(
+                        SettingPersistence.FEATURE_CONFIG,
+                        SettingPersistence.LOCAL_CONFIG,
+                        SettingPersistence.INTEGRATION_CONFIG),
+                controller.pendingDomainsForDiagnostics());
     }
 
     private static ChiseTweaksSettingRowDefinition row(
