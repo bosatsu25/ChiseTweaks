@@ -86,7 +86,7 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "FeatureSwitches.LAVA_HIGHLIGHT",
                 "FeatureSwitches.HIDDEN_SURFACE_TRACE",
                 "FeatureSwitches.VILLAGER_ANALYZER");
-        assertContainsAll(assistRows,
+        assertContainsNone(assistRows,
                 "inspector.filter",
                 "inspector.matchedRule",
                 "inspector.features",
@@ -109,6 +109,7 @@ final class SettingsAndAnalyzerDesignContractTest {
     @Test
     void builderAssistStillRetainsPlacementPatternSchematicAndHistoryCapabilities() throws IOException {
         String rows = read("src/main/java/dev/chise/chisetweaks/gui/InspectorSettingsRows.java");
+        String snapshot = read("src/main/java/dev/chise/chisetweaks/gui/CrosshairSnapshotPolicy.java");
         String productRows = read("src/main/java/dev/chise/chisetweaks/gui/TweaksBuilderAssistRows.java");
 
         assertContainsAll(rows,
@@ -116,6 +117,14 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "addSchematicPlacementRows(",
                 "addPatternConsistencyRows(",
                 "addInteractionHistoryRows(");
+        assertContainsNone(rows,
+                "filterDecision()",
+                "responsibleFeatures()",
+                "renderModeKey(");
+        assertContainsNone(snapshot,
+                "BuilderFocusVisibility",
+                "OreHighlightResolver",
+                "responsibleFeatures(");
         assertContainsAll(productRows,
                 "InspectorSettingsRows.rows",
                 "product.builderAssist");
