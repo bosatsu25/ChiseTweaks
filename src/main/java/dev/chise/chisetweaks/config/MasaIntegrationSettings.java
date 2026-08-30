@@ -1,6 +1,6 @@
 package dev.chise.chisetweaks.config;
 
-import dev.chise.chisetweaks.integration.masa.MasaJapaneseUiMode;
+import dev.chise.chisetweaks.core.policy.MasaJapaneseUiMode;
 
 /** UI bindings for the optional integration persistence domain. */
 public final class MasaIntegrationSettings {
