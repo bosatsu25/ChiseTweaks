@@ -8,7 +8,6 @@ import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.MasaIntegrationConfig;
 import dev.chise.chisetweaks.config.SettingPersistence;
 import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
-import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
 import java.util.EnumSet;
@@ -186,7 +185,7 @@ final class ChiseTweaksSettingsController {
 
     private static void resetTargetGroup(VisualTargetGroupPolicy.Group group) {
         if (group == VisualTargetGroupPolicy.Group.MATERIAL) {
-            VisualTargetSettings.setAllOreHighlightTargets(true);
+            LocalFeatureSettings.setAllOreHighlightTargets(true);
             return;
         }
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
