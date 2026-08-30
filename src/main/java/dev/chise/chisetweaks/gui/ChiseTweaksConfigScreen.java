@@ -221,22 +221,23 @@ public final class ChiseTweaksConfigScreen extends Screen {
         if (!UiAvailabilityPolicy.isActionInteractive(surface, action)) return;
         if (minecraft == null || action == null || !applyChanges()) return;
         if (action == ChiseTweaksSettingRowDefinition.Action.EDIT_BLOCK_FILTER) {
-            minecraft.setScreen(new ChiseSceneFilterEditorScreen(
-                    this, ChiseSceneFilterEditorScreen.Target.BLOCKS));
+            minecraft.setScreen(new ChiseListEditorScreen(
+                    this, ChiseListEditorScreen.Target.BLOCK_FILTER));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.EDIT_ENTITY_FILTER) {
-            minecraft.setScreen(new ChiseSceneFilterEditorScreen(
-                    this, ChiseSceneFilterEditorScreen.Target.ENTITIES));
+            minecraft.setScreen(new ChiseListEditorScreen(
+                    this, ChiseListEditorScreen.Target.ENTITY_FILTER));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.EDIT_ORE_COMPAT) {
-            minecraft.setScreen(new ChiseOreCompatibilityScreen(this));
+            minecraft.setScreen(new ChiseListEditorScreen(
+                    this, ChiseListEditorScreen.Target.ORE_COMPATIBILITY));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT) {
-            minecraft.setScreen(new ChiseMasaIntegrationEditorScreen(
-                    this, ChiseMasaIntegrationEditorScreen.Target.LITEMATICA_PICK_REDIRECT));
+            minecraft.setScreen(new ChiseListEditorScreen(
+                    this, ChiseListEditorScreen.Target.LITEMATICA_PICK_REDIRECT));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD) {
-            minecraft.setScreen(new ChiseMasaIntegrationEditorScreen(
-                    this, ChiseMasaIntegrationEditorScreen.Target.TWEAKERMORE_AUTO_PICK_GUARD));
+            minecraft.setScreen(new ChiseListEditorScreen(
+                    this, ChiseListEditorScreen.Target.TWEAKERMORE_AUTO_PICK_GUARD));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD) {
-            minecraft.setScreen(new ChiseMasaIntegrationEditorScreen(
-                    this, ChiseMasaIntegrationEditorScreen.Target.TWEAKEROO_TOOL_SWITCH_GUARD));
+            minecraft.setScreen(new ChiseListEditorScreen(
+                    this, ChiseListEditorScreen.Target.TWEAKEROO_TOOL_SWITCH_GUARD));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE) {
             minecraft.setScreen(new ChiseMasaGuideScreen(this));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE
