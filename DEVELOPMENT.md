@@ -9,7 +9,8 @@
 - Fabric Loader `0.19.3` 以上
 - Fabric API `0.155.2+26.1.2` 以上
 - Java `25` 以上
-- toggle可能なruntime visual featureは現在12個
+- toggle可能なruntime featureは現在12個
+- 上記12個はruntime visual / inspection featureであり、Masa integration capabilityは数へ含めない
 - Masa ecosystem integrationはruntime visual feature数へ含めず、optional compatibility / UX capabilityとして別registryで管理する
 - ChiseTweaks自身はAutomationを実装しない。外部MODが所有する操作にGuard / policy / refreshを追加することだけをIntegrationとして許可する
 - 12機能はすべてrendering / inspection-orientedで、building-action featureは持たない
