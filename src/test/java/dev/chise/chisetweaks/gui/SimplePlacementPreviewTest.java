@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class SimplePlacementPreviewTest {
     @Test
     void disabledPreviewDoesNotReadRuntimeContext() {
-        var disabled = CrosshairInspector.predictPlacementState(
+        var disabled = PlacementInspector.predictPlacementState(
                 null, null, null, null, null, false);
 
         assertNull(disabled);
@@ -69,8 +69,8 @@ final class SimplePlacementPreviewTest {
         assertTrue(source.contains("snapshot.upperClick() == upperClick"));
         String catalog = Files.readString(Path.of(
                 "src/main/java/dev/chise/chisetweaks/gui/InspectorSettingsRows.java"));
-        assertTrue(catalog.contains("CrosshairInspector.placementStateProperties(state)"));
-        assertTrue(catalog.contains("CrosshairInspector.actualPlacementStateProperties"));
+        assertTrue(catalog.contains("PlacementInspector.placementStateProperties(state)"));
+        assertTrue(catalog.contains("PlacementInspector.actualPlacementStateProperties"));
         for (String forbidden : new String[]{
                 "setBlock(", "setBlockAndUpdate(", ".place(", "sendPacket", "send(",
                 "clickMouse", "pressMouse", "keyPress", ".clip(", "raycast(", "LOGGER"}) {
