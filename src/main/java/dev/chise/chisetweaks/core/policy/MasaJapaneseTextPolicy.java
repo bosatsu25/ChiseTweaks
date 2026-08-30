@@ -1,7 +1,5 @@
 package dev.chise.chisetweaks.core.policy;
 
-import dev.chise.chisetweaks.integration.masa.MasaJapaneseUiMode;
-
 import java.util.Map;
 
 /**

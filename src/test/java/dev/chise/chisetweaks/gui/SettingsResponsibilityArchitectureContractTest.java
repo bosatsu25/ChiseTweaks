@@ -17,7 +17,10 @@ final class SettingsResponsibilityArchitectureContractTest {
 
         assertTrue(controller.contains("SettingPersistenceCoordinator.production()"));
         assertTrue(controller.contains("EnumSet<SettingPersistence> reset("));
-        assertTrue(controller.contains("SaveResult saveConfig("));
+        assertTrue(controller.contains("SaveResult savePendingConfig("));
+        assertTrue(controller.contains("EnumSet<SettingPersistence> dirtyDomains"));
+        assertTrue(controller.contains("boolean hasPendingChanges()"));
+        assertTrue(controller.contains("void markDirty(SettingPersistence persistenceDomain)"));
         assertTrue(controller.contains("return ChiseTweaksSettingsRows.rows("));
         assertTrue(controller.contains("return InspectorSettingsRows.rows("));
 
@@ -59,5 +62,20 @@ final class SettingsResponsibilityArchitectureContractTest {
         assertFalse(rows.contains("resetHighlightFeatures("));
         assertFalse(inspector.contains("SettingPersistenceCoordinator"));
         assertFalse(inspector.contains("FeatureSwitches."));
+    }
+
+    @Test
+    void screenDelegatesPendingPersistenceStateToController() throws Exception {
+        String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
+        String controller = Files.readString(GUI.resolve("ChiseTweaksSettingsController.java"));
+
+        assertFalse(screen.contains("EnumSet<SettingPersistence>"));
+        assertFalse(screen.contains("dirtyDomains"));
+        assertTrue(screen.contains("controller.markDirty("));
+        assertTrue(screen.contains("controller.hasPendingChanges()"));
+        assertTrue(screen.contains("controller.savePendingConfig()"));
+
+        assertTrue(controller.contains("dirtyDomains.retainAll(result.failedDomains())"));
+        assertTrue(controller.contains("Set.copyOf(dirtyDomains)"));
     }
 }

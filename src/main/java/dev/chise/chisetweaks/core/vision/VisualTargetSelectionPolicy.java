@@ -157,17 +157,23 @@ public final class VisualTargetSelectionPolicy {
     }
 
     private static boolean hiddenEnabled(int mask, String id) {
-        if (id.equals("minecraft:blue_ice")) return isEnabled(mask, Target.HIDDEN_BLUE_ICE);
-        if (id.equals("minecraft:powder_snow")) return isEnabled(mask, Target.HIDDEN_POWDER_SNOW);
-        if (id.equals("minecraft:sculk_catalyst")) {
-            return isEnabled(mask, Target.HIDDEN_SCULK_CATALYST);
-        }
+        return isEnabled(mask, hiddenTargetForNormalizedBlockId(id));
+    }
+
+    public static Target hiddenTargetForBlockId(String rawBlockId) {
+        return hiddenTargetForNormalizedBlockId(normalize(rawBlockId));
+    }
+
+    private static Target hiddenTargetForNormalizedBlockId(String id) {
+        if (id.equals("minecraft:blue_ice")) return Target.HIDDEN_BLUE_ICE;
+        if (id.equals("minecraft:powder_snow")) return Target.HIDDEN_POWDER_SNOW;
+        if (id.equals("minecraft:sculk_catalyst")) return Target.HIDDEN_SCULK_CATALYST;
         if (id.contains(":dead_") && (id.endsWith("_coral_block")
                 || id.endsWith("_coral") || id.endsWith("_coral_fan")
                 || id.endsWith("_coral_wall_fan"))) {
-            return isEnabled(mask, Target.HIDDEN_DEAD_CORAL);
+            return Target.HIDDEN_DEAD_CORAL;
         }
-        return false;
+        return null;
     }
 
     private static String normalize(String raw) {

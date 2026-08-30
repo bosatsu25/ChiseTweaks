@@ -15,7 +15,6 @@ import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -23,7 +22,6 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private final ChiseTweaksSettingsController controller;
     private final EnumMap<ChiseTweaksSettingsController.Surface, ArrayList<ChiseTweaksSettingRowView>> rowsBySurface =
             new EnumMap<>(ChiseTweaksSettingsController.Surface.class);
-    private final EnumSet<SettingPersistence> dirtyDomains = EnumSet.noneOf(SettingPersistence.class);
     private final ArrayList<Button> tabButtons = new ArrayList<>();
     private final CrosshairInspector inspector = new CrosshairInspector();
     private Screen parent;
@@ -353,26 +351,20 @@ public final class ChiseTweaksConfigScreen extends Screen {
     private void finishSettingEdit(boolean changed, SettingPersistence persistence) {
         if (changed) {
             persistenceFeedback = "";
-            if (persistence != null && persistence.isApplyManaged()) dirtyDomains.add(persistence);
+            controller.markDirty(persistence);
         }
         refreshRowButtons();
     }
 
     private void markDirty(Set<SettingPersistence> persistenceDomains) {
-        if (persistenceDomains != null) {
-            for (SettingPersistence persistence : persistenceDomains) {
-                if (persistence != null && persistence.isApplyManaged()) dirtyDomains.add(persistence);
-            }
-        }
+        controller.markDirty(persistenceDomains);
         persistenceFeedback = "";
         refreshRowButtons();
     }
 
     private boolean applyChanges() {
         if (!hasDirtyDomains()) return true;
-        EnumSet<SettingPersistence> attempted = EnumSet.copyOf(dirtyDomains);
-        var result = controller.saveConfig(attempted);
-        dirtyDomains.retainAll(result.failedDomains());
+        var result = controller.savePendingConfig();
         if (!result.successful()) {
             persistenceFeedback = text("screen.chisetweaks.settings.save_failed");
             refreshRowButtons();
@@ -384,7 +376,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
     }
 
     private boolean hasDirtyDomains() {
-        return !dirtyDomains.isEmpty();
+        return controller.hasPendingChanges();
     }
 
     @Override

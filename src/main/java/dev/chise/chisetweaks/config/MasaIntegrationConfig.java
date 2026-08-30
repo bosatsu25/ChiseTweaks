@@ -7,7 +7,7 @@ import com.google.gson.JsonParser;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
-import dev.chise.chisetweaks.integration.masa.MasaJapaneseUiMode;
+import dev.chise.chisetweaks.core.policy.MasaJapaneseUiMode;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.util.ArrayList;

@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 VALID_SCOPES = {"docs-only", "tooling-only", "full"}
+PROVENANCE_SCHEMA = 2
 
 
 def is_lower_hex(value: object, length: int) -> bool:
@@ -29,7 +30,11 @@ def write_provenance(
         version: str,
         runtime_jar: str,
         runtime_sha256: str,
-        runtime_verified: bool) -> None:
+        runtime_verified: bool,
+        repository_contracts_verified: bool,
+        quality_gate_verified: bool,
+        client_gametest_verified: bool,
+        distribution_verified: bool) -> None:
     if scope not in VALID_SCOPES:
         raise ValueError(f"invalid scope: {scope}")
     if not repository or run_id <= 0 or not version:
@@ -38,6 +43,20 @@ def write_provenance(
         raise ValueError("tested commit/tree SHA must be lowercase 40-character hex")
     if event != "pull_request":
         raise ValueError("reusable provenance must originate from pull_request")
+    if not repository_contracts_verified:
+        raise ValueError("reusable provenance requires repository contract verification")
+
+    full_verification = (
+        quality_gate_verified
+        and client_gametest_verified
+        and distribution_verified
+    )
+    if scope == "full" and not full_verification:
+        raise ValueError(
+            "full provenance requires quality gate, Client GameTest and distribution verification")
+    if scope != "full" and (
+            quality_gate_verified or client_gametest_verified or distribution_verified):
+        raise ValueError("non-full provenance must not claim heavy verification")
     if scope == "full" and not runtime_verified:
         raise ValueError("full provenance must verify a runtime artifact")
     if runtime_verified and (
@@ -50,7 +69,7 @@ def write_provenance(
         raise ValueError("non-runtime provenance must not claim an artifact")
 
     payload = {
-        "schema": 1,
+        "schema": PROVENANCE_SCHEMA,
         "repository": repository,
         "source_run_id": run_id,
         "event": event,
@@ -58,6 +77,12 @@ def write_provenance(
         "tested_commit_sha": tested_commit_sha,
         "tested_tree_sha": tested_tree_sha,
         "version": version,
+        "verification": {
+            "repository_contracts": repository_contracts_verified,
+            "quality_gate": quality_gate_verified,
+            "client_gametest": client_gametest_verified,
+            "distribution_audit": distribution_verified,
+        },
         "runtime_verified": runtime_verified,
         "runtime_jar": runtime_jar,
         "runtime_sha256": runtime_sha256,
@@ -75,7 +100,7 @@ def promotion_decision(
         has_runtime_artifact: bool) -> dict:
     fallback = {"scope": "full", "heavy": True, "promote": False, "reason": "fallback"}
 
-    if payload.get("schema") != 1:
+    if payload.get("schema") != PROVENANCE_SCHEMA:
         return fallback | {"reason": "schema"}
     if payload.get("repository") != repository:
         return fallback | {"reason": "repository"}
@@ -83,21 +108,52 @@ def promotion_decision(
         return fallback | {"reason": "event"}
     if payload.get("source_run_id") != expected_run_id:
         return fallback | {"reason": "run-id"}
+    if not is_lower_hex(payload.get("tested_commit_sha"), 40):
+        return fallback | {"reason": "commit-sha-format"}
     tested_tree_sha = payload.get("tested_tree_sha")
     if not is_lower_hex(tested_tree_sha, 40) or not is_lower_hex(current_tree_sha, 40):
         return fallback | {"reason": "tree-sha-format"}
     if tested_tree_sha != current_tree_sha:
         return fallback | {"reason": "tree-mismatch"}
+    version = payload.get("version")
+    if not isinstance(version, str) or not version.strip():
+        return fallback | {"reason": "version"}
 
     scope = payload.get("scope")
     if scope not in VALID_SCOPES:
         return fallback | {"reason": "scope"}
 
+    verification = payload.get("verification")
+    if not isinstance(verification, dict):
+        return fallback | {"reason": "verification"}
+    expected_keys = {
+        "repository_contracts",
+        "quality_gate",
+        "client_gametest",
+        "distribution_audit",
+    }
+    if set(verification) != expected_keys or any(
+            not isinstance(verification[key], bool) for key in expected_keys):
+        return fallback | {"reason": "verification"}
+    if not verification["repository_contracts"]:
+        return fallback | {"reason": "repository-contracts-unverified"}
+
     if scope in {"docs-only", "tooling-only"}:
+        if any(verification[key] for key in (
+                "quality_gate", "client_gametest", "distribution_audit")):
+            return fallback | {"reason": "non-full-claimed-heavy-verification"}
         if payload.get("runtime_verified") or payload.get("runtime_jar") or payload.get("runtime_sha256"):
             return fallback | {"reason": "non-runtime-claimed-artifact"}
-        return {"scope": scope, "heavy": False, "promote": False, "reason": "tree-identical-non-runtime"}
+        return {
+            "scope": scope,
+            "heavy": False,
+            "promote": False,
+            "reason": "tree-identical-non-runtime",
+        }
 
+    if not all(verification[key] for key in (
+            "quality_gate", "client_gametest", "distribution_audit")):
+        return fallback | {"reason": "verification-incomplete"}
     if not payload.get("runtime_verified"):
         return fallback | {"reason": "runtime-unverified"}
     runtime_jar = payload.get("runtime_jar")
@@ -128,6 +184,10 @@ def main() -> int:
     write.add_argument("--runtime-jar", default="")
     write.add_argument("--runtime-sha256", default="")
     write.add_argument("--runtime-verified", action="store_true")
+    write.add_argument("--repository-contracts-verified", action="store_true")
+    write.add_argument("--quality-gate-verified", action="store_true")
+    write.add_argument("--client-gametest-verified", action="store_true")
+    write.add_argument("--distribution-verified", action="store_true")
 
     decide = sub.add_parser("decide")
     decide.add_argument("--input", type=Path, required=True)
@@ -150,6 +210,10 @@ def main() -> int:
             runtime_jar=args.runtime_jar,
             runtime_sha256=args.runtime_sha256,
             runtime_verified=args.runtime_verified,
+            repository_contracts_verified=args.repository_contracts_verified,
+            quality_gate_verified=args.quality_gate_verified,
+            client_gametest_verified=args.client_gametest_verified,
+            distribution_verified=args.distribution_verified,
         )
         return 0
 

@@ -1,0 +1,100 @@
+package dev.chise.chisetweaks.core.security;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+final class StrictJsonAdversarialTest {
+    @Test
+    void rejectsNonObjectRootsAndTrailingContent() {
+        for (String document : new String[]{
+                "[]",
+                "true",
+                "123",
+                "\"text\"",
+                "{} false",
+                "{}{}"}) {
+            assertFalse(StrictJsonSecurityPolicy.validateObjectDocument(document).valid(), document);
+        }
+        assertTrue(StrictJsonSecurityPolicy.validateObjectDocument("{}").valid());
+    }
+
+    @Test
+    void rejectsMalformedNumberGrammar() {
+        for (String document : new String[]{
+                "{\"value\":01}",
+                "{\"value\":1.}",
+                "{\"value\":1e}",
+                "{\"value\":1e+}",
+                "{\"value\":-}",
+                "{\"value\":+1}"}) {
+            assertFalse(StrictJsonSecurityPolicy.validateObjectDocument(document).valid(), document);
+        }
+        assertTrue(StrictJsonSecurityPolicy.validateObjectDocument("{\"value\":-1.25e+3}").valid());
+    }
+
+    @Test
+    void rejectsMalformedUnicodeControlAndNulInput() {
+        assertFalse(StrictJsonSecurityPolicy.validateObjectDocument(
+                "{\"value\":\"\\uD800\"}").valid());
+        assertFalse(StrictJsonSecurityPolicy.validateObjectDocument(
+                "{\"value\":\"\\uDC00\"}").valid());
+        assertFalse(StrictJsonSecurityPolicy.validateObjectDocument(
+                "{\"value\":\"line\nfeed\"}").valid());
+        assertFalse(StrictJsonSecurityPolicy.validateObjectDocument(
+                "{\"value\":\"nul" + '\0' + "byte\"}").valid());
+        assertTrue(StrictJsonSecurityPolicy.validateObjectDocument(
+                "{\"value\":\"\\uD83D\\uDE80\"}").valid());
+    }
+
+    @Test
+    void objectMemberBudgetHasAnExactBoundary() {
+        assertTrue(StrictJsonSecurityPolicy.validateObjectDocument(
+                objectWithMembers(StrictJsonSecurityPolicy.MAX_OBJECT_MEMBERS)).valid());
+        assertFalse(StrictJsonSecurityPolicy.validateObjectDocument(
+                objectWithMembers(StrictJsonSecurityPolicy.MAX_OBJECT_MEMBERS + 1)).valid());
+    }
+
+    @Test
+    void arrayElementBudgetHasAnExactBoundary() {
+        assertTrue(StrictJsonSecurityPolicy.validateObjectDocument(
+                objectWithArrayElements(StrictJsonSecurityPolicy.MAX_ARRAY_ELEMENTS)).valid());
+        assertFalse(StrictJsonSecurityPolicy.validateObjectDocument(
+                objectWithArrayElements(StrictJsonSecurityPolicy.MAX_ARRAY_ELEMENTS + 1)).valid());
+    }
+
+    @Test
+    void nestingBudgetHasAnExactBoundary() {
+        assertTrue(StrictJsonSecurityPolicy.validateObjectDocument(
+                nestedObjects(JsonStructureBudgetPolicy.MAX_NESTING_DEPTH)).valid());
+        assertFalse(StrictJsonSecurityPolicy.validateObjectDocument(
+                nestedObjects(JsonStructureBudgetPolicy.MAX_NESTING_DEPTH + 1)).valid());
+    }
+
+    private static String objectWithMembers(int count) {
+        StringBuilder value = new StringBuilder("{");
+        for (int index = 0; index < count; index++) {
+            if (index != 0) value.append(',');
+            value.append('"').append('k').append(index).append("\":0");
+        }
+        return value.append('}').toString();
+    }
+
+    private static String objectWithArrayElements(int count) {
+        StringBuilder value = new StringBuilder("{\"values\":[");
+        for (int index = 0; index < count; index++) {
+            if (index != 0) value.append(',');
+            value.append('0');
+        }
+        return value.append("]}").toString();
+    }
+
+    private static String nestedObjects(int depth) {
+        StringBuilder value = new StringBuilder();
+        for (int index = 0; index < depth; index++) value.append("{\"v\":");
+        value.append('0');
+        for (int index = 0; index < depth; index++) value.append('}');
+        return value.toString();
+    }
+}

@@ -1,4 +1,4 @@
-package dev.chise.chisetweaks.integration.masa;
+package dev.chise.chisetweaks.core.policy;
 
 public enum MasaJapaneseUiMode {
     AUTO(0, "Auto"),

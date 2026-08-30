@@ -42,6 +42,12 @@ def main() -> int:
     require(ci, "python scripts/test_ci_provenance.py", "provenance self-test")
     require(ci, "- name: Write reusable PR provenance", "provenance writer")
     require(ci, "tested_tree", "tested tree capture")
+    require(ci, "--repository-contracts-verified", "repository contract provenance")
+    require(ci, "--quality-gate-verified", "quality gate provenance")
+    require(ci, "--client-gametest-verified", "Client GameTest provenance")
+    require(ci, "--distribution-verified", "distribution provenance")
+    require(ci, "- name: Resolve verification source", "source verification resolver")
+    require(ci, "source_verification_run:", "source verification output")
     require(ci, "steps.runtime.outputs.runtime_jar != ''", "runtime upload gate")
 
     require(ci, "github.event.pull_request.draft == false", "draft PR skip")
@@ -55,6 +61,7 @@ def main() -> int:
     require(ci, "timeout-minutes: 5", "release runaway budget cap")
     require(ci, "name: ${{ needs.verify.outputs.runtime_jar }}", "same-run exact artifact download")
     require(ci, "Exact CI artifact promoted", "release artifact integrity summary")
+    require(ci, "Verified source CI run", "release source verification evidence")
 
     if RETIRED_RELEASE_WORKFLOW.exists():
         raise AssertionError("standalone release workflow must remain retired")
@@ -68,6 +75,16 @@ def main() -> int:
     java_index = ci.index("- name: Set up Java 25")
     if not (audit_index < promotion_index < java_index):
         raise AssertionError("static audits must fail fast before promotion or Java/Gradle execution")
+
+    build_index = ci.index("- name: Build and verify")
+    gametest_index = ci.index("- name: Verify placement oracle")
+    distribution_index = ci.index("- name: Audit distribution")
+    runtime_index = ci.index("- name: Resolve verified runtime metadata")
+    source_index = ci.index("- name: Resolve verification source")
+    provenance_index = ci.index("- name: Write reusable PR provenance")
+    if not (build_index < gametest_index < distribution_index < runtime_index < source_index < provenance_index):
+        raise AssertionError(
+            "full verification evidence must be produced only after quality gate, GameTest and distribution audit")
 
     release_index = ci.index("  release:")
     release_candidate_index = ci.index("- name: Resolve release candidate")

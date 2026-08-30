@@ -46,74 +46,72 @@ final class RepositoryScopeContractTest {
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/mixin/sodium/LavaHighlightRendererMixin.java"));
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/building/PumpkinScaffoldFeature.java"));
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/PlacementGuideLineGeometry.java"));
-        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightConfig.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"));
     }
 
     @Test
-    void lavaSourceHighlightUsesBoundedLoadedChunkDiscoveryAndSharedRetainedRendering() throws IOException {
-        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
+    void throughWallAnalyzersUseBoundedLoadedChunkDiscoveryAndSharedRetainedRendering() throws IOException {
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
         String retained = read("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
 
         assertContainsAll(feature,
-                "fluidState.isSource()",
-                "getChunkNow",
-                "LevelChunk[] loadedChunkBuffer",
-                "MAX_OVERLAY_RESULTS",
+                "int dueMask = 0",
+                "LoadedChunkWindow loadedChunks",
+                "loadedChunks.load(",
+                "loadedChunks.atBlock(",
+                "MAX_CANDIDATES",
                 "ThroughWallPositionSnapshot",
                 "NearestPositionBuffer",
                 "ThroughWallMarkerRenderer.Style.LAVA_SOURCE",
+                "ThroughWallMarkerRenderer.Style.HIDDEN_BLOCK",
                 "LavaVisionPalettePolicy.shouldHighlight",
-                "Lava Source Highlight initialized");
+                "populateHiddenTargetMasks();",
+                "int targetMask = hiddenTargetMask(block)",
+                "(local.visualTargetMask & targetMask) != 0");
         assertContainsAll(renderer,
                 "withDepthStencilState(Optional.empty())",
-                "LavaVisionPalettePolicy.colorForDistance",
-                "sources.renderRevision() != uploadedRevision",
                 "RetainedThroughWallBuffer",
                 "ThroughWallWireBoxGeometry.drawWireBox");
         assertContainsAll(retained,
                 "anchorX - camera.x",
                 "vertexBuffer.rotate()");
-        assertContainsNone(feature, "DefaultFluidRenderer", ".getChunk(");
-        assertContainsNone(renderer, "DefaultFluidRenderer", "getFluidState(", "getBlockState(");
+        assertContainsNone(feature,
+                "DefaultFluidRenderer",
+                ".getChunk(",
+                "BlockInspectionPolicy.matches",
+                "BlockInspectionCategory.HIDDEN_SURFACE");
+        assertContainsAll(renderer,
+                "private String hiddenBlockIdAt(",
+                "getChunkSource().getChunkNow(");
+        assertContainsNone(renderer, "DefaultFluidRenderer", "getFluidState(");
     }
 
     @Test
-    void lavaSourceHighlightGuardsSessionConfigChunkEdgesAndRuntimeFailures() throws IOException {
-        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java");
+    void throughWallAnalyzersGuardLifecycleConfigAndRuntimeFailures() throws IOException {
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
         String manager = read("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
         String runtime = read("src/main/java/dev/chise/chisetweaks/runtime/RuntimeComponent.java");
-        String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
-        String retained = read("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
 
         assertContainsAll(feature,
                 "lastLevel != client.level",
                 "client.level != lastLevel",
-                "fingerprint != lastScanFingerprint",
+                "fingerprint != lastScanFingerprint[index]",
                 "hasKnownSourceBoundary",
-                "getChunkNow(neighborChunkX, neighborChunkZ)",
-                "neighborChunk == null",
                 "runtimeQuarantined",
-                "!isSessionQuarantined()",
                 "public void onQuarantined(Minecraft client)",
+                "public void resetSession(Minecraft client)",
                 "MAX_STABLE_BACKOFF_SHIFT = 2");
         assertContainsNone(feature,
                 "local.lavaHighlightEnabled = false",
+                "local.hiddenSurfaceTraceEnabled = false",
                 ".save()");
         assertContainsAll(manager,
                 "slot.quarantineDuringInitialization(Minecraft.getInstance(), failure)",
                 "removeFromSchedules(slot)",
                 "component.onQuarantined(client)",
                 "for (ComponentSlot slot : sessionSchedule) slot.resetSession(client)");
-        assertContainsAll(runtime,
-                "default void onQuarantined(Minecraft client)");
-        assertContainsAll(renderer,
-                "resetAfterFailure()",
-                "uploadedRevision = Long.MIN_VALUE");
-        assertContainsAll(retained,
-                "drawVertexBuffer = null",
-                "vertexBuffer.close()",
-                "allocator = new ByteBufferBuilder");
+        assertContainsAll(runtime, "default void onQuarantined(Minecraft client)");
     }
 
     @Test
@@ -122,8 +120,13 @@ final class RepositoryScopeContractTest {
         assertEquals("chisetweaks", root.get("id").getAsString());
         assertEquals("client", root.get("environment").getAsString());
         assertEquals(Set.of("client", "modmenu"), root.getAsJsonObject("entrypoints").keySet());
-        assertEquals(1, root.getAsJsonArray("mixins").size());
-        assertEquals("chisetweaks.features.mixins.json", root.getAsJsonArray("mixins").get(0).getAsString());
+        assertEquals(List.of(
+                        "chisetweaks.features.mixins.json",
+                        "chisetweaks.integrations.mixins.json",
+                        "chisetweaks.inspector.mixins.json"),
+                root.getAsJsonArray("mixins").asList().stream()
+                        .map(element -> element.getAsString())
+                        .toList());
 
         JsonObject custom = root.getAsJsonObject("custom").getAsJsonObject("chisetweaks");
         assertEquals("client-only", custom.get("side").getAsString());
@@ -137,18 +140,16 @@ final class RepositoryScopeContractTest {
     }
 
     @Test
-    void requiredVerificationFilesAndSingleGradleGateArePresent() throws IOException {
+    void requiredVerificationFilesAndSingleWorkflowGateArePresent() throws IOException {
         assertTrue(exists(".github/workflows/ci.yml"));
-        assertTrue(exists(".github/workflows/release.yml"));
+        assertFalse(exists(".github/workflows/release.yml"));
         assertFalse(exists(".github/workflows/verify-build.yml"));
         assertFalse(exists(".github/workflows/verified-release.yml"));
         assertTrue(exists("scripts/repository_audit.py"));
         assertTrue(exists("scripts/artifact_audit.py"));
-        assertFalse(exists("scripts/ci_toolchain_audit.py"));
-        assertFalse(exists("scripts/quality_summary.py"));
-        assertFalse(exists("scripts/local_ci.py"));
 
         String build = read("build.gradle");
+        String ci = read(".github/workflows/ci.yml");
         assertContainsAll(build,
                 "id 'jacoco'",
                 "id 'info.solidsoft.pitest'",
@@ -156,5 +157,10 @@ final class RepositoryScopeContractTest {
                 "tasks.register('ciGate')",
                 "mutationThreshold",
                 "testStrengthThreshold");
+        assertContainsAll(ci,
+                "name: verify / Java 25 quality gate",
+                "name: release / Publish verified runtime JAR",
+                "./gradlew --stacktrace ciGate",
+                "./gradlew --stacktrace runClientGameTest");
     }
 }

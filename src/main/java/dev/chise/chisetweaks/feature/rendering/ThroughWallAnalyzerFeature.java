@@ -6,8 +6,6 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
-import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
-import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import dev.chise.chisetweaks.runtime.TickingRuntimeComponent;
@@ -20,12 +18,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.IdentityHashMap;
 
 /**
  * Lava Analyzer / Hidden Block Analyzer のloaded-chunk走査とsession stateを共有する内部runtime。
@@ -71,6 +72,7 @@ public final class ThroughWallAnalyzerFeature
     private final int[] stableScanCount = new int[2];
     private final int[] lastScanFingerprint = {Integer.MIN_VALUE, Integer.MIN_VALUE};
     private final boolean[] movementSinceLastScan = new boolean[2];
+    private final IdentityHashMap<Block, Integer> hiddenTargetMasks = new IdentityHashMap<>();
 
     private long lastObservedPlayerBlock = Long.MIN_VALUE;
     private ClientLevel lastLevel;
@@ -84,6 +86,7 @@ public final class ThroughWallAnalyzerFeature
 
     @Override
     public void init() {
+        populateHiddenTargetMasks();
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(this::render);
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> closeRenderers());
         ChiseTweaksClient.LOGGER.info(
@@ -226,15 +229,10 @@ public final class ThroughWallAnalyzerFeature
                     }
 
                     if (hiddenCandidate) {
-                        if (!BuilderFocusVisibility.shouldHide(state.getBlock())) {
-                            Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
-                            String blockId = id == null ? "" : id.toString();
-                            if (BlockInspectionPolicy.matches(
-                                    blockId, BlockInspectionCategory.HIDDEN_SURFACE)
-                                    && VisualTargetSelectionPolicy.matchesEnabled(
-                                            local.visualTargetMask,
-                                            blockId,
-                                            BlockInspectionCategory.HIDDEN_SURFACE)) {
+                        Block block = state.getBlock();
+                        if (!BuilderFocusVisibility.shouldHide(block)) {
+                            int targetMask = hiddenTargetMask(block);
+                            if (targetMask != 0 && (local.visualTargetMask & targetMask) != 0) {
                                 if (Double.isNaN(distanceSquared)) {
                                     distanceSquared = distanceSquared(x, y, z, eye);
                                 }
@@ -297,6 +295,20 @@ public final class ThroughWallAnalyzerFeature
     private static boolean isSourceLava(FluidState fluidState) {
         if (fluidState == null || !fluidState.isSource()) return false;
         return fluidState.getType() == Fluids.LAVA || fluidState.getType() == Fluids.FLOWING_LAVA;
+    }
+
+    private void populateHiddenTargetMasks() {
+        hiddenTargetMasks.clear();
+        for (Block block : BuiltInRegistries.BLOCK) {
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+            VisualTargetSelectionPolicy.Target target =
+                    VisualTargetSelectionPolicy.hiddenTargetForBlockId(id == null ? "" : id.toString());
+            if (target != null) hiddenTargetMasks.put(block, target.bitMask());
+        }
+    }
+
+    private int hiddenTargetMask(Block block) {
+        return hiddenTargetMasks.getOrDefault(block, 0);
     }
 
     private int updateDueState(int index, int mask, int baseInterval, int fingerprint) {
