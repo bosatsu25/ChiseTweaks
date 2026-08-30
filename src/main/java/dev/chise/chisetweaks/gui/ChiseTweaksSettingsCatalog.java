@@ -163,6 +163,9 @@ final class ChiseTweaksSettingsCatalog {
         boolLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
                 FeatureDefinition.LAVA_HIGHLIGHT.englishName(),
                 text("config.comment.locallavahighlight"));
+        boolLiteral(rows, "villagerAnalyzer", FeatureSwitches.VILLAGER_ANALYZER,
+                FeatureDefinition.VILLAGER_ANALYZER.englishName(),
+                "Nearby villagers are linked to their claimed job site. If client JOB_SITE memory is unavailable, a bounded loaded-world workstation fallback is used.");
 
         headerLiteral(rows, "detail.analyzer.lava", "Lava Analyzer Settings");
         integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
@@ -191,6 +194,12 @@ final class ChiseTweaksSettingsCatalog {
                 FeatureDefinition.BRIGHT_CHEST.englishName(), "Improve Chest and Double Chest visibility.");
         boolLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
                 FeatureDefinition.BRIGHT_CONCRETE.englishName(), "Improve White Concrete visibility.");
+        boolLiteral(rows, "beaconRange", FeatureSwitches.BEACON_RANGE,
+                FeatureDefinition.BEACON_RANGE.englishName(),
+                "Show the horizontal effect radius of nearby active Beacons.");
+        boolLiteral(rows, "lightningRodRange", FeatureSwitches.LIGHTNING_ROD_RANGE,
+                FeatureDefinition.LIGHTNING_ROD_RANGE.englishName(),
+                "Show the Vanilla 128-block horizontal Lightning Rod attraction range.");
     }
 
     private static void addIntegrationRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {

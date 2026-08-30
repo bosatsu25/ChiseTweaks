@@ -96,7 +96,7 @@
   "screen.chisetweaks.help.requirement.none": "追加MODは不要です。",
   "screen.chisetweaks.help.requirement_prefix": "条件・注意: ",
   "screen.chisetweaks.help.subtitle": "12個の切り替え機能を確認できます。Bright Chest / Bright Concreteは初期ON、ほか10機能は初期OFFです。",
-  "screen.chisetweaks.help.title": "ChiseTweaks 機能ガイド",
+  "screen.chisetweaks.help.title": "クイックヘルプ",
   "screen.chisetweaks.help.usage_prefix": "使い方: ",
   "screen.chisetweaks.settings.action.settings": "設定",
   "screen.chisetweaks.settings.apply": "適用",
@@ -266,7 +266,6 @@
   "screen.chisetweaks.pattern.status": "周辺比較",
   "screen.chisetweaks.pattern.status.value": "比較 %s / 一致 %s / 不一致 %s",
   "screen.chisetweaks.pattern.clear.action": "基準を解除",
-  "screen.chisetweaks.help.title": "クイックヘルプ",
   "screen.chisetweaks.help.highlight.name": "Highlight",
   "screen.chisetweaks.help.highlight.description": "鉱石・細線・隠れブロック・ガラス・昆布などを見つけやすくします。各ハイライトは同時にONにできます。",
   "screen.chisetweaks.help.filter.name": "Filter",
@@ -278,5 +277,8 @@
   "screen.chisetweaks.help.settings.name": "設定",
   "screen.chisetweaks.help.settings.description": "変更があると下部ボタンは「設定を適用」に変わります。未変更時の「設定をリセット」は現在の設定タブだけを初期値へ戻します。",
   "screen.chisetweaks.help.troubleshooting.name": "トラブルシューティング",
-  "screen.chisetweaks.help.troubleshooting.description": "問題が起きた場合はPrism Launcherのコンソールまたはlogs/latest.logを確認してください。診断情報は設定画面へ重複表示しません。"
+  "screen.chisetweaks.help.troubleshooting.description": "問題が起きた場合はPrism Launcherのコンソールまたはlogs/latest.logを確認してください。診断情報は設定画面へ重複表示しません。",
+  "config.name.villageranalyzer": "村人アナライザー",
+  "config.name.beaconrange": "ビーコン範囲",
+  "config.name.lightningrodrange": "避雷針範囲"
 }

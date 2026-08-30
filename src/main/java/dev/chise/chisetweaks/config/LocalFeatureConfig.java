@@ -26,6 +26,9 @@ public final class LocalFeatureConfig {
     private static final String LEGACY_CONCRETE_PACK_ID = "chisetweaks:chise_white_concrete_visibility";
 
     public boolean lavaHighlightEnabled = false;
+    public boolean villagerAnalyzerEnabled = false;
+    public boolean beaconRangeEnabled = false;
+    public boolean lightningRodRangeEnabled = false;
     public boolean fireVisibilityEnabled = false;
     public int fireVisibilitySizePreset = FireVisibilityPolicy.DEFAULT_SIZE_PRESET;
     public boolean brightChestEnabled = true;
@@ -146,6 +149,15 @@ public final class LocalFeatureConfig {
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)) {
             lavaHighlightEnabled = false;
         }
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.VILLAGER_ANALYZER)) {
+            villagerAnalyzerEnabled = false;
+        }
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BEACON_RANGE)) {
+            beaconRangeEnabled = false;
+        }
+        if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LIGHTNING_ROD_RANGE)) {
+            lightningRodRangeEnabled = false;
+        }
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.FIRE_VISIBILITY)) {
             fireVisibilityEnabled = false;
         }
@@ -186,6 +198,9 @@ public final class LocalFeatureConfig {
 
     private void copyFrom(LocalFeatureConfig loaded) {
         lavaHighlightEnabled = loaded.lavaHighlightEnabled;
+        villagerAnalyzerEnabled = loaded.villagerAnalyzerEnabled;
+        beaconRangeEnabled = loaded.beaconRangeEnabled;
+        lightningRodRangeEnabled = loaded.lightningRodRangeEnabled;
         fireVisibilityEnabled = loaded.fireVisibilityEnabled;
         fireVisibilitySizePreset = loaded.fireVisibilitySizePreset;
         brightChestEnabled = loaded.brightChestEnabled;

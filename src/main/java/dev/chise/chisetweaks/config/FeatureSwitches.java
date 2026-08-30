@@ -4,7 +4,7 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 
 import java.util.List;
 
-/** 12個のtoggle可能Featureを一つのregistryで管理する。 */
+/** toggle可能Featureを一つのregistryで管理する。 */
 public final class FeatureSwitches {
     public static final FeatureSwitch BUILDER_FOCUS_BLOCKS = create(FeatureDefinition.BUILDER_FOCUS_BLOCKS);
     public static final FeatureSwitch BUILDER_FOCUS_ENTITIES = create(FeatureDefinition.BUILDER_FOCUS_ENTITIES);
@@ -27,6 +27,24 @@ public final class FeatureSwitches {
             false,
             config -> config.lavaHighlightEnabled,
             (config, value) -> config.lavaHighlightEnabled = value);
+    public static final FeatureSwitch VILLAGER_ANALYZER = local(
+            FeatureDefinition.VILLAGER_ANALYZER,
+            "villagerAnalyzer",
+            false,
+            config -> config.villagerAnalyzerEnabled,
+            (config, value) -> config.villagerAnalyzerEnabled = value);
+    public static final FeatureSwitch BEACON_RANGE = local(
+            FeatureDefinition.BEACON_RANGE,
+            "beaconRange",
+            false,
+            config -> config.beaconRangeEnabled,
+            (config, value) -> config.beaconRangeEnabled = value);
+    public static final FeatureSwitch LIGHTNING_ROD_RANGE = local(
+            FeatureDefinition.LIGHTNING_ROD_RANGE,
+            "lightningRodRange",
+            false,
+            config -> config.lightningRodRangeEnabled,
+            (config, value) -> config.lightningRodRangeEnabled = value);
     public static final FeatureSwitch BRIGHT_CHEST = local(
             FeatureDefinition.BRIGHT_CHEST,
             "brightChest",
@@ -55,10 +73,13 @@ public final class FeatureSwitches {
     public static final List<FeatureSwitch> LOCAL_CONFIG_VALUES = List.of(
             FIRE_VISIBILITY,
             LAVA_HIGHLIGHT,
+            VILLAGER_ANALYZER,
+            BEACON_RANGE,
+            LIGHTNING_ROD_RANGE,
             BRIGHT_CHEST,
             BRIGHT_CONCRETE);
 
-    /** UI・監査・ドキュメントが参照する12機能の正本。 */
+    /** UI・監査・ドキュメントが参照するruntime機能の正本。 */
     public static final List<FeatureSwitch> VALUES = List.of(
             BUILDER_FOCUS_BLOCKS,
             BUILDER_FOCUS_ENTITIES,
@@ -69,6 +90,9 @@ public final class FeatureSwitches {
             NETHER_PALETTE,
             KELP_HIGHLIGHT,
             LAVA_HIGHLIGHT,
+            VILLAGER_ANALYZER,
+            BEACON_RANGE,
+            LIGHTNING_ROD_RANGE,
             FIRE_VISIBILITY,
             BRIGHT_CHEST,
             BRIGHT_CONCRETE);
