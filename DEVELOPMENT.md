@@ -9,27 +9,28 @@
 - Fabric Loader `0.19.3` 以上
 - Fabric API `0.155.2+26.1.2` 以上
 - Java `25` 以上
-- toggle可能なruntime featureは現在12個
-- 上記12個はruntime visual / inspection featureであり、Masa integration capabilityは数へ含めない
+- toggle可能なruntime featureは現在15個
+- 上記15個はruntime visual / inspection featureであり、Masa integration capabilityは数へ含めない
 - Masa ecosystem integrationはruntime visual feature数へ含めず、optional compatibility / UX capabilityとして別registryで管理する
 - ChiseTweaks自身はAutomationを実装しない。外部MODが所有する操作にGuard / policy / refreshを追加することだけをIntegrationとして許可する
-- 12機能はすべてrendering / inspection-orientedで、building-action featureは持たない
+- 15機能はすべてrendering / inspection-orientedで、building-action featureは持たない
 - Bright Chest / Bright Concreteはbuilt-in Resource Pack selection / reloadへ依存しない
 - Low FireはMinecraftが`ScreenEffectRenderer.renderFire`へ渡す現在のspriteを再利用し、Large / Medium / Smallの3段階geometryだけを一人称overlayへ適用する。通常炎・魂の炎ごとのChise専用PNG/model、world-fire置換、Resource Pack reloadを持たない
 - Bright ChestはChiseTweaks内蔵のChest専用`normal.png` / `normal_left.png` / `normal_right.png`をvanilla CHEST atlas経路で選択し、Chest model・金具・蓋・double-chest分割・開閉animationを維持する
 - Bright ChestはWhite Concrete spriteをChestへ流用しない。White Concreteの描画責務はBright Concreteだけが持つ
 - Bright Concreteはvanilla White Concrete model / textureを維持し、quad lightingだけをfull-bright化する
 - 明示仕様がない限り機能を相互排他にしない
-- all-features-on（12機能）を回帰条件として扱う
+- all-features-on（15機能）を回帰条件として扱う
 - custom packet / server installation / remote mod detection / auto downloader / automatic JAR replacementを実装しない
 - Lava Analyzerはloaded chunks only。未ロードchunkを強制loadしない
+- Hidden Block Analyzerは旧Hidden Block Highlightの対象選択・色・opacityを維持し、Lava Analyzerと同じbounded / loaded-chunk-only / through-wall描画へ統合する。Blue Ice / Dead Coral / Powder Snow / Sculk Catalystだけを対象とし、隠れ資源探索へ拡張しない
 - サーバー側ゲーム進行を変える配置補助や、隠れ資源・server-only状態を探索／推測するAnalyzerは現行スコープ外
 
 ### Masa integration contract
 
 - MaLiLib / Litematica / Tweakeroo / TweakerMore / Syncmaticaはhard dependencyにしない
 - 対象MODが存在しない場合、対応integrationはno-opかつChise起動を妨げない
-- integration設定は`chisetweaks-integrations.json`へ分離し、FeatureDefinitionの12機能と混在させない
+- integration設定は`chisetweaks-integrations.json`へ分離し、FeatureDefinitionの15機能と混在させない
 - 外部AutomationをChise自身が開始しない
 - Syncmatica等の外部packet ownershipをChiseへ移さない
 
@@ -153,7 +154,7 @@ FULL verification layers:
 - JUnit: functional contracts、state transition、boundary、UI/config regression
 - JaCoCo: retained deterministic scope。line coverage threshold `96%`
 - PIT: semantic policy/state-transition scope。mutation score / test strength threshold `96%`
-- Client GameTest: Minecraft runtimeでvanilla placement stateをoracleとして比較し、全12機能同時ONを検証
+- Client GameTest: Minecraft runtimeでvanilla placement stateをoracleとして比較し、全15機能同時ONを検証
 - Repository / Source Usage / Documentation / Compatibility / Functional Parity audits
 - Artifact / Visual Asset / Release Residue audits
 - Prism runtime acceptance: 実GPU、描画、入力、実機組み合わせ
@@ -222,7 +223,7 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - Bright Chestがsingle / double chestともチェスト形状・金具・蓋・開閉animationを維持した白いChestとして描画され、White Concrete面へ退行しない
 - Bright Chest / Bright Concrete（White Concrete）が独立して切り替わる
 - Low FireのLarge / Medium / Smallが一人称overlayだけへ反映され、通常炎／魂の炎の現在spriteとworld fireを壊さない
-- all-features-on（12機能）をOverworld / Netherでsmoke
+- all-features-on（15機能）をOverworld / Netherでsmoke
 - Lava Analyzerに強制chunk loadや長時間停止がない
 - disconnect / dimension changeでstale session stateが残らない
 
