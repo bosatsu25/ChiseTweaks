@@ -32,20 +32,24 @@ final class ChiseTweaksSettingsController {
     private static final String[] PROPERTY_GROUPS = {
             "orientation", "shape", "connection", "interaction", "fluid", "other"};
 
-    List<ChiseTweaksSettingRowDefinition> rows(ChiseTweaksSettingsController.Surface surface) {
+    List<ChiseTweaksSettingRowDefinition> rows() {
+        return rows(Surface.HIGHLIGHT);
+    }
+
+    List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
         ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
-        ChiseTweaksSettingsController.Surface resolved = surface == null
-                ? ChiseTweaksSettingsController.Surface.HIGHLIGHT
+        Surface resolved = surface == null
+                ? Surface.HIGHLIGHT
                 : surface;
-        if (resolved == ChiseTweaksSettingsController.Surface.HIGHLIGHT) {
+        if (resolved == Surface.HIGHLIGHT) {
             addHighlightRows(rows);
-        } else if (resolved == ChiseTweaksSettingsController.Surface.FILTER) {
+        } else if (resolved == Surface.FILTER) {
             addFilterRows(rows);
-        } else if (resolved == ChiseTweaksSettingsController.Surface.INSPECTOR) {
+        } else if (resolved == Surface.INSPECTOR) {
             addInspectorRows(rows, CrosshairInspector.Snapshot.noTarget(), false);
-        } else if (resolved == ChiseTweaksSettingsController.Surface.ANALYZER) {
+        } else if (resolved == Surface.ANALYZER) {
             addAnalyzerRows(rows);
-        } else if (resolved == ChiseTweaksSettingsController.Surface.VISIBILITY) {
+        } else if (resolved == Surface.VISIBILITY) {
             addVisibilityRows(rows);
         } else {
             addIntegrationRows(rows);
@@ -62,12 +66,12 @@ final class ChiseTweaksSettingsController {
         return List.copyOf(rows);
     }
 
-    String surfaceTitle(ChiseTweaksSettingsController.Surface surface) {
-        if (surface == ChiseTweaksSettingsController.Surface.FILTER) return "Filter";
-        if (surface == ChiseTweaksSettingsController.Surface.INSPECTOR) return "Inspector";
-        if (surface == ChiseTweaksSettingsController.Surface.ANALYZER) return "Analyzer";
-        if (surface == ChiseTweaksSettingsController.Surface.VISIBILITY) return "Visibility";
-        return surface == ChiseTweaksSettingsController.Surface.INTEGRATIONS
+    String surfaceTitle(Surface surface) {
+        if (surface == Surface.FILTER) return "Filter";
+        if (surface == Surface.INSPECTOR) return "Inspector";
+        if (surface == Surface.ANALYZER) return "Analyzer";
+        if (surface == Surface.VISIBILITY) return "Visibility";
+        return surface == Surface.INTEGRATIONS
                 ? "Integrations"
                 : "Highlight";
     }
