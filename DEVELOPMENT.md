@@ -105,15 +105,21 @@ SemVer判定は`scripts/version_policy.py`と`scripts/versioning_core.py`を正�
 
 `.github/workflows/ci.yml`が品質pipelineの正本です。Required check名は `verify / Java 25 quality gate` を維持します。
 
-CI v2は**品質ゲートを削らず、PRの変更scopeだけを分類**します。
+CI v2は**品質ゲートを削らず、PRの変更scopeとActions消費を制御**します。
 
 - `pull_request`: `scripts/ci_scope.py` が変更ファイルを fail-closed で分類する
-- `README.md` / `DEVELOPMENT.md` / `docs/**` だけのPRは `docs-only`
-- source / test / config / workflow / scripts / quality baseline / mixed change / 空集合はすべて `full`
-- `docs-only` でもPython tooling test、Version progression、Repository / Source Usage / Documentation / Compatibility / Functional Parity auditsは実行する
-- `docs-only` だけJava / Gradle / JUnit / JaCoCo / PIT / Client GameTest / distribution artifact生成を省略する
+- `README.md` / `DEVELOPMENT.md` / `docs/**` だけは `docs-only`
+- docsに加えて `.github/**` / `scripts/**` / `quality/**` だけなら `tooling-only`
+- source / test / runtime resource / Gradle build logic / config / mixed change / 空集合は `full`
+- `docs-only` / `tooling-only` でもPython tooling test、Version progression、Repository / Source Usage / Documentation / Compatibility / Functional Parity auditsは実行する
+- Java / Gradle / JUnit / JaCoCo / PIT / Client GameTest / distribution artifact生成は `full` だけ実行する
+- Draft PRではjobを起動せず、`ready_for_review`で検証を開始する
 - `push: main` と `workflow_dispatch` は常に `full`
+- CI timeoutは15分、Release timeoutは5分、CI artifact retentionは3日
+- `CHISE_CI_RUNS_ON` Repository Variableが未設定なら `ubuntu-24.04`。必要時はJSON形式のLinux self-hosted runner labelsへ切替可能
 - Official Releaseは従来どおり、成功したmain FULL CIのexact artifactだけを昇格する
+
+GitHub-hosted runnerのminute / spending limit / payment method自体はGitHub account側の設定でありrepository codeから変更しません。CIはその外部制約を前提に、不要run削減・runaway上限・短期artifact保持・runner切替口を提供します。
 
 FULL verification layers:
 

@@ -237,6 +237,6 @@ runtime / source / config / test / workflowへ影響するPRでは次をまと�
 - runtime JAR size ceiling
 - 12機能all-on regression
 
-README / DEVELOPMENT / `docs/**` だけのPRは、契約監査を残したままJava / Gradle / PIT / GameTest / artifact生成を省略します。mainへのpushは常にFULL CIです。これにより品質基準を下げず、GitHub Actionsの不要な実行時間を減らします。
+README / DEVELOPMENT / `docs/**`だけのPRと、`.github/**` / `scripts/**` / `quality/**`だけのCI・監査変更PRは、契約監査を残したままJava / Gradle / PIT / GameTest / artifact生成を省略します。Draft PRはrunnerを起動せず、mainへのpushは常にFULL CIです。
 
 CIで代替できないPrism Launcher / Windows / 実GPUの見た目は、別のacceptance smokeとして確認します。

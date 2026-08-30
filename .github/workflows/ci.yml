@@ -4,6 +4,11 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   push:
     branches:
       - main
@@ -19,8 +24,9 @@ concurrency:
 jobs:
   verify:
     name: verify / Java 25 quality gate
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: ${{ fromJSON(vars.CHISE_CI_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -45,10 +51,10 @@ jobs:
           git diff --name-only --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" > /tmp/chise-changed-files.txt
           scope="$(python3 scripts/ci_scope.py --file-list /tmp/chise-changed-files.txt)"
           echo "scope=$scope" >> "$GITHUB_OUTPUT"
-          if [[ "$scope" == 'docs-only' ]]; then
-            echo 'heavy=false' >> "$GITHUB_OUTPUT"
-          else
+          if [[ "$scope" == 'full' ]]; then
             echo 'heavy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'heavy=false' >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Python 3.14
@@ -131,7 +137,7 @@ jobs:
             echo "- Scope: `$CI_SCOPE`"
             echo "- Heavy Java / Gradle / PIT / GameTest / distribution gate: `$HEAVY_GATE`"
             if [[ "$HEAVY_GATE" == 'false' ]]; then
-              echo '- Documentation-only PR: repository, version, documentation and compatibility audits still ran.'
+              echo '- Non-runtime PR: repository tooling and contract audits ran; Java/Gradle/PIT/GameTest/distribution work was skipped.'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -149,4 +155,4 @@ jobs:
           path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}
           archive: false
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3
