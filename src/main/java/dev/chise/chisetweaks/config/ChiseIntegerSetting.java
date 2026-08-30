@@ -159,6 +159,7 @@ public final class ChiseIntegerSetting {
         if (previous == next) return false;
         writer.accept(next);
         if (getIntegerValue() == previous) return false;
+        SettingChangeDispatcher.markChanged();
         SettingChangeDispatcher.notifySafely(name, this, callback);
         return true;
     }

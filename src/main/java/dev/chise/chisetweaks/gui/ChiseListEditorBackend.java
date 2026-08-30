@@ -4,6 +4,8 @@ import dev.chise.chisetweaks.api.ore.OreHighlightStyle;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
 import java.util.Locale;
@@ -126,9 +128,17 @@ interface ChiseListEditorBackend {
     }
 
     static boolean isRegisteredBlock(Identifier id) {
-        for (Block block : BuiltInRegistries.BLOCK) {
-            if (id.equals(BuiltInRegistries.BLOCK.getKey(block))) return true;
-        }
-        return false;
+        Block value = id == null ? null : BuiltInRegistries.BLOCK.getValue(id);
+        return value != null && id.equals(BuiltInRegistries.BLOCK.getKey(value));
+    }
+
+    static boolean isRegisteredEntity(Identifier id) {
+        EntityType<?> value = id == null ? null : BuiltInRegistries.ENTITY_TYPE.getValue(id);
+        return value != null && id.equals(BuiltInRegistries.ENTITY_TYPE.getKey(value));
+    }
+
+    static boolean isRegisteredItem(Identifier id) {
+        Item value = id == null ? null : BuiltInRegistries.ITEM.getValue(id);
+        return value != null && id.equals(BuiltInRegistries.ITEM.getKey(value));
     }
 }

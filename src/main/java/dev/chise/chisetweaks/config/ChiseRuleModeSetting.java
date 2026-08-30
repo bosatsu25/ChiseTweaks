@@ -28,6 +28,7 @@ public final class ChiseRuleModeSetting {
         ChiseRuleMode next = Objects.requireNonNullElse(requested, ChiseRuleMode.NONE);
         if (value == next) return false;
         value = next;
+        SettingChangeDispatcher.markChanged();
         SettingChangeDispatcher.notifySafely(name, this, callback);
         return true;
     }

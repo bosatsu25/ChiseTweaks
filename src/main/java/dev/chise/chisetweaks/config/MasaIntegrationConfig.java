@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.chise.chisetweaks.ChiseTweaksClient;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
+import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
 import dev.chise.chisetweaks.integration.masa.MasaJapaneseUiMode;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -77,6 +78,9 @@ public final class MasaIntegrationConfig {
     boolean replaceFromJsonDocument(String json) {
         resetToDefaults();
         if (json == null || json.isBlank()) return false;
+        StrictJsonSecurityPolicy.Validation validation =
+                StrictJsonSecurityPolicy.validateObjectDocument(json);
+        if (!validation.valid()) return false;
         try {
             JsonObject source = JsonParser.parseString(json).getAsJsonObject();
             MasaIntegrationConfig loaded = GSON.fromJson(source, MasaIntegrationConfig.class);

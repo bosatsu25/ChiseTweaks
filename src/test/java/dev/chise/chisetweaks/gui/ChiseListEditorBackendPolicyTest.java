@@ -4,6 +4,7 @@ import dev.chise.chisetweaks.api.ore.OreHighlightStyle;
 import dev.chise.chisetweaks.config.ChiseRuleMode;
 import dev.chise.chisetweaks.config.OreHighlightCompatibilityConfig;
 import dev.chise.chisetweaks.core.policy.MasaIdListPolicy;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -65,6 +66,22 @@ final class ChiseListEditorBackendPolicyTest {
         assertEquals(MasaIdListPolicy.BLACKLIST, MasaListBackend.nextMode(MasaIdListPolicy.NONE));
         assertEquals(MasaIdListPolicy.WHITELIST, MasaListBackend.nextMode(MasaIdListPolicy.BLACKLIST));
         assertEquals(MasaIdListPolicy.NONE, MasaListBackend.nextMode(MasaIdListPolicy.WHITELIST));
+    }
+
+
+    @Test
+    void registryValidationAcceptsKnownIdsAndRejectsUnknownIdsWithoutRegistryScans() {
+        assertTrue(ChiseListEditorBackend.isRegisteredBlock(
+                Identifier.tryParse("minecraft:stone")));
+        assertTrue(ChiseListEditorBackend.isRegisteredEntity(
+                Identifier.tryParse("minecraft:armor_stand")));
+        assertTrue(ChiseListEditorBackend.isRegisteredItem(
+                Identifier.tryParse("minecraft:golden_carrot")));
+
+        Identifier missing = Identifier.tryParse("chisetweaks:missing_registry_entry");
+        assertFalse(ChiseListEditorBackend.isRegisteredBlock(missing));
+        assertFalse(ChiseListEditorBackend.isRegisteredEntity(missing));
+        assertFalse(ChiseListEditorBackend.isRegisteredItem(missing));
     }
 
     @Test

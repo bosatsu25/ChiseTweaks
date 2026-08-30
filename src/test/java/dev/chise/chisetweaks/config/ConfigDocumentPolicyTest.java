@@ -117,6 +117,23 @@ final class ConfigDocumentPolicyTest {
         assertFalse(defaults.get("lavaHighlightEnabled").getAsBoolean());
     }
 
+
+    @Test
+    void integrationConfigsRejectDuplicateKeysThroughTheStrictJsonGate() {
+        MasaIntegrationConfig masa = new MasaIntegrationConfig();
+        masa.litematicaPickRedirect = true;
+        assertFalse(masa.replaceFromJsonDocument(
+                "{\"litematicaPickRedirect\":true,\"litematicaPickRedirect\":false}"));
+        assertFalse(masa.litematicaPickRedirect);
+
+        CompatibilityIntegrationConfig compatibility = new CompatibilityIntegrationConfig();
+        compatibility.worldBorderFixEnabled = true;
+        assertFalse(compatibility.replaceFromJsonDocument(
+                "{\"worldBorderFixEnabled\":true,\"worldBorderFixEnabled\":false}"));
+        assertFalse(compatibility.worldBorderFixEnabled);
+        assertTrue(compatibility.worldBorderFixXray);
+    }
+
     @Test
     void localConfigMigrationKeepsSafeBoundsAndIgnoresRemovedLegacyFields() {
         LocalFeatureConfig config = new LocalFeatureConfig();

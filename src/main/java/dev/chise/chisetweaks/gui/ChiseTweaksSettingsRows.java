@@ -49,13 +49,13 @@ final class ChiseTweaksSettingsRows {
     }
 
     static String surfaceTitle(Surface surface) {
-        String value = (surface == null ? Surface.HIGHLIGHT : surface)
-                .name().toLowerCase(java.util.Locale.ROOT);
-        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+        Surface resolved = surface == null ? Surface.HIGHLIGHT : surface;
+        return text("screen.chisetweaks.settings.tab."
+                + resolved.name().toLowerCase(java.util.Locale.ROOT));
     }
 
     private static void addHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.highlight", "Highlight");
+        headerLiteral(rows, "header.highlight", text("screen.chisetweaks.settings.tab.highlight"));
         feature(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS);
         feature(rows, "nether", FeatureSwitches.NETHER_PALETTE);
         feature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE);
@@ -77,19 +77,21 @@ final class ChiseTweaksSettingsRows {
         configBool(rows, "highlightWorldOverlay", LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY);
         boolLiteral(rows, "highlightDimensionPresets",
                 LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS,
-                "Dimension Preset",
-                "Automatically use the bounded Nether visibility profile when appropriate.");
+                text("screen.chisetweaks.settings.copy.dimension_preset.name"),
+                text("screen.chisetweaks.settings.copy.dimension_preset.description"));
 
-        headerLiteral(rows, "detail.highlight.traceAppearance", "Trace Appearance");
+        headerLiteral(rows, "detail.highlight.traceAppearance",
+                text("screen.chisetweaks.settings.copy.trace_appearance"));
         integerLiteral(rows, "fineThreadColor",
                 LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET,
-                "Fine Line Highlight - Color",
-                "AUTO keeps the current Chise palette.", 1);
+                text("screen.chisetweaks.settings.copy.fine_line_color.name"),
+                text("screen.chisetweaks.settings.copy.fine_line_color.description"), 1);
         integerLiteral(rows, "fineThreadOpacity",
                 LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
-                "Fine Line Highlight - Opacity",
-                "20-100%", 5);
-        headerLiteral(rows, "detail.highlight.technicalTargets", "Fine Line Targets");
+                text("screen.chisetweaks.settings.copy.fine_line_opacity.name"),
+                text("screen.chisetweaks.settings.copy.opacity_range"), 5);
+        headerLiteral(rows, "detail.highlight.technicalTargets",
+                text("screen.chisetweaks.settings.copy.fine_line_targets"));
         addTargets(rows, "visualTargetTechnical");
 
         header(rows, "detail.highlight.materialTargets", "screen.chisetweaks.settings.section.material_targets");
@@ -98,11 +100,12 @@ final class ChiseTweaksSettingsRows {
     }
 
     private static void addFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.filter", "Filter");
+        headerLiteral(rows, "header.filter", text("screen.chisetweaks.settings.tab.filter"));
         feature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS);
         feature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES);
 
-        headerLiteral(rows, "detail.visualFilter.behavior", "Filter Settings");
+        headerLiteral(rows, "detail.visualFilter.behavior",
+                text("screen.chisetweaks.settings.copy.filter_settings"));
         configBool(rows, "refreshRenderer", BuilderFocusConfig.REFRESH_RENDERER);
         action(rows, "editBlockFilter",
                 FeatureSwitches.BUILDER_FOCUS_BLOCKS.definition().englishName(),
@@ -117,11 +120,11 @@ final class ChiseTweaksSettingsRows {
     }
 
     private static void addAnalyzerRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.analyzer", "Analyzer");
+        headerLiteral(rows, "header.analyzer", text("screen.chisetweaks.settings.tab.analyzer"));
         featureLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
                 text("config.comment.locallavahighlight"));
         featureLiteral(rows, "villagerAnalyzer", FeatureSwitches.VILLAGER_ANALYZER,
-                "Nearby villagers are linked to their claimed job site. If client JOB_SITE memory is unavailable, a bounded loaded-world workstation fallback is used.");
+                text("screen.chisetweaks.settings.copy.villager_analyzer.description"));
         featureLiteral(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
                 text("config.comment.hiddensurfacetrace"));
 
@@ -140,12 +143,12 @@ final class ChiseTweaksSettingsRows {
                 LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS);
         integerLiteral(rows, "hiddenSurfaceColor",
                 LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
-                "Hidden Block Analyzer - Color",
-                "AUTO keeps the Chise hidden-block palette.", 1);
+                text("screen.chisetweaks.settings.copy.hidden_color.name"),
+                text("screen.chisetweaks.settings.copy.hidden_color.description"), 1);
         integerLiteral(rows, "hiddenSurfaceOpacity",
                 LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
-                "Hidden Block Analyzer - Opacity",
-                "20-100%", 5);
+                text("screen.chisetweaks.settings.copy.hidden_opacity.name"),
+                text("screen.chisetweaks.settings.copy.opacity_range"), 5);
 
         header(rows, "detail.analyzer.hiddenTargets", "screen.chisetweaks.settings.section.hidden_targets");
         addTargets(rows, "visualTargetHidden");
@@ -159,7 +162,10 @@ final class ChiseTweaksSettingsRows {
             ChiseIntegerSetting vertical,
             ChiseIntegerSetting interval,
             ChiseIntegerSetting maxOverlays) {
-        headerLiteral(rows, "detail.analyzer." + prefix, feature.definition().englishName() + " Settings");
+        headerLiteral(rows, "detail.analyzer." + prefix,
+                Component.translatable(
+                        "screen.chisetweaks.settings.copy.feature_settings",
+                        feature.definition().englishName()).getString());
         String key = "screen.chisetweaks.settings." + prefix;
         integer(rows, prefix + "Range", horizontal, key + "_range.name", key + "_range.description", 1);
         integer(rows, prefix + "VerticalRange", vertical, key + "_vertical.name", key + "_vertical.description", 1);
@@ -168,39 +174,41 @@ final class ChiseTweaksSettingsRows {
     }
 
     private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "header.visibility", "Visibility");
+        headerLiteral(rows, "header.visibility", text("screen.chisetweaks.settings.tab.visibility"));
         featureLiteral(rows, "fireVisibility", FeatureSwitches.FIRE_VISIBILITY,
-                "Lower only the first-person fire overlay.");
+                text("screen.chisetweaks.settings.copy.fire_visibility.description"));
         integer(rows, "fireVisibilitySize", LocalFeatureSettings.FIRE_VISIBILITY_SIZE,
                 "screen.chisetweaks.settings.fire_size.name",
                 "screen.chisetweaks.settings.fire_size.description", 1);
         featureLiteral(rows, "chestVisibility", FeatureSwitches.BRIGHT_CHEST,
-                "Improve Chest and Double Chest visibility.");
+                text("screen.chisetweaks.settings.copy.bright_chest.description"));
         featureLiteral(rows, "whiteConcreteVisibility", FeatureSwitches.BRIGHT_CONCRETE,
-                "Improve White Concrete visibility.");
+                text("screen.chisetweaks.settings.copy.bright_concrete.description"));
         featureLiteral(rows, "beaconRange", FeatureSwitches.BEACON_RANGE,
-                "Show the horizontal effect radius of nearby active Beacons.");
+                text("screen.chisetweaks.settings.copy.beacon_range.description"));
         featureLiteral(rows, "lightningRodRange", FeatureSwitches.LIGHTNING_ROD_RANGE,
-                "Show the Vanilla 128-block horizontal Lightning Rod attraction range.");
+                text("screen.chisetweaks.settings.copy.lightning_rod_range.description"));
     }
 
     private static void addIntegrationRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         MasaModAvailability.Snapshot installed = MasaModAvailability.snapshot();
-        headerLiteral(rows, "header.integrations", "Masa Ecosystem");
+        headerLiteral(rows, "header.integrations",
+                text("screen.chisetweaks.settings.tab.integrations"));
         info(rows, "masa.summary",
-                "Masa Integration",
-                "Masa系MODの既存機能を補助・制御するoptional integrationです。ChiseTweaks自身は自動操作を実行しません。");
+                text("screen.chisetweaks.settings.copy.masa_summary.name"),
+                text("screen.chisetweaks.settings.copy.masa_summary.description"));
         integerLiteral(rows, "masaJapaneseUiMode",
                 MasaIntegrationSettings.JAPANESE_UI_MODE,
-                "Masa Japanese UI",
-                "AutoはMinecraftが日本語のときだけ日本語UX補助を有効にします。", 1);
+                text("screen.chisetweaks.settings.copy.masa_japanese_ui.name"),
+                text("screen.chisetweaks.settings.copy.masa_japanese_ui.description"), 1);
         action(rows, "openMasaGuide",
-                "Masa Guide",
-                "Masa系MODが何を担当し、どの設定画面を見るべきかを日本語で案内します。",
+                text("screen.chisetweaks.settings.copy.masa_guide.name"),
+                text("screen.chisetweaks.settings.copy.masa_guide.description"),
                 ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE,
-                "ガイドを開く");
+                text("screen.chisetweaks.settings.copy.masa_guide.action"));
 
-        headerLiteral(rows, "masa.installed", "Installed Mods");
+        headerLiteral(rows, "masa.installed",
+                text("screen.chisetweaks.settings.copy.installed_mods"));
         info(rows, "masa.malilib", "MaLiLib", installedLabel(installed.malilib()));
         info(rows, "masa.litematica", "Litematica", installedLabel(installed.litematica()));
         info(rows, "masa.tweakeroo", "Tweakeroo", installedLabel(installed.tweakeroo()));
@@ -210,57 +218,59 @@ final class ChiseTweaksSettingsRows {
         headerLiteral(rows, "masa.litematica.settings", "Litematica");
         boolLiteral(rows, "litematicaPickRedirect",
                 MasaIntegrationSettings.LITEMATICA_PICK_REDIRECT,
-                "Pick Redirect",
-                "Litematicaが要求するblock itemが無い場合に、設定済みの代替blockを候補にします。");
+                text("screen.chisetweaks.settings.copy.pick_redirect.name"),
+                text("screen.chisetweaks.settings.copy.pick_redirect.description"));
         action(rows, "editLitematicaPickRedirect",
-                "Pick Redirect Map",
-                "Schematic Block → Replacement Blockの対応を編集します。",
+                text("screen.chisetweaks.settings.copy.pick_redirect_map.name"),
+                text("screen.chisetweaks.settings.copy.pick_redirect_map.description"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT,
-                "リスト設定");
+                text("screen.chisetweaks.settings.copy.list_settings"));
 
         headerLiteral(rows, "masa.tweakeroo.settings", "Tweakeroo");
         boolLiteral(rows, "tweakerooToolSwitchGuard",
                 MasaIntegrationSettings.TWEAKEROO_TOOL_SWITCH_GUARD,
-                "Selective Tool Switch Guard",
-                "TweakerooのTool SwitchをChiseのallow/deny policyで制御します。");
+                text("screen.chisetweaks.settings.copy.tool_switch_guard.name"),
+                text("screen.chisetweaks.settings.copy.tool_switch_guard.description"));
         action(rows, "editTweakerooToolSwitchGuard",
-                "Tool Switch Guard List",
-                "Tool Switchを許可/拒否するBlock IDを編集します。",
+                text("screen.chisetweaks.settings.copy.tool_switch_list.name"),
+                text("screen.chisetweaks.settings.copy.tool_switch_list.description"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD,
-                "リスト設定");
+                text("screen.chisetweaks.settings.copy.list_settings"));
         boolLiteral(rows, "tweakerooPersistentGammaOverride",
                 MasaIntegrationSettings.TWEAKEROO_PERSISTENT_GAMMA,
-                "Persistent Gamma Override",
-                "Tweakerooが所有するGamma Override状態の復元だけを補助します。");
+                text("screen.chisetweaks.settings.copy.gamma_override.name"),
+                text("screen.chisetweaks.settings.copy.gamma_override.description"));
 
         headerLiteral(rows, "masa.tweakermore.settings", "TweakerMore");
         boolLiteral(rows, "tweakermoreAutoPickGuard",
                 MasaIntegrationSettings.TWEAKERMORE_AUTO_PICK_GUARD,
-                "Selective Auto Pick Guard",
-                "TweakerMoreのAuto Pickをitem allow/deny policyで制御します。");
+                text("screen.chisetweaks.settings.copy.auto_pick_guard.name"),
+                text("screen.chisetweaks.settings.copy.auto_pick_guard.description"));
         action(rows, "editTweakerMoreAutoPickGuard",
-                "Auto Pick Guard List",
-                "Auto Pickを許可/拒否するItem IDを編集します。",
+                text("screen.chisetweaks.settings.copy.auto_pick_list.name"),
+                text("screen.chisetweaks.settings.copy.auto_pick_list.description"),
                 ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD,
-                "リスト設定");
+                text("screen.chisetweaks.settings.copy.list_settings"));
         boolLiteral(rows, "tweakermoreMaterialListRefresh",
                 MasaIntegrationSettings.TWEAKERMORE_MATERIAL_REFRESH,
-                "Material List Refresh",
-                "TweakerMoreのMaterial collect完了後に既存Material List表示を同期します。");
+                text("screen.chisetweaks.settings.copy.material_refresh.name"),
+                text("screen.chisetweaks.settings.copy.material_refresh.description"));
 
         headerLiteral(rows, "masa.syncmatica.settings", "Syncmatica");
         boolLiteral(rows, "syncmaticaRemoveDisabled",
                 MasaIntegrationSettings.SYNCMATICA_REMOVE_DISABLED,
-                "Disable Remove",
-                "共有Schematicの削除操作をguardします。");
+                text("screen.chisetweaks.settings.copy.disable_remove.name"),
+                text("screen.chisetweaks.settings.copy.disable_remove.description"));
         boolLiteral(rows, "syncmaticaRemoveRequireShift",
                 MasaIntegrationSettings.SYNCMATICA_REQUIRE_SHIFT,
-                "Require Shift To Remove",
-                "共有Schematic削除時にShift押下を要求します。");
+                text("screen.chisetweaks.settings.copy.require_shift.name"),
+                text("screen.chisetweaks.settings.copy.require_shift.description"));
     }
 
     private static String installedLabel(boolean installed) {
-        return installed ? "Installed / 導入済み" : "Not installed / 未導入";
+        return text(installed
+                ? "screen.chisetweaks.settings.copy.installed"
+                : "screen.chisetweaks.settings.copy.not_installed");
     }
 
 
@@ -369,42 +379,45 @@ final class ChiseTweaksSettingsRows {
             ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         boolean nvidiumInstalled = FabricLoader.getInstance().isModLoaded("nvidium");
         rows.add(ChiseTweaksSettingRowDefinition.header(
-                                "compatibility.renderer.header", "Renderer Compatibility"));
+                                "compatibility.renderer.header",
+                                text("screen.chisetweaks.settings.copy.renderer_compatibility")));
         rows.add(ChiseTweaksSettingRowDefinition.info(
                                 "compatibility.nvidium.status",
                                 "Nvidium",
-                                nvidiumInstalled ? "Installed / 導入済み" : "Not installed / 未導入 - World Border Fixはno-opです"));
+                                text(nvidiumInstalled
+                                        ? "screen.chisetweaks.settings.copy.installed"
+                                        : "screen.chisetweaks.settings.copy.nvidium_not_installed")));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                                 "worldBorderFixEnabled",
-                                "World Border Fix",
-                                "ワールドボーダー付近・遠距離座標でNvidium描画が破綻する環境向け。危険領域だけNvidiumを一時停止します。",
+                                text("screen.chisetweaks.settings.copy.world_border_fix.name"),
+                                text("screen.chisetweaks.settings.copy.world_border_fix.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_ENABLED));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                                 "worldBorderFixXray",
-                                "World Border X-Ray Guard",
-                                "ワールドボーダー接近時の透明化/X-Ray状描画を抑制します。",
+                                text("screen.chisetweaks.settings.copy.world_border_xray.name"),
+                                text("screen.chisetweaks.settings.copy.world_border_xray.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_XRAY));
         rows.add(ChiseTweaksSettingRowDefinition.integer(
                                 "worldBorderFixDistance",
-                                "Border Trigger Distance",
-                                "この距離よりワールドボーダーへ近づいたとき抑制候補にします。",
+                                text("screen.chisetweaks.settings.copy.border_distance.name"),
+                                text("screen.chisetweaks.settings.copy.border_distance.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_DISTANCE,
                                 16));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                                 "worldBorderFixFarCoords",
-                                "Far Coordinate Guard",
-                                "大きなX/Z座標でのNvidium描画破綻を抑制します。",
+                                text("screen.chisetweaks.settings.copy.far_coords.name"),
+                                text("screen.chisetweaks.settings.copy.far_coords.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_FAR_COORDS));
         rows.add(ChiseTweaksSettingRowDefinition.integer(
                                 "worldBorderFixCoordThreshold",
-                                "Far Coordinate Threshold",
-                                "|X|または|Z|がこの値以上で抑制候補にします。",
+                                text("screen.chisetweaks.settings.copy.coord_threshold.name"),
+                                text("screen.chisetweaks.settings.copy.coord_threshold.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_COORD_THRESHOLD,
                                 1000));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                                 "worldBorderFixAutoReenable",
-                                "Immediate Nvidium Re-enable",
-                                "危険領域を離れた直後に描画再読込してNvidiumを復帰します。既定OFF。安定性優先ならOFFを推奨します。",
+                                text("screen.chisetweaks.settings.copy.nvidium_reenable.name"),
+                                text("screen.chisetweaks.settings.copy.nvidium_reenable.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_AUTO_REENABLE));
     }
 

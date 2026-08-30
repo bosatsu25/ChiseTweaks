@@ -42,12 +42,24 @@ final class ChiseTweaksSettingsControllerTest {
     void sixTabsExposeTheCurrentReleasedInformationArchitecture() {
         var controller = new ChiseTweaksSettingsController();
 
-        assertEquals("Highlight", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
-        assertEquals("Filter", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.FILTER));
-        assertEquals("Inspector", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INSPECTOR));
-        assertEquals("Analyzer", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.ANALYZER));
-        assertEquals("Visibility", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.VISIBILITY));
-        assertEquals("Integrations", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
+        assertEquals(
+                Component.translatable("screen.chisetweaks.settings.tab.highlight").getString(),
+                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
+        assertEquals(
+                Component.translatable("screen.chisetweaks.settings.tab.filter").getString(),
+                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.FILTER));
+        assertEquals(
+                Component.translatable("screen.chisetweaks.settings.tab.inspector").getString(),
+                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INSPECTOR));
+        assertEquals(
+                Component.translatable("screen.chisetweaks.settings.tab.analyzer").getString(),
+                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.ANALYZER));
+        assertEquals(
+                Component.translatable("screen.chisetweaks.settings.tab.visibility").getString(),
+                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.VISIBILITY));
+        assertEquals(
+                Component.translatable("screen.chisetweaks.settings.tab.integrations").getString(),
+                controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
 
         assertTrue(ids(controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT)).containsAll(
                 List.of("materials", "nether", "thread", "glass", "kelp")));

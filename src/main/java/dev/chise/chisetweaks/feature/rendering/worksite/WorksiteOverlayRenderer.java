@@ -16,8 +16,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -110,8 +109,8 @@ final class WorksiteOverlayRenderer {
                     (pose, vertices) -> {
                         long pulseFrame = System.nanoTime() / 150_000_000L;
                         for (WorksiteRenderTarget target : snapshot) {
-                            Identifier liveBlockId = liveBlockId(client, target.position());
-                            if (!shouldDrawTarget(target, liveBlockId, attackPressed, attackedBlock)) continue;
+                            Block liveBlock = liveBlock(client, target.position());
+                            if (!shouldDrawTarget(target, liveBlock, attackPressed, attackedBlock)) continue;
                             drawTarget(vertices, pose, target, pulseFrame);
                         }
                     });
@@ -122,11 +121,11 @@ final class WorksiteOverlayRenderer {
 
     static boolean shouldDrawTarget(
             WorksiteRenderTarget target,
-            Identifier liveBlockId,
+            Block liveBlock,
             boolean attackPressed,
             BlockPos attackedBlock) {
-        if (target == null || liveBlockId == null || target.expectedBlockId() == null
-                || !target.expectedBlockId().equals(liveBlockId)) {
+        if (target == null || liveBlock == null || target.expectedBlock() == null
+                || target.expectedBlock() != liveBlock) {
             return false;
         }
         return !attackPressed
@@ -135,14 +134,13 @@ final class WorksiteOverlayRenderer {
                 || !target.position().equals(attackedBlock);
     }
 
-    private static Identifier liveBlockId(Minecraft client, BlockPos position) {
+    private static Block liveBlock(Minecraft client, BlockPos position) {
         if (client.level == null
                 || !client.level.getChunkSource().hasChunk(position.getX() >> 4, position.getZ() >> 4)) {
             return null;
         }
-        var block = client.level.getBlockState(position).getBlock();
-        if (BuilderFocusVisibility.shouldHide(block)) return null;
-        return BuiltInRegistries.BLOCK.getKey(block);
+        Block block = client.level.getBlockState(position).getBlock();
+        return BuilderFocusVisibility.shouldHide(block) ? null : block;
     }
 
     private static BlockPos attackedBlockPosition(Minecraft client) {

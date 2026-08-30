@@ -42,12 +42,12 @@ final class InspectorSettingsRows {
         header(rows, "inspector.title", "screen.chisetweaks.inspector.title");
         boolLiteral(rows, "interactionHistory",
                 LocalFeatureSettings.INTERACTION_HISTORY,
-                "Interaction History",
-                "直近64件までの配置・破壊・Item使用・Entity操作をメモリ内だけに保持します。チャット、看板、本、Container内容は記録しません。");
+                text("screen.chisetweaks.inspector.interaction_history.name"),
+                text("screen.chisetweaks.inspector.interaction_history.description"));
         boolLiteral(rows, "schematicPlacementInspector",
                 LocalFeatureSettings.SCHEMATIC_PLACEMENT_INSPECTOR,
-                "Schematic Placement Inspector",
-                "Litematicaの設計図と現在の配置予測をMATCH / COMPATIBLE / DIFFERENTで比較します。配置自体は止めません。");
+                text("screen.chisetweaks.inspector.schematic_inspector.name"),
+                text("screen.chisetweaks.inspector.schematic_inspector.description"));
         if (resolved.targetKind() == HitResult.Type.MISS) {
             info(rows, "inspector.noTarget",
                     text("screen.chisetweaks.inspector.no_target"),
@@ -91,33 +91,35 @@ final class InspectorSettingsRows {
 
     private static void addSchematicPlacementRows(
             ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "schematicPlacement.title", "Schematic Placement");
+        headerLiteral(rows, "schematicPlacement.title",
+                text("screen.chisetweaks.inspector.schematic.title"));
         PlacementInspector.SchematicSnapshot schematic = PlacementInspector.schematicSnapshot();
         if (!schematic.available()) {
             info(rows, "schematicPlacement.none",
-                    "No active schematic comparison",
-                    "Litematica + Schematic Placement Inspectorが有効で、設計図上へBlockを配置すると比較結果を表示します。");
+                    text("screen.chisetweaks.inspector.schematic.none"),
+                    text("screen.chisetweaks.inspector.schematic.none.description"));
             return;
         }
         info(rows, "schematicPlacement.expected",
-                "Expected / 設計図",
+                text("screen.chisetweaks.inspector.schematic.expected"),
                 schematic.expectedId());
         info(rows, "schematicPlacement.predicted",
-                "Predicted / 配置予測",
+                text("screen.chisetweaks.inspector.schematic.predicted"),
                 schematic.predictedId());
         info(rows, "schematicPlacement.result",
-                "Result",
+                text("screen.chisetweaks.inspector.schematic.result"),
                 schematic.resultLabel());
     }
 
     private static void addInteractionHistoryRows(
             ArrayList<ChiseTweaksSettingRowDefinition> rows) {
-        headerLiteral(rows, "interactionHistory.title", "Interaction History");
+        headerLiteral(rows, "interactionHistory.title",
+                text("screen.chisetweaks.inspector.interaction_history.title"));
         List<InteractionHistory.Entry> history = InteractionHistory.snapshot();
         if (history.isEmpty()) {
             info(rows, "interactionHistory.empty",
-                    "No history",
-                    "Interaction Historyが有効になると、直近の読み取り専用interactionをここに表示します。");
+                    text("screen.chisetweaks.inspector.interaction_history.empty"),
+                    text("screen.chisetweaks.inspector.interaction_history.empty.description"));
             return;
         }
         int shown = Math.min(5, history.size());
