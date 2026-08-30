@@ -15,14 +15,18 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-/** Settings lifecycle, reset and persistence coordinator. Presentation lives in dedicated row models. */
+/**
+ * Settings lifecycle, reset and persistence coordinator for the seven Tweaks product groups.
+ * Presentation remains in dedicated row models.
+ */
 final class ChiseTweaksSettingsController {
     enum Surface {
-        HIGHLIGHT,
-        FILTER,
-        INSPECTOR,
-        ANALYZER,
-        VISIBILITY,
+        VISUAL,
+        BUILDER_HIGHLIGHTS,
+        TECHNICAL_VISUALIZATION,
+        SCENE_FILTER,
+        BUILDER_ASSIST,
+        WORKFLOW,
         INTEGRATIONS
     }
 
@@ -46,10 +50,14 @@ final class ChiseTweaksSettingsController {
         return ChiseTweaksSettingsRows.rows(surface);
     }
 
-    List<ChiseTweaksSettingRowDefinition> inspectorRows(
+    List<ChiseTweaksSettingRowDefinition> builderAssistRows(
             CrosshairInspector.Snapshot snapshot,
             boolean includeHelp) {
-        return InspectorSettingsRows.rows(snapshot, includeHelp);
+        return BuilderAssistRows.rows(snapshot, includeHelp);
+    }
+
+    List<ChiseTweaksSettingRowDefinition> workflowRows() {
+        return WorkflowRows.rows();
     }
 
     String surfaceTitle(Surface surface) {
@@ -57,48 +65,45 @@ final class ChiseTweaksSettingsController {
     }
 
     EnumSet<SettingPersistence> reset(Surface surface) {
-        return switch (surface == null ? Surface.HIGHLIGHT : surface) {
-            case HIGHLIGHT -> {
-                resetHighlightFeatures();
-                resetHighlightDetails();
+        return switch (surface == null ? Surface.VISUAL : surface) {
+            case VISUAL -> {
+                resetVisualTweaks();
+                yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
+            }
+            case BUILDER_HIGHLIGHTS -> {
+                resetBuilderHighlights();
                 yield EnumSet.of(
                         SettingPersistence.FEATURE_CONFIG,
                         SettingPersistence.LOCAL_CONFIG);
             }
-            case FILTER -> {
+            case TECHNICAL_VISUALIZATION -> {
+                resetTechnicalVisualization();
+                yield EnumSet.of(
+                        SettingPersistence.FEATURE_CONFIG,
+                        SettingPersistence.LOCAL_CONFIG);
+            }
+            case SCENE_FILTER -> {
                 FeatureSwitches.BUILDER_FOCUS_BLOCKS.resetToDefault();
                 FeatureSwitches.BUILDER_FOCUS_ENTITIES.resetToDefault();
                 resetBuilderFocusDetails();
                 yield EnumSet.of(SettingPersistence.FEATURE_CONFIG);
             }
-            case INSPECTOR -> {
+            case BUILDER_ASSIST -> {
+                PatternConsistencyInspector.clearReference();
+                yield EnumSet.noneOf(SettingPersistence.class);
+            }
+            case WORKFLOW -> {
                 LocalFeatureSettings.INTERACTION_HISTORY.resetToDefault();
-                LocalFeatureSettings.SCHEMATIC_PLACEMENT_INSPECTOR.resetToDefault();
                 InteractionHistory.clearHistory();
-                yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
-            }
-            case ANALYZER -> {
-                FeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
-                FeatureSwitches.VILLAGER_ANALYZER.resetToDefault();
-                FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
-                resetAnalyzerDetails();
-                yield EnumSet.of(
-                        SettingPersistence.FEATURE_CONFIG,
-                        SettingPersistence.LOCAL_CONFIG);
-            }
-            case VISIBILITY -> {
-                FeatureSwitches.FIRE_VISIBILITY.resetToDefault();
-                LocalFeatureSettings.FIRE_VISIBILITY_SIZE.resetToDefault();
-                FeatureSwitches.BRIGHT_CHEST.resetToDefault();
-                FeatureSwitches.BRIGHT_CONCRETE.resetToDefault();
-                FeatureSwitches.BEACON_RANGE.resetToDefault();
-                FeatureSwitches.LIGHTNING_ROD_RANGE.resetToDefault();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
             case INTEGRATIONS -> {
                 MasaIntegrationConfig.getInstance().resetToDefaults();
                 CompatibilityIntegrationConfig.getInstance().resetToDefaults();
-                yield EnumSet.of(SettingPersistence.INTEGRATION_CONFIG);
+                LocalFeatureSettings.SCHEMATIC_PLACEMENT_INSPECTOR.resetToDefault();
+                yield EnumSet.of(
+                        SettingPersistence.INTEGRATION_CONFIG,
+                        SettingPersistence.LOCAL_CONFIG);
             }
         };
     }
@@ -130,15 +135,25 @@ final class ChiseTweaksSettingsController {
         return Set.copyOf(dirtyDomains);
     }
 
-    private static void resetHighlightFeatures() {
-        FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
-        FeatureSwitches.NETHER_PALETTE.resetToDefault();
-        FeatureSwitches.FINE_THREAD_TRACE.resetToDefault();
-        FeatureSwitches.GLASS_INSPECTION.resetToDefault();
-        FeatureSwitches.KELP_HIGHLIGHT.resetToDefault();
+    private static void resetVisualTweaks() {
+        FeatureSwitches.FIRE_VISIBILITY.resetToDefault();
+        LocalFeatureSettings.FIRE_VISIBILITY_SIZE.resetToDefault();
+        FeatureSwitches.HANDHELD_SIZE.resetToDefault();
+        LocalFeatureSettings.HANDHELD_BLOCK_SCALE.resetToDefault();
+        LocalFeatureSettings.HANDHELD_ITEM_SCALE.resetToDefault();
+        LocalFeatureSettings.HANDHELD_TOOL_SCALE.resetToDefault();
+        FeatureSwitches.BRIGHT_CHEST.resetToDefault();
+        FeatureSwitches.BRIGHT_CONCRETE.resetToDefault();
     }
 
-    private static void resetHighlightDetails() {
+    private static void resetBuilderHighlights() {
+        FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
+        FeatureSwitches.NETHER_PALETTE.resetToDefault();
+        FeatureSwitches.GLASS_INSPECTION.resetToDefault();
+        FeatureSwitches.KELP_HIGHLIGHT.resetToDefault();
+        FeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
+        FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
+
         LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION.resetToDefault();
         LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.resetToDefault();
         LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS.resetToDefault();
@@ -146,24 +161,25 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.WORKSITE_VISIBILITY_MAX_OVERLAYS.resetToDefault();
         LocalFeatureSettings.WORKSITE_VISIBILITY_WORLD_OVERLAY.resetToDefault();
         LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS.resetToDefault();
-        LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET.resetToDefault();
-        LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY.resetToDefault();
-        resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
-        resetTargetGroup(VisualTargetGroupPolicy.Group.TECHNICAL);
-    }
-
-    private static void resetAnalyzerDetails() {
-        LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS.resetToDefault();
-        LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS.resetToDefault();
-        LocalFeatureSettings.LAVA_ANALYZER_INTERVAL.resetToDefault();
-        LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS.resetToDefault();
-        LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS.resetToDefault();
-        LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS.resetToDefault();
-        LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL.resetToDefault();
-        LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS.resetToDefault();
         LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET.resetToDefault();
         LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY.resetToDefault();
+        LocalFeatureSettings.OCCLUDED_HIGHLIGHT_HORIZONTAL_RADIUS.resetToDefault();
+        LocalFeatureSettings.OCCLUDED_HIGHLIGHT_VERTICAL_RADIUS.resetToDefault();
+        LocalFeatureSettings.OCCLUDED_HIGHLIGHT_INTERVAL.resetToDefault();
+        LocalFeatureSettings.OCCLUDED_HIGHLIGHT_MAX_OVERLAYS.resetToDefault();
+
+        resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
         resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
+    }
+
+    private static void resetTechnicalVisualization() {
+        FeatureSwitches.FINE_THREAD_TRACE.resetToDefault();
+        FeatureSwitches.VILLAGER_ANALYZER.resetToDefault();
+        FeatureSwitches.BEACON_RANGE.resetToDefault();
+        FeatureSwitches.LIGHTNING_ROD_RANGE.resetToDefault();
+        LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET.resetToDefault();
+        LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY.resetToDefault();
+        resetTargetGroup(VisualTargetGroupPolicy.Group.TECHNICAL);
     }
 
     private static void resetBuilderFocusDetails() {
