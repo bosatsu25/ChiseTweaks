@@ -18,12 +18,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.IdentityHashMap;
 
 /**
  * Lava Analyzer / Hidden Block Analyzer のloaded-chunk走査とsession stateを共有する内部runtime。
@@ -69,8 +72,7 @@ public final class ThroughWallAnalyzerFeature
     private final int[] stableScanCount = new int[2];
     private final int[] lastScanFingerprint = {Integer.MIN_VALUE, Integer.MIN_VALUE};
     private final boolean[] movementSinceLastScan = new boolean[2];
-    private final java.util.IdentityHashMap<net.minecraft.world.level.block.Block, Integer> hiddenTargetMasks =
-            new java.util.IdentityHashMap<>();
+    private final IdentityHashMap<Block, Integer> hiddenTargetMasks = new IdentityHashMap<>();
 
     private long lastObservedPlayerBlock = Long.MIN_VALUE;
     private ClientLevel lastLevel;
@@ -84,6 +86,7 @@ public final class ThroughWallAnalyzerFeature
 
     @Override
     public void init() {
+        populateHiddenTargetMasks();
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(this::render);
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> closeRenderers());
         ChiseTweaksClient.LOGGER.info(
@@ -226,7 +229,7 @@ public final class ThroughWallAnalyzerFeature
                     }
 
                     if (hiddenCandidate) {
-                        net.minecraft.world.level.block.Block block = state.getBlock();
+                        Block block = state.getBlock();
                         if (!BuilderFocusVisibility.shouldHide(block)) {
                             int targetMask = hiddenTargetMask(block);
                             if (targetMask != 0 && (local.visualTargetMask & targetMask) != 0) {
@@ -294,15 +297,18 @@ public final class ThroughWallAnalyzerFeature
         return fluidState.getType() == Fluids.LAVA || fluidState.getType() == Fluids.FLOWING_LAVA;
     }
 
-    private int hiddenTargetMask(net.minecraft.world.level.block.Block block) {
-        Integer cached = hiddenTargetMasks.get(block);
-        if (cached != null) return cached;
-        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
-        VisualTargetSelectionPolicy.Target target =
-                VisualTargetSelectionPolicy.hiddenTargetForBlockId(id == null ? "" : id.toString());
-        int targetMask = target == null ? 0 : target.bitMask();
-        hiddenTargetMasks.put(block, targetMask);
-        return targetMask;
+    private void populateHiddenTargetMasks() {
+        hiddenTargetMasks.clear();
+        for (Block block : BuiltInRegistries.BLOCK) {
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+            VisualTargetSelectionPolicy.Target target =
+                    VisualTargetSelectionPolicy.hiddenTargetForBlockId(id == null ? "" : id.toString());
+            if (target != null) hiddenTargetMasks.put(block, target.bitMask());
+        }
+    }
+
+    private int hiddenTargetMask(Block block) {
+        return hiddenTargetMasks.getOrDefault(block, 0);
     }
 
     private int updateDueState(int index, int mask, int baseInterval, int fingerprint) {
