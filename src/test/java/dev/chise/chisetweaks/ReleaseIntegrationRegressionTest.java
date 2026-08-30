@@ -2,6 +2,7 @@ package dev.chise.chisetweaks;
 
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
 import dev.chise.chisetweaks.config.FeatureSwitches;
+import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -19,9 +20,9 @@ final class ReleaseIntegrationRegressionTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
 
     @Test
-    void allTwelveRuntimeFeaturesCanRemainEnabledAtTheSameTime() {
+    void allRegisteredRuntimeFeaturesCanRemainEnabledAtTheSameTime() {
         List<ChiseBooleanSetting> switches = new ArrayList<>(FeatureSwitches.VALUES);
-        assertEquals(12, switches.size());
+        assertEquals(FeatureDefinition.VALUES.size(), switches.size());
 
         boolean[] original = new boolean[switches.size()];
         for (int index = 0; index < switches.size(); index++) {
