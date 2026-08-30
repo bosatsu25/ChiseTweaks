@@ -15,8 +15,8 @@ final class SettingsResponsibilityArchitectureContractTest {
     void controllerCoordinatesSettingsWithoutOwningMinecraftWidgetsOrPresentationBuilders() throws Exception {
         String controller = Files.readString(GUI.resolve("ChiseTweaksSettingsController.java"));
 
-        assertTrue(controller.contains("ChiseTweaksSettingsRows"));
-        assertTrue(controller.contains("InspectorSettingsRows"));
+        assertTrue(controller.contains("TweaksProductSettingsRows"));
+        assertTrue(controller.contains("TweaksBuilderAssistRows"));
         assertTrue(controller.contains("SettingPersistenceCoordinator"));
 
         for (String presentation : new String[]{
@@ -36,10 +36,12 @@ final class SettingsResponsibilityArchitectureContractTest {
 
     @Test
     void rowModelsRemainPresentationOnly() throws Exception {
-        String rows = Files.readString(GUI.resolve("ChiseTweaksSettingsRows.java"));
+        String rows = Files.readString(GUI.resolve("TweaksProductSettingsRows.java"));
+        String assist = Files.readString(GUI.resolve("TweaksBuilderAssistRows.java"));
         String inspector = Files.readString(GUI.resolve("InspectorSettingsRows.java"));
 
         assertTrue(rows.contains("ChiseTweaksSettingRowDefinition"));
+        assertTrue(assist.contains("ChiseTweaksSettingRowDefinition"));
         assertTrue(inspector.contains("ChiseTweaksSettingRowDefinition"));
 
         for (String persistence : new String[]{
@@ -50,6 +52,8 @@ final class SettingsResponsibilityArchitectureContractTest {
                 ".save()"}) {
             assertFalse(rows.contains(persistence),
                     () -> "static settings rows own persistence: " + persistence);
+            assertFalse(assist.contains(persistence),
+                    () -> "builder assist rows own persistence: " + persistence);
             assertFalse(inspector.contains(persistence),
                     () -> "inspector rows own persistence: " + persistence);
         }
