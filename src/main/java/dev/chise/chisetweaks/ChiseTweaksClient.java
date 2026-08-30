@@ -4,6 +4,7 @@ import dev.chise.chisetweaks.config.FeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.MasaIntegrationConfig;
 import dev.chise.chisetweaks.feature.rendering.model.ChiseVisualModelPlugin;
+import dev.chise.chisetweaks.integration.masa.MasaReflectionSupport;
 import dev.chise.chisetweaks.runtime.ClientSessionState;
 import dev.chise.chisetweaks.runtime.FeatureControlBindings;
 import dev.chise.chisetweaks.runtime.FeatureManager;
@@ -33,8 +34,10 @@ public final class ChiseTweaksClient implements ClientModInitializer {
         SafeStartup.run("visual-model-plugin", ChiseVisualModelPlugin::register);
         SafeStartup.run("feature-manager", () -> FeatureManager.getInstance().init());
         SafeStartup.run("connection-lifecycle", () -> {
-            ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
-                    ClientSessionState.onJoin(client));
+            ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+                ClientSessionState.onJoin(client);
+                MasaReflectionSupport.restoreTweakerooGammaIfConfigured();
+            });
             ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
                     ClientSessionState.onDisconnect(client));
         });
