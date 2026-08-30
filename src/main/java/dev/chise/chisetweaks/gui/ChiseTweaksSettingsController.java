@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.BuilderFocusConfig;
 import dev.chise.chisetweaks.config.ChiseBooleanSetting;
+import dev.chise.chisetweaks.config.CompatibilityIntegrationConfig;
 import dev.chise.chisetweaks.config.FeatureSwitches;
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
@@ -12,6 +13,7 @@ import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
 import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -42,7 +44,12 @@ final class ChiseTweaksSettingsController {
     }
 
     List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
-        return catalog.rows(surface == null ? Surface.HIGHLIGHT : surface);
+        Surface resolved = surface == null ? Surface.HIGHLIGHT : surface;
+        List<ChiseTweaksSettingRowDefinition> base = catalog.rows(resolved);
+        if (resolved != Surface.INTEGRATIONS) return base;
+        ArrayList<ChiseTweaksSettingRowDefinition> combined = new ArrayList<>(base);
+        combined.addAll(CompatibilitySettingsRows.rows());
+        return List.copyOf(combined);
     }
 
     List<ChiseTweaksSettingRowDefinition> inspectorRows(
@@ -91,6 +98,7 @@ final class ChiseTweaksSettingsController {
             }
             case INTEGRATIONS -> {
                 MasaIntegrationConfig.getInstance().resetToDefaults();
+                CompatibilityIntegrationConfig.getInstance().resetToDefaults();
                 yield EnumSet.of(SettingPersistence.INTEGRATION_CONFIG);
             }
         };
