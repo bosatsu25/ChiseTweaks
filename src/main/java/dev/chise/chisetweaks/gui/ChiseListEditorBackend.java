@@ -113,11 +113,11 @@ interface ChiseListEditorBackend {
 
     Mutation clear();
 
-    static String normalize(String raw) {
+    default String normalize(String raw) {
         return raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
     }
 
-    static String text(String key) {
+    default String text(String key) {
         return Component.translatable(key).getString();
     }
 
