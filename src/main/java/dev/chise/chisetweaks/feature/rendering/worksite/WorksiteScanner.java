@@ -15,6 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -60,7 +61,7 @@ final class WorksiteScanner {
     private final WorksiteScanCandidate[] candidatePool = createCandidatePool();
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private final BlockPos.MutableBlockPos visibilityCursor = new BlockPos.MutableBlockPos();
-    private final boolean[] loadedChunkBuffer = new boolean[
+    private final LevelChunk[] loadedChunkBuffer = new LevelChunk[
             WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES];
 
     private int nextCandidateSlot;
@@ -118,7 +119,8 @@ final class WorksiteScanner {
         int chunkIndex = 0;
         for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
             for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-                loadedChunkBuffer[chunkIndex++] = client.level.getChunkSource().hasChunk(chunkX, chunkZ);
+                loadedChunkBuffer[chunkIndex++] =
+                        client.level.getChunkSource().getChunkNow(chunkX, chunkZ);
             }
         }
 
@@ -126,11 +128,12 @@ final class WorksiteScanner {
             int loadedRow = ((z >> 4) - minChunkZ) * chunkSpanX;
             for (int x = minX; x <= maxX; x++) {
                 int loadedIndex = loadedRow + ((x >> 4) - minChunkX);
-                if (!loadedChunkBuffer[loadedIndex]) continue;
+                LevelChunk sourceChunk = loadedChunkBuffer[loadedIndex];
+                if (sourceChunk == null) continue;
                 for (int yOffset = -verticalRadius; yOffset <= verticalRadius; yOffset++) {
                     cursor.set(x, originY + yOffset, z);
                     collectCandidate(
-                            client,
+                            sourceChunk,
                             config,
                             eyePosition,
                             cursor,
@@ -152,14 +155,14 @@ final class WorksiteScanner {
     }
 
     private void collectCandidate(
-            Minecraft client,
+            LevelChunk sourceChunk,
             LocalFeatureConfig config,
             Vec3 eyePosition,
             BlockPos position,
             Set<BlockInspectionCategory> activeCategories,
             WorksiteHighlightProfilePolicy.DimensionProfile dimensionProfile,
             PriorityQueue<WorksiteScanCandidate> candidates) {
-        BlockState state = client.level.getBlockState(position);
+        BlockState state = sourceChunk.getBlockState(position);
         if (BuilderFocusVisibility.shouldHide(state.getBlock())) return;
         WorksiteBlockDescriptor descriptor = blockInspector.describe(state);
         BlockInspectionCategory category =
