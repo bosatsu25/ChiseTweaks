@@ -143,6 +143,8 @@ final class ChiseTweaksSettingsControllerTest {
                 row(rows, "editTweakerMoreAutoPickGuard").action());
         assertEquals(ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD,
                 row(rows, "editTweakerooToolSwitchGuard").action());
+        assertEquals(ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE,
+                row(rows, "openMasaGuide").action());
     }
 
     @Test
