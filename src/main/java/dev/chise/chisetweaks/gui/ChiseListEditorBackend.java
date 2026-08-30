@@ -39,6 +39,10 @@ interface ChiseListEditorBackend {
 
     Component title();
 
+    default Component screenTitle() {
+        return title();
+    }
+
     default String subtitle() {
         return "";
     }
