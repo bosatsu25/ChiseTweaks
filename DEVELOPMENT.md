@@ -198,7 +198,7 @@ GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button o
 
 Builder Focus list、Ore compatibility、Masa list/mapは`ChiseListEditorScreen`でwidget lifecycle（layout / paging / footer / row rendering）のみ共有する。validation・mode遷移・add/remove/clear・保存責務は`SceneFilterBackend` / `MasaListBackend` / `OreCompatibilityBackend`へ分離し、Screenへdomain configやregistry lookupを戻さない。Ore model reloadも`OreCompatibilityBackend`だけが所有する。
 
-Settings row metadataは`ChiseTweaksSettingsController`を正本とし、Controller専用のCatalog/Compatibility row wrapperを別classへ戻さない。Integrationsも同一row bufferへ直接追加し、visual target rowは`VisualTargetSettings.ALL_OPTIONS`から必要時に展開する。
+Settingsの状態変更・reset・保存は`ChiseTweaksSettingsController`、6 surfaceの静的row生成は`ChiseTweaksSettingsRows`、Crosshair/Placement/Schematic/Pattern/Historyの動的row生成は`InspectorSettingsRows`を正本とする。Controllerへpresentation helperを戻さず、静的Settingsと動的Inspectorも同じ巨大classへ再統合しない。Integrationsは同一row bufferへ直接追加し、visual target rowは`VisualTargetSettings.ALL_OPTIONS`から必要時に展開する。
 
 Security/configではmalformed UTF-8、unsafe path、symlink、oversized payload、atomic write failureなどをfail-closed条件として扱います。
 
