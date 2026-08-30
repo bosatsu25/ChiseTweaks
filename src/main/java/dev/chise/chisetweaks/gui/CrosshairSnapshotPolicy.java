@@ -165,6 +165,22 @@ final class CrosshairSnapshotPolicy {
         return formatStateProperties(properties);
     }
 
+    static String semanticPropertyGroup(String property) {
+        return switch (property == null ? "" : property) {
+            case "facing", "axis" -> "orientation";
+            case "half", "type", "shape", "face" -> "shape";
+            case "north", "south", "east", "west", "up", "down", "in_wall" -> "connection";
+            case "open", "powered", "lit", "honey_level" -> "interaction";
+            case "waterlogged" -> "fluid";
+            default -> "other";
+        };
+    }
+
+    static String humanize(String token) {
+        String value = token.replace('_', ' ');
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+    }
+
     static List<String> formatStateProperties(Map<String, String> rawProperties) {
         if (rawProperties == null || rawProperties.isEmpty()) return List.of();
         ArrayList<String> result = new ArrayList<>();
