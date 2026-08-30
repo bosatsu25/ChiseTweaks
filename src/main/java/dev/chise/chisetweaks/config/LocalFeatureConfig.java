@@ -11,6 +11,7 @@ import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.security.SecureConfigStorage;
 import dev.chise.chisetweaks.core.security.StrictJsonSecurityPolicy;
+import dev.chise.chisetweaks.core.vision.FireVisibilityPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -26,6 +27,7 @@ public final class LocalFeatureConfig {
 
     public boolean lavaHighlightEnabled = false;
     public boolean fireVisibilityEnabled = false;
+    public int fireVisibilitySizePreset = FireVisibilityPolicy.DEFAULT_SIZE_PRESET;
     public boolean brightChestEnabled = true;
     public boolean brightConcreteEnabled = true;
     public boolean oreHighlightAnimationEnabled = false;
@@ -147,6 +149,7 @@ public final class LocalFeatureConfig {
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.FIRE_VISIBILITY)) {
             fireVisibilityEnabled = false;
         }
+        fireVisibilitySizePreset = FireVisibilityPolicy.clampSizePreset(fireVisibilitySizePreset);
         if (!FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BRIGHT_CHEST)) {
             brightChestEnabled = false;
         }
@@ -184,6 +187,7 @@ public final class LocalFeatureConfig {
     private void copyFrom(LocalFeatureConfig loaded) {
         lavaHighlightEnabled = loaded.lavaHighlightEnabled;
         fireVisibilityEnabled = loaded.fireVisibilityEnabled;
+        fireVisibilitySizePreset = loaded.fireVisibilitySizePreset;
         brightChestEnabled = loaded.brightChestEnabled;
         brightConcreteEnabled = loaded.brightConcreteEnabled;
         oreHighlightAnimationEnabled = loaded.oreHighlightAnimationEnabled;
