@@ -20,8 +20,6 @@ final class WorksiteHighlightSettingsCatalogTest {
         LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS.resetToDefault();
         LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET.resetToDefault();
         LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY.resetToDefault();
-        LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET.resetToDefault();
-        LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY.resetToDefault();
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
         config.visualTargetMask = VisualTargetSelectionPolicy.ALL_TARGETS_MASK;
         config.visualTargetSchemaVersion = VisualTargetSelectionPolicy.CURRENT_SCHEMA_VERSION;
@@ -39,29 +37,29 @@ final class WorksiteHighlightSettingsCatalogTest {
                 row(rows, "fineThreadColor").integerConfig());
         assertSame(LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
                 row(rows, "fineThreadOpacity").integerConfig());
-        assertSame(LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
-                row(rows, "hiddenSurfaceColor").integerConfig());
-        assertSame(LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
-                row(rows, "hiddenSurfaceOpacity").integerConfig());
 
         assertEquals(1, row(rows, "fineThreadColor").step());
         assertEquals(5, row(rows, "fineThreadOpacity").step());
-        assertEquals(1, row(rows, "hiddenSurfaceColor").step());
-        assertEquals(5, row(rows, "hiddenSurfaceOpacity").step());
+        assertFalse(rows.stream().anyMatch(row -> row.id().equals("hiddenSurfaceColor")));
+        assertFalse(rows.stream().anyMatch(row -> row.id().equals("hiddenSurfaceOpacity")));
     }
 
     @Test
-    void fineThreadAndHiddenSurfaceTargetSelectionRemainAvailable() {
+    void fineThreadTargetsStayInHighlightAndHiddenTargetsMoveToAnalyzer() {
         var controller = new ChiseTweaksSettingsController();
-        List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
+        List<ChiseTweaksSettingRowDefinition> highlight = controller.rows(
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT);
+        List<ChiseTweaksSettingRowDefinition> analyzer = controller.rows(
+                ChiseTweaksSettingsController.Surface.ANALYZER);
 
-        assertTrue(rows.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwire")));
-        assertTrue(rows.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwireHook")));
-        assertTrue(rows.stream().anyMatch(row -> row.id().equals("visualTargetHiddenBlueIce")));
-        assertTrue(rows.stream().anyMatch(row -> row.id().equals("visualTargetHiddenDeadCoral")));
-        assertTrue(rows.stream().anyMatch(row -> row.id().equals("visualTargetHiddenPowderSnow")));
-        assertTrue(rows.stream().anyMatch(row -> row.id().equals("visualTargetHiddenSculkCatalyst")));
+        assertTrue(highlight.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwire")));
+        assertTrue(highlight.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwireHook")));
+        assertFalse(highlight.stream().anyMatch(row -> row.id().startsWith("visualTargetHidden")));
+
+        assertTrue(analyzer.stream().anyMatch(row -> row.id().equals("visualTargetHiddenBlueIce")));
+        assertTrue(analyzer.stream().anyMatch(row -> row.id().equals("visualTargetHiddenDeadCoral")));
+        assertTrue(analyzer.stream().anyMatch(row -> row.id().equals("visualTargetHiddenPowderSnow")));
+        assertTrue(analyzer.stream().anyMatch(row -> row.id().equals("visualTargetHiddenSculkCatalyst")));
     }
 
     @Test
@@ -70,14 +68,10 @@ final class WorksiteHighlightSettingsCatalogTest {
         config.worksiteVisibilityDimensionPresetsEnabled = true;
         config.fineThreadTraceColorPreset = 7;
         config.fineThreadTraceOpacityPercent = 20;
-        config.hiddenSurfaceTraceColorPreset = 3;
-        config.hiddenSurfaceTraceOpacityPercent = 40;
         config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
                 config.visualTargetMask, Target.TECHNICAL_TRIPWIRE, false);
         config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
                 config.visualTargetMask, Target.TECHNICAL_TRIPWIRE_HOOK, false);
-        config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
-                config.visualTargetMask, Target.HIDDEN_BLUE_ICE, false);
 
         var controller = new ChiseTweaksSettingsController();
         controller.reset(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
@@ -85,14 +79,10 @@ final class WorksiteHighlightSettingsCatalogTest {
         assertFalse(config.worksiteVisibilityDimensionPresetsEnabled);
         assertEquals(-1, config.fineThreadTraceColorPreset);
         assertEquals(100, config.fineThreadTraceOpacityPercent);
-        assertEquals(-1, config.hiddenSurfaceTraceColorPreset);
-        assertEquals(100, config.hiddenSurfaceTraceOpacityPercent);
         assertTrue(VisualTargetSelectionPolicy.isEnabled(
                 config.visualTargetMask, Target.TECHNICAL_TRIPWIRE));
         assertTrue(VisualTargetSelectionPolicy.isEnabled(
                 config.visualTargetMask, Target.TECHNICAL_TRIPWIRE_HOOK));
-        assertTrue(VisualTargetSelectionPolicy.isEnabled(
-                config.visualTargetMask, Target.HIDDEN_BLUE_ICE));
     }
 
     private static ChiseTweaksSettingRowDefinition row(
