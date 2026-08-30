@@ -42,7 +42,21 @@ jobs:
             exit 0
           fi
 
+          artifacts="$(gh api "repos/${GH_REPO}/actions/runs/${{ github.event.workflow_run.id }}/artifacts?per_page=100")"
+          runtime_count="$(jq '[.artifacts[] | select(.expired == false and (.name | test("^chise-tweaks-.*\\.jar$")))] | length' <<<"$artifacts")"
+          if [[ "$runtime_count" == '0' ]]; then
+            echo 'No runtime artifact was produced by this successful main CI run; release is not applicable.'
+            echo 'should_release=false' >> "$GITHUB_OUTPUT"
+            echo 'skip_reason=no-runtime-artifact' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$runtime_count" != '1' ]]; then
+            echo "Expected exactly one runtime artifact, found ${runtime_count}." >&2
+            exit 1
+          fi
+
           echo 'should_release=true' >> "$GITHUB_OUTPUT"
+          echo 'skip_reason=' >> "$GITHUB_OUTPUT"
           echo "Promoting CI artifact from verified commit: $TARGET_SHA"
 
       - name: Download exact CI artifact
@@ -244,12 +258,17 @@ jobs:
           printf '### Official Release\n- Tag: `%s`\n- Commit: `%s`\n- Runtime JAR: `%s`\n- SHA-256: `%s`\n- Exact CI artifact promoted: `PASS`\n' \
             "$TAG" "$TARGET_SHA" "$RUNTIME_JAR" "$RUNTIME_SHA256" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Summarize skipped stale build
+      - name: Summarize skipped release
         if: ${{ steps.target.outputs.should_release == 'false' }}
         env:
           TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+          SKIP_REASON: ${{ steps.target.outputs.skip_reason }}
         run: |
-          printf '### Official Release\n- Skipped stale verified commit: `%s`\n' "$TARGET_SHA" >> "$GITHUB_STEP_SUMMARY"
+          reason="$SKIP_REASON"
+          if [[ -z "$reason" ]]; then
+            reason='stale-main'
+          fi
+          printf '### Official Release\n- Skipped commit: `%s`\n- Reason: `%s`\n' "$TARGET_SHA" "$reason" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize existing release
         if: ${{ steps.target.outputs.should_release == 'true' && steps.publish.outputs.should_publish == 'false' }}
