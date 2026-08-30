@@ -17,6 +17,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightningRodBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -89,10 +90,11 @@ public final class InfrastructureRangeFeature implements TickingFeature, Session
 
         for (int z = origin.getZ() - hr; z <= origin.getZ() + hr; z++) {
             for (int x = origin.getX() - hr; x <= origin.getX() + hr; x++) {
-                if (!client.level.getChunkSource().hasChunk(x >> 4, z >> 4)) continue;
+                LevelChunk sourceChunk = client.level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+                if (sourceChunk == null) continue;
                 for (int y = origin.getY() - vr; y <= origin.getY() + vr; y++) {
                     scanCursor.set(x, y, z);
-                    BlockState state = client.level.getBlockState(scanCursor);
+                    BlockState state = sourceChunk.getBlockState(scanCursor);
                     int range = 0;
                     if (mode == Mode.BEACON && state.is(Blocks.BEACON)) {
                         range = InfrastructureRangePolicy.beaconRadius(beaconLevel(client.level, x, y, z));
