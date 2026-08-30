@@ -226,17 +226,10 @@ ChiseTweaksはクライアント側の**建築確認・視認補助**に範囲�
 
 ## QA / CI
 
-runtime / source / config / test / workflowへ影響するPRでは次をまとめて確認します。
+runtime / source / config / testへ影響するPRでは、JUnit・JaCoCo・PIT・Client GameTest・artifact監査・12機能all-on回帰を含むFULL検証を行います。
 
-- repository / source / documentation / compatibility contract audit
-- JUnit
-- JaCoCo
-- PIT mutation testing
-- Client GameTest
-- artifact / distribution audit
-- runtime JAR size ceiling
-- 12機能all-on regression
+README / DEVELOPMENT / `docs/**`だけのPRと、`.github/**` / `scripts/**` / `quality/**`だけのCI・監査変更PRは、契約監査を残したままheavy Java / Gradle / PIT / GameTestを省略します。
 
-README / DEVELOPMENT / `docs/**`だけのPRと、`.github/**` / `scripts/**` / `quality/**`だけのCI・監査変更PRは、契約監査を残したままJava / Gradle / PIT / GameTest / artifact生成を省略します。Draft PRはrunnerを起動せず、mainへのpushは常にFULL CIです。
+runtime変更はPRでFULL検証し、mainのGit treeがそのPRで実際に検証したtreeと完全一致するときだけ、検証済みJARを再利用します。一致しない場合やprovenance / artifactが不足する場合はFULL検証へ戻ります。
 
-CIで代替できないPrism Launcher / Windows / 実GPUの見た目は、別のacceptance smokeとして確認します。
+Draft PRはrunnerを起動しません。Prism Launcher / Windows / 実GPUの見た目は別のacceptance smokeとして確認します。
