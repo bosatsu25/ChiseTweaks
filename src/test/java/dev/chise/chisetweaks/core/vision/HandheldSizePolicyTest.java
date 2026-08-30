@@ -10,10 +10,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 final class HandheldSizePolicyTest {
     @Test
     void categoriesAreSemanticAndDoNotDependOnModelJsonParents() {
+        assertEquals(HandheldSizePolicy.Category.NONE, HandheldSizePolicy.classify(null));
         assertEquals(HandheldSizePolicy.Category.NONE, HandheldSizePolicy.classify(ItemStack.EMPTY));
         assertEquals(HandheldSizePolicy.Category.BLOCK, HandheldSizePolicy.classify(new ItemStack(Items.STONE)));
         assertEquals(HandheldSizePolicy.Category.TOOL, HandheldSizePolicy.classify(new ItemStack(Items.DIAMOND_PICKAXE)));
+        assertEquals(HandheldSizePolicy.Category.TOOL, HandheldSizePolicy.classify(new ItemStack(Items.TRIDENT)));
         assertEquals(HandheldSizePolicy.Category.TOOL, HandheldSizePolicy.classify(new ItemStack(Items.BOW)));
+        assertEquals(HandheldSizePolicy.Category.TOOL, HandheldSizePolicy.classify(new ItemStack(Items.CROSSBOW)));
+        assertEquals(HandheldSizePolicy.Category.TOOL, HandheldSizePolicy.classify(new ItemStack(Items.FISHING_ROD)));
         assertEquals(HandheldSizePolicy.Category.ITEM, HandheldSizePolicy.classify(new ItemStack(Items.STICK)));
         assertEquals(HandheldSizePolicy.Category.SHIELD, HandheldSizePolicy.classify(new ItemStack(Items.SHIELD)));
     }
@@ -39,11 +43,23 @@ final class HandheldSizePolicyTest {
                 ItemDisplayContext.GUI,
                 stack,
                 70, 60, 75), 0.0001F);
+        assertEquals(0.60F, HandheldSizePolicy.scaleFactor(
+                true,
+                ItemDisplayContext.FIRST_PERSON_LEFT_HAND,
+                stack,
+                70, 60, 75), 0.0001F);
+        assertEquals(1.0F, HandheldSizePolicy.scaleFactor(
+                true,
+                ItemDisplayContext.FIRST_PERSON_RIGHT_HAND,
+                ItemStack.EMPTY,
+                70, 60, 75), 0.0001F);
     }
 
     @Test
     void userScaleValuesAreBoundedBeforeRendering() {
         assertEquals(HandheldSizePolicy.MIN_SCALE_PERCENT, HandheldSizePolicy.clampScalePercent(-1));
+        assertEquals(HandheldSizePolicy.MIN_SCALE_PERCENT, HandheldSizePolicy.clampScalePercent(40));
+        assertEquals(HandheldSizePolicy.MAX_SCALE_PERCENT, HandheldSizePolicy.clampScalePercent(100));
         assertEquals(HandheldSizePolicy.MAX_SCALE_PERCENT, HandheldSizePolicy.clampScalePercent(500));
         assertEquals(73, HandheldSizePolicy.clampScalePercent(73));
     }
