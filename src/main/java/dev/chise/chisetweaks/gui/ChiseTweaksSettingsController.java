@@ -28,6 +28,8 @@ final class ChiseTweaksSettingsController {
 
     private final SettingPersistenceCoordinator persistence =
             SettingPersistenceCoordinator.production();
+    private final EnumSet<SettingPersistence> dirtyDomains =
+            EnumSet.noneOf(SettingPersistence.class);
 
     static ChiseTweaksSettingsController forCurrentLanguage() {
         return new ChiseTweaksSettingsController();
@@ -101,9 +103,31 @@ final class ChiseTweaksSettingsController {
         };
     }
 
-    SettingPersistenceCoordinator.SaveResult saveConfig(
-            Set<SettingPersistence> dirtyDomains) {
-        return persistence.save(dirtyDomains);
+    void markDirty(SettingPersistence persistenceDomain) {
+        if (persistenceDomain != null && persistenceDomain.isApplyManaged()) {
+            dirtyDomains.add(persistenceDomain);
+        }
+    }
+
+    void markDirty(Set<SettingPersistence> persistenceDomains) {
+        if (persistenceDomains == null) return;
+        for (SettingPersistence persistenceDomain : persistenceDomains) {
+            markDirty(persistenceDomain);
+        }
+    }
+
+    boolean hasPendingChanges() {
+        return !dirtyDomains.isEmpty();
+    }
+
+    SettingPersistenceCoordinator.SaveResult savePendingConfig() {
+        SettingPersistenceCoordinator.SaveResult result = persistence.save(dirtyDomains);
+        dirtyDomains.retainAll(result.failedDomains());
+        return result;
+    }
+
+    Set<SettingPersistence> pendingDomainsForDiagnostics() {
+        return Set.copyOf(dirtyDomains);
     }
 
     private static void resetHighlightFeatures() {
