@@ -51,8 +51,8 @@ final class RuntimeFeatureUsabilityRegressionTest {
 
     @Test
     void everyFeatureRemainsReachableFromTheSettingsUi() throws IOException {
-        String controller = source(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
+        String rows = source(
+                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsRows.java");
         for (String toggle : new String[]{
                 "BUILDER_FOCUS_BLOCKS",
                 "BUILDER_FOCUS_ENTITIES",
@@ -69,7 +69,7 @@ final class RuntimeFeatureUsabilityRegressionTest {
                 "LIGHTNING_ROD_RANGE",
                 "BRIGHT_CHEST",
                 "BRIGHT_CONCRETE"}) {
-            assertTrue(controller.contains("FeatureSwitches." + toggle), toggle);
+            assertTrue(rows.contains("FeatureSwitches." + toggle), toggle);
         }
     }
 
