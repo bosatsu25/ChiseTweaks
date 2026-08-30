@@ -115,7 +115,7 @@ CI v3は**品質ゲートを削らず、同一treeの重複FULL検証を避け�
 - source / test / runtime resource / Gradle build logic / config / mixed change / 空集合は `full`
 - `docs-only` / `tooling-only` でもPython tooling test、Version progression、Repository / Source Usage / Documentation / Compatibility / Functional Parity auditsは実行する
 - `full` はJava / Gradle / JUnit / JaCoCo / PIT / Client GameTest / Artifact / Visual Asset / Release Residue auditsをすべて実行する
-- 成功したPR CIは、実際にcheckoutして検証したGit tree SHA、scope、runtime JAR名 / SHA-256を `chise-ci-provenance` artifactへ保存する
+- 成功したPR CIは、`scripts/ci_provenance.py`を正本として、実際にcheckoutして検証したGit tree SHA、scope、runtime JAR名 / SHA-256を `chise-ci-provenance` artifactへ保存する
 - runtime artifactはFULL distribution audit完了後だけprovenanceへ記録する
 
 ### main push
