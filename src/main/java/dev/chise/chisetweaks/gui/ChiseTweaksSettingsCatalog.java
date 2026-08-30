@@ -72,8 +72,6 @@ final class ChiseTweaksSettingsCatalog {
                 FeatureDefinition.NETHER_PALETTE, "config.comment.netherpalette");
         feature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE,
                 FeatureDefinition.FINE_THREAD_TRACE, "config.comment.finethreadtrace");
-        feature(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
-                FeatureDefinition.HIDDEN_SURFACE_TRACE, "config.comment.hiddensurfacetrace");
         feature(rows, "glass", FeatureSwitches.GLASS_INSPECTION,
                 FeatureDefinition.GLASS_INSPECTION, "config.comment.glassinspection");
         feature(rows, "kelp", FeatureSwitches.KELP_HIGHLIGHT,
@@ -116,23 +114,12 @@ final class ChiseTweaksSettingsCatalog {
                 LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
                 "Fine Line Highlight - Opacity",
                 "20-100%", 5);
-        integerLiteral(rows, "hiddenSurfaceColor",
-                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
-                "Hidden Block Highlight - Color",
-                "AUTO keeps per-target colors.", 1);
-        integerLiteral(rows, "hiddenSurfaceOpacity",
-                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
-                "Hidden Block Highlight - Opacity",
-                "20-100%", 5);
-
         headerLiteral(rows, "detail.highlight.technicalTargets", "Fine Line Targets");
         for (ChiseBooleanSetting option : TECHNICAL_TARGETS) target(rows, option);
 
         header(rows, "detail.highlight.materialTargets", "screen.chisetweaks.settings.section.material_targets");
         for (ChiseBooleanSetting option : RESOURCE_TARGETS) target(rows, option);
 
-        header(rows, "detail.highlight.hiddenTargets", "screen.chisetweaks.settings.section.hidden_targets");
-        for (ChiseBooleanSetting option : VISIBILITY_TARGETS) target(rows, option);
     }
 
     private static void addFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
@@ -166,6 +153,9 @@ final class ChiseTweaksSettingsCatalog {
         boolLiteral(rows, "villagerAnalyzer", FeatureSwitches.VILLAGER_ANALYZER,
                 FeatureDefinition.VILLAGER_ANALYZER.englishName(),
                 "Nearby villagers are linked to their claimed job site. If client JOB_SITE memory is unavailable, a bounded loaded-world workstation fallback is used.");
+        boolLiteral(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
+                FeatureDefinition.HIDDEN_SURFACE_TRACE.englishName(),
+                text("config.comment.hiddensurfacetrace"));
 
         headerLiteral(rows, "detail.analyzer.lava", "Lava Analyzer Settings");
         integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
@@ -180,6 +170,31 @@ final class ChiseTweaksSettingsCatalog {
         integer(rows, "lavaMaxOverlays", LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
                 "screen.chisetweaks.settings.lava_max.name",
                 "screen.chisetweaks.settings.lava_max.description", 1);
+
+        headerLiteral(rows, "detail.analyzer.hidden", "Hidden Block Analyzer Settings");
+        integer(rows, "hiddenRange", LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
+                "screen.chisetweaks.settings.hidden_range.name",
+                "screen.chisetweaks.settings.hidden_range.description", 1);
+        integer(rows, "hiddenVerticalRange", LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
+                "screen.chisetweaks.settings.hidden_vertical.name",
+                "screen.chisetweaks.settings.hidden_vertical.description", 1);
+        integer(rows, "hiddenInterval", LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL,
+                "screen.chisetweaks.settings.hidden_interval.name",
+                "screen.chisetweaks.settings.hidden_interval.description", 5);
+        integer(rows, "hiddenMaxOverlays", LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS,
+                "screen.chisetweaks.settings.hidden_max.name",
+                "screen.chisetweaks.settings.hidden_max.description", 1);
+        integerLiteral(rows, "hiddenSurfaceColor",
+                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
+                "Hidden Block Analyzer - Color",
+                "AUTO keeps the Chise hidden-block palette.", 1);
+        integerLiteral(rows, "hiddenSurfaceOpacity",
+                LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY,
+                "Hidden Block Analyzer - Opacity",
+                "20-100%", 5);
+
+        header(rows, "detail.analyzer.hiddenTargets", "screen.chisetweaks.settings.section.hidden_targets");
+        for (ChiseBooleanSetting option : VISIBILITY_TARGETS) target(rows, option);
     }
 
     private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
