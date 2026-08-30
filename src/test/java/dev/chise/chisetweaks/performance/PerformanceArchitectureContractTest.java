@@ -160,15 +160,12 @@ final class PerformanceArchitectureContractTest {
         assertFalse(manager.contains("new LavaHighlightFeature()"));
         assertFalse(manager.contains("new HiddenBlockAnalyzerFeature()"));
 
-        assertTrue(villager.contains("BlockPos.MutableBlockPos workstationCursor"));
-        assertTrue(villager.contains("LoadedChunkWindow workstationChunks"));
-        assertTrue(villager.contains("workstationChunks.load("));
-        assertTrue(villager.contains("workstationChunks.atBlock("));
-        assertTrue(villager.contains("LevelChunk sourceChunk"));
-        assertTrue(villager.contains("sourceChunk.getBlockState(workstationCursor)"));
-        assertFalse(villager.contains("getChunkNow(x >> 4, z >> 4)"));
-        assertFalse(villager.contains("BlockPos candidate = new BlockPos(x, y, z)"));
-        assertFalse(villager.contains("level.getBlockState(workstationCursor)"));
+        assertTrue(villager.contains("MemoryModuleType.JOB_SITE"));
+        assertTrue(villager.contains("collectKnownLinks"));
+        assertFalse(villager.contains("LoadedChunkWindow"));
+        assertFalse(villager.contains("findNearestLoadedWorkstation"));
+        assertFalse(villager.contains("workstationCursor"));
+        assertFalse(villager.contains("level.getBlockState("));
 
         assertTrue(worksite.contains("LoadedChunkWindow loadedChunks"));
         assertTrue(worksite.contains("loadedChunks.load("));
