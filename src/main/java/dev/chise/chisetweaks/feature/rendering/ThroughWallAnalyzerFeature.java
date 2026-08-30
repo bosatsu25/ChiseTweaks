@@ -6,8 +6,6 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
-import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
-import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import dev.chise.chisetweaks.runtime.TickingRuntimeComponent;
@@ -18,14 +16,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.Set;
 
 /**
  * Lava Analyzer / Hidden Block Analyzer のloaded-chunk走査とsession stateを共有する内部runtime。
@@ -40,6 +39,27 @@ public final class ThroughWallAnalyzerFeature
     private static final int MAX_CANDIDATES = WorksiteVisibilityBudgetPolicy.MAX_OVERLAY_RESULTS;
     private static final int MAX_STABLE_BACKOFF_SHIFT = 2;
     private static final Direction[] DIRECTIONS = Direction.values();
+    private static final Set<Block> DEAD_CORALS = Set.of(
+            Blocks.DEAD_TUBE_CORAL_BLOCK,
+            Blocks.DEAD_BRAIN_CORAL_BLOCK,
+            Blocks.DEAD_BUBBLE_CORAL_BLOCK,
+            Blocks.DEAD_FIRE_CORAL_BLOCK,
+            Blocks.DEAD_HORN_CORAL_BLOCK,
+            Blocks.DEAD_TUBE_CORAL,
+            Blocks.DEAD_BRAIN_CORAL,
+            Blocks.DEAD_BUBBLE_CORAL,
+            Blocks.DEAD_FIRE_CORAL,
+            Blocks.DEAD_HORN_CORAL,
+            Blocks.DEAD_TUBE_CORAL_FAN,
+            Blocks.DEAD_BRAIN_CORAL_FAN,
+            Blocks.DEAD_BUBBLE_CORAL_FAN,
+            Blocks.DEAD_FIRE_CORAL_FAN,
+            Blocks.DEAD_HORN_CORAL_FAN,
+            Blocks.DEAD_TUBE_CORAL_WALL_FAN,
+            Blocks.DEAD_BRAIN_CORAL_WALL_FAN,
+            Blocks.DEAD_BUBBLE_CORAL_WALL_FAN,
+            Blocks.DEAD_FIRE_CORAL_WALL_FAN,
+            Blocks.DEAD_HORN_CORAL_WALL_FAN);
 
     private final ThroughWallPositionSnapshot lavaTargets = new ThroughWallPositionSnapshot(MAX_CANDIDATES);
     private final ThroughWallPositionSnapshot hiddenTargets = new ThroughWallPositionSnapshot(MAX_CANDIDATES);
@@ -225,25 +245,16 @@ public final class ThroughWallAnalyzerFeature
                         }
                     }
 
-                    if (hiddenCandidate) {
-                        if (!BuilderFocusVisibility.shouldHide(state.getBlock())) {
-                            Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
-                            String blockId = id == null ? "" : id.toString();
-                            if (BlockInspectionPolicy.matches(
-                                    blockId, BlockInspectionCategory.HIDDEN_SURFACE)
-                                    && VisualTargetSelectionPolicy.matchesEnabled(
-                                            local.visualTargetMask,
-                                            blockId,
-                                            BlockInspectionCategory.HIDDEN_SURFACE)) {
-                                if (Double.isNaN(distanceSquared)) {
-                                    distanceSquared = distanceSquared(x, y, z, eye);
-                                }
-                                hiddenNearest.offer(
-                                        BlockPos.asLong(x, y, z),
-                                        distanceSquared,
-                                        hiddenLimit);
-                            }
+                    if (hiddenCandidate
+                            && !BuilderFocusVisibility.shouldHide(state.getBlock())
+                            && hiddenTargetEnabled(state.getBlock(), local.visualTargetMask)) {
+                        if (Double.isNaN(distanceSquared)) {
+                            distanceSquared = distanceSquared(x, y, z, eye);
                         }
+                        hiddenNearest.offer(
+                                BlockPos.asLong(x, y, z),
+                                distanceSquared,
+                                hiddenLimit);
                     }
                 }
             }
@@ -265,6 +276,24 @@ public final class ThroughWallAnalyzerFeature
             }
         }
         return changedMask;
+    }
+
+    private static boolean hiddenTargetEnabled(Block block, int mask) {
+        if (block == Blocks.BLUE_ICE) {
+            return VisualTargetSelectionPolicy.isEnabled(
+                    mask, VisualTargetSelectionPolicy.Target.HIDDEN_BLUE_ICE);
+        }
+        if (block == Blocks.POWDER_SNOW) {
+            return VisualTargetSelectionPolicy.isEnabled(
+                    mask, VisualTargetSelectionPolicy.Target.HIDDEN_POWDER_SNOW);
+        }
+        if (block == Blocks.SCULK_CATALYST) {
+            return VisualTargetSelectionPolicy.isEnabled(
+                    mask, VisualTargetSelectionPolicy.Target.HIDDEN_SCULK_CATALYST);
+        }
+        return DEAD_CORALS.contains(block)
+                && VisualTargetSelectionPolicy.isEnabled(
+                        mask, VisualTargetSelectionPolicy.Target.HIDDEN_DEAD_CORAL);
     }
 
     private boolean hasKnownSourceBoundary(
