@@ -121,6 +121,7 @@ public final class PlacementComparisonTracker
         int observedResult = compare(predictedState, observed);
         if (observedResult == DIFFERENT || observedResult == UNAVAILABLE) return;
         actualState = observed;
+        InteractionHistory.recordPlacement(targetPos, predictedState, actualState);
     }
 
     static int compare(BlockState predicted, BlockState actual) {
