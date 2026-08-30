@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,6 +22,15 @@ final class PlacementInspectorContractTest {
         assertEquals(3, PlacementInspector.DIFFERENT);
         assertEquals(100L, PlacementInspector.EXPIRY_TICKS);
         assertEquals(2L, PlacementInspector.SETTLE_TICKS);
+    }
+
+    @Test
+    void schematicSnapshotRetainsOnlyUiSafeIdentifiersAndResult() {
+        Set<String> components = java.util.Arrays.stream(
+                        PlacementInspector.SchematicSnapshot.class.getRecordComponents())
+                .map(java.lang.reflect.RecordComponent::getName)
+                .collect(java.util.stream.Collectors.toSet());
+        assertEquals(Set.of("targetPos", "result", "expectedId", "predictedId"), components);
     }
 
     @Test
