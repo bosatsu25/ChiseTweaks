@@ -376,42 +376,45 @@ final class ChiseTweaksSettingsRows {
             ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         boolean nvidiumInstalled = FabricLoader.getInstance().isModLoaded("nvidium");
         rows.add(ChiseTweaksSettingRowDefinition.header(
-                                "compatibility.renderer.header", "Renderer Compatibility"));
+                                "compatibility.renderer.header",
+                                text("screen.chisetweaks.settings.copy.renderer_compatibility")));
         rows.add(ChiseTweaksSettingRowDefinition.info(
                                 "compatibility.nvidium.status",
                                 "Nvidium",
-                                nvidiumInstalled ? "Installed / 導入済み" : "Not installed / 未導入 - World Border Fixはno-opです"));
+                                text(nvidiumInstalled
+                                        ? "screen.chisetweaks.settings.copy.installed"
+                                        : "screen.chisetweaks.settings.copy.nvidium_not_installed")));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                                 "worldBorderFixEnabled",
-                                "World Border Fix",
-                                "ワールドボーダー付近・遠距離座標でNvidium描画が破綻する環境向け。危険領域だけNvidiumを一時停止します。",
+                                text("screen.chisetweaks.settings.copy.world_border_fix.name"),
+                                text("screen.chisetweaks.settings.copy.world_border_fix.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_ENABLED));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                                 "worldBorderFixXray",
-                                "World Border X-Ray Guard",
-                                "ワールドボーダー接近時の透明化/X-Ray状描画を抑制します。",
+                                text("screen.chisetweaks.settings.copy.world_border_xray.name"),
+                                text("screen.chisetweaks.settings.copy.world_border_xray.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_XRAY));
         rows.add(ChiseTweaksSettingRowDefinition.integer(
                                 "worldBorderFixDistance",
-                                "Border Trigger Distance",
-                                "この距離よりワールドボーダーへ近づいたとき抑制候補にします。",
+                                text("screen.chisetweaks.settings.copy.border_distance.name"),
+                                text("screen.chisetweaks.settings.copy.border_distance.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_DISTANCE,
                                 16));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                                 "worldBorderFixFarCoords",
-                                "Far Coordinate Guard",
-                                "大きなX/Z座標でのNvidium描画破綻を抑制します。",
+                                text("screen.chisetweaks.settings.copy.far_coords.name"),
+                                text("screen.chisetweaks.settings.copy.far_coords.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_FAR_COORDS));
         rows.add(ChiseTweaksSettingRowDefinition.integer(
                                 "worldBorderFixCoordThreshold",
-                                "Far Coordinate Threshold",
-                                "|X|または|Z|がこの値以上で抑制候補にします。",
+                                text("screen.chisetweaks.settings.copy.coord_threshold.name"),
+                                text("screen.chisetweaks.settings.copy.coord_threshold.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_COORD_THRESHOLD,
                                 1000));
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                                 "worldBorderFixAutoReenable",
-                                "Immediate Nvidium Re-enable",
-                                "危険領域を離れた直後に描画再読込してNvidiumを復帰します。既定OFF。安定性優先ならOFFを推奨します。",
+                                text("screen.chisetweaks.settings.copy.nvidium_reenable.name"),
+                                text("screen.chisetweaks.settings.copy.nvidium_reenable.description"),
                                 CompatibilityIntegrationSettings.WORLD_BORDER_FIX_AUTO_REENABLE));
     }
 
