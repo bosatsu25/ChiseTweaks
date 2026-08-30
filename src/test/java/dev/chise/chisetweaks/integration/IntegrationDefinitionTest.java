@@ -16,6 +16,6 @@ final class IntegrationDefinitionTest {
             assertTrue(!definition.modId().isBlank());
             assertTrue(!definition.englishName().isBlank());
         }
-        assertEquals(9, ids.size());
+        assertEquals(10, ids.size());
     }
 }
