@@ -1,8 +1,8 @@
 {
   "schema": 2,
   "baseline": {
-    "version": "0.15.0+mc26.1.2",
-    "commit": "28d72c5a088c96c284bbbe18e0b4ac9d56f55044",
+    "version": "0.16.0+mc26.1.2",
+    "commit": "79a46455bf1825d3cc3905f5dd72523acf70c761",
     "runtimeJarBytes": 387108,
     "goalBytes": 358400
   },
@@ -52,7 +52,8 @@
       "localLavaAnalyzerHorizontalRadius": 5,
       "localLavaAnalyzerVerticalRadius": 3,
       "localLavaAnalyzerIntervalTicks": 10,
-      "localLavaAnalyzerMaxOverlays": 12
+      "localLavaAnalyzerMaxOverlays": 12,
+      "localFireVisibilitySizePreset": 1
     },
     "visualTargets": {
       "visualTargetMaterialCoalOre": true,
@@ -96,8 +97,12 @@
   "fabric": {
     "environment": "client",
     "entrypoints": {
-      "client": ["dev.chise.chisetweaks.ChiseTweaksClient"],
-      "modmenu": ["dev.chise.chisetweaks.compat.ChiseTweaksModMenu"]
+      "client": [
+        "dev.chise.chisetweaks.ChiseTweaksClient"
+      ],
+      "modmenu": [
+        "dev.chise.chisetweaks.compat.ChiseTweaksModMenu"
+      ]
     },
     "depends": {
       "minecraft": "${minecraft_version}",
