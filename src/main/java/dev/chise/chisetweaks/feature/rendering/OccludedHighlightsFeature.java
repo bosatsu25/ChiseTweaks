@@ -7,6 +7,9 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticEvent;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import dev.chise.chisetweaks.runtime.TickingRuntimeComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -44,7 +47,7 @@ public final class OccludedHighlightsFeature
 
     private final ThroughWallPositionSnapshot lavaTargets = new ThroughWallPositionSnapshot(MAX_CANDIDATES);
     private final ThroughWallPositionSnapshot hiddenTargets = new ThroughWallPositionSnapshot(MAX_CANDIDATES);
-    private final ThroughWallRenderGuard lavaRenderGuard = new ThroughWallRenderGuard(
+    private final RenderGuard lavaRenderGuard = new RenderGuard(
             new ThroughWallMarkerRenderer(
                     ThroughWallMarkerRenderer.Style.LAVA_SOURCE,
                     MAX_CANDIDATES,
@@ -53,7 +56,7 @@ public final class OccludedHighlightsFeature
             lavaTargets,
             FeatureDefinition.LAVA_HIGHLIGHT.id(),
             "Lava Source Highlight");
-    private final ThroughWallRenderGuard hiddenRenderGuard = new ThroughWallRenderGuard(
+    private final RenderGuard hiddenRenderGuard = new RenderGuard(
             new ThroughWallMarkerRenderer(
                     ThroughWallMarkerRenderer.Style.HIDDEN_BLOCK,
                     MAX_CANDIDATES,
@@ -540,6 +543,77 @@ public final class OccludedHighlightsFeature
 
         int count() {
             return count;
+        }
+    }
+
+    /** Per-style renderer quarantine owned by the Occluded Highlights engine. */
+    private static final class RenderGuard {
+        private final ThroughWallMarkerRenderer renderer;
+        private final ThroughWallPositionSnapshot snapshot;
+        private final String componentId;
+        private final String displayName;
+        private boolean quarantined;
+
+        RenderGuard(
+                ThroughWallMarkerRenderer renderer,
+                ThroughWallPositionSnapshot snapshot,
+                String componentId,
+                String displayName) {
+            this.renderer = renderer;
+            this.snapshot = snapshot;
+            this.componentId = componentId;
+            this.displayName = displayName;
+        }
+
+        boolean isQuarantined() {
+            return quarantined;
+        }
+
+        void render(LevelRenderContext context) {
+            if (quarantined) return;
+            try {
+                renderer.render(context, snapshot);
+            } catch (RuntimeException | LinkageError failure) {
+                quarantined = true;
+                snapshot.clear();
+                resetRenderer();
+                ChiseTweaksClient.LOGGER.error(
+                        "{} rendering was quarantined after {}",
+                        displayName,
+                        failure.getClass().getSimpleName());
+                RuntimeDiagnostics.log(
+                        RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
+                        Minecraft.getInstance(),
+                        RuntimeDiagnosticDetail.of("componentId", componentId),
+                        RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()),
+                        RuntimeDiagnosticDetail.of("stage", "render"));
+            }
+        }
+
+        void resetSession() {
+            quarantined = false;
+        }
+
+        void close() {
+            try {
+                renderer.close();
+            } catch (RuntimeException | LinkageError cleanupFailure) {
+                ChiseTweaksClient.LOGGER.warn(
+                        "{} renderer close failed after {}",
+                        displayName,
+                        cleanupFailure.getClass().getSimpleName());
+            }
+        }
+
+        private void resetRenderer() {
+            try {
+                renderer.resetAfterFailure();
+            } catch (RuntimeException | LinkageError cleanupFailure) {
+                ChiseTweaksClient.LOGGER.warn(
+                        "{} renderer cleanup failed after {}",
+                        displayName,
+                        cleanupFailure.getClass().getSimpleName());
+            }
         }
     }
 
