@@ -35,6 +35,7 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
     private static final int PRIMARY_COLOR = 0xFF72FF9F;
     private static final int FALLBACK_COLOR = 0xFFFFC857;
 
+    private final BlockPos.MutableBlockPos workstationCursor = new BlockPos.MutableBlockPos();
     private volatile List<Link> links = List.of();
     private int ticksUntilScan;
     private ClientLevel lastLevel;
@@ -120,23 +121,29 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         return List.copyOf(result);
     }
 
-    private static BlockPos findNearestLoadedWorkstation(
+    private BlockPos findNearestLoadedWorkstation(
             ClientLevel level,
             BlockPos origin,
             Block workstation) {
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
         int radius = FALLBACK_WORKSTATION_RADIUS;
-        for (int z = origin.getZ() - radius; z <= origin.getZ() + radius; z++) {
-            for (int x = origin.getX() - radius; x <= origin.getX() + radius; x++) {
+        int originX = origin.getX();
+        int originY = origin.getY();
+        int originZ = origin.getZ();
+        for (int z = originZ - radius; z <= originZ + radius; z++) {
+            for (int x = originX - radius; x <= originX + radius; x++) {
                 if (!level.getChunkSource().hasChunk(x >> 4, z >> 4)) continue;
-                for (int y = origin.getY() - radius; y <= origin.getY() + radius; y++) {
-                    BlockPos candidate = new BlockPos(x, y, z);
-                    if (!level.getBlockState(candidate).is(workstation)) continue;
-                    double distance = candidate.distSqr(origin);
+                int dx = x - originX;
+                int dz = z - originZ;
+                for (int y = originY - radius; y <= originY + radius; y++) {
+                    workstationCursor.set(x, y, z);
+                    if (!level.getBlockState(workstationCursor).is(workstation)) continue;
+                    int dy = y - originY;
+                    double distance = (double) dx * dx + (double) dy * dy + (double) dz * dz;
                     if (distance < bestDistance) {
                         bestDistance = distance;
-                        best = candidate;
+                        best = new BlockPos(x, y, z);
                     }
                 }
             }
