@@ -46,7 +46,7 @@ final class SettingsAndAnalyzerDesignContractTest {
     }
 
     @Test
-    void lavaAnalyzerRetainsGenericThroughWallInfrastructureWithoutRetiredScanner() throws IOException {
+    void sharedAnalyzersRetainGenericThroughWallInfrastructureWithoutRetiredScanner() throws IOException {
         String analyzers = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
 
@@ -111,7 +111,7 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Ore Highlights\"",
                 "\"Nether Highlight\"",
                 "\"Fine Line Highlight\"",
-                "\"Hidden Block Highlight\"",
+                "\"Hidden Block Analyzer\"",
                 "\"Glass Highlight\"",
                 "\"Kelp Highlight\"",
                 "\"Block Filter\"",
