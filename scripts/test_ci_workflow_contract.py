@@ -13,6 +13,18 @@ def require(text: str, marker: str, label: str) -> None:
 
 def main() -> int:
     ci = CI_WORKFLOW.read_text(encoding="utf-8")
+    trigger_block = ci[ci.index("on:"):ci.index("\npermissions:")]
+
+    require(trigger_block, "pull_request:", "automatic pull request trigger")
+    require(trigger_block, "- opened", "pull request opened trigger")
+    require(trigger_block, "- synchronize", "pull request synchronize trigger")
+    require(trigger_block, "- reopened", "pull request reopened trigger")
+    require(trigger_block, "- ready_for_review", "draft-to-ready trigger")
+    require(trigger_block, "branches:", "pull request branch filter")
+    require(trigger_block, "- main", "main branch pull request target")
+    require(trigger_block, "workflow_dispatch:", "manual CI fallback")
+    if "  push:" in trigger_block:
+        raise AssertionError("automatic main push/release must remain paused during runner stabilization")
 
     require(ci, "name: verify / Java 25 quality gate", "required status-check name")
     require(ci, "actions: read", "prior-run artifact permission")
@@ -32,7 +44,6 @@ def main() -> int:
     require(ci, "tested_tree", "tested tree capture")
     require(ci, "steps.runtime.outputs.runtime_jar != ''", "runtime upload gate")
 
-    require(ci, "- ready_for_review", "draft-to-ready trigger")
     require(ci, "github.event.pull_request.draft == false", "draft PR skip")
     require(ci, "timeout-minutes: 15", "CI runaway budget cap")
     require(ci, "retention-days: 3", "short-lived CI artifact")
