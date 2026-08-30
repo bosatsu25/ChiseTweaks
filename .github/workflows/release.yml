@@ -24,8 +24,8 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    runs-on: ${{ fromJSON(vars.CHISE_CI_RUNS_ON || '"ubuntu-24.04"') }}
+    timeout-minutes: 5
 
     steps:
       - name: Reject stale CI results
