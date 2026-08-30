@@ -1,58 +1,124 @@
 package dev.chise.chisetweaks;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class TestResponsibilityContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
+    private static final Path RISK_REGISTER = ROOT.resolve("quality/risk-register.json");
+    private static final Set<String> QUALITY_CHARACTERISTICS = Set.of(
+            "functional_suitability",
+            "performance_efficiency",
+            "compatibility",
+            "usability",
+            "reliability",
+            "security",
+            "maintainability");
+    private static final Set<String> TEST_TECHNIQUES = Set.of(
+            "boundary_value",
+            "checklist_based",
+            "combination_test",
+            "decision_table",
+            "domain_test",
+            "dynamic_analysis",
+            "fault_injection",
+            "operational_profile",
+            "scenario_based",
+            "state_transition",
+            "static_analysis");
+    private static final Set<String> ORDINAL = Set.of("low", "medium", "high");
+    private static final Set<String> PRIORITY = Set.of("low", "medium", "high", "critical");
 
     @Test
-    void eachRiskClassHasAnExecutableVerificationOwner() {
-        Map<String, List<String>> responsibility = new LinkedHashMap<>();
-        responsibility.put("pure-policy", List.of(
-                "src/test/java/dev/chise/chisetweaks/RetainedPolicyQualityGateTest.java",
-                "src/test/java/dev/chise/chisetweaks/core/policy/FeatureAvailabilityPolicyTest.java"));
-        responsibility.put("config-security", List.of(
-                "src/test/java/dev/chise/chisetweaks/core/security/SecureConfigStorageTest.java",
-                "src/test/java/dev/chise/chisetweaks/config/ConfigDocumentPolicyTest.java"));
-        responsibility.put("runtime-lifecycle", List.of(
-                "src/test/java/dev/chise/chisetweaks/runtime/FeatureManagerTickSlotTest.java",
-                "src/test/java/dev/chise/chisetweaks/runtime/ClientSessionLifecycleContractTest.java"));
-        responsibility.put("ui-contract", List.of(
-                "src/test/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsControllerTest.java",
-                "src/test/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsLayoutTest.java"));
-        responsibility.put("performance-evidence", List.of(
-                "src/test/java/dev/chise/chisetweaks/performance/PerformanceArchitectureContractTest.java",
-                "src/test/java/dev/chise/chisetweaks/performance/PerformanceComparisonTest.java"));
-        responsibility.put("minecraft-oracle", List.of(
-                "src/gametest/java/dev/chise/chisetweaks/gui/TrapdoorPlacementClientGameTest.java",
-                "src/gametest/java/dev/chise/chisetweaks/regression/AllFeaturesRegressionClientGameTest.java"));
-        responsibility.put("distribution-parity", List.of(
-                "scripts/functional_parity_audit.py",
-                "scripts/artifact_audit.py",
-                "quality/functional-parity-baseline.json"));
+    void productRisksTraceToTechniqueOracleEvidenceAndExitCriteria() throws Exception {
+        JsonObject root = JsonParser.parseString(Files.readString(RISK_REGISTER)).getAsJsonObject();
+        assertEquals(1, root.get("schema_version").getAsInt());
 
-        for (var entry : responsibility.entrySet()) {
-            for (String relative : entry.getValue()) {
+        JsonArray risks = root.getAsJsonArray("risks");
+        assertTrue(risks.size() >= 6, "risk register must cover the major retained product risks");
+
+        Set<String> ids = new HashSet<>();
+        for (var element : risks) {
+            JsonObject risk = element.getAsJsonObject();
+            String id = requiredText(risk, "id");
+            assertTrue(ids.add(id), () -> "duplicate risk id: " + id);
+            requiredText(risk, "title");
+
+            assertTrue(ORDINAL.contains(requiredText(risk, "likelihood")),
+                    () -> id + " has unsupported likelihood");
+            assertTrue(ORDINAL.contains(requiredText(risk, "impact")),
+                    () -> id + " has unsupported impact");
+            assertTrue(PRIORITY.contains(requiredText(risk, "priority")),
+                    () -> id + " has unsupported priority");
+
+            JsonArray characteristics = requiredArray(risk, "quality_characteristics");
+            assertFalse(characteristics.isEmpty(), () -> id + " needs a quality characteristic");
+            for (var characteristic : characteristics) {
+                assertTrue(QUALITY_CHARACTERISTICS.contains(characteristic.getAsString()),
+                        () -> id + " has unknown quality characteristic: " + characteristic);
+            }
+
+            JsonArray techniques = requiredArray(risk, "test_techniques");
+            assertFalse(techniques.isEmpty(), () -> id + " needs an explicit test technique");
+            for (var technique : techniques) {
+                assertTrue(TEST_TECHNIQUES.contains(technique.getAsString()),
+                        () -> id + " has unknown test technique: " + technique);
+            }
+
+            requiredText(risk, "oracle");
+            JsonArray evidence = requiredArray(risk, "evidence");
+            assertFalse(evidence.isEmpty(), () -> id + " has no executable evidence");
+            for (var evidencePath : evidence) {
+                Path relative = Path.of(evidencePath.getAsString()).normalize();
+                assertFalse(relative.isAbsolute(), () -> id + " evidence must be repository-relative");
+                assertFalse(relative.startsWith(".."), () -> id + " evidence escapes repository root");
                 assertTrue(Files.isRegularFile(ROOT.resolve(relative)),
-                        () -> entry.getKey() + " has no executable owner: " + relative);
+                        () -> id + " evidence does not exist: " + relative);
+            }
+
+            JsonArray exitCriteria = requiredArray(risk, "exit_criteria");
+            assertFalse(exitCriteria.isEmpty(), () -> id + " has no exit criteria");
+            for (var criterion : exitCriteria) {
+                assertFalse(criterion.getAsString().isBlank(), () -> id + " has a blank exit criterion");
+            }
+
+            String priority = risk.get("priority").getAsString();
+            if ("high".equals(priority) || "critical".equals(priority)) {
+                assertTrue(evidence.size() >= 2,
+                        () -> id + " high-priority risk needs independent evidence layers");
             }
         }
     }
 
     @Test
-    void ciRunsBothDeterministicUnitGateAndMinecraftOracle() throws Exception {
+    void ciRunsDeterministicGateMinecraftOracleAndDistributionAudits() throws Exception {
         String ci = Files.readString(ROOT.resolve(".github/workflows/ci.yml"));
         assertTrue(ci.contains("./gradlew --stacktrace ciGate"));
         assertTrue(ci.contains("./gradlew --stacktrace runClientGameTest"));
         assertTrue(ci.contains("python scripts/functional_parity_audit.py"));
         assertTrue(ci.contains("python scripts/artifact_audit.py"));
+    }
+
+    private static JsonArray requiredArray(JsonObject object, String name) {
+        assertTrue(object.has(name) && object.get(name).isJsonArray(), () -> "missing array: " + name);
+        return object.getAsJsonArray(name);
+    }
+
+    private static String requiredText(JsonObject object, String name) {
+        assertTrue(object.has(name) && object.get(name).isJsonPrimitive(), () -> "missing text: " + name);
+        String value = object.get(name).getAsString();
+        assertFalse(value.isBlank(), () -> "blank text: " + name);
+        return value;
     }
 }
