@@ -98,8 +98,7 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
                         villager.getY() + villager.getBbHeight() * 0.65,
                         villager.getZ(),
                         memory.get().pos(),
-                        true,
-                        villager.getVillagerData().profession().getRegisteredName()));
+                        true));
                 continue;
             }
 
@@ -114,8 +113,7 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
                         villager.getY() + villager.getBbHeight() * 0.65,
                         villager.getZ(),
                         fallback,
-                        false,
-                        villager.getVillagerData().profession().getRegisteredName()));
+                        false));
             }
         }
         return List.copyOf(result);
@@ -186,10 +184,6 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         }
     }
 
-    public List<Link> snapshot() {
-        return links;
-    }
-
     private boolean isEnabled() {
         return FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.VILLAGER_ANALYZER)
                 && LocalFeatureConfig.getInstance().villagerAnalyzerEnabled;
@@ -216,6 +210,5 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
             double villagerY,
             double villagerZ,
             BlockPos jobSite,
-            boolean claimed,
-            String profession) {}
+            boolean claimed) {}
 }
