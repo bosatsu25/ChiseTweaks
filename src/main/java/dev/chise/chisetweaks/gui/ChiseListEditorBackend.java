@@ -56,7 +56,7 @@ interface ChiseListEditorBackend {
     }
 
     default Component modeMessage() {
-        return Component.empty();
+        return Component.literal("");
     }
 
     default Mutation cycleMode() {
@@ -80,7 +80,7 @@ interface ChiseListEditorBackend {
     String firstInputHint();
 
     default Component secondInputLabel() {
-        return Component.empty();
+        return Component.literal("");
     }
 
     default String secondInputHint() {
