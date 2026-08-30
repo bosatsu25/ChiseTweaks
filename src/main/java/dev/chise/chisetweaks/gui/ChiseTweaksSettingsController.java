@@ -11,7 +11,6 @@ import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
 
 /** Settings lifecycle, reset and persistence coordinator. Presentation lives in dedicated row models. */
@@ -40,24 +39,6 @@ final class ChiseTweaksSettingsController {
 
     /** Setting bindings initialize on first use; this remains the screen lifecycle hook. */
     void initialize() {}
-
-    List<ChiseTweaksSettingRowDefinition> rows() {
-        return TweaksProductSettingsRows.rows(Surface.HIGHLIGHT);
-    }
-
-    List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
-        return TweaksProductSettingsRows.rows(surface);
-    }
-
-    List<ChiseTweaksSettingRowDefinition> inspectorRows(
-            CrosshairInspector.Snapshot snapshot,
-            boolean includeHelp) {
-        return TweaksBuilderAssistRows.rows(snapshot, includeHelp);
-    }
-
-    String surfaceTitle(Surface surface) {
-        return TweaksProductSettingsRows.title(surface);
-    }
 
     EnumSet<SettingPersistence> reset(Surface surface) {
         return switch (surface == null ? Surface.HIGHLIGHT : surface) {
