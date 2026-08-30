@@ -29,6 +29,16 @@ public final class LocalFeatureSettings {
             () -> config().oreHighlightAnimationEnabled,
             value -> config().oreHighlightAnimationEnabled = value);
 
+    public static final SimpleBooleanSetting INTERACTION_HISTORY = bool(
+            "localInteractionHistory", false,
+            () -> config().interactionHistoryEnabled,
+            value -> config().interactionHistoryEnabled = value);
+
+    public static final SimpleBooleanSetting SCHEMATIC_PLACEMENT_INSPECTOR = bool(
+            "localSchematicPlacementInspector", false,
+            () -> config().schematicPlacementInspectorEnabled,
+            value -> config().schematicPlacementInspectorEnabled = value);
+
     public static final ChiseIntegerSetting WORKSITE_VISIBILITY_HORIZONTAL_RADIUS = integer(
             "localWorksiteVisibilityHorizontalRadius", 5,
             WorksiteVisibilityBudgetPolicy.MIN_HORIZONTAL_RADIUS,
