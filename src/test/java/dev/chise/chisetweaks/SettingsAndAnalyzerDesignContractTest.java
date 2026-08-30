@@ -15,7 +15,7 @@ final class SettingsAndAnalyzerDesignContractTest {
     @Test
     void localSettingsUseConfigAsSingleInMemorySourceOfTruth() throws IOException {
         String settings = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
-        String targets = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
+        String targets = settings;
 
         assertContainsAll(settings,
                 "() -> config().worksiteVisibilityHorizontalRadius",
@@ -28,7 +28,8 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "AncientDebrisAnalyzerPolicy");
         assertContainsAll(targets,
                 "LocalFeatureConfig.getInstance().visualTargetMask",
-                "VisualTargetSelectionPolicy.withEnabled(");
+                "VisualTargetSelectionPolicy.withEnabled(",
+                "public static final List<ChiseBooleanSetting> VISUAL_TARGETS");
     }
 
     @Test
