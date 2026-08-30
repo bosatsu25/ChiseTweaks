@@ -22,11 +22,11 @@ import java.util.List;
 final class ChiseTweaksSettingsRows {
     private ChiseTweaksSettingsRows() {}
 
-    List<ChiseTweaksSettingRowDefinition> rows() {
+    static List<ChiseTweaksSettingRowDefinition> rows() {
         return rows(Surface.HIGHLIGHT);
     }
 
-    List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
+    static List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
         ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
         Surface resolved = surface == null
                 ? Surface.HIGHLIGHT
@@ -48,13 +48,13 @@ final class ChiseTweaksSettingsRows {
         return List.copyOf(rows);
     }
 
-    List<ChiseTweaksSettingRowDefinition> inspectorRows(
+    static List<ChiseTweaksSettingRowDefinition> inspectorRows(
             CrosshairInspector.Snapshot snapshot,
             boolean includeHelp) {
         return InspectorSettingsRows.rows(snapshot, includeHelp);
     }
 
-    String surfaceTitle(Surface surface) {
+    static String surfaceTitle(Surface surface) {
         String value = (surface == null ? Surface.HIGHLIGHT : surface)
                 .name().toLowerCase(java.util.Locale.ROOT);
         return Character.toUpperCase(value.charAt(0)) + value.substring(1);
