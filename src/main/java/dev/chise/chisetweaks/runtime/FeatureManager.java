@@ -10,8 +10,7 @@ import dev.chise.chisetweaks.feature.rendering.VillagerAnalyzerFeature;
 import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine;
 import dev.chise.chisetweaks.gui.InteractionHistory;
 import dev.chise.chisetweaks.gui.PatternConsistencyInspector;
-import dev.chise.chisetweaks.gui.PlacementComparisonTracker;
-import dev.chise.chisetweaks.gui.SchematicPlacementInspector;
+import dev.chise.chisetweaks.gui.PlacementInspector;
 import dev.chise.chisetweaks.integration.compat.WorldBorderFixComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
@@ -56,10 +55,9 @@ public final class FeatureManager {
         if (hasAvailableWorksiteVisibilityFeature()) {
             registerComponent(new WorksiteVisibilityEngine());
         }
-        registerComponent(new PlacementComparisonTracker());
+        registerComponent(new PlacementInspector());
         registerComponent(new PatternConsistencyInspector());
         registerComponent(new InteractionHistory());
-        registerComponent(new SchematicPlacementInspector());
         registerComponent(new WorldBorderFixComponent());
 
         for (ComponentSlot slot : componentSlots.values()) initializeComponent(slot);
