@@ -44,6 +44,17 @@ public final class MasaReflectionSupport {
         }
     }
 
+    public static boolean isShiftDown() {
+        try {
+            Class<?> screen = Class.forName("net.minecraft.client.gui.screens.Screen");
+            Method method = screen.getMethod("hasShiftDown");
+            Object value = method.invoke(null);
+            return value instanceof Boolean result && result;
+        } catch (ReflectiveOperationException | LinkageError failure) {
+            return false;
+        }
+    }
+
     public static boolean isSyncmaticaRemoveListener(Object listener) {
         if (listener == null) return false;
         try {
