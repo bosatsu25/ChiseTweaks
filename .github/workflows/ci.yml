@@ -25,6 +25,9 @@ concurrency:
 jobs:
   verify:
     name: verify / Java 25 quality gate
+    outputs:
+      release_ready: ${{ steps.release_candidate.outputs.ready }}
+      runtime_jar: ${{ steps.runtime.outputs.runtime_jar }}
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: ${{ fromJSON(vars.CHISE_CI_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 15
@@ -288,6 +291,19 @@ jobs:
           archive: false
           if-no-files-found: error
           retention-days: 3
+
+      - name: Resolve release candidate
+        id: release_candidate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref }}
+          RUNTIME_JAR: ${{ steps.runtime.outputs.runtime_jar }}
+        run: |
+          ready='false'
+          if [[ "$EVENT_NAME" == 'push' && "$REF_NAME" == 'refs/heads/main' && -n "$RUNTIME_JAR" ]]; then
+            ready='true'
+          fi
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
 
       - name: Summarize CI v3
         if: ${{ always() }}
