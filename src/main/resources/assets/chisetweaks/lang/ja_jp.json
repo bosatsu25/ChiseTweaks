@@ -95,7 +95,7 @@
   "screen.chisetweaks.help.requirement.loaded": "が必要です。",
   "screen.chisetweaks.help.requirement.none": "追加MODは不要です。",
   "screen.chisetweaks.help.requirement_prefix": "条件・注意: ",
-  "screen.chisetweaks.help.subtitle": "15個の切り替え可能なruntime機能を確認できます。Bright Chest / Bright Concreteは初期ON、ほか13機能は初期OFFです。",
+  "screen.chisetweaks.help.subtitle": "16個の切り替え可能なruntime機能を確認できます。Bright Chest / Bright Concreteは初期ON、ほか13機能は初期OFFです。",
   "screen.chisetweaks.help.title": "クイックヘルプ",
   "screen.chisetweaks.help.usage_prefix": "使い方: ",
   "screen.chisetweaks.settings.action.settings": "設定",
@@ -393,5 +393,17 @@
   "screen.chisetweaks.inspector.interaction_history.title": "Interaction History",
   "screen.chisetweaks.inspector.interaction_history.empty": "履歴なし",
   "screen.chisetweaks.inspector.interaction_history.empty.description": "Interaction Historyが有効になると、直近の読み取り専用interactionをここに表示します。",
-  "screen.chisetweaks.settings.copy.feature_settings": "%s 設定"
+  "screen.chisetweaks.settings.copy.feature_settings": "%s 設定",
+  "config.comment.handheldsize": "初期値OFF。一人称で描画される手持ちItem modelだけを縮小します。Item model・texture・Resource Pack・animation・入力操作は置き換えません。",
+  "config.name.handheldsize": "Handheld Size",
+  "help.chisetweaks.handheld_size.requirement": "クライアント専用・初期値OFF。model JSONやtexture置換、Resource reload、world変更、入力注入は行いません。",
+  "help.chisetweaks.handheld_size.summary": "現在のResource Packを維持したまま、一人称の手持ち表示をBlock / Item / Weapons & Toolsの3分類で小さくします。",
+  "help.chisetweaks.handheld_size.usage": "VisibilityでHandheld Sizeを有効にし、Block / Item / Weapons & Toolsの倍率を調整します。Shieldは95%でVanillaに近い大きさを維持します。",
+  "screen.chisetweaks.settings.copy.handheld_size.description": "現在のResource Packを置き換えず、一人称の手持ちItem modelだけを縮小します。メインハンドとオフハンドは同じ分類設定を使用します。",
+  "screen.chisetweaks.settings.handheld_block.name": "Block Itemサイズ",
+  "screen.chisetweaks.settings.handheld_block.description": "一人称BlockItemの相対倍率。初期値70%。",
+  "screen.chisetweaks.settings.handheld_item.name": "一般Itemサイズ",
+  "screen.chisetweaks.settings.handheld_item.description": "Block/Tool以外の一人称Itemの相対倍率。初期値60%。",
+  "screen.chisetweaks.settings.handheld_tool.name": "Weapons & Toolsサイズ",
+  "screen.chisetweaks.settings.handheld_tool.description": "Item componentやVanillaの武器/Tool型で判定した一人称Itemの相対倍率。初期値75%。"
 }
