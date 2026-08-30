@@ -291,7 +291,22 @@ python scripts/prism_acceptance_audit.py <instance-root>/logs/latest.log
 - render-thread CPU
 - average FPS
 
-比較にはGradleの`comparePerformanceEvidence`を使います。必要なperformance-sensitive milestoneでJFRを取得しますが、機能実装ごとに固定本数のJFRを義務化しません。
+比較にはGradleの`comparePerformanceEvidence`を使います。baseline / candidateは同一`scenario` / Minecraft / Java / Fabric Loader / `environment_id`で各metricを3回以上取得し、8 metricすべてが揃わなければS-grade performance evidenceとして合格しません。
+
+S-grade regression budget:
+
+| Metric | 許容regression |
+| --- | ---: |
+| startup_ms | 10% |
+| p50_frametime_ms | 5% |
+| p95_frametime_ms | 5% |
+| p99_frametime_ms | 10% |
+| heap_mib | 10% |
+| allocation_mib_s | 10% |
+| render_thread_cpu_pct | 10% |
+| average_fps | 5%低下まで |
+
+必要なperformance-sensitive milestoneでJFRを取得し、CSV比較に加えてallocation / GC evidenceを補助確認します。実GPU / Windows / Prismの測定値をrepositoryから推測・代用せず、実測evidenceが無い状態は「tooling ready / measurement pending」と扱います。
 
 CIでは決定的contractとして、blocking wait禁止、Analyzer force-load禁止、scan budget / cache上限、artifact sizeなどを監査します。
 
