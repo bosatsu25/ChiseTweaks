@@ -12,6 +12,7 @@ import java.util.Set;
 /** Applies optional external-mod mixins only when their owning mod is locally installed. */
 public final class IntegrationMixinConfigPlugin implements IMixinConfigPlugin {
     private static final Map<String, String> MIXIN_MODS = Map.of(
+            "dev.chise.chisetweaks.mixin.masa.MaLiLibTranslationMixin", MasaModAvailability.MALILIB,
             "dev.chise.chisetweaks.mixin.masa.LitematicaMaterialCacheMixin", MasaModAvailability.LITEMATICA,
             "dev.chise.chisetweaks.mixin.masa.TweakerooToolSwitchMixin", MasaModAvailability.TWEAKEROO,
             "dev.chise.chisetweaks.mixin.masa.TweakerMoreAutoPickMixin", MasaModAvailability.TWEAKERMORE,
