@@ -50,14 +50,15 @@ final class RepositoryScopeContractTest {
     }
 
     @Test
-    void throughWallAnalyzersUseBoundedLoadedChunkDiscoveryAndSharedRetainedRendering() throws IOException {
-        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
+    void occludedHighlightsUseBoundedLoadedChunkDiscoveryAndSharedRetainedRendering() throws IOException {
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
         String retained = read("src/main/java/dev/chise/chisetweaks/feature/rendering/RetainedThroughWallBuffer.java");
 
         assertContainsAll(feature,
-                "int dueMask = 0",
                 "LoadedChunkWindow loadedChunks",
+                "local.occludedHighlightHorizontalRadius",
+                "local.occludedHighlightIntervalTicks",
                 "loadedChunks.load(",
                 "loadedChunks.atBlock(",
                 "MAX_CANDIDATES",
@@ -88,15 +89,15 @@ final class RepositoryScopeContractTest {
     }
 
     @Test
-    void throughWallAnalyzersGuardLifecycleConfigAndRuntimeFailures() throws IOException {
-        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
+    void occludedHighlightsGuardLifecycleConfigAndRuntimeFailures() throws IOException {
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java");
         String manager = read("src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java");
         String runtime = read("src/main/java/dev/chise/chisetweaks/runtime/RuntimeComponent.java");
 
         assertContainsAll(feature,
                 "lastLevel != client.level",
                 "client.level != lastLevel",
-                "fingerprint != lastScanFingerprint[index]",
+                "fingerprint != lastScanFingerprint",
                 "hasKnownSourceBoundary",
                 "runtimeQuarantined",
                 "public void onQuarantined(Minecraft client)",
