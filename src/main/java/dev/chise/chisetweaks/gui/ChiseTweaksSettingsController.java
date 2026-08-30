@@ -17,6 +17,10 @@ import java.util.Set;
 
 /** Settings lifecycle, reset and persistence coordinator. Presentation lives in dedicated row models. */
 final class ChiseTweaksSettingsController {
+    /**
+     * Stable internal surface identifiers. User-facing meaning is provided by
+     * {@link TweaksProductSettingsRows} so existing layout/navigation contracts stay migration-safe.
+     */
     enum Surface {
         HIGHLIGHT,
         FILTER,
@@ -39,28 +43,37 @@ final class ChiseTweaksSettingsController {
     void initialize() {}
 
     List<ChiseTweaksSettingRowDefinition> rows() {
-        return ChiseTweaksSettingsRows.rows();
+        return TweaksProductSettingsRows.rows(Surface.HIGHLIGHT);
     }
 
     List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
-        return ChiseTweaksSettingsRows.rows(surface);
+        return TweaksProductSettingsRows.rows(surface);
     }
 
     List<ChiseTweaksSettingRowDefinition> inspectorRows(
             CrosshairInspector.Snapshot snapshot,
             boolean includeHelp) {
-        return InspectorSettingsRows.rows(snapshot, includeHelp);
+        return TweaksBuilderAssistRows.rows(snapshot, includeHelp);
     }
 
     String surfaceTitle(Surface surface) {
-        return ChiseTweaksSettingsRows.surfaceTitle(surface);
+        return TweaksProductSettingsRows.title(surface);
     }
 
     EnumSet<SettingPersistence> reset(Surface surface) {
         return switch (surface == null ? Surface.HIGHLIGHT : surface) {
             case HIGHLIGHT -> {
-                resetHighlightFeatures();
-                resetHighlightDetails();
+                // Builder Highlights: material/shape highlights plus bounded occluded highlights.
+                FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
+                FeatureSwitches.NETHER_PALETTE.resetToDefault();
+                FeatureSwitches.GLASS_INSPECTION.resetToDefault();
+                FeatureSwitches.KELP_HIGHLIGHT.resetToDefault();
+                FeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
+                FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
+                LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION.resetToDefault();
+                resetOccludedHighlightDetails();
+                resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
+                resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
                 yield EnumSet.of(
                         SettingPersistence.FEATURE_CONFIG,
                         SettingPersistence.LOCAL_CONFIG);
@@ -72,27 +85,33 @@ final class ChiseTweaksSettingsController {
                 yield EnumSet.of(SettingPersistence.FEATURE_CONFIG);
             }
             case INSPECTOR -> {
+                // Builder Assist keeps preview/pattern logic stateless; only optional history/schematic flags persist.
                 LocalFeatureSettings.INTERACTION_HISTORY.resetToDefault();
                 LocalFeatureSettings.SCHEMATIC_PLACEMENT_INSPECTOR.resetToDefault();
                 InteractionHistory.clearHistory();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
             case ANALYZER -> {
-                FeatureSwitches.LAVA_HIGHLIGHT.resetToDefault();
+                // Technical Visualization: traces, ranges and known villager job-site links.
+                FeatureSwitches.FINE_THREAD_TRACE.resetToDefault();
                 FeatureSwitches.VILLAGER_ANALYZER.resetToDefault();
-                FeatureSwitches.HIDDEN_SURFACE_TRACE.resetToDefault();
-                resetAnalyzerDetails();
+                FeatureSwitches.BEACON_RANGE.resetToDefault();
+                FeatureSwitches.LIGHTNING_ROD_RANGE.resetToDefault();
+                resetTechnicalVisualizationDetails();
                 yield EnumSet.of(
                         SettingPersistence.FEATURE_CONFIG,
                         SettingPersistence.LOCAL_CONFIG);
             }
             case VISIBILITY -> {
+                // Visual Tweaks: first-person comfort and simple bright rendering only.
                 FeatureSwitches.FIRE_VISIBILITY.resetToDefault();
                 LocalFeatureSettings.FIRE_VISIBILITY_SIZE.resetToDefault();
+                FeatureSwitches.HANDHELD_SIZE.resetToDefault();
+                LocalFeatureSettings.HANDHELD_BLOCK_SCALE.resetToDefault();
+                LocalFeatureSettings.HANDHELD_ITEM_SCALE.resetToDefault();
+                LocalFeatureSettings.HANDHELD_TOOL_SCALE.resetToDefault();
                 FeatureSwitches.BRIGHT_CHEST.resetToDefault();
                 FeatureSwitches.BRIGHT_CONCRETE.resetToDefault();
-                FeatureSwitches.BEACON_RANGE.resetToDefault();
-                FeatureSwitches.LIGHTNING_ROD_RANGE.resetToDefault();
                 yield EnumSet.of(SettingPersistence.LOCAL_CONFIG);
             }
             case INTEGRATIONS -> {
@@ -130,16 +149,7 @@ final class ChiseTweaksSettingsController {
         return Set.copyOf(dirtyDomains);
     }
 
-    private static void resetHighlightFeatures() {
-        FeatureSwitches.MATERIAL_HIGHLIGHTS.resetToDefault();
-        FeatureSwitches.NETHER_PALETTE.resetToDefault();
-        FeatureSwitches.FINE_THREAD_TRACE.resetToDefault();
-        FeatureSwitches.GLASS_INSPECTION.resetToDefault();
-        FeatureSwitches.KELP_HIGHLIGHT.resetToDefault();
-    }
-
-    private static void resetHighlightDetails() {
-        LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION.resetToDefault();
+    private static void resetTechnicalVisualizationDetails() {
         LocalFeatureSettings.WORKSITE_VISIBILITY_HORIZONTAL_RADIUS.resetToDefault();
         LocalFeatureSettings.WORKSITE_VISIBILITY_VERTICAL_RADIUS.resetToDefault();
         LocalFeatureSettings.WORKSITE_VISIBILITY_INTERVAL.resetToDefault();
@@ -148,11 +158,10 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS.resetToDefault();
         LocalFeatureSettings.FINE_THREAD_TRACE_COLOR_PRESET.resetToDefault();
         LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY.resetToDefault();
-        resetTargetGroup(VisualTargetGroupPolicy.Group.MATERIAL);
         resetTargetGroup(VisualTargetGroupPolicy.Group.TECHNICAL);
     }
 
-    private static void resetAnalyzerDetails() {
+    private static void resetOccludedHighlightDetails() {
         LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS.resetToDefault();
         LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS.resetToDefault();
         LocalFeatureSettings.LAVA_ANALYZER_INTERVAL.resetToDefault();
@@ -163,7 +172,6 @@ final class ChiseTweaksSettingsController {
         LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS.resetToDefault();
         LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET.resetToDefault();
         LocalFeatureSettings.HIDDEN_SURFACE_TRACE_OPACITY.resetToDefault();
-        resetTargetGroup(VisualTargetGroupPolicy.Group.HIDDEN);
     }
 
     private static void resetBuilderFocusDetails() {
