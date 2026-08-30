@@ -137,8 +137,9 @@ final class CrosshairInspector {
                 hit,
                 true);
         BlockState livePrediction = probe == null ? null : probe.predictedState();
-        Direction clickedFace = probe == null ? null : probe.clickedFace();
-        boolean upperClick = probe != null && probe.upperClick();
+        Direction clickedFace = probe == null ? null : hit.getDirection();
+        boolean upperClick = probe != null
+                && hit.getLocation().y - hit.getBlockPos().getY() > 0.5D;
         BlockState predictedPlacement = comparison == null ? livePrediction : comparison.predictedState;
         BlockState actualPlacement = comparison == null ? null : comparison.actualState;
         int placementResult = comparison == null
@@ -298,11 +299,7 @@ final class CrosshairInspector {
                         BlockItemStateProperties.EMPTY).apply(state);
             }
         }
-        return new PlacementProbe(
-                context.getClickedPos().immutable(),
-                predicted,
-                hit.getDirection(),
-                hit.getLocation().y - hit.getBlockPos().getY() > 0.5D);
+        return new PlacementProbe(context.getClickedPos().immutable(), predicted);
     }
 
     static boolean supportsPlacementPreview(Block block) {
@@ -535,9 +532,7 @@ final class CrosshairInspector {
 
     record PlacementProbe(
             net.minecraft.core.BlockPos targetPos,
-            BlockState predictedState,
-            Direction clickedFace,
-            boolean upperClick) {}
+            BlockState predictedState) {}
 
     record Snapshot(
             HitResult.Type targetKind,
