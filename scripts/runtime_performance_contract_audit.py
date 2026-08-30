@@ -19,6 +19,7 @@ BRIGHT_RENDERING_PATHS = {
 }
 ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java"),
+    Path("src/main/java/dev/chise/chisetweaks/feature/rendering/HiddenBlockAnalyzerFeature.java"),
 }
 PATTERN_INSPECTOR = Path(
     "src/main/java/dev/chise/chisetweaks/gui/PatternConsistencyInspector.java"
@@ -227,8 +228,8 @@ def main() -> int:
     print("bright_chest=chest_atlas_sprite_selection_plus_fullbright_lightcoords")
     print("bright_concrete=vanilla_model_fullbright_quad_transform")
     print("reload_controllers_get_join_free=true")
-    print("lava_analyzer_force_chunk_load=false")
-    print("retained_analyzers=1")
+    print("analyzer_force_chunk_load=false")
+    print(f"retained_analyzers={len(ANALYZERS)}")
     print("pattern_consistency_scan=bounded_loaded_chunks_only")
     print("detector_self_test=true")
     return 0
