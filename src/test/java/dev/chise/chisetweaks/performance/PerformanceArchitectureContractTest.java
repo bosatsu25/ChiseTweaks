@@ -114,12 +114,21 @@ final class PerformanceArchitectureContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/VillagerAnalyzerFeature.java"));
         String worksite = Files.readString(ROOT.resolve(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java"));
+        String manager = Files.readString(ROOT.resolve(
+                "src/main/java/dev/chise/chisetweaks/runtime/FeatureManager.java"));
 
         assertTrue(infrastructure.contains("BlockPos.MutableBlockPos scanCursor"));
         assertTrue(infrastructure.contains("LevelChunk sourceChunk"));
         assertTrue(infrastructure.contains("sourceChunk.getBlockState(scanCursor)"));
         assertFalse(infrastructure.contains("BlockPos pos = new BlockPos(x, y, z)"));
         assertFalse(infrastructure.contains("client.level.getBlockState(scanCursor)"));
+
+        assertTrue(infrastructure.contains("implements TickingRuntimeComponent, SessionAwareRuntimeComponent"));
+        assertTrue(infrastructure.contains("state.is(Blocks.BEACON)"));
+        assertTrue(infrastructure.contains("state.is(Blocks.LIGHTNING_ROD)"));
+        assertFalse(infrastructure.contains("enum Mode"));
+        assertTrue(manager.contains("registerComponent(new InfrastructureRangeFeature())"));
+        assertFalse(manager.contains("InfrastructureRangeFeature.Mode"));
 
         assertTrue(villager.contains("BlockPos.MutableBlockPos workstationCursor"));
         assertTrue(villager.contains("LevelChunk sourceChunk"));

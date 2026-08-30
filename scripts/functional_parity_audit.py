@@ -193,7 +193,8 @@ def main() -> int:
     baseline = load_json("quality/functional-parity-baseline.json")["baseline"]
     print("FUNCTIONAL PARITY AUDIT: PASS")
     print(f"baseline_version={baseline['version']}")
-    print(f"baseline_runtime_jar_bytes={baseline['runtimeJarBytes']}")
+    runtime_bytes = baseline.get("runtimeJarBytes")
+    print(f"baseline_runtime_jar_bytes={runtime_bytes if runtime_bytes is not None else 'unmeasured'}")
     print(f"goal_runtime_jar_bytes={baseline['goalBytes']}")
     print("functional_contract_change=false")
     return 0

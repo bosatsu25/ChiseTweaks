@@ -67,15 +67,15 @@ final class ChiseTweaksSettingsCatalog {
     private static void addHighlightRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.highlight", "Highlight");
         feature(rows, "materials", FeatureSwitches.MATERIAL_HIGHLIGHTS,
-                FeatureDefinition.MATERIAL_HIGHLIGHTS, "config.comment.materialhighlights");
+                FeatureDefinition.MATERIAL_HIGHLIGHTS);
         feature(rows, "nether", FeatureSwitches.NETHER_PALETTE,
-                FeatureDefinition.NETHER_PALETTE, "config.comment.netherpalette");
+                FeatureDefinition.NETHER_PALETTE);
         feature(rows, "thread", FeatureSwitches.FINE_THREAD_TRACE,
-                FeatureDefinition.FINE_THREAD_TRACE, "config.comment.finethreadtrace");
+                FeatureDefinition.FINE_THREAD_TRACE);
         feature(rows, "glass", FeatureSwitches.GLASS_INSPECTION,
-                FeatureDefinition.GLASS_INSPECTION, "config.comment.glassinspection");
+                FeatureDefinition.GLASS_INSPECTION);
         feature(rows, "kelp", FeatureSwitches.KELP_HIGHLIGHT,
-                FeatureDefinition.KELP_HIGHLIGHT, "config.comment.kelphighlight");
+                FeatureDefinition.KELP_HIGHLIGHT);
 
         header(rows, "detail.highlight.general", "screen.chisetweaks.settings.section.shared");
         bool(rows, "oreMotion", LocalFeatureSettings.ORE_HIGHLIGHT_ANIMATION,
@@ -125,9 +125,9 @@ final class ChiseTweaksSettingsCatalog {
     private static void addFilterRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
         headerLiteral(rows, "header.filter", "Filter");
         feature(rows, "focusBlocks", FeatureSwitches.BUILDER_FOCUS_BLOCKS,
-                FeatureDefinition.BUILDER_FOCUS_BLOCKS, "config.comment.builderfocusblocks");
+                FeatureDefinition.BUILDER_FOCUS_BLOCKS);
         feature(rows, "focusEntities", FeatureSwitches.BUILDER_FOCUS_ENTITIES,
-                FeatureDefinition.BUILDER_FOCUS_ENTITIES, "config.comment.builderfocusentities");
+                FeatureDefinition.BUILDER_FOCUS_ENTITIES);
 
         headerLiteral(rows, "detail.visualFilter.behavior", "Filter Settings");
         bool(rows, "refreshRenderer", BuilderFocusConfig.REFRESH_RENDERER,
@@ -157,33 +157,19 @@ final class ChiseTweaksSettingsCatalog {
                 FeatureDefinition.HIDDEN_SURFACE_TRACE.englishName(),
                 text("config.comment.hiddensurfacetrace"));
 
-        headerLiteral(rows, "detail.analyzer.lava", "Lava Analyzer Settings");
-        integer(rows, "lavaRange", LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
-                "screen.chisetweaks.settings.lava_range.name",
-                "screen.chisetweaks.settings.lava_range.description", 1);
-        integer(rows, "lavaVerticalRange", LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
-                "screen.chisetweaks.settings.lava_vertical.name",
-                "screen.chisetweaks.settings.lava_vertical.description", 1);
-        integer(rows, "lavaInterval", LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
-                "screen.chisetweaks.settings.lava_interval.name",
-                "screen.chisetweaks.settings.lava_interval.description", 5);
-        integer(rows, "lavaMaxOverlays", LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS,
-                "screen.chisetweaks.settings.lava_max.name",
-                "screen.chisetweaks.settings.lava_max.description", 1);
+        analyzerBudgetRows(
+                rows, "lava", FeatureDefinition.LAVA_HIGHLIGHT,
+                LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
+                LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
+                LocalFeatureSettings.LAVA_ANALYZER_INTERVAL,
+                LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS);
 
-        headerLiteral(rows, "detail.analyzer.hidden", "Hidden Block Analyzer Settings");
-        integer(rows, "hiddenRange", LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
-                "screen.chisetweaks.settings.hidden_range.name",
-                "screen.chisetweaks.settings.hidden_range.description", 1);
-        integer(rows, "hiddenVerticalRange", LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
-                "screen.chisetweaks.settings.hidden_vertical.name",
-                "screen.chisetweaks.settings.hidden_vertical.description", 1);
-        integer(rows, "hiddenInterval", LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL,
-                "screen.chisetweaks.settings.hidden_interval.name",
-                "screen.chisetweaks.settings.hidden_interval.description", 5);
-        integer(rows, "hiddenMaxOverlays", LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS,
-                "screen.chisetweaks.settings.hidden_max.name",
-                "screen.chisetweaks.settings.hidden_max.description", 1);
+        analyzerBudgetRows(
+                rows, "hidden", FeatureDefinition.HIDDEN_SURFACE_TRACE,
+                LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
+                LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
+                LocalFeatureSettings.HIDDEN_ANALYZER_INTERVAL,
+                LocalFeatureSettings.HIDDEN_ANALYZER_MAX_OVERLAYS);
         integerLiteral(rows, "hiddenSurfaceColor",
                 LocalFeatureSettings.HIDDEN_SURFACE_TRACE_COLOR_PRESET,
                 "Hidden Block Analyzer - Color",
@@ -195,6 +181,22 @@ final class ChiseTweaksSettingsCatalog {
 
         header(rows, "detail.analyzer.hiddenTargets", "screen.chisetweaks.settings.section.hidden_targets");
         for (ChiseBooleanSetting option : VISIBILITY_TARGETS) target(rows, option);
+    }
+
+    private static void analyzerBudgetRows(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String prefix,
+            FeatureDefinition definition,
+            ChiseIntegerSetting horizontal,
+            ChiseIntegerSetting vertical,
+            ChiseIntegerSetting interval,
+            ChiseIntegerSetting maxOverlays) {
+        headerLiteral(rows, "detail.analyzer." + prefix, definition.englishName() + " Settings");
+        String key = "screen.chisetweaks.settings." + prefix;
+        integer(rows, prefix + "Range", horizontal, key + "_range.name", key + "_range.description", 1);
+        integer(rows, prefix + "VerticalRange", vertical, key + "_vertical.name", key + "_vertical.description", 1);
+        integer(rows, prefix + "Interval", interval, key + "_interval.name", key + "_interval.description", 5);
+        integer(rows, prefix + "MaxOverlays", maxOverlays, key + "_max.name", key + "_max.description", 1);
     }
 
     private static void addVisibilityRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
@@ -621,7 +623,8 @@ final class ChiseTweaksSettingsCatalog {
     }
 
     private static void feature(ArrayList<ChiseTweaksSettingRowDefinition> rows, String id,
-            ChiseBooleanSetting config, FeatureDefinition definition, String descriptionKey) {
+            ChiseBooleanSetting config, FeatureDefinition definition) {
+        String descriptionKey = definition.nameKey().replace("config.name.", "config.comment.");
         rows.add(ChiseTweaksSettingRowDefinition.bool(
                 id, definition.englishName(), text(descriptionKey), config));
     }
