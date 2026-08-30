@@ -7,12 +7,11 @@ final class SettingRowIds {
     static final SettingRowId MATERIALS = SettingRowId.of("materials");
     static final SettingRowId NETHER = SettingRowId.of("nether");
     static final SettingRowId THREAD = SettingRowId.of("thread");
-    static final SettingRowId HIDDEN = SettingRowId.of("hidden");
     static final SettingRowId KELP = SettingRowId.of("kelp");
     static final SettingRowId GLASS = SettingRowId.of("glass");
 
     static final Set<SettingRowId> HIGHLIGHT_FEATURES = Set.of(
-            MATERIALS, NETHER, THREAD, HIDDEN, KELP, GLASS);
+            MATERIALS, NETHER, THREAD, KELP, GLASS);
 
     static final Set<SettingRowId> HIGHLIGHT_DETAIL_INTERACTIVE = Set.of(
             SettingRowId.of("oreMotion"),
@@ -24,9 +23,7 @@ final class SettingRowIds {
             SettingRowId.of("highlightWorldOverlay"),
             SettingRowId.of("highlightDimensionPresets"),
             SettingRowId.of("fineThreadColor"),
-            SettingRowId.of("fineThreadOpacity"),
-            SettingRowId.of("hiddenSurfaceColor"),
-            SettingRowId.of("hiddenSurfaceOpacity"));
+            SettingRowId.of("fineThreadOpacity"));
 
     private SettingRowIds() {}
 }
