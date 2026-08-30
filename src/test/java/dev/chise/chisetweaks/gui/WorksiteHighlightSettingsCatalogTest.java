@@ -68,7 +68,8 @@ final class WorksiteHighlightSettingsCatalogTest {
         config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
                 config.visualTargetMask, Target.TECHNICAL_TRIPWIRE_HOOK, false);
 
-        controller.reset(ChiseTweaksSettingsController.Surface.ANALYZER);
+        new ChiseTweaksSettingsController().reset(
+                ChiseTweaksSettingsController.Surface.ANALYZER);
 
         assertFalse(config.worksiteVisibilityDimensionPresetsEnabled);
         assertEquals(-1, config.fineThreadTraceColorPreset);
