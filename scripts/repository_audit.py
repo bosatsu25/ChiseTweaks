@@ -114,7 +114,7 @@ REQUIRED_PATHS = (
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticEvent.java",
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticDetail.java",
     "src/main/java/dev/chise/chisetweaks/runtime/RuntimeDiagnosticSnapshot.java",
-    "src/main/java/dev/chise/chisetweaks/feature/rendering/LavaHighlightFeature.java",
+    "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java",
     "src/main/java/dev/chise/chisetweaks/feature/rendering/NearestPositionBuffer.java",
     ".github/workflows/ci.yml",
