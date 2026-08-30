@@ -42,7 +42,7 @@ jobs:
             exit 0
           fi
 
-          git diff --name-only --diff-filter=ACMRTUXB "$BASE_SHA" "$HEAD_SHA" > /tmp/chise-changed-files.txt
+          git diff --name-only --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" > /tmp/chise-changed-files.txt
           scope="$(python3 scripts/ci_scope.py --file-list /tmp/chise-changed-files.txt)"
           echo "scope=$scope" >> "$GITHUB_OUTPUT"
           if [[ "$scope" == 'docs-only' ]]; then
