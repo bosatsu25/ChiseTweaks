@@ -592,6 +592,7 @@ final class ChiseTweaksSettingsCatalog {
     static String renderModeKey(FeatureDefinition feature, boolean hidden) {
         if (hidden) return "screen.chisetweaks.inspector.render_mode.suppressed";
         return feature == FeatureDefinition.LAVA_HIGHLIGHT
+                || feature == FeatureDefinition.HIDDEN_SURFACE_TRACE
                 ? "screen.chisetweaks.inspector.render_mode.through_wall"
                 : "screen.chisetweaks.inspector.render_mode.visible";
     }
