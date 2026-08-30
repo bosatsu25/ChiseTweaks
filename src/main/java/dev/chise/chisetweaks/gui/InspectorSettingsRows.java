@@ -1,8 +1,6 @@
 package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.LocalFeatureSettings;
-import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
@@ -60,27 +58,6 @@ final class InspectorSettingsRows {
             if (resolved.targetKind() == HitResult.Type.BLOCK) {
                 addSemanticStateRows(rows, resolved.stateProperties());
             }
-            info(rows, "inspector.filter",
-                    text("screen.chisetweaks.inspector.filter"),
-                    text(resolved.filterDecision().hidden()
-                            ? "screen.chisetweaks.inspector.filter.hidden"
-                            : "screen.chisetweaks.inspector.filter.visible"));
-            info(rows, "inspector.matchedRule",
-                    text("screen.chisetweaks.inspector.matched_rule"),
-                    filterReason(resolved.filterDecision()));
-            info(rows, "inspector.features",
-                    text("screen.chisetweaks.inspector.responsible_feature"),
-                    resolved.responsibleFeatures().isEmpty()
-                            ? text("screen.chisetweaks.inspector.none")
-                            : joinFeatures(resolved.responsibleFeatures(), false, false));
-            info(rows, "inspector.renderMode",
-                    text("screen.chisetweaks.inspector.render_mode"),
-                    resolved.responsibleFeatures().isEmpty()
-                            ? text("screen.chisetweaks.inspector.none")
-                            : joinFeatures(
-                                    resolved.responsibleFeatures(),
-                                    true,
-                                    resolved.filterDecision().hidden()));
         }
         addPlacementRows(rows, resolved);
         addSchematicPlacementRows(rows);
@@ -285,23 +262,6 @@ final class InspectorSettingsRows {
         return null;
     }
 
-    private static String filterReason(BuilderFocusVisibility.FilterDecision decision) {
-        String reason = text("screen.chisetweaks.inspector.reason." + decision.reason());
-        return decision.matchedRule().isEmpty() ? reason : reason + ": " + decision.matchedRule();
-    }
-
-    private static String joinFeatures(
-            List<FeatureDefinition> features,
-            boolean modes,
-            boolean hidden) {
-        StringBuilder result = new StringBuilder();
-        for (FeatureDefinition feature : features) {
-            if (!result.isEmpty()) result.append('\n');
-            result.append(modes ? text(renderModeKey(feature, hidden)) : feature.englishName());
-        }
-        return result.toString();
-    }
-
     static String comparisonResultKey(int result) {
         return switch (result) {
             case PlacementInspector.MATCH -> "screen.chisetweaks.placement.result.match";
@@ -309,14 +269,6 @@ final class InspectorSettingsRows {
             case PlacementInspector.DIFFERENT -> "screen.chisetweaks.placement.result.different";
             default -> "screen.chisetweaks.placement.result.unavailable";
         };
-    }
-
-    static String renderModeKey(FeatureDefinition feature, boolean hidden) {
-        if (hidden) return "screen.chisetweaks.inspector.render_mode.suppressed";
-        return feature == FeatureDefinition.LAVA_HIGHLIGHT
-                || feature == FeatureDefinition.HIDDEN_SURFACE_TRACE
-                ? "screen.chisetweaks.inspector.render_mode.through_wall"
-                : "screen.chisetweaks.inspector.render_mode.visible";
     }
 
     private static void addCommonHelpRows(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
