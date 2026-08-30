@@ -17,12 +17,12 @@ final class SettingsAndAnalyzerDesignContractTest {
         String settings = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
         String targets = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
 
-        assertContainsAll(controller,
+        assertContainsAll(settings,
                 "() -> config().worksiteVisibilityHorizontalRadius",
                 "value -> config().worksiteVisibilityHorizontalRadius = value",
                 "() -> config().lavaAnalyzerIntervalTicks",
                 "value -> config().lavaAnalyzerIntervalTicks = value");
-        assertContainsNone(controller,
+        assertContainsNone(settings,
                 "syncFromStorage",
                 "private static boolean syncing",
                 "AncientDebrisAnalyzerPolicy");
