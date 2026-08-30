@@ -3,7 +3,7 @@
   "id": "chisetweaks",
   "version": "${version}",
   "name": "ChiseTweaks",
-  "description": "Standalone client-only visual inspection tools for large Minecraft builds and technical facilities.",
+  "description": "Client-only visual and workflow tweaks for Minecraft builders, with optional Masa and renderer integrations.",
   "license": [
     "MIT",
     "Apache-2.0"
