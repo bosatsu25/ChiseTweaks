@@ -5,8 +5,8 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.policy.FeatureAvailabilityPolicy;
 import dev.chise.chisetweaks.core.security.FailureIsolationPolicy;
 import dev.chise.chisetweaks.feature.rendering.InfrastructureRangeFeature;
-import dev.chise.chisetweaks.feature.rendering.ThroughWallAnalyzerFeature;
-import dev.chise.chisetweaks.feature.rendering.VillagerAnalyzerFeature;
+import dev.chise.chisetweaks.feature.rendering.OccludedHighlightsFeature;
+import dev.chise.chisetweaks.feature.rendering.VillagerJobSiteLinksFeature;
 import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine;
 import dev.chise.chisetweaks.gui.InteractionHistory;
 import dev.chise.chisetweaks.gui.PatternConsistencyInspector;
@@ -43,10 +43,10 @@ public final class FeatureManager {
 
         if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LAVA_HIGHLIGHT)
                 || FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.HIDDEN_SURFACE_TRACE)) {
-            registerComponent(new ThroughWallAnalyzerFeature());
+            registerComponent(new OccludedHighlightsFeature());
         }
         if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.VILLAGER_ANALYZER)) {
-            registerComponent(new VillagerAnalyzerFeature());
+            registerComponent(new VillagerJobSiteLinksFeature());
         }
         if (FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.BEACON_RANGE)
                 || FeatureAvailabilityPolicy.isAvailable(FeatureDefinition.LIGHTNING_ROD_RANGE)) {
