@@ -2,6 +2,7 @@ package dev.chise.chisetweaks.gui;
 
 import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
+import dev.chise.chisetweaks.core.vision.OreHighlightResolver;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
@@ -94,7 +95,7 @@ final class CrosshairInspector {
         LocalFeatureConfig local = LocalFeatureConfig.getInstance();
         long featureMask = CrosshairSnapshotPolicy.currentEnabledFeatureMask();
         long filterRevision = BuilderFocusVisibility.revision();
-        long oreRevision = dev.chise.chisetweaks.core.vision.OreHighlightResolver.revision();
+        long oreRevision = OreHighlightResolver.revision();
         PlacementInspector comparison = PlacementInspector.activeAt(
                 client.level, hit.getBlockPos());
         ItemStack stack = client.player == null ? null : client.player.getMainHandItem();
