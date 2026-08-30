@@ -9,26 +9,32 @@
 - Fabric Loader `0.19.3` 以上
 - Fabric API `0.155.2+26.1.2` 以上
 - Java `25` 以上
-- toggle可能なruntime featureは現在16個
-- 上記16個はruntime visual / inspection featureであり、Masa integration capabilityは数へ含めない
-- Masa ecosystem integrationはruntime visual feature数へ含めず、optional compatibility / UX capabilityとして別registryで管理する
-- ChiseTweaks自身はAutomationを実装しない。外部MODが所有する操作にGuard / policy / refreshを追加することだけをIntegrationとして許可する
-- 16機能はすべてrendering / inspection-orientedで、building-action featureは持たない
+- 互換性維持のlow-level runtime toggleは16個。製品UIの正本は次の7 Tweaks groupとする
+  - Visual Tweaks
+  - Builder Highlights
+  - Technical Visualization
+  - Scene Filter
+  - Builder Assist
+  - Workflow
+  - Integrations
+- 16 toggleはconfig/runtimeの互換単位であり、ユーザー向けに16個の独立製品機能として提示しない
+- Masa ecosystem integrationはoptional capabilityとして扱い、対象MODが無い場合はno-opとする
+- ChiseTweaks自身はAutomationを実装しない。外部MODが所有する操作へGuard / policy / refreshを追加することだけをIntegrationとして許可する
 - Bright Chest / Bright Concreteはbuilt-in Resource Pack selection / reloadへ依存しない
-- Low FireはMinecraftが`ScreenEffectRenderer.renderFire`へ渡す現在のspriteを再利用し、Large / Medium / Smallの3段階geometryだけを一人称overlayへ適用する。通常炎・魂の炎ごとのChise専用PNG/model、world-fire置換、Resource Pack reloadを持たない
-- Handheld Sizeは`ItemInHandRenderer.renderItem`の一人称Item submitだけへ相対scaleを適用する。Block / Item / Weapons & Toolsを意味分類し、defaultは70% / 60% / 75%。Shieldは95%。GUI・三人称・world item、Vanilla animation、Item model/texture、Resource Pack、inputを所有・置換しない
-- Bright ChestはChiseTweaks内蔵のChest専用`normal.png` / `normal_left.png` / `normal_right.png`をvanilla CHEST atlas経路で選択し、Chest model・金具・蓋・double-chest分割・開閉animationを維持する
-- Bright ChestはWhite Concrete spriteをChestへ流用しない。White Concreteの描画責務はBright Concreteだけが持つ
-- Bright Concreteはvanilla White Concrete model / textureを維持し、quad lightingだけをfull-bright化する
-- 明示仕様がない限り機能を相互排他にしない
-- all-features-on（16機能）を回帰条件として扱う
+- Low FireはMinecraftが`ScreenEffectRenderer.renderFire`へ渡す現在spriteを再利用し、一人称overlayのgeometryだけを調整する
+- Handheld Sizeは`ItemInHandRenderer.renderItem`の一人称Item submitだけへ相対scaleを適用し、model/texture/resource-pack/input ownershipを奪わない
+- Bright Chest / Bright Concreteの既存描画契約は維持する
+- 明示仕様がない限りlow-level toggleを相互排他にしない
+- all-features-on（16 toggle）をruntime regression条件として扱う
 - custom packet / server installation / remote mod detection / auto downloader / automatic JAR replacementを実装しない
-- Lava Analyzerはloaded chunks only。未ロードchunkを強制loadしない
-- Lava Analyzer / Hidden Block Analyzerはuser-facing toggle・radius・vertical radius・interval・max overlaysを独立維持しつつ、同一tickでscan期限が重なった場合は1つの`ThroughWallAnalyzerFeature`でloaded-chunk traversalを共有する
-- Hidden Block Analyzerは旧Hidden Block Highlightの対象選択・色・opacityを維持し、Lava Analyzerと同じbounded / loaded-chunk-only / through-wall描画へ統合する。Blue Ice / Dead Coral / Powder Snow / Sculk Catalystだけを対象とし、隠れ資源探索へ拡張しない
-- サーバー側ゲーム進行を変える配置補助や、隠れ資源・server-only状態を探索／推測するAnalyzerは現行スコープ外
-- through-wall Analyzerはサーバーへ独自scan packetを送らず、server-side Anti-X-Ray / obfuscationを迂回しない。クライアントへ届いたloaded-chunk stateだけを入力とする
-- public serverではthrough-wall表示自体が規約違反になり得るため、READMEで利用前のserver rule確認を明示する
+- Builder HighlightsのLava Source / Occluded Blocksは、別toggle・別target bufferを維持しつつ、`OccludedHighlightsFeature`の**1つのscan budget / schedule / loaded-chunk traversal**を共有する
+- Occluded Highlightsの共通budgetはhorizontal radius / vertical radius / interval / max overlaysの4値。旧Lava/Hidden独立値からのmigrationでは範囲・上限は大きい側、intervalは短い側を採用して既存可視範囲のunionを保つ
+- Occluded Highlightsはloaded chunks only。未ロードchunkをforce-loadせず、独自scan packetを送らず、server-side Anti-X-Ray / obfuscationを迂回しない
+- Hidden対象はBlue Ice / Dead Coral / Powder Snow / Sculk Catalystへ限定し、隠れ資源探索へ拡張しない
+- Villager Job Site LinksはMinecraftの`MemoryModuleType.JOB_SITE`に既に存在するrelationだけを可視化する。周辺workstation探索・職業からのfallback推測を行わない
+- Builder AssistのCrosshair snapshotはBlock/Entity ID、BlockState、Placement Assistに必要な最小stateだけを保持する。Filter Decision / matched rule / responsible feature / render mode等のdeveloper diagnosticsを通常snapshotへ戻さない
+- Placement Assist / Pattern Check / Litematica Placement Assistは読み取り・比較capabilityであり、入力注入・自動配置・packet送信を行わない
+- public serverではOccluded Highlights自体が規約違反になり得るため、READMEで利用前のserver rule確認を明示する
 
 ### Masa integration contract
 
@@ -199,9 +205,9 @@ source-text contractは、dependency direction、禁止API、loaded-chunk-only�
 
 不具合修正PRでは `.github/pull_request_template.md` のRCA欄を使い、root cause、escape point、similar-risk search、regression test、preventive actionを残します。単なる修正で終わらせず、類似欠陥の再発を防ぐGateへフィードバックします。
 
-Minecraft placement予測では、production側の式をtest側へ複製しません。**実際のvanilla placement結果をoracle**にします。Placement Preview / Actual Comparisonは読み取り・比較capabilityであり、実際の入力や配置操作は変更しません。
+Minecraft placement予測では、production側の式をtest側へ複製しません。**実際のvanilla placement結果をoracle**にします。Builder AssistのPlacement Assistは予測・実配置比較を1つのcapabilityとして扱い、入力や配置操作は変更しません。
 
-配置予測のproduction正本は`PlacementInspector.placementProbe()`とし、Actual ComparisonとLitematica Schematic comparisonも同じ`PlacementInspector` runtimeで共有する。Crosshair Inspectorは既存hitの観測・cache・snapshot lifecycleだけを所有し、Block/Entity snapshot derivationは`CrosshairSnapshotPolicy`へ分離する。`UseBlockCallback`は常に`PASS`を返し、入力注入・自動配置・packet送信を追加しない。
+配置予測のproduction正本は`PlacementInspector.placementProbe()`とし、実配置比較とLitematica comparisonも同じruntimeで共有する。`CrosshairInspector`は既存hitの観測・cache・snapshot lifecycleだけを所有し、`CrosshairSnapshotPolicy`はBlock Info用の安全なID / BlockState formattingだけを持つ。Feature impact診断を再取得しない。`UseBlockCallback`は常に`PASS`を返す。
 
 Pattern Consistencyは不一致Blockの座標列を保持せず、比較件数・一致件数・property別不一致countだけをbounded memoryに保持する。
 
@@ -209,16 +215,16 @@ Bright Chestではsingle / double-left / double-rightの3専用textureが存在�
 
 GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button overlapを境界条件として扱います。
 
-16 runtime featureの回帰では、`RuntimeFeatureUsabilityRegressionTest`で以下を必須とする。
+7製品グループ / 16 low-level toggleの回帰では、`RuntimeFeatureUsabilityRegressionTest`とSettings contractで以下を必須とする。
 - `FeatureDefinition` / `FeatureSwitches` が16機能で1:1対応する
 - 各機能がSettings UIから到達可能である
 - 各機能に少なくとも1つのconcrete runtime / mixin / model rendering routeが存在する
-- shared runtime（Lava/Hidden、Beacon/Lightning Rod、Worksite overlay）でもuser-facing toggleは独立する
+- shared runtime（Occluded Highlights、Beacon/Lightning Rod、Worksite overlay）でもlow-level toggleは独立する
 - source contractのPASSは実ピクセル描画の保証ではないため、release acceptanceではClient GameTest / Prism実機確認を別途行う
 
 Builder Focus list、Ore compatibility、Masa list/mapは`ChiseListEditorScreen`でwidget lifecycle（layout / paging / footer / row rendering）のみ共有する。validation・mode遷移・add/remove/clear・保存責務は`SceneFilterBackend` / `MasaListBackend` / `OreCompatibilityBackend`へ分離し、Screenへdomain configやregistry lookupを戻さない。Ore model reloadも`OreCompatibilityBackend`だけが所有する。
 
-Settingsの状態変更・reset・保存は`ChiseTweaksSettingsController`、6 surfaceの静的row生成は`ChiseTweaksSettingsRows`、Crosshair/Placement/Schematic/Pattern/Historyの動的row生成は`InspectorSettingsRows`を正本とする。Controllerへpresentation helperを戻さず、静的Settingsと動的Inspectorも同じ巨大classへ再統合しない。Integrationsは同一row bufferへ直接追加し、visual target rowは`VisualTargetSettings.ALL_OPTIONS`から必要時に展開する。
+Settingsの状態変更・reset・保存は`ChiseTweaksSettingsController`、7 surfaceの静的row生成は`ChiseTweaksSettingsRows`、Block Info / Placement / Patternの動的rowは`BuilderAssistRows`、Interaction Historyの動的rowは`WorkflowRows`を正本とする。Controllerへpresentation helperを戻さず、動的rowを巨大なInspector classへ再統合しない。
 
 Security/configではmalformed UTF-8、unsafe path、symlink、oversized payload、atomic write failureなどをfail-closed条件として扱います。
 
@@ -270,8 +276,8 @@ Release publicationはruntime JARを再build・再pack・version rewriteしま�
 CIは実GPU / Windows display pathを再現できないため、release acceptanceではPrismで最低限次を確認します。
 
 - clean startup、Mixin errorなし
-- 日本語/英語と代表GUI scaleで6タブが使用可能
-- Crosshair Inspector / Placement Previewが読める
+- 日本語/英語と代表GUI scaleで7グループが使用可能
+- Builder AssistのBlock Info / Placement Assist / Pattern Checkが読める
 - unsupported itemでmisleading previewを出さない
 - Block FilterがBlockEntity / Bright Chestを正しく抑制
 - Bright Chestがsingle / double chestともチェスト形状・金具・蓋・開閉animationを維持した白いChestとして描画され、White Concrete面へ退行しない
@@ -279,8 +285,8 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - Low FireのLarge / Medium / Smallが一人称overlayだけへ反映され、通常炎／魂の炎の現在spriteとworld fireを壊さない
 - Handheld SizeのBlock / Item / Weapons & Tools倍率がmain hand / offhandへ反映され、GUI・三人称・active Resource Packのmodel/textureへ影響しない。Shieldは95%で防御姿勢を維持する
 - all-features-on（16機能）をOverworld / Netherでsmoke
-- Lava Analyzer / Hidden Block Analyzerに強制chunk loadや独自scan packetがなく、server-side obfuscationを迂回しない
-- public server acceptanceではAnalyzer利用可否をserver rule側で確認し、禁止serverではAnalyzerをONにしない
+- Occluded Highlightsに強制chunk loadや独自scan packetがなく、server-side obfuscationを迂回しない
+- public server acceptanceではOccluded Highlights利用可否をserver rule側で確認し、禁止serverではONにしない
 - disconnect / dimension changeでstale session stateが残らない
 
 ログ監査には次を使用します。
@@ -299,7 +305,7 @@ python scripts/prism_acceptance_audit.py <instance-root>/logs/latest.log
 
 - `chise-absent`
 - `chise-all-off`
-- `lava-analyzer-on`
+- `occluded-highlights-on`
 - `highlights-on`
 - `maximum-supported-load`
 
@@ -329,11 +335,13 @@ S-grade regression budget:
 
 必要なperformance-sensitive milestoneでJFRを取得し、CSV比較に加えてallocation / GC evidenceを補助確認します。実GPU / Windows / Prismの測定値をrepositoryから推測・代用せず、実測evidenceが無い状態は「tooling ready / measurement pending」と扱います。
 
-CIでは決定的contractとして、blocking wait禁止、Analyzer force-load禁止、scan budget / cache上限、artifact sizeなどを監査します。
+CIでは決定的contractとして、blocking wait禁止、Occluded Highlights force-load禁止、scan budget / cache上限、artifact sizeなどを監査します。
 
 Bright Chestは既存Chest draw pathでspriteだけを切り替え、追加world scan・追加draw call・Resource Pack reloadを持ちません。3枚の専用textureによるJAR増加も既存hard ceiling内で管理します。
 
 Handheld Sizeはworld scan・追加draw call・Resource reloadを持たず、既存Item submitのPoseStackへ定数時間の分類とscaleだけを追加します。
+
+Occluded Highlightsは旧Lava/Hiddenの2 scheduleを1 scheduleへ統合し、同じ範囲を1 traversalで評価します。Villager Job Site Linksは周辺workstation scanを廃止し、既知`JOB_SITE` relationだけを可視化します。Crosshair snapshotはfeature-impact計算を行いません。これらは設計上のruntime work削減であり、FPS改善値はPrism/JFR実測が完了するまで推測しません。
 
 ## 12. Security / privacy
 
