@@ -8,10 +8,8 @@ import dev.chise.chisetweaks.config.ChiseStringListSetting;
 import dev.chise.chisetweaks.config.SettingPersistence;
 import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
 import dev.chise.chisetweaks.core.policy.ConfigListPolicy;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.EntityType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -258,11 +256,9 @@ final class SceneFilterBackend implements ChiseListEditorBackend {
     }
 
     private boolean isRegisteredTarget(Identifier id) {
-        if (blockTarget) return ChiseListEditorBackend.isRegisteredBlock(id);
-        for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-            if (id.equals(BuiltInRegistries.ENTITY_TYPE.getKey(type))) return true;
-        }
-        return false;
+        return blockTarget
+                ? ChiseListEditorBackend.isRegisteredBlock(id)
+                : ChiseListEditorBackend.isRegisteredEntity(id);
     }
 
     private boolean persist(SettingPersistence domain) {
