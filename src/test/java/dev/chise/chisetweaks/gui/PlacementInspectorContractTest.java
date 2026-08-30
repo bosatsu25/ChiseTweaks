@@ -25,6 +25,15 @@ final class PlacementInspectorContractTest {
     }
 
     @Test
+    void placementProbeRetainsOnlyTargetAndVanillaPrediction() {
+        Set<String> components = java.util.Arrays.stream(
+                        CrosshairInspector.PlacementProbe.class.getRecordComponents())
+                .map(java.lang.reflect.RecordComponent::getName)
+                .collect(java.util.stream.Collectors.toSet());
+        assertEquals(Set.of("targetPos", "predictedState"), components);
+    }
+
+    @Test
     void schematicSnapshotRetainsOnlyUiSafeIdentifiersAndResult() {
         Set<String> components = java.util.Arrays.stream(
                         PlacementInspector.SchematicSnapshot.class.getRecordComponents())
