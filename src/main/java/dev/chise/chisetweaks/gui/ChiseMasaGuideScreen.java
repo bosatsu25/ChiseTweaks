@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
 import java.util.List;
@@ -77,8 +78,10 @@ public final class ChiseMasaGuideScreen extends Screen {
             int y = panelTop + 10 - scroll;
             int textWidth = Math.max(80, panelWidth - 32);
             for (MasaGuideCatalog.Entry entry : entries) {
-                List<?> summary = font.split(Component.literal(entry.summary()), textWidth);
-                List<?> directions = font.split(Component.literal(entry.directions()), textWidth);
+                List<FormattedCharSequence> summary =
+                        font.split(Component.literal(entry.summary()), textWidth);
+                List<FormattedCharSequence> directions =
+                        font.split(Component.literal(entry.directions()), textWidth);
                 int cardHeight = 30 + (summary.size() + directions.size()) * (font.lineHeight + 2);
                 extractor.fill(panelX + 8, y, panelX + panelWidth - 8, y + cardHeight, 0x88303030);
                 int statusColor = entry.installed() ? 0xFF78E08F : 0xFFAAAAAA;
@@ -88,12 +91,12 @@ public final class ChiseMasaGuideScreen extends Screen {
                         panelX + 16, y + 7, statusColor);
 
                 int lineY = y + 22;
-                for (var line : font.split(Component.literal(entry.summary()), textWidth)) {
+                for (FormattedCharSequence line : summary) {
                     extractor.text(font, line, panelX + 16, lineY, 0xFFFFFFFF);
                     lineY += font.lineHeight + 2;
                 }
                 lineY += 2;
-                for (var line : font.split(Component.literal(entry.directions()), textWidth)) {
+                for (FormattedCharSequence line : directions) {
                     extractor.text(font, line, panelX + 16, lineY, 0xFFB8B8B8);
                     lineY += font.lineHeight + 2;
                 }
