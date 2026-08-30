@@ -4,7 +4,10 @@ import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.WorksiteHighlightProfilePolicy;
 import dev.chise.chisetweaks.core.vision.FireVisibilityPolicy;
 import dev.chise.chisetweaks.core.vision.HandheldSizePolicy;
+import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
+import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy.Target;
 
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -177,6 +180,27 @@ public final class LocalFeatureSettings {
             () -> config().hiddenAnalyzerMaxOverlayResults,
             value -> config().hiddenAnalyzerMaxOverlayResults = value);
 
+    public static final List<ChiseBooleanSetting> VISUAL_TARGETS = List.of(
+            target(Target.MATERIAL_COAL_ORE, "visualTargetMaterialCoalOre"),
+            target(Target.MATERIAL_IRON_ORE, "visualTargetMaterialIronOre"),
+            target(Target.MATERIAL_COPPER_ORE, "visualTargetMaterialCopperOre"),
+            target(Target.MATERIAL_GOLD_ORE, "visualTargetMaterialGoldOre"),
+            target(Target.MATERIAL_LAPIS_ORE, "visualTargetMaterialLapisOre"),
+            target(Target.MATERIAL_REDSTONE_ORE, "visualTargetMaterialRedstoneOre"),
+            target(Target.MATERIAL_DIAMOND_ORE, "visualTargetMaterialDiamondOre"),
+            target(Target.MATERIAL_EMERALD_ORE, "visualTargetMaterialEmeraldOre"),
+            target(Target.MATERIAL_NETHER_GOLD_ORE, "visualTargetMaterialNetherGoldOre"),
+            target(Target.MATERIAL_NETHER_QUARTZ_ORE, "visualTargetMaterialNetherQuartzOre"),
+            target(Target.MATERIAL_ANCIENT_DEBRIS, "visualTargetMaterialAncientDebris"),
+            target(Target.MATERIAL_OBSIDIAN, "visualTargetMaterialObsidian"),
+            target(Target.MATERIAL_CRYING_OBSIDIAN, "visualTargetMaterialCryingObsidian"),
+            target(Target.TECHNICAL_TRIPWIRE, "visualTargetTechnicalTripwire"),
+            target(Target.TECHNICAL_TRIPWIRE_HOOK, "visualTargetTechnicalTripwireHook"),
+            target(Target.HIDDEN_BLUE_ICE, "visualTargetHiddenBlueIce"),
+            target(Target.HIDDEN_DEAD_CORAL, "visualTargetHiddenDeadCoral"),
+            target(Target.HIDDEN_POWDER_SNOW, "visualTargetHiddenPowderSnow"),
+            target(Target.HIDDEN_SCULK_CATALYST, "visualTargetHiddenSculkCatalyst"));
+
     static {
         ORE_HIGHLIGHT_ANIMATION.setValueChangeCallback(
                 ignored -> oreHighlightChangedCallback.run());
@@ -190,6 +214,27 @@ public final class LocalFeatureSettings {
 
     private static Runnable callbackOrNoop(Runnable callback) {
         return callback == null ? NOOP : callback;
+    }
+
+    public static synchronized void setAllOreHighlightTargets(boolean enabled) {
+        LocalFeatureConfig config = config();
+        int previous = config.visualTargetMask;
+        config.visualTargetMask = VisualTargetSelectionPolicy.withAllOreHighlightTargets(
+                config.visualTargetMask, enabled);
+        if (config.visualTargetMask != previous) SettingChangeDispatcher.markChanged();
+    }
+
+    private static ChiseBooleanSetting target(Target target, String configName) {
+        return new ChiseBooleanSetting(
+                configName,
+                true,
+                () -> VisualTargetSelectionPolicy.isEnabled(config().visualTargetMask, target),
+                enabled -> {
+                    LocalFeatureConfig config = config();
+                    config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
+                            config.visualTargetMask, target, enabled);
+                },
+                SettingPersistence.LOCAL_CONFIG);
     }
 
     private static LocalFeatureConfig config() {
