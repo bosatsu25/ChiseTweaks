@@ -42,13 +42,12 @@ final class CrosshairInspectorArchitectureContractTest {
     @Test
     void helpSurfaceMigratesToInspectorWithoutRestoringLegacyUtilityChrome() throws Exception {
         String controller = Files.readString(GUI.resolve("ChiseTweaksSettingsController.java"));
-        String catalog = Files.readString(GUI.resolve("ChiseTweaksSettingsCatalog.java"));
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
 
         assertTrue(controller.contains("INSPECTOR"));
         assertFalse(controller.contains("HELP"));
         assertFalse(controller.contains("VISUAL_FILTER"));
-        assertTrue(catalog.contains("addCommonHelpRows"));
+        assertTrue(controller.contains("addCommonHelpRows"));
         assertTrue(screen.contains("inspectorHelpVisible"));
         assertFalse(screen.contains("ChiseTweaksMetadata.MOD_VERSION"));
         assertFalse(screen.contains("Diagnostics"));
