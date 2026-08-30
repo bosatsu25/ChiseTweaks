@@ -493,7 +493,7 @@ public final class OccludedHighlightsFeature
         hiddenRenderGuard.resetSession();
     }
     /** Fixed-capacity nearest-N candidate buffer owned by the occluded scan engine. */
-    private static final class NearestBuffer {
+    static final class NearestBuffer {
         private final long[] positions;
         private final double[] distanceSquared;
         private int count;
