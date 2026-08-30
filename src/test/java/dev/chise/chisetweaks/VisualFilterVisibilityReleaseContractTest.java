@@ -30,7 +30,7 @@ final class VisualFilterVisibilityReleaseContractTest {
     @Test
     void worksiteHighlightsHaveNoRuntimeOrConfigMutualExclusionResidue() throws IOException {
         String bindings = source("src/main/java/dev/chise/chisetweaks/runtime/FeatureControlBindings.java");
-        String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
+        String controller = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
         String localConfig = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureConfig.java");
         String localSettings = source("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
         String featureDefinition = source("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
@@ -38,7 +38,7 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertFalse(bindings.contains("bindExclusiveWorksiteMode"));
         assertFalse(bindings.contains("applyWorksiteModesAtomically"));
         assertFalse(bindings.contains("worksiteVisibilityExclusiveMode"));
-        assertFalse(catalog.contains("\"highlightExclusiveMode\""));
+        assertFalse(controller.contains("\"highlightExclusiveMode\""));
         assertFalse(localConfig.contains("worksiteVisibilityExclusiveMode"));
         assertFalse(localConfig.contains("worksiteVisibilityMaxResults"));
         assertFalse(localSettings.contains("WORKSITE_VISIBILITY_EXCLUSIVE_MODE"));
@@ -59,7 +59,7 @@ final class VisualFilterVisibilityReleaseContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/ChiseVisualModelPlugin.java");
         String model = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/FullbrightOverlayModel.java");
-        String catalog = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsCatalog.java");
+        String controller = source("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
 
         assertTrue(switches.contains("BRIGHT_CHEST = local("));
         assertTrue(switches.contains("BRIGHT_CONCRETE = local("));
@@ -90,8 +90,9 @@ final class VisualFilterVisibilityReleaseContractTest {
         assertTrue(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_left.png")));
         assertTrue(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/entity/chest/normal_right.png")));
         assertFalse(Files.exists(ROOT.resolve("src/main/resources/assets/chisetweaks/textures/block/visual/bright_white_concrete.png")));
-        assertTrue(catalog.contains("FeatureDefinition.BRIGHT_CHEST.englishName()"));
-        assertTrue(catalog.contains("FeatureDefinition.BRIGHT_CONCRETE.englishName()"));
+        assertTrue(controller.contains("FeatureSwitches.BRIGHT_CHEST"));
+        assertTrue(controller.contains("FeatureSwitches.BRIGHT_CONCRETE"));
+        assertTrue(controller.contains("config.definition().englishName()"));
     }
 
     private static String source(String relativePath) throws IOException {
