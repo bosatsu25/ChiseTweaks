@@ -78,6 +78,14 @@ public enum FeatureDefinition {
             "",
             FeatureHelpLevel.DIAGNOSTIC,
             null),
+    HANDHELD_SIZE(
+            "handheld_size",
+            FeatureArea.RENDERING,
+            "config.name.handheldsize",
+            "Handheld Size",
+            "",
+            FeatureHelpLevel.DIAGNOSTIC,
+            null),
     LAVA_HIGHLIGHT(
             "lava_highlight",
             FeatureArea.RENDERING,
