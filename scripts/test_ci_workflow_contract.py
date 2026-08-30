@@ -26,6 +26,7 @@ def main() -> int:
     require(ci, "reason=direct-or-unverified-main", "fail-closed main fallback")
     require(ci, "- name: Download tree-identical verified runtime", "runtime promotion download")
     require(ci, "python scripts/promoted_artifact_audit.py", "promoted artifact audit")
+    require(ci, "python -m compileall -q scripts", "Python tooling compile check")
     require(ci, "python scripts/test_ci_provenance.py", "provenance self-test")
     require(ci, "- name: Write reusable PR provenance", "provenance writer")
     require(ci, "tested_tree", "tested tree capture")
