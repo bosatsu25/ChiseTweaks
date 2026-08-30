@@ -185,6 +185,8 @@ Bright Chestではsingle / double-left / double-rightの3専用textureが存在�
 
 GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button overlapを境界条件として扱います。
 
+Builder Focus list、Ore compatibility、Masa list/mapの編集画面は`ChiseListEditorScreen`へ集約し、paging / remove / clear / footer / row renderingを共有する。各domainのvalidation・保存先・Ore model reloadは統合せず、それぞれの既存contractを維持する。
+
 Security/configではmalformed UTF-8、unsafe path、symlink、oversized payload、atomic write failureなどをfail-closed条件として扱います。
 
 ### Config migration contract

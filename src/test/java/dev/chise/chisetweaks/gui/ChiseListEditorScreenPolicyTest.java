@@ -10,15 +10,15 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-final class ChiseOreCompatibilityScreenPolicyTest {
+final class ChiseListEditorScreenPolicyTest {
     @Test
     void blankInputCannotBeSubmitted() {
-        assertFalse(ChiseOreCompatibilityScreen.canSubmitEntry("  ", List.of()));
+        assertFalse(ChiseListEditorScreen.canSubmitOreEntry("  ", List.of()));
     }
 
     @Test
     void newEntryIsAllowedBelowTheLimit() {
-        assertTrue(ChiseOreCompatibilityScreen.canSubmitEntry(
+        assertTrue(ChiseListEditorScreen.canSubmitOreEntry(
                 "examplemod:new_ore",
                 List.of(new OreHighlightCompatibilityConfig.Entry(
                         "examplemod:existing_ore", OreHighlightStyle.GENERIC))));
@@ -33,7 +33,7 @@ final class ChiseOreCompatibilityScreenPolicyTest {
                     OreHighlightStyle.GENERIC));
         }
 
-        assertFalse(ChiseOreCompatibilityScreen.canSubmitEntry("examplemod:new_ore", entries));
-        assertTrue(ChiseOreCompatibilityScreen.canSubmitEntry(" EXAMPLEMOD:ORE_255 ", entries));
+        assertFalse(ChiseListEditorScreen.canSubmitOreEntry("examplemod:new_ore", entries));
+        assertTrue(ChiseListEditorScreen.canSubmitOreEntry(" EXAMPLEMOD:ORE_255 ", entries));
     }
 }
