@@ -75,6 +75,9 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
         int anchorZ = BlockPos.getZ(anchor);
 
         BufferBuilder buffer = retainedBuffer.newBufferBuilder(THROUGH_WALL_PIPELINE);
+        LocalFeatureConfig hiddenConfig =
+                style == Style.HIDDEN_BLOCK ? LocalFeatureConfig.getInstance() : null;
+        Minecraft client = style == Style.HIDDEN_BLOCK ? Minecraft.getInstance() : null;
         for (int index = 0; index < state.count(); index++) {
             long packed = state.positionAt(index);
             int x = BlockPos.getX(packed);
@@ -89,18 +92,17 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
             float edgeThickness;
             float boxInset;
             if (style == Style.HIDDEN_BLOCK) {
-                LocalFeatureConfig local = LocalFeatureConfig.getInstance();
-                String blockId = hiddenBlockIdAt(x, y, z);
+                String blockId = hiddenBlockIdAt(client, x, y, z);
                 outlineColor = HiddenBlockAnalyzerPalettePolicy.colorForDistance(
                         distance,
                         blockId,
-                        local.hiddenSurfaceTraceColorPreset,
-                        local.hiddenSurfaceTraceOpacityPercent);
+                        hiddenConfig.hiddenSurfaceTraceColorPreset,
+                        hiddenConfig.hiddenSurfaceTraceOpacityPercent);
                 fillColor = HiddenBlockAnalyzerPalettePolicy.fillColorForDistance(
                         distance,
                         blockId,
-                        local.hiddenSurfaceTraceColorPreset,
-                        local.hiddenSurfaceTraceOpacityPercent);
+                        hiddenConfig.hiddenSurfaceTraceColorPreset,
+                        hiddenConfig.hiddenSurfaceTraceOpacityPercent);
                 edgeThickness = HiddenBlockAnalyzerPalettePolicy.ANALYZER_EDGE_THICKNESS;
                 boxInset = HiddenBlockAnalyzerPalettePolicy.ANALYZER_BOX_INSET;
             } else {
@@ -135,9 +137,8 @@ final class ThroughWallMarkerRenderer implements AutoCloseable {
         }
     }
 
-    private String hiddenBlockIdAt(int x, int y, int z) {
-        Minecraft client = Minecraft.getInstance();
-        if (client.level == null
+    private String hiddenBlockIdAt(Minecraft client, int x, int y, int z) {
+        if (client == null || client.level == null
                 || client.level.getChunkSource().getChunkNow(x >> 4, z >> 4) == null) {
             return "";
         }
