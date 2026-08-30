@@ -58,13 +58,12 @@ def audit_language(
     if subtitle != expected_subtitle:
         failures.append(f"{locale} help subtitle must describe the 16-toggle / 14-default-off scope")
 
-    analyzer_help = str(values.get("screen.chisetweaks.help.analyzer.description", ""))
-    if not analyzer_help or "Ancient Debris" in analyzer_help or "古代の残骸" in analyzer_help:
-        failures.append(f"{locale} Analyzer help must describe the retained analyzer group")
-
     expected_names = {
         "config.name.localfirevisibility": "Low Fire",
-        "config.name.locallavahighlight": "Lava Analyzer",
+        "config.name.locallavahighlight": "Lava Source",
+        "config.name.hiddensurfacetrace": "Occluded Blocks",
+        "config.name.villageranalyzer": "Villager Job Site Links",
+        "config.name.finethreadtrace": "Fine Line / Tripwire",
         "config.name.materialhighlights": "Ore Highlights",
         "config.name.handheldsize": "Handheld Size",
     }
@@ -121,9 +120,15 @@ def main() -> int:
         failures,
     )
     require(
-        r"16個のON/OFF可能なruntime機能",
+        r"7グループ",
         readme,
-        "README must explain the current sixteen-toggle scope in beginner-facing language",
+        "README must explain the seven Tweaks product groups",
+        failures,
+    )
+    require(
+        r"16個のlow-level runtime toggle",
+        readme,
+        "README must distinguish the 16 compatibility toggles from product groups",
         failures,
     )
     require(
@@ -165,7 +170,7 @@ def main() -> int:
         "exact CI-verified runtime JAR",
         f"`{jar_goal} bytes`",
         f"`{jar_max} bytes`",
-        "toggle可能なruntime featureは現在16個",
+        "製品UIの正本は次の7 Tweaks group",
         "GitHub Issues",
         "scripts/ci_scope.py",
         "scripts/ci_provenance.py",
@@ -174,6 +179,10 @@ def main() -> int:
         "release / Publish verified runtime JAR",
         "CHISE_CI_RUNS_ON",
         "workflow_dispatch",
+        "OccludedHighlightsFeature",
+        "Villager Job Site Links",
+        "BuilderAssistRows",
+        "WorkflowRows",
     ):
         if marker not in development:
             failures.append(f"DEVELOPMENT.md is missing current contract marker: {marker}")
@@ -221,12 +230,13 @@ def main() -> int:
     print("DOCUMENTATION CONSISTENCY AUDIT: PASS")
     print("user_doc=README.md")
     print("development_doc=DEVELOPMENT.md")
-    print("runtime_translation_scope=16_retained_features")
+    print("runtime_translation_scope=7_product_groups_16_compatibility_toggles")
     print("retired_translation_residue=false")
     print("retired_duplicate_docs=false")
     print(f"minecraft={minecraft}")
     print(f"runtime_jar_goal={jar_goal}")
     print(f"runtime_jar_max={jar_max}")
+    print("product_groups=7")
     print("metadata_placeholders=true")
     return 0
 
