@@ -15,6 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -35,27 +36,111 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Classify change scope
+      - name: Resolve prior PR verification
+        id: prior
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          echo 'candidate=false' >> "$GITHUB_OUTPUT"
+          echo 'has_runtime_artifact=false' >> "$GITHUB_OUTPUT"
+
+          pr_json="$(gh api -H 'Accept: application/vnd.github+json' "repos/${GH_REPO}/commits/${HEAD_SHA}/pulls")"
+          pr_number="$(jq -r '[.[] | select(.merged_at != null and .base.ref == "main")] | sort_by(.merged_at) | last | .number // empty' <<<"$pr_json")"
+          if [[ -z "$pr_number" ]]; then
+            echo 'No merged PR provenance candidate; main will run FULL.'
+            exit 0
+          fi
+
+          pr_head_sha="$(gh api "repos/${GH_REPO}/pulls/${pr_number}" --jq '.head.sha')"
+          runs="$(gh api "repos/${GH_REPO}/actions/runs?head_sha=${pr_head_sha}&event=pull_request&status=success&per_page=20")"
+          prior_run_id="$(jq -r '[.workflow_runs[] | select(.name == "CI")] | sort_by(.run_number) | last | .id // empty' <<<"$runs")"
+          if [[ -z "$prior_run_id" ]]; then
+            echo "No successful PR CI run for #${pr_number}; main will run FULL."
+            exit 0
+          fi
+
+          artifacts="$(gh api "repos/${GH_REPO}/actions/runs/${prior_run_id}/artifacts?per_page=100")"
+          provenance_count="$(jq '[.artifacts[] | select(.expired == false and .name == "chise-ci-provenance")] | length' <<<"$artifacts")"
+          if [[ "$provenance_count" != '1' ]]; then
+            echo "PR CI run ${prior_run_id} has no unique provenance artifact; main will run FULL."
+            exit 0
+          fi
+
+          runtime_count="$(jq '[.artifacts[] | select(.expired == false and (.name | test("^chise-tweaks-.*\\.jar$")))] | length' <<<"$artifacts")"
+          runtime_name=''
+          has_runtime='false'
+          if [[ "$runtime_count" == '1' ]]; then
+            runtime_name="$(jq -r '.artifacts[] | select(.expired == false and (.name | test("^chise-tweaks-.*\\.jar$"))) | .name' <<<"$artifacts")"
+            has_runtime='true'
+          fi
+
+          {
+            echo 'candidate=true'
+            echo "pr_number=${pr_number}"
+            echo "prior_run_id=${prior_run_id}"
+            echo "has_runtime_artifact=${has_runtime}"
+            echo "runtime_artifact_name=${runtime_name}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download prior PR provenance
+        if: ${{ steps.prior.outputs.candidate == 'true' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: chise-ci-provenance
+          path: build/prior
+          run-id: ${{ steps.prior.outputs.prior_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Classify execution mode
         id: scope
         env:
           EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.sha }}
+          GH_REPO: ${{ github.repository }}
+          PRIOR_CANDIDATE: ${{ steps.prior.outputs.candidate }}
+          PRIOR_RUN_ID: ${{ steps.prior.outputs.prior_run_id }}
+          HAS_RUNTIME_ARTIFACT: ${{ steps.prior.outputs.has_runtime_artifact }}
         run: |
-          if [[ "$EVENT_NAME" != 'pull_request' ]]; then
-            echo 'scope=full' >> "$GITHUB_OUTPUT"
-            echo 'heavy=true' >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == 'pull_request' ]]; then
+            git diff --name-only --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" > /tmp/chise-changed-files.txt
+            scope="$(python3 scripts/ci_scope.py --file-list /tmp/chise-changed-files.txt)"
+            heavy='false'
+            if [[ "$scope" == 'full' ]]; then
+              heavy='true'
+            fi
+            {
+              echo "scope=${scope}"
+              echo "heavy=${heavy}"
+              echo 'promote=false'
+              echo 'reason=pull-request'
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          git diff --name-only --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" > /tmp/chise-changed-files.txt
-          scope="$(python3 scripts/ci_scope.py --file-list /tmp/chise-changed-files.txt)"
-          echo "scope=$scope" >> "$GITHUB_OUTPUT"
-          if [[ "$scope" == 'full' ]]; then
-            echo 'heavy=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'heavy=false' >> "$GITHUB_OUTPUT"
+          if [[ "$EVENT_NAME" == 'push' && "$PRIOR_CANDIDATE" == 'true' && -f build/prior/ci-provenance.json ]]; then
+            current_tree="$(git rev-parse 'HEAD^{tree}')"
+            decision="$(python3 scripts/ci_provenance.py decide               --input build/prior/ci-provenance.json               --repository "$GH_REPO"               --expected-run-id "$PRIOR_RUN_ID"               --current-tree-sha "$current_tree"               --has-runtime-artifact "$HAS_RUNTIME_ARTIFACT")"
+            {
+              echo "scope=$(jq -r '.scope' <<<"$decision")"
+              echo "heavy=$(jq -r '.heavy' <<<"$decision")"
+              echo "promote=$(jq -r '.promote' <<<"$decision")"
+              echo "reason=$(jq -r '.reason' <<<"$decision")"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          {
+            echo 'scope=full'
+            echo 'heavy=true'
+            echo 'promote=false'
+            echo 'reason=direct-or-unverified-main'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Python 3.14
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -65,6 +150,7 @@ jobs:
       - name: Test repository tooling
         run: |
           python scripts/test_ci_scope.py
+          python scripts/test_ci_provenance.py
           python scripts/test_ci_workflow_contract.py
           python scripts/test_versioning_tools.py
           python scripts/test_prism_acceptance_audit.py
@@ -76,8 +162,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          previous_tag="$(gh api "repos/${GH_REPO}/releases?per_page=100" \
-            --jq '[.[] | select(.draft == false and .prerelease == false and (.tag_name | test("^v[0-9]+\\.")))] | sort_by(.published_at) | last | .tag_name // ""')"
+          previous_tag="$(gh api "repos/${GH_REPO}/releases?per_page=100"             --jq '[.[] | select(.draft == false and .prerelease == false and (.tag_name | test("^v[0-9]+\\.")))] | sort_by(.published_at) | last | .tag_name // ""')"
           if [[ -z "$previous_tag" ]]; then
             echo 'No previous official SemVer release; progression check skipped.'
           else
@@ -92,6 +177,19 @@ jobs:
           python scripts/documentation_consistency_audit.py
           python scripts/compatibility_contract_audit.py
           python scripts/functional_parity_audit.py
+
+      - name: Download tree-identical verified runtime
+        if: ${{ steps.scope.outputs.promote == 'true' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ steps.prior.outputs.runtime_artifact_name }}
+          path: build/libs
+          run-id: ${{ steps.prior.outputs.prior_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Audit promoted runtime
+        if: ${{ steps.scope.outputs.promote == 'true' }}
+        run: python scripts/promoted_artifact_audit.py
 
       - name: Set up Java 25
         if: ${{ steps.scope.outputs.heavy == 'true' }}
@@ -126,18 +224,88 @@ jobs:
           python scripts/visual_asset_audit.py
           python scripts/release_residue_audit.py
 
-      - name: Summarize CI scope
+      - name: Resolve verified runtime metadata
+        id: runtime
+        if: ${{ success() && (steps.scope.outputs.heavy == 'true' || steps.scope.outputs.promote == 'true') }}
+        run: |
+          mapfile -t candidates < <(find build/libs -maxdepth 1 -type f -name 'chise-tweaks-*.jar' ! -name '*-sources.jar' -print)
+          if [[ "${#candidates[@]}" -ne 1 ]]; then
+            echo "Expected exactly one verified runtime JAR, found ${#candidates[@]}." >&2
+            exit 1
+          fi
+          runtime="${candidates[0]}"
+          runtime_jar="$(basename "$runtime")"
+          runtime_sha256="$(sha256sum "$runtime" | cut -d' ' -f1)"
+          {
+            echo "runtime_jar=${runtime_jar}"
+            echo "runtime_sha256=${runtime_sha256}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Write reusable PR provenance
+        if: ${{ success() && github.event_name == 'pull_request' }}
+        env:
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SCOPE: ${{ steps.scope.outputs.scope }}
+          RUNTIME_JAR: ${{ steps.runtime.outputs.runtime_jar }}
+          RUNTIME_SHA256: ${{ steps.runtime.outputs.runtime_sha256 }}
+        run: |
+          tested_commit="$(git rev-parse HEAD)"
+          tested_tree="$(git rev-parse 'HEAD^{tree}')"
+          version="$(sed -n 's/^mod_version=//p' gradle.properties)"
+          args=(
+            write
+            --output build/ci/ci-provenance.json
+            --repository "$GH_REPO"
+            --run-id "$RUN_ID"
+            --event pull_request
+            --scope "$SCOPE"
+            --tested-commit-sha "$tested_commit"
+            --tested-tree-sha "$tested_tree"
+            --version "$version"
+          )
+          if [[ "$SCOPE" == 'full' ]]; then
+            args+=(--runtime-verified --runtime-jar "$RUNTIME_JAR" --runtime-sha256 "$RUNTIME_SHA256")
+          fi
+          python scripts/ci_provenance.py "${args[@]}"
+
+      - name: Upload PR provenance
+        if: ${{ success() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: chise-ci-provenance
+          path: build/ci/ci-provenance.json
+          archive: false
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Upload verified runtime JAR
+        if: ${{ success() && steps.runtime.outputs.runtime_jar != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.runtime.outputs.runtime_jar }}
+          path: build/libs/${{ steps.runtime.outputs.runtime_jar }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Summarize CI v3
         if: ${{ always() }}
         env:
           CI_SCOPE: ${{ steps.scope.outputs.scope }}
           HEAVY_GATE: ${{ steps.scope.outputs.heavy }}
+          PROMOTED: ${{ steps.scope.outputs.promote }}
+          REASON: ${{ steps.scope.outputs.reason }}
+          PRIOR_RUN: ${{ steps.prior.outputs.prior_run_id }}
         run: |
           {
-            echo '### CI v2 scope'
+            echo '### CI v3 execution'
             echo "- Scope: `$CI_SCOPE`"
-            echo "- Heavy Java / Gradle / PIT / GameTest / distribution gate: `$HEAVY_GATE`"
-            if [[ "$HEAVY_GATE" == 'false' ]]; then
-              echo '- Non-runtime PR: repository tooling and contract audits ran; Java/Gradle/PIT/GameTest/distribution work was skipped.'
+            echo "- Heavy Java / Gradle / PIT / GameTest gate: `$HEAVY_GATE`"
+            echo "- Tree-identical PR artifact promoted: `$PROMOTED`"
+            echo "- Decision: `$REASON`"
+            if [[ "$PROMOTED" == 'true' ]]; then
+              echo "- Source PR CI run: `$PRIOR_RUN`"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -147,12 +315,3 @@ jobs:
           if [[ -f build/ci/artifact-summary.md ]]; then
             cat build/ci/artifact-summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
-
-      - name: Upload verified runtime JAR
-        if: ${{ success() && steps.scope.outputs.heavy == 'true' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          path: build/libs/${{ steps.artifacts.outputs.runtime_jar }}
-          archive: false
-          if-no-files-found: error
-          retention-days: 3
