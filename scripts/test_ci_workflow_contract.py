@@ -3,7 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
-RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
+RETIRED_RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 
 
 def require(text: str, marker: str, label: str) -> None:
@@ -13,7 +13,6 @@ def require(text: str, marker: str, label: str) -> None:
 
 def main() -> int:
     ci = CI_WORKFLOW.read_text(encoding="utf-8")
-    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
 
     require(ci, "name: verify / Java 25 quality gate", "required status-check name")
     require(ci, "actions: read", "prior-run artifact permission")
@@ -37,9 +36,16 @@ def main() -> int:
     require(ci, "timeout-minutes: 15", "CI runaway budget cap")
     require(ci, "retention-days: 3", "short-lived CI artifact")
     require(ci, "vars.CHISE_CI_RUNS_ON", "runner override")
-    require(release, "vars.CHISE_CI_RUNS_ON", "release runner override")
-    require(release, "timeout-minutes: 5", "release runaway budget cap")
-    require(release, "skip_reason=no-runtime-artifact", "non-runtime main release skip")
+
+    require(ci, "name: release / Publish verified runtime JAR", "integrated release job")
+    require(ci, "needs.verify.outputs.release_ready == 'true'", "runtime-only release gate")
+    require(ci, "contents: write", "release write permission")
+    require(ci, "timeout-minutes: 5", "release runaway budget cap")
+    require(ci, "name: ${{ needs.verify.outputs.runtime_jar }}", "same-run exact artifact download")
+    require(ci, "Exact CI artifact promoted", "release artifact integrity summary")
+
+    if RETIRED_RELEASE_WORKFLOW.exists():
+        raise AssertionError("standalone release workflow must remain retired")
 
     heavy_condition = "if: ${{ steps.scope.outputs.heavy == 'true' }}"
     if ci.count(heavy_condition) < 6:
@@ -50,6 +56,11 @@ def main() -> int:
     java_index = ci.index("- name: Set up Java 25")
     if not (audit_index < promotion_index < java_index):
         raise AssertionError("static audits must fail fast before promotion or Java/Gradle execution")
+
+    release_index = ci.index("  release:")
+    release_candidate_index = ci.index("- name: Resolve release candidate")
+    if release_candidate_index >= release_index:
+        raise AssertionError("verify job must decide runtime release readiness before release job")
 
     print("CI WORKFLOW CONTRACT TESTS: PASS")
     return 0
