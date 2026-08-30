@@ -14,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class TestResponsibilitySGradeContractTest {
     private static final Path ROOT = Path.of("").toAbsolutePath().normalize();
     private static final Path TESTS = ROOT.resolve("src/test/java/dev/chise/chisetweaks");
+    private static final Path SELF = ROOT.resolve(
+            "src/test/java/dev/chise/chisetweaks/TestResponsibilitySGradeContractTest.java");
 
     @Test
     void deterministicPolicyBehaviorHasJUnitAndMutationEvidence() throws IOException {
@@ -23,18 +25,19 @@ final class TestResponsibilitySGradeContractTest {
         assertTrue(build.contains("pitest {"));
         assertTrue(build.contains("mutationThreshold"));
         assertTrue(build.contains("testStrengthThreshold"));
-        assertAnyTestMentions("WorksiteVisibilityBudgetPolicy");
-        assertAnyTestMentions("VisualTargetSelectionPolicy");
+        assertAnyOtherTestMentions("WorksiteVisibilityBudgetPolicy");
+        assertAnyOtherTestMentions("VisualTargetSelectionPolicy");
     }
 
     @Test
-    void runtimeFeatureWiringHasExecutableRegressionEvidence() {
+    void runtimeFeatureWiringAndFaultIsolationHaveExecutableRegressionEvidence() {
         assertExists("src/test/java/dev/chise/chisetweaks/RuntimeFeatureUsabilityRegressionTest.java");
+        assertExists("src/test/java/dev/chise/chisetweaks/runtime/FeatureManagerFaultInjectionSGradeTest.java");
     }
 
     @Test
     void performanceHasStructuralAndRealDeviceEvidenceLayers() throws IOException {
-        assertAnyTestMentions("PerformanceArchitectureContract");
+        assertAnyOtherTestMentions("PerformanceArchitectureContract");
         assertExists("scripts/performance_evidence_template.py");
         assertExists("scripts/prism_acceptance_audit.py");
         String build = Files.readString(ROOT.resolve("build.gradle"));
@@ -42,10 +45,8 @@ final class TestResponsibilitySGradeContractTest {
     }
 
     @Test
-    void configAndSecurityHaveAdversarialTestOwnership() throws IOException {
-        assertAnyTestMentions("StrictJsonSecurityPolicy");
-        assertAnyTestMentions("SecureConfigStorage");
-        assertAnyTestMentions("JsonStructureBudgetPolicy");
+    void configAndSecurityHaveAdversarialTestOwnership() {
+        assertExists("src/test/java/dev/chise/chisetweaks/core/security/ConfigAdversarialSGradeTest.java");
     }
 
     @Test
@@ -69,16 +70,17 @@ final class TestResponsibilitySGradeContractTest {
         }
     }
 
-    private static void assertAnyTestMentions(String marker) throws IOException {
+    private static void assertAnyOtherTestMentions(String marker) throws IOException {
         try (Stream<Path> files = Files.walk(TESTS)) {
             boolean found = false;
             for (Path path : files.filter(p -> p.toString().endsWith(".java")).toList()) {
+                if (path.toAbsolutePath().normalize().equals(SELF)) continue;
                 if (Files.readString(path).contains(marker)) {
                     found = true;
                     break;
                 }
             }
-            assertTrue(found, () -> "No JUnit evidence found for " + marker);
+            assertTrue(found, () -> "No independent JUnit evidence found for " + marker);
         }
     }
 
