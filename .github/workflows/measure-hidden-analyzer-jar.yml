@@ -1,0 +1,57 @@
+name: Measure Hidden Analyzer JAR
+
+on:
+  push:
+    branches:
+      - feature/hidden-block-analyzer
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: measure / runtime JAR
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Java 25
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb
+
+      - name: Build runtime JAR only
+        run: |
+          chmod +x gradlew
+          ./gradlew --stacktrace remapJar
+
+      - name: Measure runtime JAR
+        id: jar
+        run: |
+          mapfile -t jars < <(find build/libs -maxdepth 1 -type f -name 'chise-tweaks-*.jar' ! -name '*-sources.jar' -print)
+          if [[ "${#jars[@]}" -ne 1 ]]; then
+            echo "Expected one runtime JAR, found ${#jars[@]}" >&2
+            exit 1
+          fi
+          jar="${jars[0]}"
+          bytes="$(wc -c < "$jar" | tr -d ' ')"
+          echo "path=$jar" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$jar")" >> "$GITHUB_OUTPUT"
+          echo "bytes=$bytes" >> "$GITHUB_OUTPUT"
+          kib="$(awk "BEGIN {printf \"%.2f\", $bytes/1024}")"
+          printf '### Runtime JAR size\n- File: `%s`\n- Bytes: `%s`\n- KiB: `%s`\n' "$(basename "$jar")" "$bytes" "$kib" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload measured JAR
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: measured-${{ steps.jar.outputs.name }}
+          path: ${{ steps.jar.outputs.path }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 1
