@@ -26,10 +26,10 @@ final class WorksiteHighlightSettingsCatalogTest {
     }
 
     @Test
-    void highlightTabExposesAppearanceAndDimensionControls() {
+    void technicalVisualizationOwnsTraceAppearanceAndSharedOverlayBudget() {
         var controller = new ChiseTweaksSettingsController();
         List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
-                ChiseTweaksSettingsController.Surface.HIGHLIGHT);
+                ChiseTweaksSettingsController.Surface.ANALYZER);
 
         assertSame(LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS,
                 row(rows, "highlightDimensionPresets").booleanConfig());
@@ -37,33 +37,30 @@ final class WorksiteHighlightSettingsCatalogTest {
                 row(rows, "fineThreadColor").integerConfig());
         assertSame(LocalFeatureSettings.FINE_THREAD_TRACE_OPACITY,
                 row(rows, "fineThreadOpacity").integerConfig());
-
         assertEquals(1, row(rows, "fineThreadColor").step());
         assertEquals(5, row(rows, "fineThreadOpacity").step());
-        assertFalse(rows.stream().anyMatch(row -> row.id().equals("hiddenSurfaceColor")));
-        assertFalse(rows.stream().anyMatch(row -> row.id().equals("hiddenSurfaceOpacity")));
     }
 
     @Test
-    void fineThreadTargetsStayInHighlightAndHiddenTargetsMoveToAnalyzer() {
+    void technicalTargetsAndOccludedTargetsBelongToDifferentProductGroups() {
         var controller = new ChiseTweaksSettingsController();
-        List<ChiseTweaksSettingRowDefinition> highlight = controller.rows(
+        List<ChiseTweaksSettingRowDefinition> highlights = controller.rows(
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT);
-        List<ChiseTweaksSettingRowDefinition> analyzer = controller.rows(
+        List<ChiseTweaksSettingRowDefinition> technical = controller.rows(
                 ChiseTweaksSettingsController.Surface.ANALYZER);
 
-        assertTrue(highlight.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwire")));
-        assertTrue(highlight.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwireHook")));
-        assertFalse(highlight.stream().anyMatch(row -> row.id().startsWith("visualTargetHidden")));
+        assertTrue(technical.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwire")));
+        assertTrue(technical.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwireHook")));
+        assertFalse(technical.stream().anyMatch(row -> row.id().startsWith("visualTargetHidden")));
 
-        assertTrue(analyzer.stream().anyMatch(row -> row.id().equals("visualTargetHiddenBlueIce")));
-        assertTrue(analyzer.stream().anyMatch(row -> row.id().equals("visualTargetHiddenDeadCoral")));
-        assertTrue(analyzer.stream().anyMatch(row -> row.id().equals("visualTargetHiddenPowderSnow")));
-        assertTrue(analyzer.stream().anyMatch(row -> row.id().equals("visualTargetHiddenSculkCatalyst")));
+        assertTrue(highlights.stream().anyMatch(row -> row.id().equals("visualTargetHiddenBlueIce")));
+        assertTrue(highlights.stream().anyMatch(row -> row.id().equals("visualTargetHiddenDeadCoral")));
+        assertTrue(highlights.stream().anyMatch(row -> row.id().equals("visualTargetHiddenPowderSnow")));
+        assertTrue(highlights.stream().anyMatch(row -> row.id().equals("visualTargetHiddenSculkCatalyst")));
     }
 
     @Test
-    void highlightResetRestoresControlsAndTraceTargetsToSafeDefaults() {
+    void technicalResetRestoresTraceControlsAndTargets() {
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();
         config.worksiteVisibilityDimensionPresetsEnabled = true;
         config.fineThreadTraceColorPreset = 7;
@@ -74,7 +71,7 @@ final class WorksiteHighlightSettingsCatalogTest {
                 config.visualTargetMask, Target.TECHNICAL_TRIPWIRE_HOOK, false);
 
         var controller = new ChiseTweaksSettingsController();
-        controller.reset(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
+        controller.reset(ChiseTweaksSettingsController.Surface.ANALYZER);
 
         assertFalse(config.worksiteVisibilityDimensionPresetsEnabled);
         assertEquals(-1, config.fineThreadTraceColorPreset);

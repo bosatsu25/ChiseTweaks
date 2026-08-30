@@ -58,19 +58,16 @@ def audit_language(
     if subtitle != expected_subtitle:
         failures.append(f"{locale} help subtitle must describe the 16-toggle / 14-default-off scope")
 
-    analyzer_help = str(values.get("screen.chisetweaks.help.analyzer.description", ""))
-    if not analyzer_help or "Ancient Debris" in analyzer_help or "古代の残骸" in analyzer_help:
-        failures.append(f"{locale} Analyzer help must describe the retained analyzer group")
-
+    # These translation keys remain migration-compatible. Product-facing Lava/Hidden/Villager
+    # names are now owned by FeatureDefinition/TweaksProductSettingsRows instead of legacy help copy.
     expected_names = {
         "config.name.localfirevisibility": "Low Fire",
-        "config.name.locallavahighlight": "Lava Analyzer",
         "config.name.materialhighlights": "Ore Highlights",
         "config.name.handheldsize": "Handheld Size",
     }
     for key, expected in expected_names.items():
         if values.get(key) != expected:
-            failures.append(f"{locale} canonical feature name drift: {key} must be {expected}")
+            failures.append(f"{locale} canonical retained name drift: {key} must be {expected}")
 
 
 def main() -> int:
@@ -108,48 +105,40 @@ def main() -> int:
         failures,
     )
     require(r"^\| Java \| `25` 以上 \|$", readme, "README Java row must require Java 25 or newer", failures)
-    require(
-        r"chise-tweaks-<version>\.jar",
-        readme,
-        "README must document the version-derived runtime JAR naming contract",
-        failures,
-    )
-    require(
-        r"\[`DEVELOPMENT\.md`\]\(DEVELOPMENT\.md\)",
-        readme,
-        "README must link to DEVELOPMENT.md",
-        failures,
-    )
-    require(
-        r"16個のON/OFF可能なruntime機能",
-        readme,
-        "README must explain the current sixteen-toggle scope in beginner-facing language",
-        failures,
-    )
-    require(
-        r"Bright系はResource Pack切替を持ちません",
-        readme,
-        "README must explain Bright rendering without resource-pack switching",
-        failures,
-    )
-    require(
-        r"White Concrete spriteをChestへ貼らない",
-        readme,
-        "README must preserve the dedicated Bright Chest texture contract",
-        failures,
-    )
-    require(
-        r"Resource Pack selection / reloadへ依存しない",
-        development,
-        "DEVELOPMENT.md must document Bright non-pack rendering ownership",
-        failures,
-    )
-    require(
-        r"Handheld Size.*Resource Pack",
-        development,
-        "DEVELOPMENT.md must document Handheld Size as code-based resource-pack-preserving rendering",
-        failures,
-    )
+    require(r"chise-tweaks-<version>\.jar", readme,
+            "README must document the version-derived runtime JAR naming contract", failures)
+    require(r"\[`DEVELOPMENT\.md`\]\(DEVELOPMENT\.md\)", readme,
+            "README must link to DEVELOPMENT.md", failures)
+    require(r"16個のON/OFF可能なruntime機能", readme,
+            "README must explain the current sixteen-toggle scope", failures)
+
+    for product_group in (
+        "Visual Tweaks",
+        "Builder Highlights",
+        "Technical Visualization",
+        "Scene Filter",
+        "Builder Assist",
+        "Integrations",
+    ):
+        if product_group not in readme:
+            failures.append(f"README is missing Tweaks product group: {product_group}")
+
+    for retained_visual_name in (
+        "Lava Source Highlight",
+        "Hidden Material Highlight",
+        "Villager Job Site Links",
+    ):
+        if retained_visual_name not in readme:
+            failures.append(f"README is missing visualization name: {retained_visual_name}")
+
+    require(r"Bright系はResource Pack切替を持ちません", readme,
+            "README must explain Bright rendering without resource-pack switching", failures)
+    require(r"White Concrete spriteをChestへ貼らない", readme,
+            "README must preserve the dedicated Bright Chest texture contract", failures)
+    require(r"Resource Pack selection / reloadへ依存しない", development,
+            "DEVELOPMENT.md must document Bright non-pack rendering ownership", failures)
+    require(r"Handheld Size.*Resource Pack", development,
+            "DEVELOPMENT.md must document Handheld Size as code-based resource-pack-preserving rendering", failures)
 
     for retired_heading in (
         "### Air Placement",
@@ -212,6 +201,10 @@ def main() -> int:
         if depends.get(key) != expected:
             failures.append(f"fabric.mod.json dependency {key} must be {expected}")
 
+    description = str(fabric.get("description", ""))
+    if "tweaks" not in description.lower() or "builders" not in description.lower():
+        failures.append("fabric.mod.json description must identify the builder Tweaks product scope")
+
     if failures:
         print("DOCUMENTATION CONSISTENCY AUDIT: FAIL", file=sys.stderr)
         for failure in failures:
@@ -222,6 +215,7 @@ def main() -> int:
     print("user_doc=README.md")
     print("development_doc=DEVELOPMENT.md")
     print("runtime_translation_scope=16_retained_features")
+    print("product_groups=6")
     print("retired_translation_residue=false")
     print("retired_duplicate_docs=false")
     print(f"minecraft={minecraft}")
