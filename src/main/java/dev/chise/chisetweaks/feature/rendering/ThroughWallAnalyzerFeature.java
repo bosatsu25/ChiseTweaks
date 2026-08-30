@@ -6,8 +6,6 @@ import dev.chise.chisetweaks.config.LocalFeatureConfig;
 import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
-import dev.chise.chisetweaks.core.vision.BlockInspectionCategory;
-import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import dev.chise.chisetweaks.runtime.TickingRuntimeComponent;
