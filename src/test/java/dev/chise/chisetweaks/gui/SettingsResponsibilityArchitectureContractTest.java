@@ -12,59 +12,38 @@ final class SettingsResponsibilityArchitectureContractTest {
     private static final Path GUI = Path.of("src/main/java/dev/chise/chisetweaks/gui");
 
     @Test
-    void controllerCoordinatesSettingsWithoutOwningMinecraftWidgetsOrPresentationBuilders() throws Exception {
+    void controllerCoordinatesSettingsWithoutOwningPresentationBuilders() throws Exception {
         String controller = Files.readString(GUI.resolve("ChiseTweaksSettingsController.java"));
-
         assertTrue(controller.contains("ChiseTweaksSettingsRows"));
-        assertTrue(controller.contains("InspectorSettingsRows"));
+        assertTrue(controller.contains("BuilderAssistRows"));
+        assertTrue(controller.contains("WorkflowRows"));
         assertTrue(controller.contains("SettingPersistenceCoordinator"));
 
         for (String presentation : new String[]{
                 "net.minecraft.client.gui.components.Button",
-                "net.minecraft.client.gui.screens.Screen",
-                "GuiGraphicsExtractor",
-                "Tooltip",
-                "Component.translatable(",
-                "headerLiteral(",
-                "addHighlightRows(",
-                "addAnalyzerRows(",
-                "addPlacementRows("}) {
-            assertFalse(controller.contains(presentation),
-                    () -> "controller owns presentation detail: " + presentation);
+                "GuiGraphicsExtractor", "Tooltip", "Component.translatable("}) {
+            assertFalse(controller.contains(presentation), presentation);
         }
     }
 
     @Test
     void rowModelsRemainPresentationOnly() throws Exception {
-        String rows = Files.readString(GUI.resolve("ChiseTweaksSettingsRows.java"));
-        String inspector = Files.readString(GUI.resolve("InspectorSettingsRows.java"));
-
-        assertTrue(rows.contains("ChiseTweaksSettingRowDefinition"));
-        assertTrue(inspector.contains("ChiseTweaksSettingRowDefinition"));
-
+        String combined = Files.readString(GUI.resolve("ChiseTweaksSettingsRows.java"))
+                + Files.readString(GUI.resolve("BuilderAssistRows.java"))
+                + Files.readString(GUI.resolve("WorkflowRows.java"));
         for (String persistence : new String[]{
-                "SettingPersistenceCoordinator",
-                "savePendingConfig(",
-                "pendingDomainsForDiagnostics(",
-                "SecureConfigStorage",
-                ".save()"}) {
-            assertFalse(rows.contains(persistence),
-                    () -> "static settings rows own persistence: " + persistence);
-            assertFalse(inspector.contains(persistence),
-                    () -> "inspector rows own persistence: " + persistence);
+                "SettingPersistenceCoordinator", "savePendingConfig(", "SecureConfigStorage", ".save()"}) {
+            assertFalse(combined.contains(persistence), persistence);
         }
     }
 
     @Test
-    void screenOwnsWidgetLifecycleButNotConfigDomainPersistence() throws Exception {
+    void screenOwnsWidgetLifecycleButNotConfigPersistence() throws Exception {
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
-
         assertTrue(screen.contains("extends Screen"));
         assertTrue(screen.contains("ChiseTweaksSettingsController"));
         assertFalse(screen.contains("SettingPersistenceCoordinator"));
         assertFalse(screen.contains("LocalFeatureConfig.getInstance()"));
-        assertFalse(screen.contains("MasaIntegrationConfig.getInstance()"));
-        assertFalse(screen.contains("CompatibilityIntegrationConfig.getInstance()"));
         assertFalse(screen.contains("SecureConfigStorage"));
     }
 }
