@@ -224,9 +224,12 @@ public final class ThroughWallAnalyzerFeature
                     int y = originY + yOffset;
                     cursor.set(x, y, z);
                     double distanceSquared = Double.NaN;
+                    BlockState state = hiddenCandidate ? sourceChunk.getBlockState(cursor) : null;
 
                     if (lavaCandidate) {
-                        FluidState fluidState = sourceChunk.getFluidState(cursor);
+                        FluidState fluidState = state == null
+                                ? sourceChunk.getFluidState(cursor)
+                                : state.getFluidState();
                         boolean source = isSourceLava(fluidState);
                         boolean boundary = source && hasKnownSourceBoundary(client, sourceChunk, cursor);
                         if (LavaVisionPalettePolicy.shouldHighlight(true, source, boundary)) {
@@ -236,7 +239,6 @@ public final class ThroughWallAnalyzerFeature
                     }
 
                     if (hiddenCandidate) {
-                        BlockState state = sourceChunk.getBlockState(cursor);
                         if (!BuilderFocusVisibility.shouldHide(state.getBlock())) {
                             Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
                             String blockId = id == null ? "" : id.toString();
