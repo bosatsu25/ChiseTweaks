@@ -120,7 +120,7 @@ public class ChiseBooleanSetting {
     }
 
     protected void writeValue(boolean requested) {
-        writeValue(requested);
+        writer.accept(availability.getAsBoolean() && requested);
     }
 
     public final boolean getBooleanValue() {
@@ -143,7 +143,7 @@ public class ChiseBooleanSetting {
     public final boolean setBooleanValue(boolean requested) {
         boolean previous = getBooleanValue();
         if (previous == requested) return false;
-        writer.accept(availability.getAsBoolean() && requested);
+        writeValue(requested);
         if (getBooleanValue() == previous) return false;
         notifyChangeListeners();
         return true;
