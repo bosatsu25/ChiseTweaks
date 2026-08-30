@@ -237,6 +237,8 @@ public final class ChiseTweaksConfigScreen extends Screen {
         } else if (action == ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD) {
             minecraft.setScreen(new ChiseMasaIntegrationEditorScreen(
                     this, ChiseMasaIntegrationEditorScreen.Target.TWEAKEROO_TOOL_SWITCH_GUARD));
+        } else if (action == ChiseTweaksSettingRowDefinition.Action.OPEN_MASA_GUIDE) {
+            minecraft.setScreen(new ChiseMasaGuideScreen(this));
         } else if (action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE
                 || action == ChiseTweaksSettingRowDefinition.Action.CLEAR_PATTERN_REFERENCE) {
             if (action == ChiseTweaksSettingRowDefinition.Action.SELECT_PATTERN_REFERENCE) {
