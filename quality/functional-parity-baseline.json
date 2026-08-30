@@ -2,10 +2,10 @@
   "schema": 2,
   "baseline": {
     "version": "0.15.0+mc26.1.2",
-    "commit": "f6269e0b76df8a2ea4aecb460823d950b1c01adf",
+    "commit": "4d88da343c722e79f101801c4646265ea1741fd1",
     "runtimeJarBytes": null,
     "goalBytes": 358400,
-    "measurementStatus": "unmeasured-current-16-feature-runtime"
+    "measurementStatus": "unmeasured-seven-group-refactor"
   },
   "featureIds": [
     "builder_focus_blocks",
@@ -64,14 +64,10 @@
       "localFineThreadTraceOpacityPercent": 100,
       "localHiddenSurfaceTraceColorPreset": -1,
       "localHiddenSurfaceTraceOpacityPercent": 100,
-      "localLavaAnalyzerHorizontalRadius": 5,
-      "localLavaAnalyzerVerticalRadius": 3,
-      "localLavaAnalyzerIntervalTicks": 10,
-      "localLavaAnalyzerMaxOverlays": 12,
-      "localHiddenAnalyzerHorizontalRadius": 5,
-      "localHiddenAnalyzerVerticalRadius": 3,
-      "localHiddenAnalyzerIntervalTicks": 10,
-      "localHiddenAnalyzerMaxOverlays": 12
+      "localOccludedHighlightHorizontalRadius": 5,
+      "localOccludedHighlightVerticalRadius": 3,
+      "localOccludedHighlightIntervalTicks": 10,
+      "localOccludedHighlightMaxOverlays": 12
     },
     "visualTargets": {
       "visualTargetMaterialCoalOre": true,
