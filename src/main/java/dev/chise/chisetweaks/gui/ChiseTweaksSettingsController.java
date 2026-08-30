@@ -31,9 +31,6 @@ final class ChiseTweaksSettingsController {
 
     private static final String[] PROPERTY_GROUPS = {
             "orientation", "shape", "connection", "interaction", "fluid", "other"};
-    private static final List<ChiseBooleanSetting> RESOURCE_TARGETS = targets("visualTargetMaterial");
-    private static final List<ChiseBooleanSetting> TECHNICAL_TARGETS = targets("visualTargetTechnical");
-    private static final List<ChiseBooleanSetting> VISIBILITY_TARGETS = targets("visualTargetHidden");
 
     List<ChiseTweaksSettingRowDefinition> rows(ChiseTweaksSettingsController.Surface surface) {
         ArrayList<ChiseTweaksSettingRowDefinition> rows = new ArrayList<>();
@@ -116,10 +113,10 @@ final class ChiseTweaksSettingsController {
                 "Fine Line Highlight - Opacity",
                 "20-100%", 5);
         headerLiteral(rows, "detail.highlight.technicalTargets", "Fine Line Targets");
-        for (ChiseBooleanSetting option : TECHNICAL_TARGETS) target(rows, option);
+        addTargets(rows, "visualTargetTechnical");
 
         header(rows, "detail.highlight.materialTargets", "screen.chisetweaks.settings.section.material_targets");
-        for (ChiseBooleanSetting option : RESOURCE_TARGETS) target(rows, option);
+        addTargets(rows, "visualTargetMaterial");
 
     }
 
@@ -179,7 +176,7 @@ final class ChiseTweaksSettingsController {
                 "20-100%", 5);
 
         header(rows, "detail.analyzer.hiddenTargets", "screen.chisetweaks.settings.section.hidden_targets");
-        for (ChiseBooleanSetting option : VISIBILITY_TARGETS) target(rows, option);
+        addTargets(rows, "visualTargetHidden");
     }
 
     private static void analyzerBudgetRows(
@@ -686,12 +683,12 @@ final class ChiseTweaksSettingsController {
                 config.getName(), text(base + ".name"), text(base + ".description"), config));
     }
 
-    private static List<ChiseBooleanSetting> targets(String prefix) {
-        ArrayList<ChiseBooleanSetting> result = new ArrayList<>();
+    private static void addTargets(
+            ArrayList<ChiseTweaksSettingRowDefinition> rows,
+            String prefix) {
         for (ChiseBooleanSetting option : VisualTargetSettings.ALL_OPTIONS) {
-            if (option.getName().startsWith(prefix)) result.add(option);
+            if (option.getName().startsWith(prefix)) target(rows, option);
         }
-        return List.copyOf(result);
     }
 
     private static String text(String key) {
