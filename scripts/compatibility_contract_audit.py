@@ -19,6 +19,7 @@ FORBIDDEN_IMPLEMENTATION_TOKENS = (
 )
 FORBIDDEN_METADATA_RELATIONS = ("depends", "breaks", "conflicts")
 EXPECTED_MIXIN_PLUGIN = "dev.chise.chisetweaks.mixin.FeatureAvailabilityMixinConfigPlugin"
+EXPECTED_INTEGRATION_MIXIN_PLUGIN = "dev.chise.chisetweaks.mixin.IntegrationMixinConfigPlugin"
 
 
 def relation_mod_ids(value: object) -> set[str]:
@@ -68,6 +69,16 @@ def main() -> int:
     if mixin.get("plugin") != EXPECTED_MIXIN_PLUGIN:
         failures.append(f"feature mixin plugin must be {EXPECTED_MIXIN_PLUGIN}")
 
+    integration_mixin_path = ROOT / "src/main/resources/chisetweaks.integrations.mixins.json"
+    integration_mixin = json.loads(integration_mixin_path.read_text(encoding="utf-8"))
+    if integration_mixin.get("required") is not False:
+        failures.append("integration mixin config must remain fail-soft with required=false")
+    if integration_mixin.get("injectors", {}).get("defaultRequire") != 0:
+        failures.append("integration mixin config defaultRequire must remain 0")
+    if integration_mixin.get("plugin") != EXPECTED_INTEGRATION_MIXIN_PLUGIN:
+        failures.append(
+            f"integration mixin plugin must be {EXPECTED_INTEGRATION_MIXIN_PLUGIN}")
+
     production_root = ROOT / "src/main/java"
     for path in production_root.rglob("*.java"):
         text = path.read_text(encoding="utf-8").lower()
@@ -94,6 +105,7 @@ def main() -> int:
     print("resource_namespace_coupling=false")
     print("mixin_fail_soft=true")
     print("canonical_mixin_plugin=true")
+    print("integration_mixin_fail_soft=true")
     print("blocking_runtime_regressions=false")
     return 0
 
