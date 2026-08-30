@@ -10,12 +10,12 @@ from pathlib import Path
 VALID_SCOPES = {"docs-only", "tooling-only", "full"}
 
 
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+def is_lower_hex(value: object, length: int) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == length
+        and all(character in "0123456789abcdef" for character in value)
+    )
 
 
 def write_provenance(
@@ -33,12 +33,20 @@ def write_provenance(
         runtime_verified: bool) -> None:
     if scope not in VALID_SCOPES:
         raise ValueError(f"invalid scope: {scope}")
+    if not repository or run_id <= 0 or not version:
+        raise ValueError("repository, positive run id and version are required")
+    if not is_lower_hex(tested_commit_sha, 40) or not is_lower_hex(tested_tree_sha, 40):
+        raise ValueError("tested commit/tree SHA must be lowercase 40-character hex")
     if event != "pull_request":
         raise ValueError("reusable provenance must originate from pull_request")
     if scope == "full" and not runtime_verified:
         raise ValueError("full provenance must verify a runtime artifact")
-    if runtime_verified and (not runtime_jar or len(runtime_sha256) != 64):
-        raise ValueError("verified runtime provenance requires filename and SHA-256")
+    if runtime_verified and (
+            not runtime_jar
+            or not runtime_jar.startswith("chise-tweaks-")
+            or not runtime_jar.endswith(".jar")
+            or not is_lower_hex(runtime_sha256, 64)):
+        raise ValueError("verified runtime provenance requires Chise runtime filename and SHA-256")
     if not runtime_verified and (runtime_jar or runtime_sha256):
         raise ValueError("non-runtime provenance must not claim an artifact")
 
@@ -76,7 +84,10 @@ def promotion_decision(
         return fallback | {"reason": "event"}
     if payload.get("source_run_id") != expected_run_id:
         return fallback | {"reason": "run-id"}
-    if payload.get("tested_tree_sha") != current_tree_sha:
+    tested_tree_sha = payload.get("tested_tree_sha")
+    if not is_lower_hex(tested_tree_sha, 40) or not is_lower_hex(current_tree_sha, 40):
+        return fallback | {"reason": "tree-sha-format"}
+    if tested_tree_sha != current_tree_sha:
         return fallback | {"reason": "tree-mismatch"}
 
     scope = payload.get("scope")
@@ -84,7 +95,7 @@ def promotion_decision(
         return fallback | {"reason": "scope"}
 
     if scope in {"docs-only", "tooling-only"}:
-        if payload.get("runtime_verified"):
+        if payload.get("runtime_verified") or payload.get("runtime_jar") or payload.get("runtime_sha256"):
             return fallback | {"reason": "non-runtime-claimed-artifact"}
         return {"scope": scope, "heavy": False, "promote": False, "reason": "tree-identical-non-runtime"}
 
@@ -94,7 +105,7 @@ def promotion_decision(
     runtime_sha256 = payload.get("runtime_sha256")
     if not isinstance(runtime_jar, str) or not runtime_jar.startswith("chise-tweaks-") or not runtime_jar.endswith(".jar"):
         return fallback | {"reason": "runtime-name"}
-    if not isinstance(runtime_sha256, str) or len(runtime_sha256) != 64:
+    if not is_lower_hex(runtime_sha256, 64):
         return fallback | {"reason": "runtime-sha256"}
     if not has_runtime_artifact:
         return fallback | {"reason": "runtime-artifact-missing"}
