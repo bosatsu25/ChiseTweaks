@@ -216,12 +216,22 @@ final class ChiseTweaksSettingsCatalog {
                 MasaIntegrationSettings.LITEMATICA_PICK_REDIRECT,
                 "Pick Redirect",
                 "Litematicaが要求するblock itemが無い場合に、設定済みの代替blockを候補にします。");
+        action(rows, "editLitematicaPickRedirect",
+                "Pick Redirect Map",
+                "Schematic Block → Replacement Blockの対応を編集します。",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_LITEMATICA_PICK_REDIRECT,
+                "リスト設定");
 
         headerLiteral(rows, "masa.tweakeroo.settings", "Tweakeroo");
         boolLiteral(rows, "tweakerooToolSwitchGuard",
                 MasaIntegrationSettings.TWEAKEROO_TOOL_SWITCH_GUARD,
                 "Selective Tool Switch Guard",
                 "TweakerooのTool SwitchをChiseのallow/deny policyで制御します。");
+        action(rows, "editTweakerooToolSwitchGuard",
+                "Tool Switch Guard List",
+                "Tool Switchを許可/拒否するBlock IDを編集します。",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKEROO_TOOL_SWITCH_GUARD,
+                "リスト設定");
         boolLiteral(rows, "tweakerooPersistentGammaOverride",
                 MasaIntegrationSettings.TWEAKEROO_PERSISTENT_GAMMA,
                 "Persistent Gamma Override",
@@ -232,6 +242,11 @@ final class ChiseTweaksSettingsCatalog {
                 MasaIntegrationSettings.TWEAKERMORE_AUTO_PICK_GUARD,
                 "Selective Auto Pick Guard",
                 "TweakerMoreのAuto Pickをitem allow/deny policyで制御します。");
+        action(rows, "editTweakerMoreAutoPickGuard",
+                "Auto Pick Guard List",
+                "Auto Pickを許可/拒否するItem IDを編集します。",
+                ChiseTweaksSettingRowDefinition.Action.EDIT_TWEAKERMORE_AUTO_PICK_GUARD,
+                "リスト設定");
         boolLiteral(rows, "tweakermoreMaterialListRefresh",
                 MasaIntegrationSettings.TWEAKERMORE_MATERIAL_REFRESH,
                 "Material List Refresh",
