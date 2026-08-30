@@ -29,15 +29,18 @@ final class ConfigAdversarialSGradeTest {
     @Test
     void rejectsDuplicateAndUnicodeEquivalentKeys() {
         assertRejected("{\"enabled\":true,\"enabled\":false}");
-        assertRejected("{\"é\":1,\"e\\u0301\":2}");
+        String escapedCombiningAcute = "\\" + "u0301";
+        assertRejected("{\"é\":1,\"e" + escapedCombiningAcute + "\":2}");
     }
 
     @Test
     void rejectsControlCharactersNulAndBrokenUnicode() {
         assertRejected("{\"a\":\"line\nfeed\"}");
-        assertRejected("{\"a\":\"x\u0000y\"}");
-        assertRejected("{\"a\":\"\\uD800\"}");
-        assertRejected("{\"a\":\"\\uDC00\"}");
+        assertRejected("{\"a\":\"x" + (char) 0 + "y\"}");
+        String escapedHighSurrogate = "\\" + "uD800";
+        String escapedLowSurrogate = "\\" + "uDC00";
+        assertRejected("{\"a\":\"" + escapedHighSurrogate + "\"}");
+        assertRejected("{\"a\":\"" + escapedLowSurrogate + "\"}");
     }
 
     @Test
