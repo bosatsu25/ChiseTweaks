@@ -63,14 +63,14 @@ final class TestResponsibilityContractTest {
                     () -> id + " has unsupported priority");
 
             JsonArray characteristics = requiredArray(risk, "quality_characteristics");
-            assertFalse(characteristics.isEmpty(), () -> id + " needs a quality characteristic");
+            assertFalse(characteristics.size() == 0, () -> id + " needs a quality characteristic");
             for (var characteristic : characteristics) {
                 assertTrue(QUALITY_CHARACTERISTICS.contains(characteristic.getAsString()),
                         () -> id + " has unknown quality characteristic: " + characteristic);
             }
 
             JsonArray techniques = requiredArray(risk, "test_techniques");
-            assertFalse(techniques.isEmpty(), () -> id + " needs an explicit test technique");
+            assertFalse(techniques.size() == 0, () -> id + " needs an explicit test technique");
             for (var technique : techniques) {
                 assertTrue(TEST_TECHNIQUES.contains(technique.getAsString()),
                         () -> id + " has unknown test technique: " + technique);
@@ -78,7 +78,7 @@ final class TestResponsibilityContractTest {
 
             requiredText(risk, "oracle");
             JsonArray evidence = requiredArray(risk, "evidence");
-            assertFalse(evidence.isEmpty(), () -> id + " has no executable evidence");
+            assertFalse(evidence.size() == 0, () -> id + " has no executable evidence");
             for (var evidencePath : evidence) {
                 Path relative = Path.of(evidencePath.getAsString()).normalize();
                 assertFalse(relative.isAbsolute(), () -> id + " evidence must be repository-relative");
@@ -88,7 +88,7 @@ final class TestResponsibilityContractTest {
             }
 
             JsonArray exitCriteria = requiredArray(risk, "exit_criteria");
-            assertFalse(exitCriteria.isEmpty(), () -> id + " has no exit criteria");
+            assertFalse(exitCriteria.size() == 0, () -> id + " has no exit criteria");
             for (var criterion : exitCriteria) {
                 assertFalse(criterion.getAsString().isBlank(), () -> id + " has a blank exit criterion");
             }
