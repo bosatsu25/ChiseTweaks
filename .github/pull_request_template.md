@@ -14,7 +14,7 @@ If no existing risk applies, explain whether `quality/risk-register.json` should
 
 ## Scope checklist
 
-- [ ] The 15-feature runtime product contract is preserved, or the intentional change is documented.
+- [ ] The 16-feature runtime product contract is preserved, or the intentional change is documented.
 - [ ] No ChiseTweaks-owned automation, click/key injection, custom play protocol, background execution, or server requirement is introduced.
 - [ ] Through-wall analyzers remain bounded, loaded-chunk-only, and do not bypass server-side obfuscation.
 - [ ] Optional integrations remain fail-soft when their target mod is absent or its API drifts.
