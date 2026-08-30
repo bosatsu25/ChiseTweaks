@@ -43,6 +43,7 @@ final class SettingsResponsibilityArchitectureContractTest {
         assertTrue(rows.contains("ChiseTweaksSettingRowDefinition"));
         assertTrue(assist.contains("ChiseTweaksSettingRowDefinition"));
         assertTrue(inspector.contains("ChiseTweaksSettingRowDefinition"));
+        assertFalse(Files.exists(GUI.resolve("ChiseTweaksSettingsRows.java")));
 
         for (String persistence : new String[]{
                 "SettingPersistenceCoordinator",
