@@ -10,6 +10,7 @@ import dev.chise.chisetweaks.core.vision.BlockInspectionPolicy;
 import dev.chise.chisetweaks.core.vision.VisualAssistanceStylePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
 import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
+import dev.chise.chisetweaks.feature.rendering.LoadedChunkWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ClipContext;
@@ -61,8 +62,8 @@ final class WorksiteScanner {
     private final WorksiteScanCandidate[] candidatePool = createCandidatePool();
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private final BlockPos.MutableBlockPos visibilityCursor = new BlockPos.MutableBlockPos();
-    private final LevelChunk[] loadedChunkBuffer = new LevelChunk[
-            WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES];
+    private final LoadedChunkWindow loadedChunks =
+            new LoadedChunkWindow(WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES);
 
     private int nextCandidateSlot;
     private int remainingLineOfSightRays;
@@ -107,28 +108,11 @@ final class WorksiteScanner {
         int maxX = originX + horizontalRadius;
         int minZ = originZ - horizontalRadius;
         int maxZ = originZ + horizontalRadius;
-        int minChunkX = minX >> 4;
-        int maxChunkX = maxX >> 4;
-        int minChunkZ = minZ >> 4;
-        int maxChunkZ = maxZ >> 4;
-        int chunkSpanX = maxChunkX - minChunkX + 1;
-        int chunkSpanZ = maxChunkZ - minChunkZ + 1;
-        int chunkCount = chunkSpanX * chunkSpanZ;
-        if (chunkCount > loadedChunkBuffer.length) return List.of();
-
-        int chunkIndex = 0;
-        for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-                loadedChunkBuffer[chunkIndex++] =
-                        client.level.getChunkSource().getChunkNow(chunkX, chunkZ);
-            }
-        }
+        if (!loadedChunks.load(client.level, minX, maxX, minZ, maxZ)) return List.of();
 
         for (int z = minZ; z <= maxZ; z++) {
-            int loadedRow = ((z >> 4) - minChunkZ) * chunkSpanX;
             for (int x = minX; x <= maxX; x++) {
-                int loadedIndex = loadedRow + ((x >> 4) - minChunkX);
-                LevelChunk sourceChunk = loadedChunkBuffer[loadedIndex];
+                LevelChunk sourceChunk = loadedChunks.atBlock(x, z);
                 if (sourceChunk == null) continue;
                 for (int yOffset = -verticalRadius; yOffset <= verticalRadius; yOffset++) {
                     cursor.set(x, originY + yOffset, z);

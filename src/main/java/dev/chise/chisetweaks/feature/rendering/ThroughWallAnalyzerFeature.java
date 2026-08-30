@@ -63,8 +63,8 @@ public final class ThroughWallAnalyzerFeature
             "Hidden Block Analyzer");
     private final NearestPositionBuffer lavaNearest = new NearestPositionBuffer(MAX_CANDIDATES);
     private final NearestPositionBuffer hiddenNearest = new NearestPositionBuffer(MAX_CANDIDATES);
-    private final LevelChunk[] loadedChunkBuffer = new LevelChunk[
-            WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES];
+    private final LoadedChunkWindow loadedChunks =
+            new LoadedChunkWindow(WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES);
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private final BlockPos.MutableBlockPos neighborCursor = new BlockPos.MutableBlockPos();
     private final int[] ticksUntilScan = new int[2];
@@ -179,19 +179,8 @@ public final class ThroughWallAnalyzerFeature
         int maxX = origin.getX() + horizontalRadius;
         int minZ = origin.getZ() - horizontalRadius;
         int maxZ = origin.getZ() + horizontalRadius;
-        int minChunkX = minX >> 4;
-        int maxChunkX = maxX >> 4;
-        int minChunkZ = minZ >> 4;
-        int maxChunkZ = maxZ >> 4;
-        int chunkSpanX = maxChunkX - minChunkX + 1;
-        int chunkCount = chunkSpanX * (maxChunkZ - minChunkZ + 1);
-        if (chunkCount > loadedChunkBuffer.length) return clearDueTargets(dueMask);
-
-        int chunkIndex = 0;
-        for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-                loadedChunkBuffer[chunkIndex++] = client.level.getChunkSource().getChunkNow(chunkX, chunkZ);
-            }
+        if (!loadedChunks.load(client.level, minX, maxX, minZ, maxZ)) {
+            return clearDueTargets(dueMask);
         }
 
         if ((dueMask & LAVA_MASK) != 0) lavaNearest.clear();
@@ -201,11 +190,9 @@ public final class ThroughWallAnalyzerFeature
         int originZ = origin.getZ();
 
         for (int z = minZ; z <= maxZ; z++) {
-            int loadedRow = ((z >> 4) - minChunkZ) * chunkSpanX;
             int dzBlocks = Math.abs(z - originZ);
             for (int x = minX; x <= maxX; x++) {
-                int loadedIndex = loadedRow + ((x >> 4) - minChunkX);
-                LevelChunk sourceChunk = loadedChunkBuffer[loadedIndex];
+                LevelChunk sourceChunk = loadedChunks.atBlock(x, z);
                 if (sourceChunk == null) continue;
                 int dxBlocks = Math.abs(x - originX);
                 boolean lavaColumn = (dueMask & LAVA_MASK) != 0
@@ -224,9 +211,12 @@ public final class ThroughWallAnalyzerFeature
                     int y = originY + yOffset;
                     cursor.set(x, y, z);
                     double distanceSquared = Double.NaN;
+                    BlockState state = hiddenCandidate ? sourceChunk.getBlockState(cursor) : null;
 
                     if (lavaCandidate) {
-                        FluidState fluidState = sourceChunk.getFluidState(cursor);
+                        FluidState fluidState = state == null
+                                ? sourceChunk.getFluidState(cursor)
+                                : state.getFluidState();
                         boolean source = isSourceLava(fluidState);
                         boolean boundary = source && hasKnownSourceBoundary(client, sourceChunk, cursor);
                         if (LavaVisionPalettePolicy.shouldHighlight(true, source, boundary)) {
@@ -236,7 +226,6 @@ public final class ThroughWallAnalyzerFeature
                     }
 
                     if (hiddenCandidate) {
-                        BlockState state = sourceChunk.getBlockState(cursor);
                         if (!BuilderFocusVisibility.shouldHide(state.getBlock())) {
                             Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
                             String blockId = id == null ? "" : id.toString();
@@ -293,7 +282,11 @@ public final class ThroughWallAnalyzerFeature
             int neighborChunkZ = neighborCursor.getZ() >> 4;
             LevelChunk neighborChunk = sourceChunk;
             if (neighborChunkX != sourceChunkX || neighborChunkZ != sourceChunkZ) {
-                neighborChunk = client.level.getChunkSource().getChunkNow(neighborChunkX, neighborChunkZ);
+                neighborChunk = loadedChunks.atBlock(neighborCursor.getX(), neighborCursor.getZ());
+                if (neighborChunk == null) {
+                    neighborChunk = client.level.getChunkSource().getChunkNow(
+                            neighborChunkX, neighborChunkZ);
+                }
                 if (neighborChunk == null) continue;
             }
             if (!isSourceLava(neighborChunk.getFluidState(neighborCursor))) return true;
@@ -427,6 +420,7 @@ public final class ThroughWallAnalyzerFeature
         hiddenTargets.clear();
         lavaNearest.clear();
         hiddenNearest.clear();
+        loadedChunks.clear();
         resetModeTiming(LAVA_INDEX);
         resetModeTiming(HIDDEN_INDEX);
         lastObservedPlayerBlock = Long.MIN_VALUE;

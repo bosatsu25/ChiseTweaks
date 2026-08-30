@@ -38,4 +38,12 @@ final class ChiseTweaksSettingRowView {
         if (value != null) value.visible = visible;
         if (plus != null) plus.visible = visible;
     }
+
+    void removeWidgets(java.util.function.Consumer<Button> remover) {
+        if (remover == null) return;
+        if (primary != null) remover.accept(primary);
+        if (minus != null) remover.accept(minus);
+        if (value != null) remover.accept(value);
+        if (plus != null) remover.accept(plus);
+    }
 }

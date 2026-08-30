@@ -37,6 +37,7 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
     private static final int FALLBACK_COLOR = 0xFFFFC857;
 
     private final BlockPos.MutableBlockPos workstationCursor = new BlockPos.MutableBlockPos();
+    private final LoadedChunkWindow workstationChunks = new LoadedChunkWindow(9);
     private volatile List<Link> links = List.of();
     private int ticksUntilScan;
     private ClientLevel lastLevel;
@@ -130,9 +131,15 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         int originX = origin.getX();
         int originY = origin.getY();
         int originZ = origin.getZ();
-        for (int z = originZ - radius; z <= originZ + radius; z++) {
-            for (int x = originX - radius; x <= originX + radius; x++) {
-                LevelChunk sourceChunk = level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+        int minX = originX - radius;
+        int maxX = originX + radius;
+        int minZ = originZ - radius;
+        int maxZ = originZ + radius;
+        if (!workstationChunks.load(level, minX, maxX, minZ, maxZ)) return null;
+
+        for (int z = minZ; z <= maxZ; z++) {
+            for (int x = minX; x <= maxX; x++) {
+                LevelChunk sourceChunk = workstationChunks.atBlock(x, z);
                 if (sourceChunk == null) continue;
                 int dx = x - originX;
                 int dz = z - originZ;
@@ -195,6 +202,7 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         links = List.of();
         ticksUntilScan = 0;
         lastLevel = null;
+        workstationChunks.clear();
     }
 
     @Override

@@ -20,6 +20,9 @@ BRIGHT_RENDERING_PATHS = {
 ANALYZERS = {
     Path("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java"),
 }
+LOADED_CHUNK_WINDOW = Path(
+    "src/main/java/dev/chise/chisetweaks/feature/rendering/LoadedChunkWindow.java"
+)
 PATTERN_INSPECTOR = Path(
     "src/main/java/dev/chise/chisetweaks/gui/PatternConsistencyInspector.java"
 )
@@ -193,6 +196,16 @@ def audit() -> list[str]:
         if PLAIN_GET_CHUNK.search(text):
             failures.append(f"{relative}: potentially force-loading getChunk call detected")
 
+    chunk_window_path = ROOT / LOADED_CHUNK_WINDOW
+    if not chunk_window_path.is_file():
+        failures.append(f"{LOADED_CHUNK_WINDOW}: shared loaded-chunk scan window is missing")
+    else:
+        chunk_window = java_code_only(chunk_window_path.read_text(encoding="utf-8"))
+        if "getChunkNow(" not in chunk_window:
+            failures.append(f"{LOADED_CHUNK_WINDOW}: shared scan window must use loaded chunks only")
+        if PLAIN_GET_CHUNK.search(chunk_window):
+            failures.append(f"{LOADED_CHUNK_WINDOW}: potentially force-loading getChunk call detected")
+
     pattern_text = java_code_only((ROOT / PATTERN_INSPECTOR).read_text(encoding="utf-8"))
     for marker in (
         "HORIZONTAL_RADIUS = 8",
@@ -229,6 +242,7 @@ def main() -> int:
     print("bright_concrete=vanilla_model_fullbright_quad_transform")
     print("reload_controllers_get_join_free=true")
     print("analyzer_force_chunk_load=false")
+    print("loaded_chunk_window_force_load=false")
     print(f"retained_analyzers={len(ANALYZERS)}")
     print("pattern_consistency_scan=bounded_loaded_chunks_only")
     print("pattern_consistency_position_retention=false")

@@ -33,6 +33,7 @@ public final class InfrastructureRangeFeature
     private static final int LIGHTNING_ROD_COLOR = 0xFFFFD45A;
 
     private final BlockPos.MutableBlockPos scanCursor = new BlockPos.MutableBlockPos();
+    private final LoadedChunkWindow loadedChunks = new LoadedChunkWindow(16);
     private volatile List<Target> targets = List.of();
     private int ticksUntilScan;
     private int lastEnabledMask;
@@ -77,13 +78,26 @@ public final class InfrastructureRangeFeature
         int hr = InfrastructureRangePolicy.DISCOVERY_HORIZONTAL_RADIUS;
         int vr = InfrastructureRangePolicy.DISCOVERY_VERTICAL_RADIUS;
         int maxTargets = InfrastructureRangePolicy.MAX_TARGETS;
+        int minX = origin.getX() - hr;
+        int maxX = origin.getX() + hr;
+        int minZ = origin.getZ() - hr;
+        int maxZ = origin.getZ() + hr;
+        int beaconMargin = (enabledMask & BEACON_MASK) != 0
+                ? InfrastructureRangePolicy.MAX_BEACON_LEVEL
+                : 0;
+        if (!loadedChunks.load(
+                client.level,
+                minX - beaconMargin,
+                maxX + beaconMargin,
+                minZ - beaconMargin,
+                maxZ + beaconMargin)) return List.of();
+
         ArrayList<Target> result = new ArrayList<>(maxTargets * Integer.bitCount(enabledMask));
         int beaconCount = 0;
         int lightningRodCount = 0;
-
-        for (int z = origin.getZ() - hr; z <= origin.getZ() + hr; z++) {
-            for (int x = origin.getX() - hr; x <= origin.getX() + hr; x++) {
-                LevelChunk sourceChunk = client.level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+        for (int z = minZ; z <= maxZ; z++) {
+            for (int x = minX; x <= maxX; x++) {
+                LevelChunk sourceChunk = loadedChunks.atBlock(x, z);
                 if (sourceChunk == null) continue;
                 for (int y = origin.getY() - vr; y <= origin.getY() + vr; y++) {
                     scanCursor.set(x, y, z);
@@ -91,8 +105,7 @@ public final class InfrastructureRangeFeature
                     if ((enabledMask & BEACON_MASK) != 0
                             && beaconCount < maxTargets
                             && state.is(Blocks.BEACON)) {
-                        int range = InfrastructureRangePolicy.beaconRadius(
-                                beaconLevel(client.level, x, y, z));
+                        int range = InfrastructureRangePolicy.beaconRadius(beaconLevel(x, y, z));
                         if (range > 0) {
                             result.add(new Target(new BlockPos(x, y, z), range, BEACON_COLOR));
                             beaconCount++;
@@ -117,14 +130,14 @@ public final class InfrastructureRangeFeature
         return List.copyOf(result);
     }
 
-    private int beaconLevel(ClientLevel level, int beaconX, int beaconY, int beaconZ) {
+    private int beaconLevel(int beaconX, int beaconY, int beaconZ) {
         int complete = 0;
         for (int layer = 1; layer <= InfrastructureRangePolicy.MAX_BEACON_LEVEL; layer++) {
             int y = beaconY - layer;
             boolean valid = true;
             for (int z = beaconZ - layer; z <= beaconZ + layer && valid; z++) {
                 for (int x = beaconX - layer; x <= beaconX + layer; x++) {
-                    LevelChunk sourceChunk = level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+                    LevelChunk sourceChunk = loadedChunks.atBlock(x, z);
                     if (sourceChunk == null) {
                         valid = false;
                         break;
@@ -213,6 +226,7 @@ public final class InfrastructureRangeFeature
         ticksUntilScan = 0;
         lastEnabledMask = 0;
         lastLevel = null;
+        loadedChunks.clear();
     }
 
     @Override
