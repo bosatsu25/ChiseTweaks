@@ -15,54 +15,22 @@ public final class FeatureSwitches {
     public static final FeatureSwitch NETHER_PALETTE = create(FeatureDefinition.NETHER_PALETTE);
     public static final FeatureSwitch KELP_HIGHLIGHT = create(FeatureDefinition.KELP_HIGHLIGHT);
 
-    public static final FeatureSwitch FIRE_VISIBILITY = local(
-            FeatureDefinition.FIRE_VISIBILITY,
-            "localFireVisibility",
-            false,
-            config -> config.fireVisibilityEnabled,
-            (config, value) -> config.fireVisibilityEnabled = value);
-    public static final FeatureSwitch HANDHELD_SIZE = local(
-            FeatureDefinition.HANDHELD_SIZE,
-            "handheldSize",
-            false,
-            config -> config.handheldSizeEnabled,
-            (config, value) -> config.handheldSizeEnabled = value);
-    public static final FeatureSwitch LAVA_HIGHLIGHT = local(
-            FeatureDefinition.LAVA_HIGHLIGHT,
-            "localLavaHighlight",
-            false,
-            config -> config.lavaHighlightEnabled,
-            (config, value) -> config.lavaHighlightEnabled = value);
-    public static final FeatureSwitch VILLAGER_ANALYZER = local(
-            FeatureDefinition.VILLAGER_ANALYZER,
-            "villagerAnalyzer",
-            false,
-            config -> config.villagerAnalyzerEnabled,
-            (config, value) -> config.villagerAnalyzerEnabled = value);
-    public static final FeatureSwitch BEACON_RANGE = local(
-            FeatureDefinition.BEACON_RANGE,
-            "beaconRange",
-            false,
-            config -> config.beaconRangeEnabled,
-            (config, value) -> config.beaconRangeEnabled = value);
-    public static final FeatureSwitch LIGHTNING_ROD_RANGE = local(
-            FeatureDefinition.LIGHTNING_ROD_RANGE,
-            "lightningRodRange",
-            false,
-            config -> config.lightningRodRangeEnabled,
-            (config, value) -> config.lightningRodRangeEnabled = value);
-    public static final FeatureSwitch BRIGHT_CHEST = local(
-            FeatureDefinition.BRIGHT_CHEST,
-            "brightChest",
-            true,
-            config -> config.brightChestEnabled,
-            (config, value) -> config.brightChestEnabled = value);
-    public static final FeatureSwitch BRIGHT_CONCRETE = local(
-            FeatureDefinition.BRIGHT_CONCRETE,
-            "brightConcrete",
-            true,
-            config -> config.brightConcreteEnabled,
-            (config, value) -> config.brightConcreteEnabled = value);
+    public static final FeatureSwitch FIRE_VISIBILITY =
+            local(FeatureDefinition.FIRE_VISIBILITY, "localFireVisibility", false);
+    public static final FeatureSwitch HANDHELD_SIZE =
+            local(FeatureDefinition.HANDHELD_SIZE, "handheldSize", false);
+    public static final FeatureSwitch LAVA_HIGHLIGHT =
+            local(FeatureDefinition.LAVA_HIGHLIGHT, "localLavaHighlight", false);
+    public static final FeatureSwitch VILLAGER_ANALYZER =
+            local(FeatureDefinition.VILLAGER_ANALYZER, "villagerAnalyzer", false);
+    public static final FeatureSwitch BEACON_RANGE =
+            local(FeatureDefinition.BEACON_RANGE, "beaconRange", false);
+    public static final FeatureSwitch LIGHTNING_ROD_RANGE =
+            local(FeatureDefinition.LIGHTNING_ROD_RANGE, "lightningRodRange", false);
+    public static final FeatureSwitch BRIGHT_CHEST =
+            local(FeatureDefinition.BRIGHT_CHEST, "brightChest", true);
+    public static final FeatureSwitch BRIGHT_CONCRETE =
+            local(FeatureDefinition.BRIGHT_CONCRETE, "brightConcrete", true);
 
     /** chisetweaks.jsonに保存されるFeature。 */
     public static final List<FeatureSwitch> FEATURE_CONFIG_VALUES = List.of(
@@ -114,15 +82,13 @@ public final class FeatureSwitches {
     private static FeatureSwitch local(
             FeatureDefinition definition,
             String configName,
-            boolean defaultEnabled,
-            java.util.function.Predicate<LocalFeatureConfig> getter,
-            java.util.function.BiConsumer<LocalFeatureConfig, Boolean> setter) {
+            boolean defaultEnabled) {
         return new FeatureSwitch(
                 definition,
                 configName,
                 defaultEnabled,
-                () -> getter.test(LocalFeatureConfig.getInstance()),
-                value -> setter.accept(LocalFeatureConfig.getInstance(), value),
+                () -> LocalFeatureConfig.getInstance().featureEnabled(definition),
+                value -> LocalFeatureConfig.getInstance().setFeatureEnabled(definition, value),
                 SettingPersistence.LOCAL_CONFIG);
     }
 }
