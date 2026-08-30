@@ -28,11 +28,11 @@ final class CrosshairInspectorLayoutTest {
                         FeatureDefinition.MATERIAL_HIGHLIGHTS),
                 null,
                 null,
-                PlacementComparisonTracker.NONE,
+                PlacementInspector.NONE,
                 null,
                 false);
         List<ChiseTweaksSettingRowDefinition> rows =
-                new ChiseTweaksSettingsCatalog().inspectorRows(
+                new ChiseTweaksSettingsController().inspectorRows(
                         snapshot,
                         true);
 
