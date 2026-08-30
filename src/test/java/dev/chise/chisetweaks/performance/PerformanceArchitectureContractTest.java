@@ -116,16 +116,22 @@ final class PerformanceArchitectureContractTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteScanner.java"));
 
         assertTrue(infrastructure.contains("BlockPos.MutableBlockPos scanCursor"));
+        assertTrue(infrastructure.contains("LevelChunk sourceChunk"));
+        assertTrue(infrastructure.contains("sourceChunk.getBlockState(scanCursor)"));
         assertFalse(infrastructure.contains("BlockPos pos = new BlockPos(x, y, z)"));
-        assertFalse(infrastructure.contains("getBlockState(new BlockPos(x, y, z))"));
+        assertFalse(infrastructure.contains("client.level.getBlockState(scanCursor)"));
 
         assertTrue(villager.contains("BlockPos.MutableBlockPos workstationCursor"));
+        assertTrue(villager.contains("LevelChunk sourceChunk"));
+        assertTrue(villager.contains("sourceChunk.getBlockState(workstationCursor)"));
         assertFalse(villager.contains("BlockPos candidate = new BlockPos(x, y, z)"));
+        assertFalse(villager.contains("level.getBlockState(workstationCursor)"));
 
         assertTrue(worksite.contains("LevelChunk[] loadedChunkBuffer"));
         assertTrue(worksite.contains("sourceChunk.getBlockState(position)"));
         assertFalse(worksite.contains("client.level.getBlockState(position)"));
     }
+
     @Test
     void patternConsistencyBudgetsArePartOfTheRepositoryPerformanceAudit() throws IOException {
         String audit = Files.readString(ROOT.resolve("scripts/runtime_performance_contract_audit.py"));
