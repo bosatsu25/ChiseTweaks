@@ -170,9 +170,10 @@ Masa系MODは英語の設定名が多いため、重要な項目を**日本語 +
 例:
 
 - `Generic` → **一般設定 (Generic)**
+- `Visuals` → **表示設定 (Visuals)**
 - `Hotkeys` → **キー設定 (Hotkeys)**
-- `Placement` → **配置 (Placement)**
-- `Material List` → **材料リスト (Material List)**
+- `Lists` → **リスト設定 (Lists)**
+- Litematicaの `placementRestriction` → **配置制限 (placementRestriction)**
 
 設定は `Auto / Enabled / Disabled` の3段階です。  
 **AutoではMinecraftの言語が日本語のときだけ日本語UX補助を有効にします。**
