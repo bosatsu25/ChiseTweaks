@@ -48,12 +48,6 @@ final class ChiseTweaksSettingsRows {
         return List.copyOf(rows);
     }
 
-    static List<ChiseTweaksSettingRowDefinition> inspectorRows(
-            CrosshairInspector.Snapshot snapshot,
-            boolean includeHelp) {
-        return InspectorSettingsRows.rows(snapshot, includeHelp);
-    }
-
     static String surfaceTitle(Surface surface) {
         String value = (surface == null ? Surface.HIGHLIGHT : surface)
                 .name().toLowerCase(java.util.Locale.ROOT);
