@@ -487,6 +487,39 @@ final class CrosshairInspector {
         return List.copyOf(result);
     }
 
+    static String semanticPropertyGroup(String property) {
+        return switch (property == null ? "" : property) {
+            case "facing", "axis" -> "orientation";
+            case "half", "type", "shape", "face" -> "shape";
+            case "north", "south", "east", "west", "up", "down", "in_wall" -> "connection";
+            case "open", "powered", "lit", "honey_level" -> "interaction";
+            case "waterlogged" -> "fluid";
+            default -> "other";
+        };
+    }
+
+    static String comparisonResultKey(int result) {
+        return switch (result) {
+            case PlacementInspector.MATCH -> "screen.chisetweaks.placement.result.match";
+            case PlacementInspector.ADJUSTED -> "screen.chisetweaks.placement.result.adjusted";
+            case PlacementInspector.DIFFERENT -> "screen.chisetweaks.placement.result.different";
+            default -> "screen.chisetweaks.placement.result.unavailable";
+        };
+    }
+
+    static String humanize(String token) {
+        String value = token.replace('_', ' ');
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+    }
+
+    static String renderModeKey(FeatureDefinition feature, boolean hidden) {
+        if (hidden) return "screen.chisetweaks.inspector.render_mode.suppressed";
+        return feature == FeatureDefinition.LAVA_HIGHLIGHT
+                || feature == FeatureDefinition.HIDDEN_SURFACE_TRACE
+                ? "screen.chisetweaks.inspector.render_mode.through_wall"
+                : "screen.chisetweaks.inspector.render_mode.visible";
+    }
+
     private static String safeIdentifier(String raw) {
         if (raw == null) return "";
         String value = raw.trim();
