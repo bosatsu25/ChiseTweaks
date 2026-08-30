@@ -35,8 +35,10 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
     private static final int SCAN_INTERVAL_TICKS = 20;
     private static final int PRIMARY_COLOR = 0xFF72FF9F;
     private static final int FALLBACK_COLOR = 0xFFFFC857;
+    private static final int MAX_WORKSTATION_CHUNKS = 9;
 
     private final BlockPos.MutableBlockPos workstationCursor = new BlockPos.MutableBlockPos();
+    private final LevelChunk[] workstationChunkBuffer = new LevelChunk[MAX_WORKSTATION_CHUNKS];
     private volatile List<Link> links = List.of();
     private int ticksUntilScan;
     private ClientLevel lastLevel;
@@ -130,9 +132,32 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         int originX = origin.getX();
         int originY = origin.getY();
         int originZ = origin.getZ();
-        for (int z = originZ - radius; z <= originZ + radius; z++) {
-            for (int x = originX - radius; x <= originX + radius; x++) {
-                LevelChunk sourceChunk = level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+        int minX = originX - radius;
+        int maxX = originX + radius;
+        int minZ = originZ - radius;
+        int maxZ = originZ + radius;
+        int minChunkX = minX >> 4;
+        int maxChunkX = maxX >> 4;
+        int minChunkZ = minZ >> 4;
+        int maxChunkZ = maxZ >> 4;
+        int chunkSpanX = maxChunkX - minChunkX + 1;
+        int chunkSpanZ = maxChunkZ - minChunkZ + 1;
+        int chunkCount = chunkSpanX * chunkSpanZ;
+        if (chunkCount > workstationChunkBuffer.length) return null;
+
+        int chunkIndex = 0;
+        for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                workstationChunkBuffer[chunkIndex++] =
+                        level.getChunkSource().getChunkNow(chunkX, chunkZ);
+            }
+        }
+
+        for (int z = minZ; z <= maxZ; z++) {
+            int loadedRow = ((z >> 4) - minChunkZ) * chunkSpanX;
+            for (int x = minX; x <= maxX; x++) {
+                int loadedIndex = loadedRow + ((x >> 4) - minChunkX);
+                LevelChunk sourceChunk = workstationChunkBuffer[loadedIndex];
                 if (sourceChunk == null) continue;
                 int dx = x - originX;
                 int dz = z - originZ;
@@ -195,6 +220,9 @@ public final class VillagerAnalyzerFeature implements TickingFeature, SessionAwa
         links = List.of();
         ticksUntilScan = 0;
         lastLevel = null;
+        for (int index = 0; index < workstationChunkBuffer.length; index++) {
+            workstationChunkBuffer[index] = null;
+        }
     }
 
     @Override
