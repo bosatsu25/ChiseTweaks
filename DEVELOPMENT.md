@@ -130,7 +130,7 @@ CI v3は**品質ゲートを削らず、同一treeの重複FULL検証を避け�
 
 - `scripts/ci_scope.py` が変更ファイルをfail-closedで `docs-only` / `tooling-only` / `full` に分類する
 - `README.md` / `DEVELOPMENT.md` / `docs/**` だけは `docs-only`
-- docsに加えて `.github/**` / `scripts/**` / `quality/**` だけなら `tooling-only`
+- docsに加えて `.github/**` / `scripts/**` / `quality/**` だけなら原則 `tooling-only`。ただし品質正本の `quality/risk-register.json` を変更した場合は、traceabilityのexecutable evidenceを再検証するため `full`
 - source / test / runtime resource / Gradle build logic / config / mixed change / 空集合は `full`
 - `docs-only` / `tooling-only` でもPython tooling test、Version progression、Repository / Source Usage / Documentation / Compatibility / Functional Parity auditsは実行する
 - `full` はJava / Gradle / JUnit / JaCoCo / PIT / Client GameTest / Artifact / Visual Asset / Release Residue auditsをすべて実行する
