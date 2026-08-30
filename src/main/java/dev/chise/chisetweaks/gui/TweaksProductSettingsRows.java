@@ -42,12 +42,12 @@ final class TweaksProductSettingsRows {
 
     static String title(Surface surface) {
         return switch (surface == null ? Surface.HIGHLIGHT : surface) {
-            case HIGHLIGHT -> localized("Builder Highlights", "建築ハイライト");
-            case FILTER -> localized("Scene Filter", "表示フィルター");
-            case INSPECTOR -> localized("Builder Assist", "建築アシスト");
-            case ANALYZER -> localized("Technical", "技術可視化");
-            case VISIBILITY -> localized("Visual Tweaks", "表示調整");
-            case INTEGRATIONS -> localized("Integrations", "連携");
+            case HIGHLIGHT -> text("screen.chisetweaks.product.builder_highlights");
+            case FILTER -> text("screen.chisetweaks.product.scene_filter");
+            case INSPECTOR -> text("screen.chisetweaks.product.builder_assist");
+            case ANALYZER -> text("screen.chisetweaks.product.technical");
+            case VISIBILITY -> text("screen.chisetweaks.product.visual_tweaks");
+            case INTEGRATIONS -> text("screen.chisetweaks.product.integrations");
         };
     }
 
@@ -70,9 +70,7 @@ final class TweaksProductSettingsRows {
         addTargets(rows, "visualTargetMaterial");
 
         featureLiteral(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
-                localized(
-                        "Show nearby loaded lava source blocks as bounded occluded highlights.",
-                        "読み込み済み近傍の溶岩源を、範囲制限された壁越しハイライトとして表示します。"));
+                text("screen.chisetweaks.product.lava.description"));
         analyzerBudgetRows(rows, "lava", FeatureSwitches.LAVA_HIGHLIGHT,
                 LocalFeatureSettings.LAVA_ANALYZER_HORIZONTAL_RADIUS,
                 LocalFeatureSettings.LAVA_ANALYZER_VERTICAL_RADIUS,
@@ -80,9 +78,7 @@ final class TweaksProductSettingsRows {
                 LocalFeatureSettings.LAVA_ANALYZER_MAX_OVERLAYS);
 
         featureLiteral(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
-                localized(
-                        "Show selected hidden building materials as bounded occluded highlights.",
-                        "選択した隠れ建材を、範囲制限された壁越しハイライトとして表示します。"));
+                text("screen.chisetweaks.product.hidden.description"));
         analyzerBudgetRows(rows, "hidden", FeatureSwitches.HIDDEN_SURFACE_TRACE,
                 LocalFeatureSettings.HIDDEN_ANALYZER_HORIZONTAL_RADIUS,
                 LocalFeatureSettings.HIDDEN_ANALYZER_VERTICAL_RADIUS,
@@ -153,9 +149,7 @@ final class TweaksProductSettingsRows {
         featureLiteral(rows, "lightningRodRange", FeatureSwitches.LIGHTNING_ROD_RANGE,
                 text("screen.chisetweaks.settings.copy.lightning_rod_range.description"));
         featureLiteral(rows, "villagerAnalyzer", FeatureSwitches.VILLAGER_ANALYZER,
-                localized(
-                        "Draw links only for villager job sites already known by Minecraft; no workstation guessing scan is used.",
-                        "Minecraftが既に把握している村人のJob Siteだけを線で表示します。職業ブロックの推測探索は行いません。"));
+                text("screen.chisetweaks.product.villager_links.description"));
     }
 
     private static void addVisualTweaks(ArrayList<ChiseTweaksSettingRowDefinition> rows) {
@@ -441,7 +435,4 @@ final class TweaksProductSettingsRows {
                 : "screen.chisetweaks.settings.copy.not_installed");
     }
 
-    private static String localized(String english, String japanese) {
-        return "ja".equals(text("screen.chisetweaks.help.language.probe")) ? japanese : english;
-    }
 }
