@@ -1,11 +1,9 @@
 name: CI
 
-# Post-expansion stabilization: automatic verification is active again.
+# Feature Expansion Mode (temporary)
+# Automatic PR/main execution is intentionally paused while the queued feature set is merged.
+# Restore pull_request/push triggers in the post-expansion stabilization PR.
 on:
-  pull_request:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
