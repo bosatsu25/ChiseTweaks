@@ -69,6 +69,8 @@ public final class ThroughWallAnalyzerFeature
     private final int[] stableScanCount = new int[2];
     private final int[] lastScanFingerprint = {Integer.MIN_VALUE, Integer.MIN_VALUE};
     private final boolean[] movementSinceLastScan = new boolean[2];
+    private final java.util.IdentityHashMap<net.minecraft.world.level.block.Block, Integer> hiddenTargetMasks =
+            new java.util.IdentityHashMap<>();
 
     private long lastObservedPlayerBlock = Long.MIN_VALUE;
     private ClientLevel lastLevel;
