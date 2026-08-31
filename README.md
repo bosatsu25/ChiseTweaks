@@ -237,7 +237,8 @@ ChiseTweaksは、機能数よりも**回帰しにくさ・軽量性・配布物�
 | PIT coverage | 96% |
 | Mutation score | 96% |
 | Test strength | 96% |
-| runtime JAR目標 | 358,400 bytes / 350 KiB |
+| runtime JAR目標 | 296,960 bytes / 290 KiB |
+| runtime JAR stretch | 256,000 bytes / 250 KiB |
 | runtime JAR hard ceiling | 446,814 bytes |
 
 Performanceは推測値で合格判定しません。同一Prism環境でstartup / p50 / p95 / p99 frametime / heap / allocation / render-thread CPU / average FPSを比較します。

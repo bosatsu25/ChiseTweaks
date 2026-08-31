@@ -6,10 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-final class NearestPositionBufferTest {
+final class OccludedNearestBufferTest {
     @Test
     void retainsOnlyTheNearestRequestedPositionsAndSortsForStableSnapshots() {
-        NearestPositionBuffer buffer = new NearestPositionBuffer(4);
+        OccludedHighlightsFeature.NearestBuffer buffer = new OccludedHighlightsFeature.NearestBuffer(4);
 
         buffer.offer(40L, 40.0, 3);
         buffer.offer(10L, 10.0, 3);
@@ -25,7 +25,7 @@ final class NearestPositionBufferTest {
 
     @Test
     void clearAndZeroLimitDoNotLeakPreviousCandidates() {
-        NearestPositionBuffer buffer = new NearestPositionBuffer(2);
+        OccludedHighlightsFeature.NearestBuffer buffer = new OccludedHighlightsFeature.NearestBuffer(2);
         buffer.offer(1L, 1.0, 2);
         buffer.offer(2L, 2.0, 2);
         assertEquals(2, buffer.count());
@@ -40,6 +40,6 @@ final class NearestPositionBufferTest {
 
     @Test
     void capacityMustBePositive() {
-        assertThrows(IllegalArgumentException.class, () -> new NearestPositionBuffer(0));
+        assertThrows(IllegalArgumentException.class, () -> new OccludedHighlightsFeature.NearestBuffer(0));
     }
 }

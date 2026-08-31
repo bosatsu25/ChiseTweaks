@@ -80,7 +80,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
             ChiseTweaksSettingsController.Surface target = surfaces[index];
             ChiseTweaksSettingsLayout.Rect bounds = tabs.get(index);
             Button tab = addRenderableWidget(Button.builder(
-                    Component.literal(controller.surfaceTitle(target)),
+                    Component.literal(TweaksProductSettingsRows.title(target)),
                     ignored -> selectSurface(target, true))
                     .bounds(bounds.x(), bounds.y(), bounds.width(), bounds.height())
                     .build());
@@ -111,7 +111,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         }
 
         ArrayList<ChiseTweaksSettingRowView> views = new ArrayList<>();
-        for (ChiseTweaksSettingRowDefinition definition : controller.rows(candidate)) {
+        for (ChiseTweaksSettingRowDefinition definition : TweaksProductSettingsRows.rows(candidate)) {
             ChiseTweaksSettingRowView row = createRow(candidate, definition);
             row.renderVisible = false;
             row.setWidgetsVisible(false);
@@ -305,7 +305,7 @@ public final class ChiseTweaksConfigScreen extends Screen {
         ArrayList<ChiseTweaksSettingRowView> next = new ArrayList<>();
 
         for (ChiseTweaksSettingRowDefinition definition
-                : controller.inspectorRows(inspector.snapshot(), inspectorHelpVisible)) {
+                : TweaksBuilderAssistRows.rows(inspector.snapshot(), inspectorHelpVisible)) {
             ChiseTweaksSettingRowView row = reusableInspectorRow(previous, reused, definition);
             if (row == null) {
                 row = createRow(ChiseTweaksSettingsController.Surface.INSPECTOR, definition);

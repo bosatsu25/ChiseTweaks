@@ -28,23 +28,21 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void sixStableSurfacesExposeTweaksProductGroups() {
-        var controller = new ChiseTweaksSettingsController();
+        assertEquals("Builder Highlights", TweaksProductSettingsRows.title(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
+        assertEquals("Scene Filter", TweaksProductSettingsRows.title(ChiseTweaksSettingsController.Surface.FILTER));
+        assertEquals("Builder Assist", TweaksProductSettingsRows.title(ChiseTweaksSettingsController.Surface.INSPECTOR));
+        assertEquals("Technical", TweaksProductSettingsRows.title(ChiseTweaksSettingsController.Surface.ANALYZER));
+        assertEquals("Visual Tweaks", TweaksProductSettingsRows.title(ChiseTweaksSettingsController.Surface.VISIBILITY));
+        assertEquals("Integrations", TweaksProductSettingsRows.title(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
 
-        assertEquals("Builder Highlights", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
-        assertEquals("Scene Filter", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.FILTER));
-        assertEquals("Builder Assist", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INSPECTOR));
-        assertEquals("Technical", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.ANALYZER));
-        assertEquals("Visual Tweaks", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.VISIBILITY));
-        assertEquals("Integrations", controller.surfaceTitle(ChiseTweaksSettingsController.Surface.INTEGRATIONS));
-
-        List<String> highlights = ids(controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
+        List<String> highlights = ids(TweaksProductSettingsRows.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT));
         assertTrue(highlights.containsAll(List.of(
                 "materials", "nether", "glass", "kelp", "lava", "hidden",
                 "lavaRange", "hiddenRange", "visualTargetHiddenBlueIce")));
         assertFalse(highlights.contains("thread"));
         assertFalse(highlights.contains("villagerAnalyzer"));
 
-        List<String> technical = ids(controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER));
+        List<String> technical = ids(TweaksProductSettingsRows.rows(ChiseTweaksSettingsController.Surface.ANALYZER));
         assertTrue(technical.containsAll(List.of(
                 "thread", "fineThreadColor", "fineThreadOpacity",
                 "beaconRange", "lightningRodRange", "villagerAnalyzer",
@@ -52,7 +50,7 @@ final class ChiseTweaksSettingsControllerTest {
         assertFalse(technical.contains("lava"));
         assertFalse(technical.contains("hidden"));
 
-        List<String> visual = ids(controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY));
+        List<String> visual = ids(TweaksProductSettingsRows.rows(ChiseTweaksSettingsController.Surface.VISIBILITY));
         assertTrue(visual.containsAll(List.of(
                 "fireVisibility", "fireVisibilitySize",
                 "handheldSize", "handheldBlockScale", "handheldItemScale", "handheldToolScale",
@@ -63,10 +61,9 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void featureBindingsMoveGroupsWithoutChangingPersistenceBindings() {
-        var controller = new ChiseTweaksSettingsController();
-        var highlights = controller.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
-        var technical = controller.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
-        var visual = controller.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
+        var highlights = TweaksProductSettingsRows.rows(ChiseTweaksSettingsController.Surface.HIGHLIGHT);
+        var technical = TweaksProductSettingsRows.rows(ChiseTweaksSettingsController.Surface.ANALYZER);
+        var visual = TweaksProductSettingsRows.rows(ChiseTweaksSettingsController.Surface.VISIBILITY);
 
         assertSame(FeatureSwitches.MATERIAL_HIGHLIGHTS, row(highlights, "materials").booleanConfig());
         assertSame(FeatureSwitches.LAVA_HIGHLIGHT, row(highlights, "lava").booleanConfig());
@@ -89,8 +86,7 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void builderAssistHidesDeveloperDiagnosticsButRetainsBuilderTools() {
-        var controller = new ChiseTweaksSettingsController();
-        List<String> ids = controller.inspectorRows(CrosshairInspector.Snapshot.noTarget(), false)
+        List<String> ids = TweaksBuilderAssistRows.rows(CrosshairInspector.Snapshot.noTarget(), false)
                 .stream().map(ChiseTweaksSettingRowDefinition::id).toList();
 
         assertTrue(ids.containsAll(List.of(
@@ -107,11 +103,10 @@ final class ChiseTweaksSettingsControllerTest {
 
     @Test
     void rowsRemainUniqueAndStructurallyValid() {
-        var controller = new ChiseTweaksSettingsController();
         for (ChiseTweaksSettingsController.Surface surface : ChiseTweaksSettingsController.Surface.values()) {
             List<ChiseTweaksSettingRowDefinition> rows = surface == ChiseTweaksSettingsController.Surface.INSPECTOR
-                    ? controller.inspectorRows(CrosshairInspector.Snapshot.noTarget(), false)
-                    : controller.rows(surface);
+                    ? TweaksBuilderAssistRows.rows(CrosshairInspector.Snapshot.noTarget(), false)
+                    : TweaksProductSettingsRows.rows(surface);
             Set<String> unique = new HashSet<>();
             for (ChiseTweaksSettingRowDefinition row : rows) {
                 assertTrue(unique.add(row.id()), "duplicate row id: " + row.id());

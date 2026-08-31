@@ -52,7 +52,7 @@ final class RuntimeFeatureUsabilityRegressionTest {
     @Test
     void everyFeatureRemainsReachableFromTheSettingsUi() throws IOException {
         String rows = source(
-                "src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsRows.java");
+                "src/main/java/dev/chise/chisetweaks/gui/TweaksProductSettingsRows.java");
         for (String toggle : new String[]{
                 "BUILDER_FOCUS_BLOCKS",
                 "BUILDER_FOCUS_ENTITIES",
@@ -87,7 +87,7 @@ final class RuntimeFeatureUsabilityRegressionTest {
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java",
                 "toggle.definition().inspectionCategory()"));
         routes.put(FeatureDefinition.HIDDEN_SURFACE_TRACE, route(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java",
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java",
                 "FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue()"));
         routes.put(FeatureDefinition.GLASS_INSPECTION, route(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/model/VisualRenderState.java",
@@ -108,7 +108,7 @@ final class RuntimeFeatureUsabilityRegressionTest {
                 "src/main/java/dev/chise/chisetweaks/mixin/rendering/HandheldSizeMixin.java",
                 "FeatureSwitches.HANDHELD_SIZE.getBooleanValue()"));
         routes.put(FeatureDefinition.LAVA_HIGHLIGHT, route(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java",
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java",
                 "FeatureSwitches.LAVA_HIGHLIGHT.getBooleanValue()"));
         routes.put(FeatureDefinition.VILLAGER_ANALYZER, route(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/VillagerAnalyzerFeature.java",
@@ -138,7 +138,7 @@ final class RuntimeFeatureUsabilityRegressionTest {
     @Test
     void sharedRuntimesStillKeepTheirUserTogglesIndependent() throws IOException {
         String analyzers = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java");
         assertTrue(analyzers.contains("FeatureSwitches.LAVA_HIGHLIGHT.getBooleanValue()"));
         assertTrue(analyzers.contains("FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue()"));
         assertTrue(analyzers.contains("LAVA_MASK"));

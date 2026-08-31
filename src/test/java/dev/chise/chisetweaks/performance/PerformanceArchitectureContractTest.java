@@ -142,7 +142,7 @@ final class PerformanceArchitectureContractTest {
         assertFalse(manager.contains("InfrastructureRangeFeature.Mode"));
 
         String analyzers = Files.readString(ROOT.resolve(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java"));
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java"));
         assertTrue(analyzers.contains("implements TickingRuntimeComponent, SessionAwareRuntimeComponent"));
         assertTrue(analyzers.contains("FeatureSwitches.LAVA_HIGHLIGHT.getBooleanValue()"));
         assertTrue(analyzers.contains("FeatureSwitches.HIDDEN_SURFACE_TRACE.getBooleanValue()"));
@@ -156,19 +156,16 @@ final class PerformanceArchitectureContractTest {
                 "BlockState state = hiddenCandidate ? sourceChunk.getBlockState(cursor) : null"));
         assertTrue(analyzers.contains("state.getFluidState()"));
         assertFalse(analyzers.contains("client.level.getBlockState(cursor)"));
-        assertTrue(manager.contains("registerComponent(new ThroughWallAnalyzerFeature())"));
+        assertTrue(manager.contains("registerComponent(new OccludedHighlightsFeature())"));
         assertFalse(manager.contains("new LavaHighlightFeature()"));
         assertFalse(manager.contains("new HiddenBlockAnalyzerFeature()"));
 
-        assertTrue(villager.contains("BlockPos.MutableBlockPos workstationCursor"));
-        assertTrue(villager.contains("LoadedChunkWindow workstationChunks"));
-        assertTrue(villager.contains("workstationChunks.load("));
-        assertTrue(villager.contains("workstationChunks.atBlock("));
-        assertTrue(villager.contains("LevelChunk sourceChunk"));
-        assertTrue(villager.contains("sourceChunk.getBlockState(workstationCursor)"));
-        assertFalse(villager.contains("getChunkNow(x >> 4, z >> 4)"));
-        assertFalse(villager.contains("BlockPos candidate = new BlockPos(x, y, z)"));
-        assertFalse(villager.contains("level.getBlockState(workstationCursor)"));
+        assertTrue(villager.contains("MemoryModuleType.JOB_SITE"));
+        assertTrue(villager.contains("collectKnownLinks"));
+        assertFalse(villager.contains("LoadedChunkWindow"));
+        assertFalse(villager.contains("findNearestLoadedWorkstation"));
+        assertFalse(villager.contains("workstationCursor"));
+        assertFalse(villager.contains("level.getBlockState("));
 
         assertTrue(worksite.contains("LoadedChunkWindow loadedChunks"));
         assertTrue(worksite.contains("loadedChunks.load("));

@@ -8,11 +8,9 @@ import dev.chise.chisetweaks.config.LocalFeatureSettings;
 import dev.chise.chisetweaks.config.MasaIntegrationConfig;
 import dev.chise.chisetweaks.config.SettingPersistence;
 import dev.chise.chisetweaks.config.SettingPersistenceCoordinator;
-import dev.chise.chisetweaks.config.VisualTargetSettings;
 import dev.chise.chisetweaks.core.vision.VisualTargetGroupPolicy;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
 
 /** Settings lifecycle, reset and persistence coordinator. Presentation lives in dedicated row models. */
@@ -41,24 +39,6 @@ final class ChiseTweaksSettingsController {
 
     /** Setting bindings initialize on first use; this remains the screen lifecycle hook. */
     void initialize() {}
-
-    List<ChiseTweaksSettingRowDefinition> rows() {
-        return TweaksProductSettingsRows.rows(Surface.HIGHLIGHT);
-    }
-
-    List<ChiseTweaksSettingRowDefinition> rows(Surface surface) {
-        return TweaksProductSettingsRows.rows(surface);
-    }
-
-    List<ChiseTweaksSettingRowDefinition> inspectorRows(
-            CrosshairInspector.Snapshot snapshot,
-            boolean includeHelp) {
-        return TweaksBuilderAssistRows.rows(snapshot, includeHelp);
-    }
-
-    String surfaceTitle(Surface surface) {
-        return TweaksProductSettingsRows.title(surface);
-    }
 
     EnumSet<SettingPersistence> reset(Surface surface) {
         return switch (surface == null ? Surface.HIGHLIGHT : surface) {
@@ -186,7 +166,7 @@ final class ChiseTweaksSettingsController {
 
     private static void resetTargetGroup(VisualTargetGroupPolicy.Group group) {
         if (group == VisualTargetGroupPolicy.Group.MATERIAL) {
-            VisualTargetSettings.setAllOreHighlightTargets(true);
+            LocalFeatureSettings.setAllOreHighlightTargets(true);
             return;
         }
         LocalFeatureConfig config = LocalFeatureConfig.getInstance();

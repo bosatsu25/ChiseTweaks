@@ -15,7 +15,7 @@ final class SettingsAndAnalyzerDesignContractTest {
     @Test
     void localSettingsUseConfigAsSingleInMemorySourceOfTruth() throws IOException {
         String settings = read("src/main/java/dev/chise/chisetweaks/config/LocalFeatureSettings.java");
-        String targets = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java");
+        String targets = settings;
 
         assertContainsAll(settings,
                 "() -> config().worksiteVisibilityHorizontalRadius",
@@ -27,19 +27,20 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "private static boolean syncing",
                 "AncientDebrisAnalyzerPolicy");
         assertContainsAll(targets,
-                "LocalFeatureConfig.getInstance().visualTargetMask",
-                "VisualTargetSelectionPolicy.withEnabled(");
+                "config().visualTargetMask",
+                "VisualTargetSelectionPolicy.withEnabled(",
+                "public static final List<ChiseBooleanSetting> VISUAL_TARGETS");
     }
 
     @Test
     void occludedHighlightsRetainBoundedSharedInfrastructure() throws IOException {
-        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
+        String feature = read("src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java");
         String renderer = read("src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallMarkerRenderer.java");
 
         assertContainsAll(feature,
                 "ThroughWallMarkerRenderer.Style.LAVA_SOURCE",
                 "ThroughWallMarkerRenderer.Style.HIDDEN_BLOCK",
-                "new NearestPositionBuffer(",
+                "new NearestBuffer(",
                 "getChunkNow(");
         assertContainsAll(renderer, "enum Style", "LAVA_SOURCE", "HIDDEN_BLOCK");
         assertContainsNone(renderer, "ANCIENT_DEBRIS", "AncientDebrisAnalyzerPolicy");
@@ -66,27 +67,32 @@ final class SettingsAndAnalyzerDesignContractTest {
     @Test
     void settingsPresentationUsesTweaksProductComposition() throws IOException {
         String controller = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsController.java");
+        String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         String productRows = read("src/main/java/dev/chise/chisetweaks/gui/TweaksProductSettingsRows.java");
         String assistRows = read("src/main/java/dev/chise/chisetweaks/gui/TweaksBuilderAssistRows.java");
         String grouping = read("src/main/java/dev/chise/chisetweaks/core/definition/TweaksProductGroupPolicy.java");
         String definition = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
 
         assertContainsAll(controller,
-                "TweaksProductSettingsRows.rows",
-                "TweaksBuilderAssistRows.rows",
                 "resetTechnicalVisualizationDetails",
                 "resetOccludedHighlightDetails",
                 "SettingPersistenceCoordinator.production()");
+        assertContainsNone(controller,
+                "TweaksProductSettingsRows.rows(",
+                "TweaksBuilderAssistRows.rows(");
+        assertContainsAll(screen,
+                "TweaksProductSettingsRows.rows(",
+                "TweaksBuilderAssistRows.rows(");
         assertContainsAll(productRows,
-                "Builder Highlights",
-                "Scene Filter",
-                "Builder Assist",
-                "Technical",
-                "Visual Tweaks",
+                "screen.chisetweaks.product.builder_highlights",
+                "screen.chisetweaks.product.scene_filter",
+                "screen.chisetweaks.product.builder_assist",
+                "screen.chisetweaks.product.technical",
+                "screen.chisetweaks.product.visual_tweaks",
                 "FeatureSwitches.LAVA_HIGHLIGHT",
                 "FeatureSwitches.HIDDEN_SURFACE_TRACE",
                 "FeatureSwitches.VILLAGER_ANALYZER");
-        assertContainsAll(assistRows,
+        assertContainsNone(assistRows,
                 "inspector.filter",
                 "inspector.matchedRule",
                 "inspector.features",
@@ -104,11 +110,14 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Lava Analyzer\"",
                 "\"Hidden Block Analyzer\"",
                 "\"Villager Analyzer\"");
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsRows.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java"));
     }
 
     @Test
     void builderAssistStillRetainsPlacementPatternSchematicAndHistoryCapabilities() throws IOException {
         String rows = read("src/main/java/dev/chise/chisetweaks/gui/InspectorSettingsRows.java");
+        String snapshot = read("src/main/java/dev/chise/chisetweaks/gui/CrosshairSnapshotPolicy.java");
         String productRows = read("src/main/java/dev/chise/chisetweaks/gui/TweaksBuilderAssistRows.java");
 
         assertContainsAll(rows,
@@ -116,6 +125,14 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "addSchematicPlacementRows(",
                 "addPatternConsistencyRows(",
                 "addInteractionHistoryRows(");
+        assertContainsNone(rows,
+                "filterDecision()",
+                "responsibleFeatures()",
+                "renderModeKey(");
+        assertContainsNone(snapshot,
+                "BuilderFocusVisibility",
+                "OreHighlightResolver",
+                "responsibleFeatures(");
         assertContainsAll(productRows,
                 "InspectorSettingsRows.rows",
                 "product.builderAssist");

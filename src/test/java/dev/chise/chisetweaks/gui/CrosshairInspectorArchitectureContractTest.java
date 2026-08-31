@@ -12,23 +12,22 @@ final class CrosshairInspectorArchitectureContractTest {
     private static final Path GUI = Path.of("src/main/java/dev/chise/chisetweaks/gui");
 
     @Test
-    void crosshairOwnsExistingHitLifecycleAndCacheButNotDomainDerivation() throws Exception {
+    void crosshairOwnsExistingHitLifecycleAndMinimalBuilderCache() throws Exception {
         String crosshair = Files.readString(GUI.resolve("CrosshairInspector.java"));
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));
 
         assertTrue(crosshair.contains("client.hitResult"));
         assertTrue(crosshair.contains("cachedBlockState == state"));
-        assertTrue(crosshair.contains("cachedFilterRevision == filterRevision"));
         assertTrue(crosshair.contains("CrosshairSnapshotPolicy.blockSnapshot("));
         assertTrue(crosshair.contains("PlacementInspector.placementProbe("));
         assertTrue(screen.contains("inspector.refresh(minecraft)"));
 
-        for (String misplaced : new String[]{
-                "BlockPlaceContext", "BlockStateProperties", "BlockInspectionPolicy",
-                "VisualTargetSelectionPolicy", "TrapDoorBlock", "SlabBlock", "StairBlock",
-                "GlassHighlightTargetPolicy", "OreHighlightResolver.resolve("}) {
-            assertFalse(crosshair.contains(misplaced),
-                    () -> "CrosshairInspector reacquired extracted responsibility: " + misplaced);
+        for (String removed : new String[]{
+                "cachedFilterRevision", "cachedOreRevision", "cachedFeatureMask",
+                "currentEnabledFeatureMask", "BuilderFocusVisibility", "OreHighlightResolver",
+                "BlockInspectionPolicy", "VisualTargetSelectionPolicy",
+                "GlassHighlightTargetPolicy", "responsibleFeatures"}) {
+            assertFalse(crosshair.contains(removed), () -> "legacy crosshair analysis returned: " + removed);
         }
         assertFalse(crosshair.contains(".clip("));
         assertFalse(crosshair.contains("raycast("));
@@ -36,13 +35,17 @@ final class CrosshairInspectorArchitectureContractTest {
     }
 
     @Test
-    void snapshotPolicyDerivesReadOnlyStateWithoutOwningMinecraftHitLifecycle() throws Exception {
+    void snapshotPolicyFormatsReadOnlyStateWithoutFeatureAnalysis() throws Exception {
         String policy = Files.readString(GUI.resolve("CrosshairSnapshotPolicy.java"));
 
-        assertTrue(policy.contains("BlockInspectionPolicy.categories("));
-        assertTrue(policy.contains("BuilderFocusVisibility.inspect("));
-        assertTrue(policy.contains("responsibleFeatures("));
         assertTrue(policy.contains("formatStateProperties("));
+        assertTrue(policy.contains("stateProperties(state)"));
+        for (String removed : new String[]{
+                "BuilderFocusVisibility", "FeatureSwitches", "FeatureDefinition",
+                "OreHighlightResolver", "BlockInspectionPolicy", "VisualTargetSelectionPolicy",
+                "responsibleFeatures(", "enabledFeatureMask("}) {
+            assertFalse(policy.contains(removed), () -> "legacy snapshot analysis returned: " + removed);
+        }
         assertFalse(policy.contains("Minecraft"));
         assertFalse(policy.contains("client.hitResult"));
         assertFalse(policy.contains("BlockPlaceContext"));
@@ -65,7 +68,7 @@ final class CrosshairInspectorArchitectureContractTest {
     }
 
     @Test
-    void helpSurfaceMigratesToInspectorWithoutRestoringLegacyUtilityChrome() throws Exception {
+    void helpSurfaceRemainsInsideBuilderAssistWithoutLegacyUtilityChrome() throws Exception {
         String controller = Files.readString(GUI.resolve("ChiseTweaksSettingsController.java"));
         String inspectorRows = Files.readString(GUI.resolve("InspectorSettingsRows.java"));
         String screen = Files.readString(GUI.resolve("ChiseTweaksConfigScreen.java"));

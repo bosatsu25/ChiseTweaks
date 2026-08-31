@@ -25,24 +25,7 @@ final class CrosshairInspectorTranslationContractTest {
             "screen.chisetweaks.inspector.state.interaction",
             "screen.chisetweaks.inspector.state.fluid",
             "screen.chisetweaks.inspector.state.other",
-            "screen.chisetweaks.inspector.filter",
-            "screen.chisetweaks.inspector.filter.visible",
-            "screen.chisetweaks.inspector.filter.hidden",
-            "screen.chisetweaks.inspector.matched_rule",
-            "screen.chisetweaks.inspector.responsible_feature",
-            "screen.chisetweaks.inspector.render_mode",
-            "screen.chisetweaks.inspector.render_mode.visible",
-            "screen.chisetweaks.inspector.render_mode.through_wall",
-            "screen.chisetweaks.inspector.render_mode.suppressed",
             "screen.chisetweaks.inspector.none",
-            "screen.chisetweaks.inspector.reason.filter_off",
-            "screen.chisetweaks.inspector.reason.no_rule",
-            "screen.chisetweaks.inspector.reason.hide_list_match",
-            "screen.chisetweaks.inspector.reason.hide_list_no_match",
-            "screen.chisetweaks.inspector.reason.allow_list_match",
-            "screen.chisetweaks.inspector.reason.allow_list_no_match",
-            "screen.chisetweaks.inspector.reason.self_protected",
-            "screen.chisetweaks.inspector.reason.unregistered",
             "screen.chisetweaks.placement.title",
             "screen.chisetweaks.placement.impossible",
             "screen.chisetweaks.placement.predicted",
@@ -54,6 +37,7 @@ final class CrosshairInspectorTranslationContractTest {
             "screen.chisetweaks.placement.result.different",
             "screen.chisetweaks.placement.result.unavailable",
             "screen.chisetweaks.placement.changed",
+            "screen.chisetweaks.placement.reason",
             "screen.chisetweaks.placement.reason.upper",
             "screen.chisetweaks.placement.reason.lower",
             "screen.chisetweaks.pattern.title",
@@ -82,7 +66,7 @@ final class CrosshairInspectorTranslationContractTest {
             "screen.chisetweaks.help.troubleshooting.description");
 
     @Test
-    void englishAndJapaneseContainEveryInspectorKey() throws Exception {
+    void englishAndJapaneseContainEveryBuilderAssistKey() throws Exception {
         for (String locale : List.of("en_us", "ja_jp")) {
             JsonObject language = JsonParser.parseString(
                     Files.readString(LANG.resolve(locale + ".json"))).getAsJsonObject();

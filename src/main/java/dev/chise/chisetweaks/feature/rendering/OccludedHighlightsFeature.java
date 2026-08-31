@@ -7,6 +7,9 @@ import dev.chise.chisetweaks.core.definition.FeatureDefinition;
 import dev.chise.chisetweaks.core.performance.WorksiteVisibilityBudgetPolicy;
 import dev.chise.chisetweaks.core.policy.LavaVisionPalettePolicy;
 import dev.chise.chisetweaks.core.vision.VisualTargetSelectionPolicy;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticDetail;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnosticEvent;
+import dev.chise.chisetweaks.runtime.RuntimeDiagnostics;
 import dev.chise.chisetweaks.runtime.SessionAwareRuntimeComponent;
 import dev.chise.chisetweaks.runtime.TickingRuntimeComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -29,10 +32,10 @@ import net.minecraft.world.phys.Vec3;
 import java.util.IdentityHashMap;
 
 /**
- * Lava Analyzer / Hidden Block Analyzer のloaded-chunk走査とsession stateを共有する内部runtime。
+ * Lava Source / Hidden Material のloaded-chunk走査とsession stateを共有する内部runtime。
  * user-facing toggle・scan budget・target buffer・render guardは独立したまま維持する。
  */
-public final class ThroughWallAnalyzerFeature
+public final class OccludedHighlightsFeature
         implements TickingRuntimeComponent, SessionAwareRuntimeComponent {
     private static final int LAVA_INDEX = 0;
     private static final int HIDDEN_INDEX = 1;
@@ -44,7 +47,7 @@ public final class ThroughWallAnalyzerFeature
 
     private final ThroughWallPositionSnapshot lavaTargets = new ThroughWallPositionSnapshot(MAX_CANDIDATES);
     private final ThroughWallPositionSnapshot hiddenTargets = new ThroughWallPositionSnapshot(MAX_CANDIDATES);
-    private final ThroughWallRenderGuard lavaRenderGuard = new ThroughWallRenderGuard(
+    private final RenderGuard lavaRenderGuard = new RenderGuard(
             new ThroughWallMarkerRenderer(
                     ThroughWallMarkerRenderer.Style.LAVA_SOURCE,
                     MAX_CANDIDATES,
@@ -53,17 +56,17 @@ public final class ThroughWallAnalyzerFeature
             lavaTargets,
             FeatureDefinition.LAVA_HIGHLIGHT.id(),
             "Lava Source Highlight");
-    private final ThroughWallRenderGuard hiddenRenderGuard = new ThroughWallRenderGuard(
+    private final RenderGuard hiddenRenderGuard = new RenderGuard(
             new ThroughWallMarkerRenderer(
                     ThroughWallMarkerRenderer.Style.HIDDEN_BLOCK,
                     MAX_CANDIDATES,
-                    "ChiseTweaks Hidden Block Analyzer retained buffer",
-                    "ChiseTweaks Hidden Block Analyzer retained rendering"),
+                    "ChiseTweaks Hidden Material Highlight retained buffer",
+                    "ChiseTweaks Hidden Material Highlight retained rendering"),
             hiddenTargets,
             FeatureDefinition.HIDDEN_SURFACE_TRACE.id(),
-            "Hidden Block Analyzer");
-    private final NearestPositionBuffer lavaNearest = new NearestPositionBuffer(MAX_CANDIDATES);
-    private final NearestPositionBuffer hiddenNearest = new NearestPositionBuffer(MAX_CANDIDATES);
+            "Hidden Material Highlight");
+    private final NearestBuffer lavaNearest = new NearestBuffer(MAX_CANDIDATES);
+    private final NearestBuffer hiddenNearest = new NearestBuffer(MAX_CANDIDATES);
     private final LoadedChunkWindow loadedChunks =
             new LoadedChunkWindow(WorksiteVisibilityBudgetPolicy.MAX_LOADED_CHUNK_PROBES);
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -81,7 +84,7 @@ public final class ThroughWallAnalyzerFeature
 
     @Override
     public String getId() {
-        return "through_wall_analyzers";
+        return "occluded_highlights";
     }
 
     @Override
@@ -90,7 +93,7 @@ public final class ThroughWallAnalyzerFeature
         LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(this::render);
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> closeRenderers());
         ChiseTweaksClient.LOGGER.info(
-                "Through-wall analyzers initialized with shared loaded-chunk traversal and independent budgets");
+                "Occluded Highlights initialized with shared loaded-chunk traversal and independent budgets");
     }
 
     @Override
@@ -492,4 +495,126 @@ public final class ThroughWallAnalyzerFeature
         lavaRenderGuard.resetSession();
         hiddenRenderGuard.resetSession();
     }
+    /** Fixed-capacity nearest-N candidate buffer owned by the occluded scan engine. */
+    static final class NearestBuffer {
+        private final long[] positions;
+        private final double[] distanceSquared;
+        private int count;
+
+        NearestBuffer(int capacity) {
+            if (capacity <= 0) throw new IllegalArgumentException("capacity must be positive");
+            positions = new long[capacity];
+            distanceSquared = new double[capacity];
+        }
+
+        void clear() {
+            count = 0;
+        }
+
+        void offer(long packedPosition, double candidateDistanceSquared, int requestedLimit) {
+            int limit = Math.min(Math.max(requestedLimit, 0), positions.length);
+            if (limit == 0) return;
+            if (count < limit) {
+                positions[count] = packedPosition;
+                distanceSquared[count] = candidateDistanceSquared;
+                count++;
+                return;
+            }
+            int farthestIndex = 0;
+            double farthestDistance = distanceSquared[0];
+            for (int index = 1; index < count; index++) {
+                if (distanceSquared[index] > farthestDistance) {
+                    farthestDistance = distanceSquared[index];
+                    farthestIndex = index;
+                }
+            }
+            if (candidateDistanceSquared >= farthestDistance) return;
+            positions[farthestIndex] = packedPosition;
+            distanceSquared[farthestIndex] = candidateDistanceSquared;
+        }
+
+        void sortPositions() {
+            java.util.Arrays.sort(positions, 0, count);
+        }
+
+        long[] positions() {
+            return positions;
+        }
+
+        int count() {
+            return count;
+        }
+    }
+
+    /** Per-style renderer quarantine owned by the Occluded Highlights engine. */
+    private static final class RenderGuard {
+        private final ThroughWallMarkerRenderer renderer;
+        private final ThroughWallPositionSnapshot snapshot;
+        private final String componentId;
+        private final String displayName;
+        private boolean quarantined;
+
+        RenderGuard(
+                ThroughWallMarkerRenderer renderer,
+                ThroughWallPositionSnapshot snapshot,
+                String componentId,
+                String displayName) {
+            this.renderer = renderer;
+            this.snapshot = snapshot;
+            this.componentId = componentId;
+            this.displayName = displayName;
+        }
+
+        boolean isQuarantined() {
+            return quarantined;
+        }
+
+        void render(LevelRenderContext context) {
+            if (quarantined) return;
+            try {
+                renderer.render(context, snapshot);
+            } catch (RuntimeException | LinkageError failure) {
+                quarantined = true;
+                snapshot.clear();
+                resetRenderer();
+                ChiseTweaksClient.LOGGER.error(
+                        "{} rendering was quarantined after {}",
+                        displayName,
+                        failure.getClass().getSimpleName());
+                RuntimeDiagnostics.log(
+                        RuntimeDiagnosticEvent.COMPONENT_QUARANTINE,
+                        Minecraft.getInstance(),
+                        RuntimeDiagnosticDetail.of("componentId", componentId),
+                        RuntimeDiagnosticDetail.of("failure", failure.getClass().getSimpleName()),
+                        RuntimeDiagnosticDetail.of("stage", "render"));
+            }
+        }
+
+        void resetSession() {
+            quarantined = false;
+        }
+
+        void close() {
+            try {
+                renderer.close();
+            } catch (RuntimeException | LinkageError cleanupFailure) {
+                ChiseTweaksClient.LOGGER.warn(
+                        "{} renderer close failed after {}",
+                        displayName,
+                        cleanupFailure.getClass().getSimpleName());
+            }
+        }
+
+        private void resetRenderer() {
+            try {
+                renderer.resetAfterFailure();
+            } catch (RuntimeException | LinkageError cleanupFailure) {
+                ChiseTweaksClient.LOGGER.warn(
+                        "{} renderer cleanup failed after {}",
+                        displayName,
+                        cleanupFailure.getClass().getSimpleName());
+            }
+        }
+    }
+
 }

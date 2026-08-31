@@ -27,8 +27,7 @@ final class WorksiteHighlightSettingsCatalogTest {
 
     @Test
     void technicalVisualizationOwnsTraceAppearanceAndSharedOverlayBudget() {
-        var controller = new ChiseTweaksSettingsController();
-        List<ChiseTweaksSettingRowDefinition> rows = controller.rows(
+        List<ChiseTweaksSettingRowDefinition> rows = TweaksProductSettingsRows.rows(
                 ChiseTweaksSettingsController.Surface.ANALYZER);
 
         assertSame(LocalFeatureSettings.WORKSITE_VISIBILITY_DIMENSION_PRESETS,
@@ -43,10 +42,9 @@ final class WorksiteHighlightSettingsCatalogTest {
 
     @Test
     void technicalTargetsAndOccludedTargetsBelongToDifferentProductGroups() {
-        var controller = new ChiseTweaksSettingsController();
-        List<ChiseTweaksSettingRowDefinition> highlights = controller.rows(
+        List<ChiseTweaksSettingRowDefinition> highlights = TweaksProductSettingsRows.rows(
                 ChiseTweaksSettingsController.Surface.HIGHLIGHT);
-        List<ChiseTweaksSettingRowDefinition> technical = controller.rows(
+        List<ChiseTweaksSettingRowDefinition> technical = TweaksProductSettingsRows.rows(
                 ChiseTweaksSettingsController.Surface.ANALYZER);
 
         assertTrue(technical.stream().anyMatch(row -> row.id().equals("visualTargetTechnicalTripwire")));
@@ -70,8 +68,8 @@ final class WorksiteHighlightSettingsCatalogTest {
         config.visualTargetMask = VisualTargetSelectionPolicy.withEnabled(
                 config.visualTargetMask, Target.TECHNICAL_TRIPWIRE_HOOK, false);
 
-        var controller = new ChiseTweaksSettingsController();
-        controller.reset(ChiseTweaksSettingsController.Surface.ANALYZER);
+        new ChiseTweaksSettingsController().reset(
+                ChiseTweaksSettingsController.Surface.ANALYZER);
 
         assertFalse(config.worksiteVisibilityDimensionPresetsEnabled);
         assertEquals(-1, config.fineThreadTraceColorPreset);

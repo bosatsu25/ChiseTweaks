@@ -24,7 +24,7 @@
 - all-features-on（16機能）を回帰条件として扱う
 - custom packet / server installation / remote mod detection / auto downloader / automatic JAR replacementを実装しない
 - Lava Analyzerはloaded chunks only。未ロードchunkを強制loadしない
-- Lava Analyzer / Hidden Block Analyzerはuser-facing toggle・radius・vertical radius・interval・max overlaysを独立維持しつつ、同一tickでscan期限が重なった場合は1つの`ThroughWallAnalyzerFeature`でloaded-chunk traversalを共有する
+- Lava Source / Hidden Materialはuser-facing toggle・radius・vertical radius・interval・max overlaysを独立維持しつつ、同一tickでscan期限が重なった場合は1つの`OccludedHighlightsFeature`でloaded-chunk traversalを共有する
 - Hidden Block Analyzerは旧Hidden Block Highlightの対象選択・色・opacityを維持し、Lava Analyzerと同じbounded / loaded-chunk-only / through-wall描画へ統合する。Blue Ice / Dead Coral / Powder Snow / Sculk Catalystだけを対象とし、隠れ資源探索へ拡張しない
 - サーバー側ゲーム進行を変える配置補助や、隠れ資源・server-only状態を探索／推測するAnalyzerは現行スコープ外
 - through-wall Analyzerはサーバーへ独自scan packetを送らず、server-side Anti-X-Ray / obfuscationを迂回しない。クライアントへ届いたloaded-chunk stateだけを入力とする
@@ -218,7 +218,7 @@ GUIでは狭幅、日本語/英語、長文、scroll、scissor、footer/button o
 
 Builder Focus list、Ore compatibility、Masa list/mapは`ChiseListEditorScreen`でwidget lifecycle（layout / paging / footer / row rendering）のみ共有する。validation・mode遷移・add/remove/clear・保存責務は`SceneFilterBackend` / `MasaListBackend` / `OreCompatibilityBackend`へ分離し、Screenへdomain configやregistry lookupを戻さない。Ore model reloadも`OreCompatibilityBackend`だけが所有する。
 
-Settingsの状態変更・reset・保存は`ChiseTweaksSettingsController`、6 surfaceの静的row生成は`ChiseTweaksSettingsRows`、Crosshair/Placement/Schematic/Pattern/Historyの動的row生成は`InspectorSettingsRows`を正本とする。Controllerへpresentation helperを戻さず、静的Settingsと動的Inspectorも同じ巨大classへ再統合しない。Integrationsは同一row bufferへ直接追加し、visual target rowは`VisualTargetSettings.ALL_OPTIONS`から必要時に展開する。
+Settingsの状態変更・reset・保存は`ChiseTweaksSettingsController`、6 surfaceの静的row生成は`ChiseTweaksSettingsRows`、Crosshair/Placement/Schematic/Pattern/Historyの動的row生成は`InspectorSettingsRows`を正本とする。Controllerへpresentation helperを戻さず、静的Settingsと動的Inspectorも同じ巨大classへ再統合しない。Integrationsは同一row bufferへ直接追加し、visual target rowは`LocalFeatureSettings.ALL_OPTIONS`から必要時に展開する。
 
 Security/configではmalformed UTF-8、unsafe path、symlink、oversized payload、atomic write failureなどをfail-closed条件として扱います。
 
@@ -238,7 +238,8 @@ Security/configではmalformed UTF-8、unsafe path、symlink、oversized payload
 
 Installable artifactはruntime JARだけです。
 
-- final target: `358400 bytes` 以下（350 KiB）
+- target: `296960 bytes` 以下（290 KiB）
+- stretch: `256000 bytes` 以下（250 KiB）
 - frozen / effective hard ceiling: `446814 bytes`
 - feature parity / correctnessを壊す削減は禁止
 - hard ceilingを機能追加の都合で引き上げない
@@ -279,7 +280,7 @@ CIは実GPU / Windows display pathを再現できないため、release acceptan
 - Low FireのLarge / Medium / Smallが一人称overlayだけへ反映され、通常炎／魂の炎の現在spriteとworld fireを壊さない
 - Handheld SizeのBlock / Item / Weapons & Tools倍率がmain hand / offhandへ反映され、GUI・三人称・active Resource Packのmodel/textureへ影響しない。Shieldは95%で防御姿勢を維持する
 - all-features-on（16機能）をOverworld / Netherでsmoke
-- Lava Analyzer / Hidden Block Analyzerに強制chunk loadや独自scan packetがなく、server-side obfuscationを迂回しない
+- Lava Source / Hidden Materialに強制chunk loadや独自scan packetがなく、server-side obfuscationを迂回しない
 - public server acceptanceではAnalyzer利用可否をserver rule側で確認し、禁止serverではAnalyzerをONにしない
 - disconnect / dimension changeでstale session stateが残らない
 

@@ -1,7 +1,5 @@
 package dev.chise.chisetweaks.gui;
 
-import dev.chise.chisetweaks.core.definition.FeatureDefinition;
-import dev.chise.chisetweaks.feature.rendering.BuilderFocusVisibility;
 import net.minecraft.world.phys.HitResult;
 import org.junit.jupiter.api.Test;
 
@@ -19,22 +17,13 @@ final class CrosshairInspectorLayoutTest {
                 List.of(
                         "facing=north", "half=top", "open=false", "powered=false",
                         "waterlogged=true", "custom_property=safe_value"),
-                new BuilderFocusVisibility.FilterDecision(
-                        true,
-                        BuilderFocusVisibility.REASON_HIDE_LIST_MATCH,
-                        "minecraft:oak_trapdoor"),
-                List.of(
-                        FeatureDefinition.FINE_THREAD_TRACE,
-                        FeatureDefinition.MATERIAL_HIGHLIGHTS),
                 null,
                 null,
                 PlacementInspector.NONE,
                 null,
                 false);
         List<ChiseTweaksSettingRowDefinition> rows =
-                new ChiseTweaksSettingsController().inspectorRows(
-                        snapshot,
-                        true);
+                new ChiseTweaksSettingsController().inspectorRows(snapshot, true);
 
         for (int width : List.of(320, 480, 960)) {
             var geometry = ChiseTweaksSettingsLayout.calculate(width, 480);

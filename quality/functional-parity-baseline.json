@@ -4,7 +4,7 @@
     "version": "0.15.0+mc26.1.2",
     "commit": "f6269e0b76df8a2ea4aecb460823d950b1c01adf",
     "runtimeJarBytes": null,
-    "goalBytes": 358400,
+    "goalBytes": 296960,
     "measurementStatus": "unmeasured-current-16-feature-runtime"
   },
   "featureIds": [

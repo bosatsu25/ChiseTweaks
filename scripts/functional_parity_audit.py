@@ -112,9 +112,9 @@ def audit() -> list[str]:
     local_settings = {name: scalar(default, constants) for name, default in local_setting_pairs}
     diff("local setting defaults", baseline["settings"]["localSettings"], local_settings, failures)
 
-    visual_targets_text = read("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java")
+    visual_targets_text = local_settings_text
     visual_target_keys = re.findall(
-        r"entry\(Target\.[A-Z0-9_]+\s*,\s*\"([^\"]+)\"", visual_targets_text, re.DOTALL)
+        r"target\(Target\.[A-Z0-9_]+\s*,\s*\"([^\"]+)\"", visual_targets_text, re.DOTALL)
     visual_targets = {name: True for name in visual_target_keys}
     if not re.search(r"new\s+ChiseBooleanSetting\(\s*configName\s*,\s*true\s*,", visual_targets_text):
         failures.append("visual target default is no longer true")

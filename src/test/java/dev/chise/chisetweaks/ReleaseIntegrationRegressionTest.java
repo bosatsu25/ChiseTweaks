@@ -58,7 +58,7 @@ final class ReleaseIntegrationRegressionTest {
         String worksite = source(
                 "src/main/java/dev/chise/chisetweaks/feature/rendering/worksite/WorksiteVisibilityEngine.java");
         String analyzer = source(
-                "src/main/java/dev/chise/chisetweaks/feature/rendering/ThroughWallAnalyzerFeature.java");
+                "src/main/java/dev/chise/chisetweaks/feature/rendering/OccludedHighlightsFeature.java");
 
         assertTrue(session.contains("public static void onJoin"));
         assertTrue(session.contains("public static void onDisconnect"));
