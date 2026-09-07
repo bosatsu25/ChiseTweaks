@@ -1,5 +1,6 @@
 package dev.chise.chisetweaks.integration.masa;
 
+import dev.chise.chisetweaks.integration.IntegrationDefinition;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.util.Map;
@@ -43,6 +44,15 @@ public final class MasaModAvailability {
                 case SYNCMATICA -> syncmatica;
                 default -> false;
             };
+        }
+
+        public boolean integrationAvailable(IntegrationDefinition definition) {
+            if (definition == null) return false;
+            if (definition == IntegrationDefinition.MASA_GUIDE) return true;
+            if (definition == IntegrationDefinition.MASA_JAPANESE_UI) {
+                return malilib || litematica || tweakeroo || tweakermore || syncmatica;
+            }
+            return loaded(definition.modId());
         }
 
         public Map<String, Boolean> asMap() {

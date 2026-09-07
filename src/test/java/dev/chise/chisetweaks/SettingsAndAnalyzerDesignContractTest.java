@@ -70,7 +70,6 @@ final class SettingsAndAnalyzerDesignContractTest {
         String screen = read("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksConfigScreen.java");
         String productRows = read("src/main/java/dev/chise/chisetweaks/gui/TweaksProductSettingsRows.java");
         String assistRows = read("src/main/java/dev/chise/chisetweaks/gui/TweaksBuilderAssistRows.java");
-        String grouping = read("src/main/java/dev/chise/chisetweaks/core/definition/TweaksProductGroupPolicy.java");
         String definition = read("src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java");
 
         assertContainsAll(controller,
@@ -97,11 +96,6 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "inspector.matchedRule",
                 "inspector.features",
                 "inspector.renderMode");
-        assertContainsAll(grouping,
-                "TweaksProductGroup.BUILDER_HIGHLIGHTS",
-                "TweaksProductGroup.TECHNICAL_VISUALIZATION",
-                "TweaksProductGroup.VISUAL_TWEAKS",
-                "TweaksProductGroup.SCENE_FILTER");
         assertContainsAll(definition,
                 "\"Lava Source Highlight\"",
                 "\"Hidden Material Highlight\"",
@@ -112,6 +106,7 @@ final class SettingsAndAnalyzerDesignContractTest {
                 "\"Villager Analyzer\"");
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/gui/ChiseTweaksSettingsRows.java"));
         assertFalse(exists("src/main/java/dev/chise/chisetweaks/config/VisualTargetSettings.java"));
+        assertFalse(exists("src/main/java/dev/chise/chisetweaks/core/definition/TweaksProductGroupPolicy.java"));
     }
 
     @Test
