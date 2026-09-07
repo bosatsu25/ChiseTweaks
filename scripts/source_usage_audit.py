@@ -15,10 +15,16 @@ DECLARATION = re.compile(
     r"\b(?:public\s+)?(?:final\s+|abstract\s+|sealed\s+|non-sealed\s+)?"
     r"(?:class|interface|enum|record)\s+([A-Za-z_$][A-Za-z0-9_$]*)\b"
 )
+JAVA_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
+JAVA_LINE_COMMENT = re.compile(r"//.*?$", re.MULTILINE)
+
+
+def java_code_only(text: str) -> str:
+    return JAVA_LINE_COMMENT.sub("", JAVA_BLOCK_COMMENT.sub("", text))
 
 
 def class_name(path: Path) -> str:
-    source = path.read_text(encoding="utf-8")
+    source = java_code_only(path.read_text(encoding="utf-8"))
     match = DECLARATION.search(source)
     if not match:
         raise RuntimeError(f"No top-level Java declaration found: {path.relative_to(ROOT)}")
@@ -70,7 +76,8 @@ def count_external_references(name: str, owner: Path, sources: list[Path]) -> in
     for path in sources:
         if path == owner:
             continue
-        count += len(token.findall(path.read_text(encoding="utf-8")))
+        source = java_code_only(path.read_text(encoding="utf-8"))
+        count += len(token.findall(source))
     return count
 
 
