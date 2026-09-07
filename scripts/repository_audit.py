@@ -111,8 +111,6 @@ REQUIRED_PATHS = (
     "src/main/resources/chisetweaks.integrations.mixins.json",
     "src/main/resources/chisetweaks.inspector.mixins.json",
     "src/main/java/dev/chise/chisetweaks/core/definition/FeatureDefinition.java",
-    "src/main/java/dev/chise/chisetweaks/core/definition/TweaksProductGroup.java",
-    "src/main/java/dev/chise/chisetweaks/core/definition/TweaksProductGroupPolicy.java",
     "src/main/java/dev/chise/chisetweaks/integration/IntegrationDefinition.java",
     "src/main/java/dev/chise/chisetweaks/config/MasaIntegrationConfig.java",
     "src/main/java/dev/chise/chisetweaks/mixin/IntegrationMixinConfigPlugin.java",
