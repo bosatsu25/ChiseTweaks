@@ -11,8 +11,10 @@ import dev.chise.chisetweaks.feature.rendering.worksite.WorksiteVisibilityEngine
 import dev.chise.chisetweaks.gui.InteractionHistory;
 import dev.chise.chisetweaks.gui.PatternConsistencyInspector;
 import dev.chise.chisetweaks.gui.PlacementInspector;
+import dev.chise.chisetweaks.integration.compat.RecordingIndicatorComponent;
 import dev.chise.chisetweaks.integration.compat.WorldBorderFixComponent;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
@@ -59,6 +61,9 @@ public final class FeatureManager {
         registerComponent(new PatternConsistencyInspector());
         registerComponent(new InteractionHistory());
         registerComponent(new WorldBorderFixComponent());
+        if (FabricLoader.getInstance().isModLoaded("flashback")) {
+            registerComponent(new RecordingIndicatorComponent());
+        }
 
         for (ComponentSlot slot : componentSlots.values()) initializeComponent(slot);
 
