@@ -58,14 +58,12 @@ public final class RecordingIndicatorComponent
     @Override
     public void tick(Minecraft client) {
         if (!supported) return;
-
-        if (pollCountdown <= 0) {
-            pollCountdown = POLL_INTERVAL_TICKS - 1;
-            sampleFlashbackState();
-        } else {
+        if (pollCountdown > 0) {
             pollCountdown--;
+            return;
         }
-
+        pollCountdown = POLL_INTERVAL_TICKS - 1;
+        sampleFlashbackState();
         if (recording) refreshDisplayText(System.currentTimeMillis());
     }
 
