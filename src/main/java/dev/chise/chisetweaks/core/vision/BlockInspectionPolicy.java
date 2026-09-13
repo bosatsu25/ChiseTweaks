@@ -2,8 +2,6 @@ package dev.chise.chisetweaks.core.vision;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -23,37 +21,6 @@ public final class BlockInspectionPolicy {
             "attached", "disarmed", "powered", "facing", "north", "east", "south", "west");
     private static final Set<String> HIDDEN_PROPERTIES = Set.of(
             "bloom", "waterlogged", "facing");
-
-    private static final Set<String> MATERIAL_HIGHLIGHT_IDS = createMaterialHighlightIds();
-
-    private static final Set<String> NETHER_PALETTE_IDS = Set.of(
-            "minecraft:netherrack",
-            "minecraft:gravel",
-            "minecraft:soul_sand",
-            "minecraft:soul_soil",
-            "minecraft:magma_block",
-            "minecraft:glowstone",
-            "minecraft:shroomlight",
-            "minecraft:crimson_nylium",
-            "minecraft:warped_nylium",
-            "minecraft:crimson_stem",
-            "minecraft:warped_stem",
-            "minecraft:nether_wart_block",
-            "minecraft:warped_wart_block",
-            "minecraft:basalt",
-            "minecraft:polished_basalt",
-            "minecraft:blackstone",
-            "minecraft:gilded_blackstone",
-            "minecraft:polished_blackstone",
-            "minecraft:chiseled_polished_blackstone",
-            "minecraft:polished_blackstone_bricks",
-            "minecraft:cracked_polished_blackstone_bricks",
-            "minecraft:nether_bricks",
-            "minecraft:chiseled_nether_bricks",
-            "minecraft:cracked_nether_bricks",
-            "minecraft:nether_gold_ore",
-            "minecraft:nether_quartz_ore",
-            "minecraft:crying_obsidian");
 
     private BlockInspectionPolicy() {}
 
@@ -105,13 +72,7 @@ public final class BlockInspectionPolicy {
     public static Set<BlockInspectionCategory> categories(String rawBlockId) {
         String id = normalizeBlockId(rawBlockId);
         if (id.isEmpty()) return Set.of();
-        EnumSet<BlockInspectionCategory> result =
-                EnumSet.noneOf(BlockInspectionCategory.class);
-        if (isTechnical(id)) result.add(BlockInspectionCategory.TECHNICAL_TRACE);
-        if (isHiddenSurface(id)) result.add(BlockInspectionCategory.HIDDEN_SURFACE);
-        if (MATERIAL_HIGHLIGHT_IDS.contains(id)) result.add(BlockInspectionCategory.MATERIAL_HIGHLIGHT);
-        if (NETHER_PALETTE_IDS.contains(id)) result.add(BlockInspectionCategory.NETHER_PALETTE);
-        return Set.copyOf(result);
+        return VisualCapabilityCatalog.categories(id);
     }
 
     public static boolean matches(String rawBlockId, BlockInspectionCategory category) {
@@ -120,41 +81,19 @@ public final class BlockInspectionPolicy {
     }
 
     private static boolean matchesNormalized(String id, BlockInspectionCategory category) {
-        if (id.isEmpty()) return false;
-        if (category == BlockInspectionCategory.TECHNICAL_TRACE) return isTechnical(id);
-        if (category == BlockInspectionCategory.HIDDEN_SURFACE) return isHiddenSurface(id);
-        if (category == BlockInspectionCategory.MATERIAL_HIGHLIGHT) {
-            return MATERIAL_HIGHLIGHT_IDS.contains(id);
-        }
-        return category == BlockInspectionCategory.NETHER_PALETTE
-                && NETHER_PALETTE_IDS.contains(id);
+        return !id.isEmpty() && VisualCapabilityCatalog.matches(id, category);
     }
 
     public static boolean isScanCategory(BlockInspectionCategory category) {
         return category != null && category != BlockInspectionCategory.NONE;
     }
 
-    public static Set<String> materialHighlightIds() { return MATERIAL_HIGHLIGHT_IDS; }
-    public static Set<String> netherPaletteIds() { return NETHER_PALETTE_IDS; }
-
-    private static Set<String> createMaterialHighlightIds() {
-        LinkedHashSet<String> ids = new LinkedHashSet<>(VanillaOreVisualCatalog.blockIds());
-        ids.add("minecraft:obsidian");
-        ids.add("minecraft:crying_obsidian");
-        return Set.copyOf(ids);
+    public static Set<String> materialHighlightIds() {
+        return VisualCapabilityCatalog.materialHighlightIds();
     }
 
-    private static boolean isTechnical(String id) {
-        return id.equals("minecraft:tripwire") || id.equals("minecraft:tripwire_hook");
-    }
-
-    private static boolean isHiddenSurface(String id) {
-        return id.equals("minecraft:powder_snow")
-                || id.equals("minecraft:blue_ice")
-                || id.equals("minecraft:sculk_catalyst")
-                || id.contains(":dead_") && (id.endsWith("_coral_block")
-                || id.endsWith("_coral") || id.endsWith("_coral_fan")
-                || id.endsWith("_coral_wall_fan"));
+    public static Set<String> netherPaletteIds() {
+        return VisualCapabilityCatalog.netherPaletteIds();
     }
 
     private static String normalizeBlockId(String raw) {

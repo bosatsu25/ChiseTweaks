@@ -11,9 +11,12 @@ ROOT = Path(__file__).resolve().parents[1]
 MAIN_JAVA = ROOT / "src" / "main" / "java"
 RESOURCES = ROOT / "src" / "main" / "resources"
 
+# Anchor type detection to a Java declaration line. The previous word-boundary expression could
+# mistake prose such as "This class owns ..." inside Javadoc for a top-level declaration.
 DECLARATION = re.compile(
-    r"\b(?:public\s+)?(?:final\s+|abstract\s+|sealed\s+|non-sealed\s+)?"
-    r"(?:class|interface|enum|record)\s+([A-Za-z_$][A-Za-z0-9_$]*)\b"
+    r"(?m)^[ \t]*(?:public[ \t]+)?"
+    r"(?:(?:final|abstract|sealed|non-sealed)[ \t]+)?"
+    r"(?:class|interface|enum|record)[ \t]+([A-Za-z_$][A-Za-z0-9_$]*)\b"
 )
 
 
