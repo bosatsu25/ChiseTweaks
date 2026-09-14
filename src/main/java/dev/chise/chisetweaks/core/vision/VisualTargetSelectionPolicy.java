@@ -1,7 +1,5 @@
 package dev.chise.chisetweaks.core.vision;
 
-import java.util.Locale;
-
 public final class VisualTargetSelectionPolicy {
     /**
      * 既存設定との互換性を守るため、保持対象のビット位置は過去の割り当てを維持する。
@@ -122,61 +120,14 @@ public final class VisualTargetSelectionPolicy {
             String rawBlockId,
             BlockInspectionCategory category) {
         if (category == null || category == BlockInspectionCategory.NONE) return false;
-        String id = normalize(rawBlockId);
-        if (id.isEmpty()) return false;
-
-        if (category == BlockInspectionCategory.TECHNICAL_TRACE) {
-            return technicalEnabled(mask, id);
+        if (category == BlockInspectionCategory.NETHER_PALETTE) {
+            return VisualTargetCatalog.matches(rawBlockId, category);
         }
-        if (category == BlockInspectionCategory.MATERIAL_HIGHLIGHT) {
-            return materialEnabled(mask, id);
-        }
-        if (category == BlockInspectionCategory.HIDDEN_SURFACE) {
-            return hiddenEnabled(mask, id);
-        }
-        return true;
-    }
-
-    private static boolean technicalEnabled(int mask, String id) {
-        if (id.equals("minecraft:tripwire")) {
-            return isEnabled(mask, Target.TECHNICAL_TRIPWIRE);
-        }
-        if (id.equals("minecraft:tripwire_hook")) {
-            return isEnabled(mask, Target.TECHNICAL_TRIPWIRE_HOOK);
-        }
-        return false;
-    }
-
-    private static boolean materialEnabled(int mask, String id) {
-        if (id.equals("minecraft:obsidian")) return isEnabled(mask, Target.MATERIAL_OBSIDIAN);
-        if (id.equals("minecraft:crying_obsidian")) {
-            return isEnabled(mask, Target.MATERIAL_CRYING_OBSIDIAN);
-        }
-        Target vanillaOreTarget = VanillaOreVisualCatalog.targetForBlockId(id);
-        return vanillaOreTarget != null && isEnabled(mask, vanillaOreTarget);
-    }
-
-    private static boolean hiddenEnabled(int mask, String id) {
-        return isEnabled(mask, hiddenTargetForNormalizedBlockId(id));
+        Target target = VisualTargetCatalog.selectionTarget(rawBlockId, category);
+        return target != null && isEnabled(mask, target);
     }
 
     public static Target hiddenTargetForBlockId(String rawBlockId) {
-        return hiddenTargetForNormalizedBlockId(normalize(rawBlockId));
-    }
-
-    private static Target hiddenTargetForNormalizedBlockId(String id) {
-        if (id.equals("minecraft:blue_ice")) return Target.HIDDEN_BLUE_ICE;
-        if (id.equals("minecraft:powder_snow")) return Target.HIDDEN_POWDER_SNOW;
-        if (id.equals("minecraft:sculk_catalyst")) return Target.HIDDEN_SCULK_CATALYST;
-        if (id.contains(":dead_") && (id.endsWith("_coral_block")
-                || id.endsWith("_coral") || id.endsWith("_coral_fan")
-                || id.endsWith("_coral_wall_fan"))) {
-            return Target.HIDDEN_DEAD_CORAL;
-        }
-        return null;
-    }
-
-    private static String normalize(String raw) {
-        return raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+        return VisualTargetCatalog.hiddenTargetForBlockId(rawBlockId);
     }
 }
